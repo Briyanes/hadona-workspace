@@ -336,7 +336,7 @@ export default function TasksPage() {
             <select
               value={filterClient}
               onChange={(e) => setFilterClient(e.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+              className="input py-1.5 text-xs"
             >
               <option value="all">Semua</option>
               {clients.map((c) => (
@@ -349,7 +349,7 @@ export default function TasksPage() {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+              className="input py-1.5 text-xs"
             >
               <option value="all">Semua</option>
               <option value="low">Low</option>
