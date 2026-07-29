@@ -220,7 +220,7 @@ export default function TasksPage() {
             className={cn(
               "rounded-md px-3 py-2 text-xs font-medium transition-colors",
               showMyTasksOnly
-                ? "bg-primary text-gray-900"
+                ? "bg-primary text-white"
                 : "bg-surface text-muted hover:text-gray-900"
             )}
           >

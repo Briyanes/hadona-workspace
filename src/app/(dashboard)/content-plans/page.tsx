@@ -241,7 +241,7 @@ export default function ContentPlansPage() {
                       className={cn(
                         "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                         form.services.includes(s)
-                          ? "bg-primary text-gray-900"
+                          ? "bg-primary text-white"
                           : "bg-background text-muted hover:text-gray-900"
                       )}
                     >

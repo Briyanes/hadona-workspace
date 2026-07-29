@@ -206,7 +206,7 @@ export default function CreativePage() {
             onClick={() => setStatusFilter(s)}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-              statusFilter === s ? "bg-primary text-gray-900" : "bg-surface text-muted hover:text-gray-900"
+              statusFilter === s ? "bg-primary text-white" : "bg-surface text-muted hover:text-white"
             )}
           >
             {s === "all" ? "Semua" : statusLabels[s] || s}

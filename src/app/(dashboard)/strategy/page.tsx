@@ -271,7 +271,7 @@ export default function StrategyPage() {
           onClick={() => setQuarterFilter("all")}
           className={cn(
             "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-            quarterFilter === "all" ? "bg-primary text-gray-900" : "bg-surface text-muted hover:text-gray-900"
+            quarterFilter === "all" ? "bg-primary text-white" : "bg-surface text-muted hover:text-white"
           )}
         >
           Semua Periode
@@ -282,7 +282,7 @@ export default function StrategyPage() {
             onClick={() => setQuarterFilter(q)}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-              quarterFilter === q ? "bg-primary text-gray-900" : "bg-surface text-muted hover:text-gray-900"
+              quarterFilter === q ? "bg-primary text-white" : "bg-surface text-muted hover:text-white"
             )}
           >
             {q}
