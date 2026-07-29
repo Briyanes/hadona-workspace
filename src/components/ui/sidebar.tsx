@@ -63,7 +63,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-hadona-yellow-dark bg-hadona-yellow transition-all duration-200",
+        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-white transition-all duration-200",
         isCollapsed ? "w-[60px]" : "w-60"
       )}
     >
@@ -119,7 +119,7 @@ export function Sidebar() {
                 Management
               </div>
             )}
-            {isCollapsed && <div className="my-2 border-t border-hadona-yellow-dark/30" />}
+            {isCollapsed && <div className="my-2 border-t border-border" />}
             {managerItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname.startsWith(item.href);
@@ -144,7 +144,7 @@ export function Sidebar() {
       </nav>
 
       {/* Zone 3: Settings (fixed at bottom, no absolute) */}
-      <div className="shrink-0 border-t border-hadona-yellow-dark bg-white p-3">
+      <div className="shrink-0 border-t border-border bg-surface p-3">
         <Link
           href="/settings"
           title={isCollapsed ? "Settings" : undefined}
