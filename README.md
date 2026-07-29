@@ -36,7 +36,7 @@ Copy `.env.example` ke `.env.local` dan isi:
 
 ```env
 # App
-NEXT_PUBLIC_APP_URL=https://teamwork.hadona.id
+NEXT_PUBLIC_APP_URL=https://workspace.hadona.id
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
@@ -92,10 +92,10 @@ Buka `http://localhost:3000`
 
 ```
 # Dashboard (ringkasan stats)
-https://teamwork.hadona.id/embed?token=USER_ACCESS_TOKEN
+https://workspace.hadona.id/embed?token=USER_ACCESS_TOKEN
 
 # Task List (tugas user)
-https://teamwork.hadona.id/embed/tasks?token=USER_ACCESS_TOKEN
+https://workspace.hadona.id/embed/tasks?token=USER_ACCESS_TOKEN
 ```
 
 > **Catatan:** `USER_ACCESS_TOKEN` adalah Supabase JWT access token user.
@@ -174,7 +174,7 @@ Color palette (dark-mode first):
 4. Deploy
 
 Domain akan otomatis ter-setup di `*.vercel.app`.
-Hubungkan custom domain `teamwork.hadona.id` di Settings → Domains.
+Hubungkan custom domain `workspace.hadona.id` di Settings → Domains.
 
 ---
 

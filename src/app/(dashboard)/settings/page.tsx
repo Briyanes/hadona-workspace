@@ -14,13 +14,13 @@ export default function SettingsPage() {
           <div className="rounded-md border border-border bg-background p-3">
             <p className="mb-1 text-xs text-muted">Embed URL (Dashboard)</p>
             <code className="text-xs text-primary">
-              {process.env.NEXT_PUBLIC_APP_URL || "https://teamwork.hadona.id"}/embed?token=ACCESS_TOKEN
+              {process.env.NEXT_PUBLIC_APP_URL || "https://workspace.hadona.id"}/embed?token=ACCESS_TOKEN
             </code>
           </div>
           <div className="rounded-md border border-border bg-background p-3">
             <p className="mb-1 text-xs text-muted">Embed URL (Tasks)</p>
             <code className="text-xs text-primary">
-              {process.env.NEXT_PUBLIC_APP_URL || "https://teamwork.hadona.id"}/embed/tasks?token=ACCESS_TOKEN
+              {process.env.NEXT_PUBLIC_APP_URL || "https://workspace.hadona.id"}/embed/tasks?token=ACCESS_TOKEN
             </code>
           </div>
           <p className="text-xs text-muted">
