@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare } from "lucide-react";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate, cn, extractError } from "@/lib/utils";
 
 interface CreativeRequest {
   id: string;
@@ -91,12 +91,12 @@ export default function CreativePage() {
     try {
       const { data, error } = await supabase
         .from("creative_requests")
-        .select("*, client:clients(name), creator:profiles!creative_requests_created_by_fkey(full_name), assignee:profiles!creative_requests_assigned_to_fkey(full_name)")
+        .select("*, client:clients(name), creator:profiles!created_by(full_name), assignee:profiles!assigned_to(full_name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setRequests((data as unknown as CreativeRequest[]) || []);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = extractError(err);
       toast.error("Gagal memuat creative requests: " + msg);
     } finally {
       setLoading(false);
