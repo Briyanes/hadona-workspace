@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Search, UserCog, ShieldCheck, ShieldOff, Loader2 } from "lucide-react";
 import type { Database } from "@/types/database";
+import { useSortable } from "@/hooks/use-sortable-table";
+import { SortableTh } from "@/components/ui/sortable-th";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -90,6 +92,8 @@ export default function UsersPage() {
   const getRoleLabel = (role: string) => ROLES.find((r) => r.value === role)?.label || role;
   const getRoleColor = (role: string) => ROLES.find((r) => r.value === role)?.color || "text-muted";
 
+  const { sortedData, sortState, toggleSort } = useSortable<Profile>({ data: filtered });
+
   return (
     <div className="space-y-6">
       <div>
@@ -157,15 +161,17 @@ export default function UsersPage() {
           <table className="w-full">
             <thead className="bg-surface">
               <tr className="text-left text-xs text-muted">
-                <th className="px-4 py-3 font-medium">Nama</th>
-                <th className="hidden px-4 py-3 font-medium sm:table-cell">Email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <SortableTh label="Nama" sortKey="full_name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                  <SortableTh label="Email" sortKey="email" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                </th>
+                <SortableTh label="Role" sortKey="role" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Status" sortKey="is_active" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
                 <th className="px-4 py-3 text-right font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((user) => (
+              {sortedData.map((user) => (
                 <tr key={user.id} className="text-sm hover:bg-surface/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

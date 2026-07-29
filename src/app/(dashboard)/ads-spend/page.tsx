@@ -15,6 +15,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatIDR, cn, extractError } from "@/lib/utils";
+import { useSortable } from "@/hooks/use-sortable-table";
+import { SortableTh } from "@/components/ui/sortable-th";
 
 interface AdAccount {
   id: string;
@@ -183,6 +185,8 @@ export default function AdsSpendPage() {
     return matchSearch && matchStatus;
   });
 
+  const { sortedData, sortState, toggleSort } = useSortable<AdAccount>({ data: filtered });
+
   const totalDaily = accounts
     .filter((a) => a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
@@ -270,19 +274,19 @@ export default function AdsSpendPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-surface">
               <tr className="text-left text-xs uppercase text-muted">
-                <th className="px-4 py-3 font-medium">Client</th>
-                <th className="px-4 py-3 font-medium">Platform</th>
-                <th className="px-4 py-3 font-medium">Ad Account ID</th>
-                <th className="px-4 py-3 font-medium">Objective</th>
-                <th className="px-4 py-3 text-right font-medium">Daily Budget</th>
-                <th className="px-4 py-3 text-right font-medium">Remaining</th>
-                <th className="px-4 py-3 text-center font-medium">Days Left</th>
-                <th className="px-4 py-3 text-center font-medium">Status</th>
+                <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Platform" sortKey="platform" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Ad Account ID" sortKey="ad_account_id" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Objective" sortKey="objective" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Daily Budget" sortKey="daily_budget" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" />
+                <SortableTh label="Remaining" sortKey="remaining_budget" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" />
+                <SortableTh label="Days Left" sortKey="days_left" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="center" />
+                <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="center" />
                 <th className="px-4 py-3 text-right font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((a) => (
+              {sortedData.map((a) => (
                 <tr key={a.id} className="group hover:bg-surface/50">
                   <td className="px-4 py-3 font-medium text-white">{a.client?.name || "-"}</td>
                   <td className="px-4 py-3">
