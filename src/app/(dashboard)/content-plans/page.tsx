@@ -46,16 +46,27 @@ export default function ContentPlansPage() {
   }, [supabase]);
 
   async function loadPlans() {
-    const { data } = await supabase
-      .from("content_plans")
-      .select("*, client:clients(name)")
-      .order("created_at", { ascending: false });
-    setPlans((data as unknown as ContentPlan[]) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("content_plans")
+        .select("*, client:clients(name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setPlans((data as unknown as ContentPlan[]) || []);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal memuat content plans: " + msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadClients() {
-    const { data } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    const { data, error } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    if (error) {
+      toast.error("Gagal memuat daftar client");
+      return;
+    }
     setClients((data as unknown as Client[]) || []);
   }
 

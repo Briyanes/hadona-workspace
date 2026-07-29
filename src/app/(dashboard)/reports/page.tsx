@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, FileText, ChevronRight, X } from "lucide-react";
+import { Plus, FileText, ChevronRight, X, Pencil, Trash2, AlertCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface Report {
@@ -31,9 +31,11 @@ export default function ReportsPage() {
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const emptyForm = {
     client_id: "",
     period_start: "",
     period_end: "",
@@ -42,7 +44,8 @@ export default function ReportsPage() {
     conclusion: "",
     action: "",
     status: "draft",
-  });
+  };
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     loadReports();
@@ -50,20 +53,66 @@ export default function ReportsPage() {
   }, [supabase]);
 
   async function loadReports() {
-    const { data } = await supabase
-      .from("weekly_reports")
-      .select("*, client:clients(name), pic:profiles(full_name)")
-      .order("created_at", { ascending: false });
-    setReports((data as unknown as Report[]) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("weekly_reports")
+        .select("*, client:clients(name), pic:profiles(full_name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setReports((data as unknown as Report[]) || []);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setError("Gagal memuat laporan: " + msg);
+      toast.error("Gagal memuat data laporan");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadClients() {
-    const { data } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    const { data, error } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    if (error) {
+      toast.error("Gagal memuat daftar client");
+      return;
+    }
     setClients((data as unknown as Client[]) || []);
   }
 
-  async function handleCreateReport(e: React.FormEvent) {
+  function openEdit(report: Report) {
+    setEditingId(report.id);
+    setForm({
+      client_id: report.client?.name ? "" : "",
+      period_start: report.period_start,
+      period_end: report.period_end,
+      summary: report.summary || "",
+      performance_text: report.performance_text || "",
+      conclusion: report.conclusion || "",
+      action: report.action || "",
+      status: report.status,
+    });
+    setShowModal(true);
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Hapus laporan ini?")) return;
+    try {
+      const { error } = await supabase.from("weekly_reports").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Laporan dihapus");
+      loadReports();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal hapus: " + msg);
+    }
+  }
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setShowModal(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!form.client_id) {
       toast.error("Client wajib dipilih");
@@ -75,38 +124,42 @@ export default function ReportsPage() {
     }
 
     setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
+    try {
+      const payload = {
+        client_id: form.client_id,
+        period_start: form.period_start,
+        period_end: form.period_end,
+        summary: form.summary.trim() || null,
+        performance_text: form.performance_text.trim() || null,
+        conclusion: form.conclusion.trim() || null,
+        action: form.action.trim() || null,
+        status: form.status,
+      };
 
-    const { error } = await supabase.from("weekly_reports").insert({
-      client_id: form.client_id,
-      pic_id: userData.user?.id,
-      period_start: form.period_start,
-      period_end: form.period_end,
-      summary: form.summary.trim() || null,
-      performance_text: form.performance_text.trim() || null,
-      conclusion: form.conclusion.trim() || null,
-      action: form.action.trim() || null,
-      status: form.status,
-    } as never);
+      if (editingId) {
+        const { error } = await supabase.from("weekly_reports").update(payload as never).eq("id", editingId);
+        if (error) throw error;
+        toast.success("Laporan berhasil diupdate!");
+      } else {
+        const { data: userData } = await supabase.auth.getUser();
+        const { error } = await supabase.from("weekly_reports").insert({
+          ...payload,
+          pic_id: userData.user?.id,
+        } as never);
+        if (error) throw error;
+        toast.success("Laporan berhasil dibuat!");
+      }
 
-    if (error) {
-      toast.error("Gagal membuat laporan: " + error.message);
-    } else {
-      toast.success("Laporan berhasil dibuat!");
-      setForm({
-        client_id: "",
-        period_start: "",
-        period_end: "",
-        summary: "",
-        performance_text: "",
-        conclusion: "",
-        action: "",
-        status: "draft",
-      });
+      setForm(emptyForm);
+      setEditingId(null);
       setShowModal(false);
       loadReports();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal menyimpan: " + msg);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   const statusColors: Record<string, string> = {
@@ -122,7 +175,7 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-white">Weekly Reports</h1>
           <p className="text-sm text-muted">Laporan performa klien mingguan</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
+        <button onClick={openCreate} className="btn-primary">
           <Plus size={16} /> New Report
         </button>
       </div>
@@ -144,7 +197,7 @@ export default function ReportsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {reports.map((r) => (
-            <div key={r.id} className="card card-hover cursor-pointer">
+            <div key={r.id} className="card card-hover group">
               <div className="mb-3 flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-white">{r.client?.name || "Unknown Client"}</h3>
@@ -167,7 +220,22 @@ export default function ReportsPage() {
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <span className="text-xs text-muted">PIC: {r.pic?.full_name || "-"}</span>
-                <ChevronRight size={16} className="text-muted" />
+                <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={() => openEdit(r)}
+                    className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(r.id)}
+                    className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                    title="Hapus"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -179,7 +247,9 @@ export default function ReportsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
           <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Buat Weekly Report</h2>
+              <h2 className="text-lg font-bold text-white">
+                {editingId ? "Edit Weekly Report" : "Buat Weekly Report"}
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="rounded p-1 text-muted hover:bg-background hover:text-white"
@@ -188,7 +258,7 @@ export default function ReportsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateReport} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-white">Client *</label>
                 <select
@@ -296,7 +366,7 @@ export default function ReportsPage() {
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? "Menyimpan..." : "Simpan Laporan"}
+                  {saving ? "Menyimpan..." : editingId ? "Update Laporan" : "Simpan Laporan"}
                 </button>
               </div>
             </form>

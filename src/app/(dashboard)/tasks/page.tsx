@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Calendar, Flag, X } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 
 interface Task {
@@ -41,7 +41,10 @@ export default function TasksPage() {
   const supabase = createClient();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -57,6 +60,7 @@ export default function TasksPage() {
   });
 
   useEffect(() => {
+    loadCurrentUser();
     loadTasks();
     loadClients();
 
@@ -70,23 +74,40 @@ export default function TasksPage() {
     };
   }, [supabase]);
 
+  async function loadCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setCurrentUserId(user.id);
+  }
+
   async function loadTasks() {
-    const { data } = await supabase
-      .from("tasks")
-      .select(
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select(
+          `
+          id, title, description, status, priority, division, due_date,
+          client:clients(name),
+          task_assignees(user_id, user:profiles(full_name))
         `
-        id, title, description, status, priority, division, due_date,
-        client:clients(name),
-        task_assignees(user_id, user:profiles(full_name))
-      `
-      )
-      .order("created_at", { ascending: false });
-    setTasks((data as unknown as Task[]) || []);
-    setLoading(false);
+        )
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setTasks((data as unknown as Task[]) || []);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setError("Gagal memuat tugas: " + msg);
+      toast.error("Gagal memuat tugas");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadClients() {
-    const { data } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    const { data, error } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    if (error) {
+      toast.error("Gagal memuat daftar client");
+      return;
+    }
     setClients((data as unknown as Client[]) || []);
   }
 
@@ -147,6 +168,12 @@ export default function TasksPage() {
     }
   }
 
+  const visibleTasks = showMyTasksOnly && currentUserId
+    ? tasks.filter(
+        (t) => t.task_assignees?.some((a) => a.user_id === currentUserId)
+      )
+    : tasks;
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -160,6 +187,18 @@ export default function TasksPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+        <AlertCircle className="mb-3 text-danger" size={32} />
+        <p className="text-sm text-muted">{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary mt-4">
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4">
       <div className="flex items-center justify-between">
@@ -167,14 +206,27 @@ export default function TasksPage() {
           <h1 className="text-2xl font-bold text-white">Task Board</h1>
           <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          <Plus size={16} /> New Task
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowMyTasksOnly(!showMyTasksOnly)}
+            className={cn(
+              "rounded-md px-3 py-2 text-xs font-medium transition-colors",
+              showMyTasksOnly
+                ? "bg-primary text-white"
+                : "bg-surface text-muted hover:text-white"
+            )}
+          >
+            My Tasks Only
+          </button>
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            <Plus size={16} /> New Task
+          </button>
+        </div>
       </div>
 
       <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden md:grid-cols-2 xl:grid-cols-4">
         {COLUMNS.map((col) => {
-          const colTasks = tasks.filter((t) => t.status === col.id);
+          const colTasks = visibleTasks.filter((t) => t.status === col.id);
           return (
             <div
               key={col.id}

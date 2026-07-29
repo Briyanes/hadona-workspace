@@ -2,7 +2,18 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { AlertTriangle, Search } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertTriangle,
+  AlertCircle,
+  Search,
+  Plus,
+  X,
+  Pencil,
+  Trash2,
+  Megaphone,
+  Loader2,
+} from "lucide-react";
 import { formatIDR, cn } from "@/lib/utils";
 
 interface AdAccount {
@@ -16,27 +27,151 @@ interface AdAccount {
   days_left: number | null;
   status: string;
   notes: string | null;
+  client_id: string;
   client?: { name: string };
 }
+
+interface Client {
+  id: string;
+  name: string;
+}
+
+const emptyForm = {
+  client_id: "",
+  platform: "META",
+  ad_account_id: "",
+  account_name: "",
+  objective: "",
+  daily_budget: "",
+  remaining_budget: "",
+  days_left: "",
+  status: "active",
+  notes: "",
+};
 
 export default function AdsSpendPage() {
   const supabase = createClient();
   const [accounts, setAccounts] = useState<AdAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  // Modal
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
+    loadAccounts();
+    loadClients();
+  }, []);
+
+  async function loadAccounts() {
+    try {
+      const { data, error } = await supabase
         .from("ad_accounts")
         .select("*, client:clients(name)")
         .order("created_at", { ascending: false });
+      if (error) throw error;
       setAccounts((data as unknown as AdAccount[]) || []);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setError("Gagal memuat data: " + msg);
+      toast.error("Gagal memuat ad accounts");
+    } finally {
       setLoading(false);
     }
-    load();
-  }, [supabase]);
+  }
+
+  async function loadClients() {
+    const { data } = await supabase.from("clients").select("id, name").order("name");
+    setClients((data as unknown as Client[]) || []);
+  }
+
+  function openCreate() {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowModal(true);
+  }
+
+  function openEdit(account: AdAccount) {
+    setForm({
+      client_id: account.client_id,
+      platform: account.platform,
+      ad_account_id: account.ad_account_id,
+      account_name: account.account_name || "",
+      objective: account.objective || "",
+      daily_budget: account.daily_budget?.toString() || "",
+      remaining_budget: account.remaining_budget?.toString() || "",
+      days_left: account.days_left?.toString() || "",
+      status: account.status,
+      notes: account.notes || "",
+    });
+    setEditingId(account.id);
+    setShowModal(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.client_id) {
+      toast.error("Client wajib dipilih");
+      return;
+    }
+    if (!form.ad_account_id.trim()) {
+      toast.error("Ad Account ID wajib diisi");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        client_id: form.client_id,
+        platform: form.platform,
+        ad_account_id: form.ad_account_id.trim(),
+        account_name: form.account_name.trim() || null,
+        objective: form.objective.trim() || null,
+        daily_budget: form.daily_budget ? parseFloat(form.daily_budget) : null,
+        remaining_budget: form.remaining_budget ? parseFloat(form.remaining_budget) : null,
+        days_left: form.days_left ? parseInt(form.days_left) : null,
+        status: form.status,
+        notes: form.notes.trim() || null,
+      };
+
+      if (editingId) {
+        const { error } = await supabase.from("ad_accounts").update(payload as never).eq("id", editingId);
+        if (error) throw error;
+        toast.success("Ad account diupdate!");
+      } else {
+        const { error } = await supabase.from("ad_accounts").insert(payload as never);
+        if (error) throw error;
+        toast.success("Ad account dibuat!");
+      }
+
+      setShowModal(false);
+      loadAccounts();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal menyimpan: " + msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Hapus ad account ini?")) return;
+    try {
+      const { error } = await supabase.from("ad_accounts").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Ad account dihapus");
+      loadAccounts();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal hapus: " + msg);
+    }
+  }
 
   const filtered = accounts.filter((a) => {
     const matchSearch =
@@ -64,6 +199,27 @@ export default function AdsSpendPage() {
     hold: "bg-warning/20 text-warning",
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-white">Ads Spend Tracker</h1>
+        <div className="skeleton h-64 rounded-lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+        <AlertCircle className="mb-3 text-danger" size={32} />
+        <p className="text-sm text-muted">{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary mt-4">
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -73,10 +229,13 @@ export default function AdsSpendPage() {
             Total Budget Harian: <span className="font-semibold text-white">{formatIDR(totalDaily)}</span>
           </p>
         </div>
+        <button onClick={openCreate} className="btn-primary">
+          <Plus size={16} /> New Ad Account
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
             type="text"
@@ -98,28 +257,33 @@ export default function AdsSpendPage() {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border bg-surface">
-            <tr className="text-left text-xs uppercase text-muted">
-              <th className="px-4 py-3 font-medium">Client</th>
-              <th className="px-4 py-3 font-medium">Platform</th>
-              <th className="px-4 py-3 font-medium">Ad Account ID</th>
-              <th className="px-4 py-3 font-medium">Objective</th>
-              <th className="px-4 py-3 text-right font-medium">Daily Budget</th>
-              <th className="px-4 py-3 text-right font-medium">Remaining</th>
-              <th className="px-4 py-3 text-center font-medium">Days Left</th>
-              <th className="px-4 py-3 text-center font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {loading ? (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted">Loading...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted">Tidak ada data</td></tr>
-            ) : (
-              filtered.map((a) => (
-                <tr key={a.id} className="hover:bg-surface/50">
+      {filtered.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-12 text-center">
+          <Megaphone className="mb-3 text-muted" size={32} />
+          <p className="text-muted">Belum ada ad account</p>
+          <button onClick={openCreate} className="btn-primary mt-4">
+            <Plus size={16} /> Tambah Ad Account
+          </button>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border bg-surface">
+              <tr className="text-left text-xs uppercase text-muted">
+                <th className="px-4 py-3 font-medium">Client</th>
+                <th className="px-4 py-3 font-medium">Platform</th>
+                <th className="px-4 py-3 font-medium">Ad Account ID</th>
+                <th className="px-4 py-3 font-medium">Objective</th>
+                <th className="px-4 py-3 text-right font-medium">Daily Budget</th>
+                <th className="px-4 py-3 text-right font-medium">Remaining</th>
+                <th className="px-4 py-3 text-center font-medium">Days Left</th>
+                <th className="px-4 py-3 text-center font-medium">Status</th>
+                <th className="px-4 py-3 text-right font-medium">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.map((a) => (
+                <tr key={a.id} className="group hover:bg-surface/50">
                   <td className="px-4 py-3 font-medium text-white">{a.client?.name || "-"}</td>
                   <td className="px-4 py-3">
                     <span className={cn("badge", platformColors[a.platform] || "bg-surface text-muted")}>
@@ -128,7 +292,9 @@ export default function AdsSpendPage() {
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted">{a.ad_account_id}</td>
                   <td className="px-4 py-3 text-muted">{a.objective || "-"}</td>
-                  <td className="px-4 py-3 text-right font-medium text-white">{formatIDR(a.daily_budget)}</td>
+                  <td className="px-4 py-3 text-right font-medium text-white">
+                    {formatIDR(a.daily_budget)}
+                  </td>
                   <td className="px-4 py-3 text-right text-muted">{formatIDR(a.remaining_budget)}</td>
                   <td className="px-4 py-3 text-center">
                     {a.days_left !== null && a.days_left <= 3 ? (
@@ -144,12 +310,195 @@ export default function AdsSpendPage() {
                       {a.status}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={() => openEdit(a)}
+                        className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(a.id)}
+                        className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                        title="Hapus"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create/Edit Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white">
+                {editingId ? "Edit Ad Account" : "Ad Account Baru"}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-white">Client *</label>
+                <select
+                  required
+                  value={form.client_id}
+                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                  className="input"
+                >
+                  <option value="">— Pilih Client —</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Platform *</label>
+                  <select
+                    value={form.platform}
+                    onChange={(e) => setForm({ ...form, platform: e.target.value })}
+                    className="input"
+                  >
+                    <option value="META">META (Facebook/Instagram)</option>
+                    <option value="Google">Google Ads</option>
+                    <option value="TikTok">TikTok Ads</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Status</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="input"
+                  >
+                    <option value="active">Active</option>
+                    <option value="hold">Hold</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Ad Account ID *</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.ad_account_id}
+                    onChange={(e) => setForm({ ...form, ad_account_id: e.target.value })}
+                    placeholder="Contoh: 1234567890"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Account Name</label>
+                  <input
+                    type="text"
+                    value={form.account_name}
+                    onChange={(e) => setForm({ ...form, account_name: e.target.value })}
+                    placeholder="Nickname untuk akun"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-white">Objective</label>
+                <input
+                  type="text"
+                  value={form.objective}
+                  onChange={(e) => setForm({ ...form, objective: e.target.value })}
+                  placeholder="Contoh: Conversions, Traffic, Awareness"
+                  className="input"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Daily Budget (Rp)</label>
+                  <input
+                    type="number"
+                    value={form.daily_budget}
+                    onChange={(e) => setForm({ ...form, daily_budget: e.target.value })}
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Remaining (Rp)</label>
+                  <input
+                    type="number"
+                    value={form.remaining_budget}
+                    onChange={(e) => setForm({ ...form, remaining_budget: e.target.value })}
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Days Left</label>
+                  <input
+                    type="number"
+                    value={form.days_left}
+                    onChange={(e) => setForm({ ...form, days_left: e.target.value })}
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-white">Catatan</label>
+                <textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Catatan tambahan..."
+                  className="input resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                >
+                  Batal
+                </button>
+                <button type="submit" disabled={saving} className="btn-primary">
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
+                    </>
+                  ) : editingId ? (
+                    "Update Ad Account"
+                  ) : (
+                    "Simpan Ad Account"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

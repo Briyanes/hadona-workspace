@@ -18,12 +18,20 @@ interface CreativeRequest {
   prefilled_message: string | null;
   status: string;
   created_at: string;
+  due_date: string | null;
   client?: { name: string };
+  creator?: { full_name: string | null };
+  assignee?: { full_name: string | null };
 }
 
 interface Client {
   id: string;
   name: string;
+}
+
+interface TeamMember {
+  id: string;
+  full_name: string | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -58,6 +66,7 @@ export default function CreativePage() {
   // Modal
   const [showModal, setShowModal] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     client_id: "",
@@ -68,20 +77,30 @@ export default function CreativePage() {
     content_url: "",
     caption: "",
     prefilled_message: "",
+    assigned_to: "",
+    due_date: "",
   });
 
   useEffect(() => {
     loadRequests();
     loadClients();
+    loadTeam();
   }, [supabase]);
 
   async function loadRequests() {
-    const { data } = await supabase
-      .from("creative_requests")
-      .select("*, client:clients(name)")
-      .order("created_at", { ascending: false });
-    setRequests((data as unknown as CreativeRequest[]) || []);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("creative_requests")
+        .select("*, client:clients(name), creator:profiles!creative_requests_created_by_fkey(full_name), assignee:profiles!creative_requests_assigned_to_fkey(full_name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setRequests((data as unknown as CreativeRequest[]) || []);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal memuat creative requests: " + msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadClients() {
@@ -89,11 +108,18 @@ export default function CreativePage() {
     setClients((data as unknown as Client[]) || []);
   }
 
+  async function loadTeam() {
+    const { data } = await supabase.from("profiles").select("id, full_name").order("full_name");
+    setTeam((data as unknown as TeamMember[]) || []);
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
     const today = new Date().toISOString().split("T")[0];
+
+    const { data: userData } = await supabase.auth.getUser();
 
     const { error } = await supabase.from("creative_requests").insert({
       client_id: form.client_id || null,
@@ -105,6 +131,9 @@ export default function CreativePage() {
       content_url: form.content_url || null,
       caption: form.caption || null,
       prefilled_message: form.prefilled_message || null,
+      assigned_to: form.assigned_to || null,
+      due_date: form.due_date || null,
+      created_by: userData.user?.id,
       status: "requested",
     } as never);
 
@@ -121,6 +150,8 @@ export default function CreativePage() {
         content_url: "",
         caption: "",
         prefilled_message: "",
+        assigned_to: "",
+        due_date: "",
       });
       setShowModal(false);
       loadRequests();
@@ -152,6 +183,7 @@ export default function CreativePage() {
     }
   }
 
+  const todayStr = new Date().toISOString().split("T")[0];
   const filtered = requests.filter((r) => statusFilter === "all" || r.status === statusFilter);
 
   return (
@@ -238,6 +270,16 @@ export default function CreativePage() {
                 {r.angle && (
                   <p className="text-white">
                     <span className="text-muted">Angle:</span> {r.angle}
+                  </p>
+                )}
+                {r.assignee?.full_name && (
+                  <p className="text-white">
+                    <span className="text-muted">Assignee:</span> {r.assignee.full_name}
+                  </p>
+                )}
+                {r.due_date && (
+                  <p className={cn("text-white", r.due_date < todayStr && "text-danger")}>
+                    <span className="text-muted">Deadline:</span> {formatDate(r.due_date)}
                   </p>
                 )}
               </div>
@@ -401,6 +443,33 @@ export default function CreativePage() {
                   placeholder="Pesan WA atau link CTWA..."
                   className="input resize-none"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Assign To</label>
+                  <select
+                    value={form.assigned_to}
+                    onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
+                    className="input"
+                  >
+                    <option value="">— Pilih Designer/Copywriter —</option>
+                    {team.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.full_name || "Unknown"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Deadline</label>
+                  <input
+                    type="date"
+                    value={form.due_date}
+                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                    className="input"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
