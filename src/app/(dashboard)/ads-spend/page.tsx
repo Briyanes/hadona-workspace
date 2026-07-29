@@ -14,7 +14,7 @@ import {
   Megaphone,
   Loader2,
 } from "lucide-react";
-import { formatIDR, cn } from "@/lib/utils";
+import { formatIDR, cn, extractError } from "@/lib/utils";
 
 interface AdAccount {
   id: string;
@@ -78,7 +78,7 @@ export default function AdsSpendPage() {
       if (error) throw error;
       setAccounts((data as unknown as AdAccount[]) || []);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = extractError(err);
       setError("Gagal memuat data: " + msg);
       toast.error("Gagal memuat ad accounts");
     } finally {
@@ -153,7 +153,7 @@ export default function AdsSpendPage() {
       setShowModal(false);
       loadAccounts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = extractError(err);
       toast.error("Gagal menyimpan: " + msg);
     } finally {
       setSaving(false);
@@ -168,7 +168,7 @@ export default function AdsSpendPage() {
       toast.success("Ad account dihapus");
       loadAccounts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = extractError(err);
       toast.error("Gagal hapus: " + msg);
     }
   }

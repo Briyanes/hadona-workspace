@@ -6,6 +6,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Safely extract error message from any thrown value.
+ * Handles Supabase errors (plain objects with .message), native Errors, and strings.
+ */
+export function extractError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
+/**
  * Format number to Indonesian Rupiah currency.
  */
 export function formatIDR(value: number | string | null | undefined): string {
