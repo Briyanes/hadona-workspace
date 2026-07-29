@@ -194,7 +194,7 @@ export default function AdsSpendPage() {
   const platformColors: Record<string, string> = {
     META: "bg-primary/20 text-primary",
     Google: "bg-warning/20 text-warning",
-    TikTok: "bg-dark text-white",
+    TikTok: "bg-gray-900 text-white",
   };
 
   const statusColors: Record<string, string> = {
@@ -206,7 +206,7 @@ export default function AdsSpendPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Ads Spend Tracker</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
         <div className="skeleton h-64 rounded-lg" />
       </div>
     );
@@ -228,9 +228,9 @@ export default function AdsSpendPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Ads Spend Tracker</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
           <p className="text-sm text-muted">
-            Total Budget Harian: <span className="font-semibold text-white">{formatIDR(totalDaily)}</span>
+            Total Budget Harian: <span className="font-semibold text-gray-900">{formatIDR(totalDaily)}</span>
           </p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -288,7 +288,7 @@ export default function AdsSpendPage() {
             <tbody className="divide-y divide-border">
               {sortedData.map((a) => (
                 <tr key={a.id} className="group hover:bg-surface/50">
-                  <td className="px-4 py-3 font-medium text-white">{a.client?.name || "-"}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">{a.client?.name || "-"}</td>
                   <td className="px-4 py-3">
                     <span className={cn("badge", platformColors[a.platform] || "bg-surface text-muted")}>
                       {a.platform}
@@ -296,7 +296,7 @@ export default function AdsSpendPage() {
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted">{a.ad_account_id}</td>
                   <td className="px-4 py-3 text-muted">{a.objective || "-"}</td>
-                  <td className="px-4 py-3 text-right font-medium text-white">
+                  <td className="px-4 py-3 text-right font-medium text-gray-900">
                     {formatIDR(a.daily_budget)}
                   </td>
                   <td className="px-4 py-3 text-right text-muted">{formatIDR(a.remaining_budget)}</td>
@@ -341,15 +341,15 @@ export default function AdsSpendPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit Ad Account" : "Ad Account Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -357,7 +357,7 @@ export default function AdsSpendPage() {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Client *</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
                 <select
                   required
                   value={form.client_id}
@@ -375,7 +375,7 @@ export default function AdsSpendPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Platform *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Platform *</label>
                   <select
                     value={form.platform}
                     onChange={(e) => setForm({ ...form, platform: e.target.value })}
@@ -387,7 +387,7 @@ export default function AdsSpendPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Status</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -402,7 +402,7 @@ export default function AdsSpendPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Ad Account ID *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Ad Account ID *</label>
                   <input
                     type="text"
                     required
@@ -413,7 +413,7 @@ export default function AdsSpendPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Account Name</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Account Name</label>
                   <input
                     type="text"
                     value={form.account_name}
@@ -425,7 +425,7 @@ export default function AdsSpendPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Objective</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Objective</label>
                 <input
                   type="text"
                   value={form.objective}
@@ -437,7 +437,7 @@ export default function AdsSpendPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Daily Budget (Rp)</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Daily Budget (Rp)</label>
                   <input
                     type="number"
                     value={form.daily_budget}
@@ -447,7 +447,7 @@ export default function AdsSpendPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Remaining (Rp)</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Remaining (Rp)</label>
                   <input
                     type="number"
                     value={form.remaining_budget}
@@ -457,7 +457,7 @@ export default function AdsSpendPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Days Left</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Days Left</label>
                   <input
                     type="number"
                     value={form.days_left}
@@ -469,7 +469,7 @@ export default function AdsSpendPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Catatan</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -483,7 +483,7 @@ export default function AdsSpendPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

@@ -6,7 +6,10 @@
   :root {
     --font-inter: "Inter", system-ui, sans-serif;
     --font-jetbrains: "JetBrains Mono", monospace;
-    color-scheme: dark;
+    --hadona-primary: #2b46bb;
+    --hadona-dark: #1e3190;
+    --hadona-light: #4a6ae8;
+    color-scheme: light;
   }
 
   * {
@@ -15,7 +18,7 @@
 
   body {
     background-color: theme("colors.background");
-    color: #fafafa;
+    color: #18181b;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
   }
@@ -31,14 +34,14 @@
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: theme("colors.background");
+    background: theme("colors.surface");
   }
   ::-webkit-scrollbar-thumb {
-    background: theme("colors.border");
+    background: theme("colors.border-hover");
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: theme("colors.border-hover");
+    background: theme("colors.muted.DEFAULT");
   }
 }
 
@@ -63,45 +66,45 @@
   }
 
   .glass {
-    background: rgba(22, 22, 26, 0.7);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
   .card {
-    @apply rounded-lg border border-border bg-surface p-5 transition-all duration-200;
+    @apply rounded-lg border border-border bg-white p-5 transition-all duration-200 shadow-sm;
   }
   .card:hover {
-    @apply border-border-hover;
+    @apply border-border-hover shadow-md;
   }
 
   .card-hover {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20;
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gray-300/50;
   }
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all duration-150 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn gradient-primary text-white hover:opacity-90 active:scale-[0.98];
+    @apply btn gradient-primary text-white hover:opacity-90 active:scale-[0.98] shadow-sm;
   }
   .btn-secondary {
-    @apply btn border border-border bg-surface text-white hover:bg-surface-hover active:scale-[0.98];
+    @apply btn border border-border bg-white text-gray-700 hover:bg-surface-hover active:scale-[0.98] shadow-sm;
   }
   .btn-ghost {
-    @apply btn text-muted hover:bg-surface-hover hover:text-white;
+    @apply btn text-muted hover:bg-surface-hover hover:text-gray-900;
   }
 
   .input {
-    @apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-white placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+    @apply w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors;
   }
 
-  /* Custom select styling - dark mode arrow + options */
+  /* Custom select styling - light mode arrow */
   select.input {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 0.6rem center;
     background-size: 1rem;
@@ -110,17 +113,17 @@
   }
 
   select.input option {
-    background-color: #16161a;
-    color: #fafafa;
+    background-color: #ffffff;
+    color: #18181b;
   }
 
   select.input option:checked {
-    background-color: #6366f1;
+    background-color: theme("colors.primary.DEFAULT");
     color: white;
   }
 
   select.input:focus {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232B46BB' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
   }
 
   /* Disable default IE arrow */
@@ -133,10 +136,10 @@
   }
 
   .sidebar-link {
-    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-white;
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-gray-900;
   }
   .sidebar-link-active {
-    @apply bg-surface text-white;
+    @apply bg-primary/10 text-primary font-medium;
   }
 }
 
@@ -150,7 +153,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.04),
+      rgba(0, 0, 0, 0.04),
       transparent
     );
   }

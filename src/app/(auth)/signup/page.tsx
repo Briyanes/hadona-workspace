@@ -63,16 +63,16 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-xl font-bold text-white">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-xl font-bold text-gray-900">
             H
           </div>
-          <h1 className="text-2xl font-bold text-white">Buat Akun Baru</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Buat Akun Baru</h1>
           <p className="mt-1 text-sm text-muted">Hadona Digital Media Team</p>
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-white">Nama Lengkap</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-900">Nama Lengkap</label>
             <input
               type="text"
               required
@@ -83,7 +83,7 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-white">Email</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
             <input
               type="email"
               required
@@ -94,7 +94,7 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-white">Password</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-900">Password</label>
             <input
               type="password"
               required
@@ -106,7 +106,7 @@ export default function SignupPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-white">Konfirmasi Password</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-900">Konfirmasi Password</label>
             <input
               type="password"
               required

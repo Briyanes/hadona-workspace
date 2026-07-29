@@ -194,7 +194,7 @@ export default function StrategyPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Strategy & OKR</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Strategy & OKR</h1>
         <div className="skeleton h-32 rounded-lg" />
         <div className="skeleton h-64 rounded-lg" />
       </div>
@@ -221,7 +221,7 @@ export default function StrategyPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Strategy & OKR</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Strategy & OKR</h1>
           <p className="text-sm text-muted">Objectives and Key Results tracker</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -235,7 +235,7 @@ export default function StrategyPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase text-muted">Total Key Results</p>
-              <p className="mt-1 text-2xl font-bold text-white">{totalOKRs}</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{totalOKRs}</p>
             </div>
             <Target className="text-primary" size={24} />
           </div>
@@ -244,7 +244,7 @@ export default function StrategyPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase text-muted">Avg Progress</p>
-              <p className="mt-1 text-2xl font-bold text-white">{avgProgress}%</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{avgProgress}%</p>
             </div>
             <TrendingUp className="text-success" size={24} />
           </div>
@@ -253,7 +253,7 @@ export default function StrategyPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase text-muted">Completed</p>
-              <p className="mt-1 text-2xl font-bold text-white">
+              <p className="mt-1 text-2xl font-bold text-gray-900">
                 {completedCount}
                 <span className="text-sm text-muted"> / {totalOKRs}</span>
               </p>
@@ -271,7 +271,7 @@ export default function StrategyPage() {
           onClick={() => setQuarterFilter("all")}
           className={cn(
             "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-            quarterFilter === "all" ? "bg-primary text-white" : "bg-surface text-muted hover:text-white"
+            quarterFilter === "all" ? "bg-primary text-gray-900" : "bg-surface text-muted hover:text-gray-900"
           )}
         >
           Semua Periode
@@ -282,7 +282,7 @@ export default function StrategyPage() {
             onClick={() => setQuarterFilter(q)}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-              quarterFilter === q ? "bg-primary text-white" : "bg-surface text-muted hover:text-white"
+              quarterFilter === q ? "bg-primary text-gray-900" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
             {q}
@@ -314,7 +314,7 @@ export default function StrategyPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Target className="text-primary" size={16} />
-                      <h3 className="font-semibold text-white">{objective}</h3>
+                      <h3 className="font-semibold text-gray-900">{objective}</h3>
                     </div>
                     <p className="mt-1 text-xs text-muted">
                       {krs.length} Key Result{ krs.length > 1 ? "s" : ""} • Avg: {objAvg}%
@@ -327,7 +327,7 @@ export default function StrategyPage() {
                         style={{ width: `${objAvg}%` }}
                       />
                     </div>
-                    <span className="text-sm font-bold text-white">{objAvg}%</span>
+                    <span className="text-sm font-bold text-gray-900">{objAvg}%</span>
                   </div>
                 </div>
 
@@ -337,7 +337,7 @@ export default function StrategyPage() {
                     <div key={kr.id} className="group flex items-center gap-4 px-5 py-3 hover:bg-surface/50">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-white">
+                          <p className="text-sm font-medium text-gray-900">
                             {kr.key_result || "No Key Result defined"}
                           </p>
                           <span
@@ -368,7 +368,7 @@ export default function StrategyPage() {
                             style={{ width: `${kr.progress_pct}%` }}
                           />
                         </div>
-                        <span className="w-10 text-right text-sm font-bold text-white">
+                        <span className="w-10 text-right text-sm font-bold text-gray-900">
                           {kr.progress_pct}%
                         </span>
                       </div>
@@ -401,15 +401,15 @@ export default function StrategyPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit OKR" : "OKR Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -417,7 +417,7 @@ export default function StrategyPage() {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">
                   Objective *
                 </label>
                 <input
@@ -434,7 +434,7 @@ export default function StrategyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">
                   Key Result
                 </label>
                 <input
@@ -451,7 +451,7 @@ export default function StrategyPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Quarter</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Quarter</label>
                   <select
                     value={form.quarter}
                     onChange={(e) => setForm({ ...form, quarter: e.target.value })}
@@ -464,7 +464,7 @@ export default function StrategyPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Tahun</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Tahun</label>
                   <input
                     type="number"
                     value={form.year}
@@ -475,7 +475,7 @@ export default function StrategyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Owner (PIC)</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Owner (PIC)</label>
                 <select
                   value={form.owner_id}
                   onChange={(e) => setForm({ ...form, owner_id: e.target.value })}
@@ -492,7 +492,7 @@ export default function StrategyPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Target</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Target</label>
                   <input
                     type="number"
                     step="0.01"
@@ -503,7 +503,7 @@ export default function StrategyPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Actual</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Actual</label>
                   <input
                     type="number"
                     step="0.01"
@@ -514,7 +514,7 @@ export default function StrategyPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Unit</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Unit</label>
                   <input
                     type="text"
                     value={form.unit}
@@ -526,7 +526,7 @@ export default function StrategyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Catatan</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -540,7 +540,7 @@ export default function StrategyPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

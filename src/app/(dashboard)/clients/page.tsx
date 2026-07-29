@@ -181,7 +181,7 @@ export default function ClientsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Clients</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="skeleton h-32 rounded-lg" />
@@ -207,7 +207,7 @@ export default function ClientsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Clients</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
           <p className="text-sm text-muted">Daftar klien Hadona Digital Media</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -244,7 +244,7 @@ export default function ClientsPage() {
                     <Building2 size={18} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white hover:text-primary">{c.name}</h3>
+                    <h3 className="font-semibold text-gray-900 hover:text-primary">{c.name}</h3>
                     <p className="text-xs text-muted">{c.industry || "-"}</p>
                   </div>
                 </Link>
@@ -303,15 +303,15 @@ export default function ClientsPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit Client" : "Client Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -319,7 +319,7 @@ export default function ClientsPage() {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Nama Client *</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Nama Client *</label>
                 <input
                   type="text"
                   required
@@ -333,7 +333,7 @@ export default function ClientsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Industri</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Industri</label>
                   <input
                     type="text"
                     value={form.industry}
@@ -343,7 +343,7 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Status</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -358,7 +358,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white">Services</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Services</label>
                 <div className="flex flex-wrap gap-2">
                   {SERVICE_OPTIONS.map((s) => (
                     <button
@@ -368,8 +368,8 @@ export default function ClientsPage() {
                       className={cn(
                         "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                         form.services.includes(s)
-                          ? "bg-primary text-white"
-                          : "bg-background text-muted hover:text-white"
+                          ? "bg-primary text-gray-900"
+                          : "bg-background text-muted hover:text-gray-900"
                       )}
                     >
                       {s}
@@ -380,7 +380,7 @@ export default function ClientsPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Contact Person</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Contact Person</label>
                   <input
                     type="text"
                     value={form.contact_person}
@@ -390,7 +390,7 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">No. Telepon</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">No. Telepon</label>
                   <input
                     type="tel"
                     value={form.contact_phone}
@@ -402,7 +402,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Email</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
                 <input
                   type="email"
                   value={form.contact_email}
@@ -413,7 +413,7 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Catatan</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -427,7 +427,7 @@ export default function ClientsPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

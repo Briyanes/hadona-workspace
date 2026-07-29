@@ -190,7 +190,7 @@ export default function CreativePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Creative Requests</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Creative Requests</h1>
           <p className="text-sm text-muted">Request kreatif untuk tim design/copy</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary">
@@ -206,7 +206,7 @@ export default function CreativePage() {
             onClick={() => setStatusFilter(s)}
             className={cn(
               "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-              statusFilter === s ? "bg-primary text-white" : "bg-surface text-muted hover:text-white"
+              statusFilter === s ? "bg-primary text-gray-900" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
             {s === "all" ? "Semua" : statusLabels[s] || s}
@@ -234,7 +234,7 @@ export default function CreativePage() {
             <div key={r.id} className="card">
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-white">{r.client?.name || "No Client"}</h3>
+                  <h3 className="font-semibold text-gray-900">{r.client?.name || "No Client"}</h3>
                   <p className="text-xs text-muted">{formatDate(r.request_date)}</p>
                 </div>
                 <select
@@ -252,7 +252,7 @@ export default function CreativePage() {
 
               <div className="space-y-1.5 text-sm">
                 {r.objective_campaign && (
-                  <p className="text-white">
+                  <p className="text-gray-900">
                     <span className="text-muted">Objective:</span> {r.objective_campaign}
                   </p>
                 )}
@@ -263,22 +263,22 @@ export default function CreativePage() {
                   </p>
                 )}
                 {r.format && (
-                  <p className="text-white">
+                  <p className="text-gray-900">
                     <span className="text-muted">Format:</span> {r.format}
                   </p>
                 )}
                 {r.angle && (
-                  <p className="text-white">
+                  <p className="text-gray-900">
                     <span className="text-muted">Angle:</span> {r.angle}
                   </p>
                 )}
                 {r.assignee?.full_name && (
-                  <p className="text-white">
+                  <p className="text-gray-900">
                     <span className="text-muted">Assignee:</span> {r.assignee.full_name}
                   </p>
                 )}
                 {r.due_date && (
-                  <p className={cn("text-white", r.due_date < todayStr && "text-danger")}>
+                  <p className={cn("text-gray-900", r.due_date < todayStr && "text-danger")}>
                     <span className="text-muted">Deadline:</span> {formatDate(r.due_date)}
                   </p>
                 )}
@@ -287,7 +287,7 @@ export default function CreativePage() {
               {r.caption && (
                 <div className="mt-3 rounded-md border border-border bg-background p-2">
                   <p className="text-xs text-muted">Caption:</p>
-                  <p className="text-sm text-white">{r.caption}</p>
+                  <p className="text-sm text-gray-900">{r.caption}</p>
                 </div>
               )}
 
@@ -334,13 +334,13 @@ export default function CreativePage() {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Creative Request Baru</h2>
+              <h2 className="text-lg font-bold text-gray-900">Creative Request Baru</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -348,7 +348,7 @@ export default function CreativePage() {
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Client</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
                 <select
                   value={form.client_id}
                   onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -365,7 +365,7 @@ export default function CreativePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Objective/Campaign</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Objective/Campaign</label>
                   <input
                     type="text"
                     value={form.objective_campaign}
@@ -375,7 +375,7 @@ export default function CreativePage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Funnel Stage</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Funnel Stage</label>
                   <select
                     value={form.funnel}
                     onChange={(e) => setForm({ ...form, funnel: e.target.value })}
@@ -391,7 +391,7 @@ export default function CreativePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Format</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Format</label>
                   <input
                     type="text"
                     value={form.format}
@@ -401,7 +401,7 @@ export default function CreativePage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Angle</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Angle</label>
                   <input
                     type="text"
                     value={form.angle}
@@ -413,7 +413,7 @@ export default function CreativePage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Content URL</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Content URL</label>
                 <input
                   type="url"
                   value={form.content_url}
@@ -424,7 +424,7 @@ export default function CreativePage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Caption</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Caption</label>
                 <textarea
                   rows={2}
                   value={form.caption}
@@ -435,7 +435,7 @@ export default function CreativePage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Prefilled Message (WA/Link)</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Prefilled Message (WA/Link)</label>
                 <textarea
                   rows={2}
                   value={form.prefilled_message}
@@ -447,7 +447,7 @@ export default function CreativePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Assign To</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Assign To</label>
                   <select
                     value={form.assigned_to}
                     onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
@@ -462,7 +462,7 @@ export default function CreativePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Deadline</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
                   <input
                     type="date"
                     value={form.due_date}
@@ -476,7 +476,7 @@ export default function CreativePage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

@@ -4,12 +4,12 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="text-sm text-muted">Konfigurasi workspace</p>
       </div>
 
       <div className="card">
-        <h3 className="mb-3 font-semibold text-white">WorkAdventure Integration</h3>
+        <h3 className="mb-3 font-semibold text-gray-900">WorkAdventure Integration</h3>
         <div className="space-y-3 text-sm">
           <div className="rounded-md border border-border bg-background p-3">
             <p className="mb-1 text-xs text-muted">Embed URL (Dashboard)</p>

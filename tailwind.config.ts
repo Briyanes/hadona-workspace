@@ -10,25 +10,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0A0A0B",
-        surface: "#16161A",
-        "surface-hover": "#1E1E24",
-        border: "#27272A",
-        "border-hover": "#3F3F46",
+        background: "#FFFFFF",
+        surface: "#F8FAFC",
+        "surface-hover": "#F1F5F9",
+        border: "#E5E7EB",
+        "border-hover": "#CBD5E1",
         primary: {
-          DEFAULT: "#6366F1",
+          DEFAULT: "#2B46BB",
           foreground: "#FFFFFF",
+          dark: "#1E3190",
+          light: "#4A6AE8",
         },
         accent: {
-          DEFAULT: "#8B5CF6",
+          DEFAULT: "#4A6AE8",
           foreground: "#FFFFFF",
         },
         success: "#10B981",
         warning: "#F59E0B",
         danger: "#EF4444",
         muted: {
-          DEFAULT: "#A1A1AA",
-          foreground: "#18181B",
+          DEFAULT: "#6B7280",
+          foreground: "#FFFFFF",
         },
       },
       fontFamily: {

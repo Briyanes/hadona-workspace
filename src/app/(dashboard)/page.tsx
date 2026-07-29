@@ -174,7 +174,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-muted">Ringkasan aktivitas agency hari ini</p>
       </div>
 
@@ -187,7 +187,7 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-muted">{card.label}</p>
-                  <p className="mt-1 text-3xl font-bold text-white">{card.value}</p>
+                  <p className="mt-1 text-3xl font-bold text-gray-900">{card.value}</p>
                 </div>
                 <Icon className={card.color} size={20} />
               </div>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted">Total Daily Ad Spend Budget</p>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-2xl font-bold text-gray-900">
               {formatIDR(stats?.totalBudget ?? 0)}
               <span className="ml-1 text-sm text-muted">/hari</span>
             </p>
@@ -213,7 +213,7 @@ export default function DashboardPage() {
       {/* Recent Tasks */}
       <div className="card">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-semibold text-white">Recent Tasks</h2>
+          <h2 className="font-semibold text-gray-900">Recent Tasks</h2>
           <Link href="/tasks" className="text-xs text-primary hover:underline">
             Lihat semua →
           </Link>
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between rounded-md border border-border bg-background p-3"
               >
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{task.title}</p>
+                  <p className="text-sm font-medium text-gray-900">{task.title}</p>
                   {task.client && (
                     <p className="text-xs text-muted">{task.client.name}</p>
                   )}

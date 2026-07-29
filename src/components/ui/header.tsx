@@ -40,11 +40,11 @@ export function Header() {
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-xs font-semibold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-xs font-semibold text-gray-900">
             {getInitials(profile?.full_name)}
           </div>
           <div className="hidden md:block">
-            <div className="text-sm font-medium text-white">{profile?.full_name || "User"}</div>
+            <div className="text-sm font-medium text-gray-900">{profile?.full_name || "User"}</div>
             <div className="text-xs capitalize text-muted">{profile?.division || profile?.role}</div>
           </div>
         </div>

@@ -97,7 +97,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">User Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
         <p className="text-sm text-muted">Kelola tim, role, dan status akun</p>
       </div>
 
@@ -105,7 +105,7 @@ export default function UsersPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="card p-4">
           <p className="text-xs text-muted">Total User</p>
-          <p className="text-2xl font-bold text-white">{users.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{users.length}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-muted">Active</p>
@@ -178,7 +178,7 @@ export default function UsersPage() {
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                         {user.full_name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-medium text-white">{user.full_name}</span>
+                      <span className="font-medium text-gray-900">{user.full_name}</span>
                       {user.id === currentUserId && (
                         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
                           You
@@ -243,7 +243,7 @@ export default function UsersPage() {
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="px-3 py-1 text-xs text-muted hover:text-white"
+                          className="px-3 py-1 text-xs text-muted hover:text-gray-900"
                         >
                           Batal
                         </button>
@@ -276,7 +276,7 @@ export default function UsersPage() {
         <div className="flex items-start gap-3">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-success" />
           <div className="text-sm">
-            <p className="font-medium text-white">Tentang Role & Hak Akses</p>
+            <p className="font-medium text-gray-900">Tentang Role & Hak Akses</p>
             <ul className="mt-2 space-y-1 text-xs text-muted">
               <li>
                 <span className="text-danger">Super Admin</span> &{" "}

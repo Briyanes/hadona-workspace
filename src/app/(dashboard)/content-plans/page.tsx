@@ -121,7 +121,7 @@ export default function ContentPlansPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Content Plans</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Content Plans</h1>
           <p className="text-sm text-muted">Content calendar & plan per klien</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary">
@@ -149,7 +149,7 @@ export default function ContentPlansPage() {
             <div key={p.id} className="card">
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-white">{p.client?.name || "Unknown"}</h3>
+                  <h3 className="font-semibold text-gray-900">{p.client?.name || "Unknown"}</h3>
                   <p className="flex items-center gap-1 text-xs text-muted">
                     <CalendarDays size={12} /> {p.month}
                   </p>
@@ -189,13 +189,13 @@ export default function ContentPlansPage() {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Content Plan Baru</h2>
+              <h2 className="text-lg font-bold text-gray-900">Content Plan Baru</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -203,7 +203,7 @@ export default function ContentPlansPage() {
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Client *</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
                 <select
                   required
                   value={form.client_id}
@@ -220,7 +220,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Bulan *</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Bulan *</label>
                 <input
                   type="month"
                   required
@@ -231,7 +231,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white">Services</label>
+                <label className="mb-2 block text-sm font-medium text-gray-900">Services</label>
                 <div className="flex flex-wrap gap-2">
                   {SERVICE_OPTIONS.map((s) => (
                     <button
@@ -241,8 +241,8 @@ export default function ContentPlansPage() {
                       className={cn(
                         "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                         form.services.includes(s)
-                          ? "bg-primary text-white"
-                          : "bg-background text-muted hover:text-white"
+                          ? "bg-primary text-gray-900"
+                          : "bg-background text-muted hover:text-gray-900"
                       )}
                     >
                       {s}
@@ -252,7 +252,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Plan URL (Google Sheets/Drive)</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Plan URL (Google Sheets/Drive)</label>
                 <input
                   type="url"
                   value={form.plan_url}
@@ -263,7 +263,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Catatan</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -277,7 +277,7 @@ export default function ContentPlansPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

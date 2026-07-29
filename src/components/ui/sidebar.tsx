@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -60,11 +61,16 @@ export function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r border-border bg-surface">
       <div className="flex h-16 items-center gap-2 border-b border-border px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary text-sm font-bold text-white">
-          H
-        </div>
+        <Image
+          src="/logo/logo-hadona.png"
+          alt="Hadona Digital Media"
+          width={32}
+          height={32}
+          className="h-8 w-8 rounded-lg object-cover"
+          priority
+        />
         <div>
-          <div className="text-sm font-bold text-white">Hadona</div>
+          <div className="text-sm font-bold text-gray-900">Hadona</div>
           <div className="text-[10px] text-muted">Workspace</div>
         </div>
       </div>

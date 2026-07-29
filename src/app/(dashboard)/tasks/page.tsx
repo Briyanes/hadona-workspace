@@ -211,7 +211,7 @@ export default function TasksPage() {
     <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Task Board</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Task Board</h1>
           <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas</p>
         </div>
         <div className="flex items-center gap-2">
@@ -220,8 +220,8 @@ export default function TasksPage() {
             className={cn(
               "rounded-md px-3 py-2 text-xs font-medium transition-colors",
               showMyTasksOnly
-                ? "bg-primary text-white"
-                : "bg-surface text-muted hover:text-white"
+                ? "bg-primary text-gray-900"
+                : "bg-surface text-muted hover:text-gray-900"
             )}
           >
             My Tasks Only
@@ -246,7 +246,7 @@ export default function TasksPage() {
               onDrop={(e) => handleDrop(e, col.id)}
             >
               <div className="flex items-center justify-between border-b border-border p-3">
-                <span className="text-sm font-semibold text-white">{col.label}</span>
+                <span className="text-sm font-semibold text-gray-900">{col.label}</span>
                 <span className="badge bg-background text-muted">{colTasks.length}</span>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto p-2">
@@ -258,7 +258,7 @@ export default function TasksPage() {
                     className="cursor-grab rounded-md border border-border bg-background p-3 transition-all hover:border-border-hover active:cursor-grabbing"
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-white">{task.title}</p>
+                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
                       <Flag size={12} className={priorityColors[task.priority] || "text-muted"} />
                     </div>
                     {task.client && <p className="mb-1 text-xs text-muted">{task.client.name}</p>}
@@ -272,7 +272,7 @@ export default function TasksPage() {
                         {task.task_assignees?.map((a) => (
                           <div
                             key={a.user_id}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-white"
+                            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900"
                             title={a.user?.full_name}
                           >
                             {getInitials(a.user?.full_name)}
@@ -301,13 +301,13 @@ export default function TasksPage() {
 
       {/* Create Task Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Buat Task Baru</h2>
+              <h2 className="text-lg font-bold text-gray-900">Buat Task Baru</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -315,7 +315,7 @@ export default function TasksPage() {
 
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Judul Task *</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Judul Task *</label>
                 <input
                   type="text"
                   required
@@ -328,7 +328,7 @@ export default function TasksPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Deskripsi</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
                 <textarea
                   rows={2}
                   value={form.description}
@@ -340,7 +340,7 @@ export default function TasksPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Client</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
                   <select
                     value={form.client_id}
                     onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -355,7 +355,7 @@ export default function TasksPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Prioritas</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Prioritas</label>
                   <select
                     value={form.priority}
                     onChange={(e) => setForm({ ...form, priority: e.target.value })}
@@ -371,7 +371,7 @@ export default function TasksPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Status Awal</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status Awal</label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -384,7 +384,7 @@ export default function TasksPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Divisi</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Divisi</label>
                   <select
                     value={form.division}
                     onChange={(e) => setForm({ ...form, division: e.target.value })}
@@ -403,7 +403,7 @@ export default function TasksPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Start Date</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Start Date</label>
                   <input
                     type="date"
                     value={form.start_date}
@@ -412,7 +412,7 @@ export default function TasksPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Deadline</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
                   <input
                     type="date"
                     value={form.due_date}
@@ -423,7 +423,7 @@ export default function TasksPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Result / Output</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>
                 <input
                   type="text"
                   value={form.result}
@@ -434,7 +434,7 @@ export default function TasksPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">
                   Blocker / Kendala
                 </label>
                 <textarea
@@ -450,7 +450,7 @@ export default function TasksPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

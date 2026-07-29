@@ -92,7 +92,7 @@ export default function EmbedDashboardPage() {
   return (
     <div className="flex h-screen flex-col">
       <header className="border-b border-border bg-surface px-4 py-3">
-        <h1 className="flex items-center gap-2 text-sm font-bold text-white">
+        <h1 className="flex items-center gap-2 text-sm font-bold text-gray-900">
           <span className="flex h-6 w-6 items-center justify-center rounded gradient-primary text-[10px]">H</span>
           Hadona Dashboard
         </h1>
@@ -107,7 +107,7 @@ export default function EmbedDashboardPage() {
                   <span className="text-[10px] text-muted">{card.label}</span>
                   <Icon size={14} className={card.color} />
                 </div>
-                <p className="mt-1 text-xl font-bold text-white">{card.value}</p>
+                <p className="mt-1 text-xl font-bold text-gray-900">{card.value}</p>
               </div>
             );
           })}
@@ -117,7 +117,7 @@ export default function EmbedDashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-muted">Daily Ad Budget</p>
-              <p className="text-lg font-bold text-white">{formatIDR(stats?.totalBudget ?? 0)}</p>
+              <p className="text-lg font-bold text-gray-900">{formatIDR(stats?.totalBudget ?? 0)}</p>
             </div>
             <TrendingUp className="text-success" size={20} />
           </div>

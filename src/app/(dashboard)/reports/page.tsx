@@ -172,7 +172,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Weekly Reports</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Weekly Reports</h1>
           <p className="text-sm text-muted">Laporan performa klien mingguan</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -200,7 +200,7 @@ export default function ReportsPage() {
             <div key={r.id} className="card card-hover group">
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-white">{r.client?.name || "Unknown Client"}</h3>
+                  <h3 className="font-semibold text-gray-900">{r.client?.name || "Unknown Client"}</h3>
                   <p className="text-xs text-muted">
                     {formatDate(r.period_start, { day: "numeric", month: "short" })} —{" "}
                     {formatDate(r.period_end, { day: "numeric", month: "short", year: "numeric" })}
@@ -214,7 +214,7 @@ export default function ReportsPage() {
               {r.performance_text && (
                 <div className="mb-3 rounded-md border border-border bg-background p-2">
                   <p className="text-xs text-muted">Performance:</p>
-                  <p className="text-sm text-white">{r.performance_text}</p>
+                  <p className="text-sm text-gray-900">{r.performance_text}</p>
                 </div>
               )}
 
@@ -244,15 +244,15 @@ export default function ReportsPage() {
 
       {/* Create Report Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit Weekly Report" : "Buat Weekly Report"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-white"
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
@@ -260,7 +260,7 @@ export default function ReportsPage() {
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Client *</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
                 <select
                   required
                   value={form.client_id}
@@ -278,7 +278,7 @@ export default function ReportsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Periode Mulai *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Mulai *</label>
                   <input
                     type="date"
                     required
@@ -288,7 +288,7 @@ export default function ReportsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Periode Selesai *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Selesai *</label>
                   <input
                     type="date"
                     required
@@ -300,7 +300,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Ringkasan</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Ringkasan</label>
                 <textarea
                   rows={2}
                   value={form.summary}
@@ -311,7 +311,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Performance</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Performance</label>
                 <textarea
                   rows={3}
                   value={form.performance_text}
@@ -323,7 +323,7 @@ export default function ReportsPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Kesimpulan</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Kesimpulan</label>
                   <textarea
                     rows={2}
                     value={form.conclusion}
@@ -333,7 +333,7 @@ export default function ReportsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-white">Action Plan</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Action Plan</label>
                   <textarea
                     rows={2}
                     value={form.action}
@@ -345,7 +345,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-white">Status</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -361,7 +361,7 @@ export default function ReportsPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-white"
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
                 </button>

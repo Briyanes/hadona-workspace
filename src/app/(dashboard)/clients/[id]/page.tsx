@@ -183,11 +183,11 @@ export default function ClientDetailPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted">
-        <button onClick={() => router.push("/clients")} className="flex items-center gap-1 hover:text-white">
+        <button onClick={() => router.push("/clients")} className="flex items-center gap-1 hover:text-gray-900">
           <ArrowLeft size={14} /> Clients
         </button>
         <span>/</span>
-        <span className="text-white">{client.name}</span>
+        <span className="text-gray-900">{client.name}</span>
       </div>
 
       {/* Header */}
@@ -199,7 +199,7 @@ export default function ClientDetailPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white">{client.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
                 <span className={cn("badge", statusColors[client.status] || statusColors.inactive)}>
                   {client.status}
                 </span>
@@ -228,7 +228,7 @@ export default function ClientDetailPage() {
                 <User size={14} className="text-muted" />
                 <div>
                   <p className="text-xs text-muted">Contact Person</p>
-                  <p className="text-white">{client.contact_person}</p>
+                  <p className="text-gray-900">{client.contact_person}</p>
                 </div>
               </div>
             )}
@@ -237,7 +237,7 @@ export default function ClientDetailPage() {
                 <Phone size={14} className="text-muted" />
                 <div>
                   <p className="text-xs text-muted">Telepon</p>
-                  <p className="text-white">{client.contact_phone}</p>
+                  <p className="text-gray-900">{client.contact_phone}</p>
                 </div>
               </div>
             )}
@@ -246,7 +246,7 @@ export default function ClientDetailPage() {
                 <Mail size={14} className="text-muted" />
                 <div>
                   <p className="text-xs text-muted">Email</p>
-                  <p className="text-white">{client.contact_email}</p>
+                  <p className="text-gray-900">{client.contact_email}</p>
                 </div>
               </div>
             )}
@@ -256,7 +256,7 @@ export default function ClientDetailPage() {
         {client.notes && (
           <div className="mt-4 rounded-md border border-border bg-background p-3">
             <p className="text-xs text-muted">Catatan</p>
-            <p className="text-sm text-white">{client.notes}</p>
+            <p className="text-sm text-gray-900">{client.notes}</p>
           </div>
         )}
       </div>
@@ -272,8 +272,8 @@ export default function ClientDetailPage() {
               className={cn(
                 "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
                 tab === t.id
-                  ? "border-primary text-white"
-                  : "border-transparent text-muted hover:text-white"
+                  ? "border-primary text-gray-900"
+                  : "border-transparent text-muted hover:text-gray-900"
               )}
             >
               <Icon size={14} />
@@ -293,22 +293,22 @@ export default function ClientDetailPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="card">
             <CheckSquare className="mb-2 text-primary" size={18} />
-            <p className="text-2xl font-bold text-white">{tasks.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
             <p className="text-xs text-muted">Total Tasks</p>
           </div>
           <div className="card">
             <FileText className="mb-2 text-warning" size={18} />
-            <p className="text-2xl font-bold text-white">{reports.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
             <p className="text-xs text-muted">Weekly Reports</p>
           </div>
           <div className="card">
             <Target className="mb-2 text-accent" size={18} />
-            <p className="text-2xl font-bold text-white">{strategies.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{strategies.length}</p>
             <p className="text-xs text-muted">Strategies</p>
           </div>
           <div className="card">
             <Megaphone className="mb-2 text-success" size={18} />
-            <p className="text-2xl font-bold text-white">
+            <p className="text-2xl font-bold text-gray-900">
               {formatIDR(adAccounts.reduce((s, a) => s + (a.daily_budget || 0), 0))}
             </p>
             <p className="text-xs text-muted">Daily Budget</p>
@@ -327,7 +327,7 @@ export default function ClientDetailPage() {
                 className="flex items-center justify-between rounded-md border border-border bg-surface p-3"
               >
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-white">{task.title}</p>
+                  <p className="text-sm font-medium text-gray-900">{task.title}</p>
                   {task.due_date && (
                     <p className="text-xs text-muted">Deadline: {formatDate(task.due_date)}</p>
                   )}
@@ -357,7 +357,7 @@ export default function ClientDetailPage() {
                 className="rounded-md border border-border bg-surface p-3"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-gray-900">
                     {formatDate(report.period_start, { day: "numeric", month: "short" })} —{" "}
                     {formatDate(report.period_end, { day: "numeric", month: "short", year: "numeric" })}
                   </p>
@@ -379,7 +379,7 @@ export default function ClientDetailPage() {
           ) : (
             strategies.map((strat) => (
               <div key={strat.id} className="rounded-md border border-border bg-surface p-3">
-                <p className="text-sm font-medium text-white">{strat.title}</p>
+                <p className="text-sm font-medium text-gray-900">{strat.title}</p>
                 {strat.period && <p className="text-xs text-muted">{strat.period}</p>}
                 {strat.description && (
                   <p className="mt-1 text-sm text-muted">{strat.description}</p>
@@ -401,7 +401,7 @@ export default function ClientDetailPage() {
                 className="flex items-center justify-between rounded-md border border-border bg-surface p-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-gray-900">
                     {ad.platform} - {ad.account_name || "Unnamed"}
                   </p>
                   <p className="text-xs text-muted">{formatIDR(ad.daily_budget)}/hari</p>
