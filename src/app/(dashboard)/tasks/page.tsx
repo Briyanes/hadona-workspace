@@ -1,10 +1,12 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Plus, Calendar, Flag, X, AlertCircle } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
+import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 
 interface Task {
   id: string;
@@ -27,6 +29,7 @@ const COLUMNS = [
   { id: "todo", label: "To Do", color: "border-t-muted" },
   { id: "in_progress", label: "In Progress", color: "border-t-warning" },
   { id: "review", label: "Review", color: "border-t-accent" },
+  { id: "blocked", label: "Blocked", color: "border-t-danger" },
   { id: "done", label: "Done", color: "border-t-success" },
 ];
 
@@ -42,13 +45,19 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
 
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterClient, setFilterClient] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -163,31 +172,57 @@ export default function TasksPage() {
     setSaving(false);
   }
 
-  function handleDragStart(e: React.DragEvent, taskId: string) {
-    setDraggedTask(taskId);
-    e.dataTransfer.effectAllowed = "move";
+  function handleDragEnd(result: DropResult) {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    updateStatus(draggableId, destination.droppableId);
   }
 
-  function handleDrop(e: React.DragEvent, status: string) {
-    e.preventDefault();
-    if (draggedTask) {
-      updateStatus(draggedTask, status);
-      setDraggedTask(null);
+  // Apply filters
+  const visibleTasks = useMemo(() => {
+    let filtered = tasks;
+
+    // My Tasks filter
+    if (showMyTasksOnly && currentUserId) {
+      filtered = filtered.filter((t) =>
+        t.task_assignees?.some((a) => a.user_id === currentUserId)
+      );
     }
-  }
 
-  const visibleTasks = showMyTasksOnly && currentUserId
-    ? tasks.filter(
-        (t) => t.task_assignees?.some((a) => a.user_id === currentUserId)
-      )
-    : tasks;
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.description?.toLowerCase().includes(q) ||
+          t.client?.name?.toLowerCase().includes(q)
+      );
+    }
+
+    // Client filter
+    if (filterClient !== "all") {
+      filtered = filtered.filter((t) => t.client?.name === filterClient);
+    }
+
+    // Priority filter
+    if (filterPriority !== "all") {
+      filtered = filtered.filter((t) => t.priority === filterPriority);
+    }
+
+    return filtered;
+  }, [tasks, showMyTasksOnly, currentUserId, searchQuery, filterClient, filterPriority]);
+
+  const today = new Date().toISOString().split("T")[0];
+  const activeFilterCount = (filterClient !== "all" ? 1 : 0) + (filterPriority !== "all" ? 1 : 0);
 
   if (loading) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Tasks</h1>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="skeleton h-64 rounded-lg" />
           ))}
         </div>
@@ -209,19 +244,18 @@ export default function TasksPage() {
 
   return (
     <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Task Board</h1>
-          <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas</p>
+          <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas • Klik kartu untuk detail</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowMyTasksOnly(!showMyTasksOnly)}
             className={cn(
               "rounded-md px-3 py-2 text-xs font-medium transition-colors",
-              showMyTasksOnly
-                ? "bg-primary text-white"
-                : "bg-surface text-muted hover:text-gray-900"
+              showMyTasksOnly ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
             My Tasks Only
@@ -232,72 +266,187 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-1 gap-4 overflow-hidden md:grid-cols-2 xl:grid-cols-4">
-        {COLUMNS.map((col) => {
-          const colTasks = visibleTasks.filter((t) => t.status === col.id);
-          return (
-            <div
-              key={col.id}
-              className={cn(
-                "flex flex-col rounded-lg border border-border border-t-4 bg-surface/50",
-                col.color
-              )}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => handleDrop(e, col.id)}
+      {/* Search & Filter Bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Cari task, client, atau deskripsi..."
+            className="input py-1.5 pl-8 text-xs"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-gray-900">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={cn(
+            "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+            showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          <Filter size={12} />
+          Filter
+          {activeFilterCount > 0 && (
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] text-white">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Expanded Filters */}
+      {showFilters && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted">Client:</label>
+            <select
+              value={filterClient}
+              onChange={(e) => setFilterClient(e.target.value)}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs"
             >
-              <div className="flex items-center justify-between border-b border-border p-3">
-                <span className="text-sm font-semibold text-gray-900">{col.label}</span>
-                <span className="badge bg-background text-muted">{colTasks.length}</span>
-              </div>
-              <div className="flex-1 space-y-2 overflow-y-auto p-2">
-                {colTasks.map((task) => (
+              <option value="all">Semua</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted">Prioritas:</label>
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+            >
+              <option value="all">Semua</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => { setFilterClient("all"); setFilterPriority("all"); }}
+              className="text-xs text-danger hover:underline"
+            >
+              Reset Filter
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Kanban Board */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid flex-1 grid-cols-1 gap-3 overflow-hidden overflow-x-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {COLUMNS.map((col) => {
+            const colTasks = visibleTasks.filter((t) => t.status === col.id);
+            return (
+              <Droppable key={col.id} droppableId={col.id}>
+                {(provided, snapshot) => (
                   <div
-                    key={task.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, task.id)}
-                    className="cursor-grab rounded-md border border-border bg-background p-3 transition-all hover:border-border-hover active:cursor-grabbing"
-                  >
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
-                      <Flag size={12} className={priorityColors[task.priority] || "text-muted"} />
-                    </div>
-                    {task.client && <p className="mb-1 text-xs text-muted">{task.client.name}</p>}
-                    {task.division && (
-                      <span className="mb-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                        {task.division}
-                      </span>
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={cn(
+                      "flex flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors",
+                      col.color,
+                      snapshot.isDraggingOver && "bg-primary/5"
                     )}
-                    <div className="flex items-center justify-between">
-                      <div className="flex -space-x-1.5">
-                        {task.task_assignees?.map((a) => (
-                          <div
-                            key={a.user_id}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900"
-                            title={a.user?.full_name}
-                          >
-                            {getInitials(a.user?.full_name)}
-                          </div>
-                        ))}
-                      </div>
-                      {task.due_date && (
-                        <span className="flex items-center gap-1 text-xs text-muted">
-                          <Calendar size={11} />
-                          {formatDate(task.due_date, { day: "numeric", month: "short" })}
-                        </span>
+                  >
+                    <div className="flex items-center justify-between border-b border-border p-3">
+                      <span className="text-sm font-semibold text-gray-900">{col.label}</span>
+                      <span className="badge bg-background text-muted">{colTasks.length}</span>
+                    </div>
+                    <div className="flex-1 space-y-2 overflow-y-auto p-2">
+                      {colTasks.map((task, index) => {
+                        const isOverdue = task.due_date && task.due_date < today && task.status !== "done" && task.status !== "blocked";
+                        return (
+                          <Draggable key={task.id} draggableId={task.id} index={index}>
+                            {(dragProvided, dragSnapshot) => (
+                              <div
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                                onClick={() => setDetailTaskId(task.id)}
+                                className={cn(
+                                  "cursor-pointer rounded-md border border-border bg-background p-3 transition-all hover:border-primary hover:shadow-md active:cursor-grabbing",
+                                  dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/50"
+                                )}
+                              >
+                                <div className="mb-1.5 flex items-start justify-between gap-2">
+                                  <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                                  <div className="flex items-center gap-1">
+                                    {isOverdue && <AlertTriangle size={12} className="text-danger" />}
+                                    <Flag size={12} className={priorityColors[task.priority] || "text-muted"} />
+                                  </div>
+                                </div>
+
+                                {/* Description preview */}
+                                {task.description && (
+                                  <p className="mb-1.5 line-clamp-2 text-xs text-muted">
+                                    {task.description}
+                                  </p>
+                                )}
+
+                                {task.client && <p className="mb-1 text-xs text-muted">{task.client.name}</p>}
+                                {task.division && (
+                                  <span className="mb-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                    {task.division}
+                                  </span>
+                                )}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex -space-x-1.5">
+                                    {task.task_assignees?.map((a) => (
+                                      <div
+                                        key={a.user_id}
+                                        className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900"
+                                        title={a.user?.full_name}
+                                      >
+                                        {getInitials(a.user?.full_name)}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {task.due_date && (
+                                    <span className={cn("flex items-center gap-1 text-xs", isOverdue ? "font-medium text-danger" : "text-muted")}>
+                                      <Calendar size={11} />
+                                      {formatDate(task.due_date, { day: "numeric", month: "short" })}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                      {colTasks.length === 0 && (
+                        <div className="flex h-24 items-center justify-center rounded-md border border-dashed border-border">
+                          <p className="text-xs text-muted">Drop tugas di sini</p>
+                        </div>
                       )}
                     </div>
                   </div>
-                ))}
-                {colTasks.length === 0 && (
-                  <div className="flex h-24 items-center justify-center rounded-md border border-dashed border-border">
-                    <p className="text-xs text-muted">Drop tugas di sini</p>
-                  </div>
                 )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              </Droppable>
+            );
+          })}
+        </div>
+      </DragDropContext>
+
+      {/* Task Detail Modal */}
+      {detailTaskId && (
+        <TaskDetailModal
+          taskId={detailTaskId}
+          onClose={() => setDetailTaskId(null)}
+          onUpdated={loadTasks}
+          onDeleted={loadTasks}
+        />
+      )}
 
       {/* Create Task Modal */}
       {showModal && (
@@ -380,6 +529,7 @@ export default function TasksPage() {
                     <option value="todo">To Do</option>
                     <option value="in_progress">In Progress</option>
                     <option value="review">Review</option>
+                    <option value="blocked">Blocked</option>
                     <option value="done">Done</option>
                   </select>
                 </div>

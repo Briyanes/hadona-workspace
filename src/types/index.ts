@@ -78,6 +78,16 @@ export interface TaskComment {
   created_at: string;
 }
 
+export interface Subtask {
+  id: string;
+  task_id: string;
+  title: string;
+  is_completed: boolean;
+  order_index: number;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface AdAccount {
   id: string;
   client_id: string;
