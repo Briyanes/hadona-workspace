@@ -4,14 +4,13 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  CheckSquare,
   Clock,
   AlertCircle,
   TrendingUp,
   Users,
   Megaphone,
 } from "lucide-react";
-import { formatIDR, timeUntil, getInitials } from "@/lib/utils";
+import { formatIDR, timeUntil } from "@/lib/utils";
 
 interface Stats {
   totalTasks: number;
@@ -38,46 +37,74 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+
     async function load() {
-      const [tasks, clients, adAccounts] = await Promise.all([
-        supabase.from("tasks").select("status, due_date, priority"),
-        supabase.from("clients").select("status").eq("status", "active"),
-        supabase.from("ad_accounts").select("daily_budget, status").eq("status", "active"),
-      ]);
+      try {
+        timeout = setTimeout(() => {
+          if (!cancelled) {
+            setError("Timeout: Server tidak merespons. Cek koneksi internet.");
+            setLoading(false);
+          }
+        }, 10000);
 
-      const allTasks = (tasks.data as { status: string; due_date: string | null; priority: string }[]) || [];
-      const clientList = (clients.data as { status: string }[]) || [];
-      const accountList = (adAccounts.data as { daily_budget: number | null; status: string }[]) || [];
-      const today = new Date().toISOString().split("T")[0];
+        const [tasks, clients, adAccounts] = await Promise.all([
+          supabase.from("tasks").select("status, due_date, priority"),
+          supabase.from("clients").select("status").eq("status", "active"),
+          supabase.from("ad_accounts").select("daily_budget, status").eq("status", "active"),
+        ]);
 
-      setStats({
-        totalTasks: allTasks.length,
-        todoTasks: allTasks.filter((t) => t.status === "todo").length,
-        inProgressTasks: allTasks.filter((t) => t.status === "in_progress").length,
-        doneTasks: allTasks.filter((t) => t.status === "done").length,
-        overdueTasks: allTasks.filter(
-          (t) => t.due_date && t.due_date < today && t.status !== "done"
-        ).length,
-        activeClients: clientList.length,
-        activeAdAccounts: accountList.length,
-        totalBudget: accountList.reduce(
-          (sum, a) => sum + (a.daily_budget || 0),
-          0
-        ),
-      });
+        if (cancelled) return;
 
-      const { data: recent } = await supabase
-        .from("tasks")
-        .select("id, title, status, priority, due_date, client:clients(name)")
-        .order("created_at", { ascending: false })
-        .limit(5);
+        const allTasks = (tasks.data as { status: string; due_date: string | null; priority: string }[]) || [];
+        const clientList = (clients.data as { status: string }[]) || [];
+        const accountList = (adAccounts.data as { daily_budget: number | null; status: string }[]) || [];
+        const today = new Date().toISOString().split("T")[0];
 
-      setRecentTasks((recent as unknown as RecentTask[]) || []);
-      setLoading(false);
+        setStats({
+          totalTasks: allTasks.length,
+          todoTasks: allTasks.filter((t) => t.status === "todo").length,
+          inProgressTasks: allTasks.filter((t) => t.status === "in_progress").length,
+          doneTasks: allTasks.filter((t) => t.status === "done").length,
+          overdueTasks: allTasks.filter(
+            (t) => t.due_date && t.due_date < today && t.status !== "done"
+          ).length,
+          activeClients: clientList.length,
+          activeAdAccounts: accountList.length,
+          totalBudget: accountList.reduce(
+            (sum, a) => sum + (a.daily_budget || 0),
+            0
+          ),
+        });
+
+        const { data: recent } = await supabase
+          .from("tasks")
+          .select("id, title, status, priority, due_date, client:clients(name)")
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (cancelled) return;
+
+        setRecentTasks((recent as unknown as RecentTask[]) || []);
+        setLoading(false);
+        clearTimeout(timeout);
+      } catch (err) {
+        if (!cancelled) {
+          setError("Gagal memuat data. Cek koneksi atau login ulang.");
+          setLoading(false);
+        }
+      }
     }
     load();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [supabase]);
 
   if (loading) {
@@ -89,6 +116,18 @@ export default function DashboardPage() {
             <div key={i} className="card skeleton h-32" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+        <AlertCircle className="mb-3 text-danger" size={32} />
+        <p className="text-sm text-muted">{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary mt-4">
+          Coba Lagi
+        </button>
       </div>
     );
   }
