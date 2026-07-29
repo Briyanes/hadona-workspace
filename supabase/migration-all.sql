@@ -50,10 +50,16 @@ CREATE POLICY "daily_spend_write_manager" ON public.daily_spend
   FOR ALL USING (public.is_manager()) WITH CHECK (public.is_manager());
 
 -- 4. FIX: creative_requests RLS policies
+-- DROP ALL policies first to avoid "already exists" error
+DROP POLICY IF EXISTS "creative_requests_select_all" ON public.creative_requests;
 DROP POLICY IF EXISTS "creative_requests_insert_all" ON public.creative_requests;
+DROP POLICY IF EXISTS "creative_requests_insert_auth" ON public.creative_requests;
 DROP POLICY IF EXISTS "creative_requests_update_all_or_manager" ON public.creative_requests;
+DROP POLICY IF EXISTS "creative_requests_update_creator_or_assigned_or_manager" ON public.creative_requests;
 DROP POLICY IF EXISTS "creative_requests_delete_manager" ON public.creative_requests;
+DROP POLICY IF EXISTS "creative_requests_delete_creator_or_manager" ON public.creative_requests;
 
+-- Recreate with proper security policies
 CREATE POLICY "creative_requests_select_all" ON public.creative_requests
   FOR SELECT USING (auth.uid() IS NOT NULL);
 
