@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
+import { useSortable } from "@/hooks/use-sortable-table";
+import { SortableTh } from "@/components/ui/sortable-th";
 
 interface Task {
   id: string;
@@ -54,6 +56,9 @@ export default function TasksPage() {
   const [filterPriority, setFilterPriority] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+
+  // View mode: board or table
+  const [viewMode, setViewMode] = useState<"board" | "table">("board");
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -217,6 +222,9 @@ export default function TasksPage() {
   const today = new Date().toISOString().split("T")[0];
   const activeFilterCount = (filterClient !== "all" ? 1 : 0) + (filterPriority !== "all" ? 1 : 0);
 
+  // Sortable table data
+  const { sortedData: sortedTasks, sortState, toggleSort } = useSortable<Task>({ data: visibleTasks });
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -251,6 +259,26 @@ export default function TasksPage() {
           <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas • Klik kartu untuk detail</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex overflow-hidden rounded-md border border-border">
+            <button
+              onClick={() => setViewMode("board")}
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
+                viewMode === "board" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+              )}
+            >
+              <LayoutGrid size={14} /> Board
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
+                viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+              )}
+            >
+              <List size={14} /> Table
+            </button>
+          </div>
           <button
             onClick={() => setShowMyTasksOnly(!showMyTasksOnly)}
             className={cn(
@@ -341,7 +369,8 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Kanban Board */}
+      {/* ==================== BOARD VIEW ==================== */}
+      {viewMode === "board" && (
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid flex-1 grid-cols-1 gap-3 overflow-hidden overflow-x-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {COLUMNS.map((col) => {
@@ -437,6 +466,84 @@ export default function TasksPage() {
           })}
         </div>
       </DragDropContext>
+      )}
+
+      {/* ==================== TABLE VIEW ==================== */}
+      {viewMode === "table" && (
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border bg-background">
+              <tr>
+                <SortableTh label="Title" sortKey="title" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Priority" sortKey="priority" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <th className="px-4 py-3 text-left text-xs font-medium">Assignees</th>
+                <SortableTh label="Deadline" sortKey="due_date" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Division" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+              </tr>
+            </thead>
+            <tbody>
+              {sortedTasks.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-sm text-muted">Tidak ada task yang cocok dengan filter</td>
+                </tr>
+              ) : (
+                sortedTasks.map((task) => {
+                  const isOverdue = task.due_date && task.due_date < today && task.status !== "done" && task.status !== "blocked";
+                  const statusLabel = COLUMNS.find((c) => c.id === task.status)?.label || task.status;
+                  return (
+                    <tr
+                      key={task.id}
+                      onClick={() => setDetailTaskId(task.id)}
+                      className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-primary/5"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {isOverdue && <AlertTriangle size={12} className="shrink-0 text-danger" />}
+                          <span className="font-medium text-gray-900">{task.title}</span>
+                        </div>
+                        {task.description && (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-muted">{task.description}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted">{task.client?.name || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          {statusLabel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={cn("flex items-center gap-1 text-xs font-medium capitalize", priorityColors[task.priority] || "text-muted")}>
+                          <Flag size={10} /> {task.priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex -space-x-1.5">
+                          {task.task_assignees?.map((a) => (
+                            <div
+                              key={a.user_id}
+                              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-gray-900"
+                              title={a.user?.full_name}
+                            >
+                              {getInitials(a.user?.full_name)}
+                            </div>
+                          ))}
+                          {(!task.task_assignees || task.task_assignees.length === 0) && <span className="text-xs text-muted">—</span>}
+                        </div>
+                      </td>
+                      <td className={cn("px-4 py-3 text-xs", isOverdue ? "font-medium text-danger" : "text-muted")}>
+                        {task.due_date ? formatDate(task.due_date, { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted">{task.division || "—"}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Task Detail Modal */}
       {detailTaskId && (

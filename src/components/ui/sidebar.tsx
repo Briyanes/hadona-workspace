@@ -59,8 +59,9 @@ export function Sidebar() {
   }, [supabase]);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r border-hadona-yellow-dark bg-hadona-yellow">
-      <div className="flex h-16 items-center gap-2 border-b-0 bg-white px-5">
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-hadona-yellow-dark bg-hadona-yellow">
+      {/* Zone 1: Brand area (fixed, no scroll) */}
+      <div className="flex h-16 shrink-0 items-center gap-2 border-b-0 bg-white px-5">
         <Image
           src="/logo/logo-hadona.png"
           alt="Hadona Digital Media"
@@ -75,7 +76,8 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex flex-col gap-0.5 p-3">
+      {/* Zone 2: Navigation (scrollable) */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -114,7 +116,8 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="absolute bottom-0 left-0 right-0 border-t border-hadona-yellow-dark p-3">
+      {/* Zone 3: Settings (fixed at bottom, no absolute) */}
+      <div className="shrink-0 border-t border-hadona-yellow-dark bg-white p-3">
         <Link href="/settings" className={cn("sidebar-link", pathname === "/settings" && "sidebar-link-active")}>
           <Settings size={16} />
           Settings
