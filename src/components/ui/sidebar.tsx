@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   CheckSquare,
-  Users,
+  Users as UsersIcon,
+  UserCog,
   Megaphone,
   BarChart3,
   Target,
@@ -14,11 +15,16 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/types/database";
+
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Clients", href: "/clients", icon: Users },
+  { label: "Clients", href: "/clients", icon: UsersIcon },
   { label: "Ads Spend", href: "/ads-spend", icon: Megaphone },
   { label: "Weekly Report", href: "/reports", icon: BarChart3 },
   { label: "Strategy (OKR)", href: "/strategy", icon: Target },
@@ -26,8 +32,30 @@ const navItems = [
   { label: "Content Plans", href: "/content-plans", icon: Calendar },
 ];
 
+const managerItems = [{ label: "User Management", href: "/users", icon: UserCog }];
+
 export function Sidebar() {
   const pathname = usePathname();
+  const [isManager, setIsManager] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userData.user.id)
+          .single();
+        const role = (profile as { role: string } | null)?.role;
+        if (role) {
+          setIsManager(role === "super_admin" || role === "project_manager");
+        }
+      }
+    };
+    checkRole();
+  }, [supabase]);
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r border-border bg-surface">
@@ -56,6 +84,28 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {isManager && (
+          <>
+            <div className="mt-3 px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
+              Management
+            </div>
+            {managerItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "sidebar-link-active")}
+                >
+                  <Icon size={16} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <div className="absolute bottom-0 left-0 right-0 border-t border-border p-3">

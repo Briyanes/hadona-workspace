@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,6 +70,13 @@ export default function LoginPage() {
             {loading ? "Loading..." : "Masuk"}
           </button>
         </form>
+
+        <p className="text-center text-sm text-muted">
+          Belum punya akun?{" "}
+          <Link href="/signup" className="text-primary hover:underline">
+            Daftar di sini
+          </Link>
+        </p>
 
         <p className="text-center text-xs text-muted">
           Hanya untuk tim internal Hadona Digital Media.
