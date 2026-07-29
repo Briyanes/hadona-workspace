@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import { useSidebar } from "@/components/ui/sidebar-context";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -39,6 +40,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isManager, setIsManager] = useState(false);
   const supabase = createClient();
+  const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const checkRole = async () => {
@@ -59,21 +61,33 @@ export function Sidebar() {
   }, [supabase]);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-hadona-yellow-dark bg-hadona-yellow">
+    <aside
+      className={cn(
+        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-hadona-yellow-dark bg-hadona-yellow transition-all duration-200",
+        isCollapsed ? "w-[60px]" : "w-60"
+      )}
+    >
       {/* Zone 1: Brand area (fixed, no scroll) */}
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b-0 bg-white px-5">
+      <div
+        className={cn(
+          "flex h-16 shrink-0 items-center border-b-0 bg-white",
+          isCollapsed ? "justify-center px-2" : "gap-2 px-5"
+        )}
+      >
         <Image
           src="/logo/logo-hadona.png"
           alt="Hadona Digital Media"
           width={32}
           height={32}
-          className="h-8 w-8 rounded-lg object-cover"
+          className="h-8 w-8 shrink-0 rounded-lg object-cover"
           priority
         />
-        <div>
-          <div className="text-sm font-bold text-gray-900">Hadona</div>
-          <div className="text-[10px] text-muted">Workspace</div>
-        </div>
+        {!isCollapsed && (
+          <div>
+            <div className="text-sm font-bold text-gray-900">Hadona</div>
+            <div className="text-[10px] text-muted">Workspace</div>
+          </div>
+        )}
       </div>
 
       {/* Zone 2: Navigation (scrollable) */}
@@ -85,19 +99,27 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={cn("sidebar-link", isActive && "sidebar-link-active")}
+              title={isCollapsed ? item.label : undefined}
+              className={cn(
+                "sidebar-link",
+                isActive && "sidebar-link-active",
+                isCollapsed && "justify-center px-0"
+              )}
             >
-              <Icon size={16} />
-              {item.label}
+              <Icon size={16} className="shrink-0" />
+              {!isCollapsed && item.label}
             </Link>
           );
         })}
 
         {isManager && (
           <>
-            <div className="mt-3 px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-700">
-              Management
-            </div>
+            {!isCollapsed && (
+              <div className="mt-3 px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-700">
+                Management
+              </div>
+            )}
+            {isCollapsed && <div className="my-2 border-t border-hadona-yellow-dark/30" />}
             {managerItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname.startsWith(item.href);
@@ -105,10 +127,15 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={cn("sidebar-link", isActive && "sidebar-link-active")}
+                  title={isCollapsed ? item.label : undefined}
+                  className={cn(
+                    "sidebar-link",
+                    isActive && "sidebar-link-active",
+                    isCollapsed && "justify-center px-0"
+                  )}
                 >
-                  <Icon size={16} />
-                  {item.label}
+                  <Icon size={16} className="shrink-0" />
+                  {!isCollapsed && item.label}
                 </Link>
               );
             })}
@@ -118,9 +145,17 @@ export function Sidebar() {
 
       {/* Zone 3: Settings (fixed at bottom, no absolute) */}
       <div className="shrink-0 border-t border-hadona-yellow-dark bg-white p-3">
-        <Link href="/settings" className={cn("sidebar-link", pathname === "/settings" && "sidebar-link-active")}>
-          <Settings size={16} />
-          Settings
+        <Link
+          href="/settings"
+          title={isCollapsed ? "Settings" : undefined}
+          className={cn(
+            "sidebar-link",
+            pathname === "/settings" && "sidebar-link-active",
+            isCollapsed && "justify-center px-0"
+          )}
+        >
+          <Settings size={16} className="shrink-0" />
+          {!isCollapsed && "Settings"}
         </Link>
       </div>
     </aside>
