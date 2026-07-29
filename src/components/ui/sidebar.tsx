@@ -60,7 +60,7 @@ export function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r border-hadona-yellow-dark bg-hadona-yellow">
-      <div className="flex h-16 items-center gap-2 border-b border-border bg-white px-5">
+      <div className="flex h-16 items-center gap-2 border-b-0 bg-white px-5">
         <Image
           src="/logo/logo-hadona.png"
           alt="Hadona Digital Media"
