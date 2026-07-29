@@ -471,16 +471,16 @@ export default function TasksPage() {
       {/* ==================== TABLE VIEW ==================== */}
       {viewMode === "table" && (
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
+          <table className="w-full table-fixed text-sm">
             <thead className="border-b border-border bg-background">
               <tr>
-                <SortableTh label="Title" sortKey="title" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Priority" sortKey="priority" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <th className="px-4 py-3 text-left text-xs font-medium">Assignees</th>
-                <SortableTh label="Deadline" sortKey="due_date" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Division" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
+                <SortableTh label="Title" sortKey="title" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[300px]" />
+                <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[150px]" />
+                <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[100px]" />
+                <SortableTh label="Priority" sortKey="priority" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[90px]" />
+                <th className="w-[110px] px-4 py-3 text-left text-xs font-medium">Assignees</th>
+                <SortableTh label="Deadline" sortKey="due_date" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[120px]" />
+                <SortableTh label="Division" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[130px]" />
               </tr>
             </thead>
             <tbody>
@@ -498,24 +498,25 @@ export default function TasksPage() {
                       onClick={() => setDetailTaskId(task.id)}
                       className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-primary/5"
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-4 py-3" title={task.title}>
+                        <div className="flex items-center gap-1.5 overflow-hidden">
                           {isOverdue && <AlertTriangle size={12} className="shrink-0 text-danger" />}
-                          <span className="font-medium text-gray-900">{task.title}</span>
+                          <span className="truncate font-medium text-gray-900">{task.title}</span>
                         </div>
-                        {task.description && (
-                          <p className="mt-0.5 line-clamp-1 text-xs text-muted">{task.description}</p>
-                        )}
                       </td>
-                      <td className="px-4 py-3 text-muted">{task.client?.name || "—"}</td>
+                      <td className="px-4 py-3 text-muted">
+                        <span className="block truncate" title={task.client?.name}>
+                          {task.client?.name || "—"}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                           {statusLabel}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={cn("flex items-center gap-1 text-xs font-medium capitalize", priorityColors[task.priority] || "text-muted")}>
-                          <Flag size={10} /> {task.priority}
+                          <Flag size={10} className="shrink-0" /> {task.priority}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -535,7 +536,11 @@ export default function TasksPage() {
                       <td className={cn("px-4 py-3 text-xs", isOverdue ? "font-medium text-danger" : "text-muted")}>
                         {task.due_date ? formatDate(task.due_date, { day: "numeric", month: "short", year: "numeric" }) : "—"}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted">{task.division || "—"}</td>
+                      <td className="px-4 py-3 text-xs text-muted">
+                        <span className="block truncate" title={task.division || undefined}>
+                          {task.division || "—"}
+                        </span>
+                      </td>
                     </tr>
                   );
                 })
