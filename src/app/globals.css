@@ -136,10 +136,10 @@
   }
 
   .sidebar-link {
-    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-gray-900;
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-hadona-yellow-dark/15 hover:text-gray-900;
   }
   .sidebar-link-active {
-    @apply bg-primary/10 text-primary font-medium;
+    @apply bg-primary text-white shadow-sm hover:bg-primary-dark hover:text-white;
   }
 }
 

@@ -59,8 +59,8 @@ export function Sidebar() {
   }, [supabase]);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r border-border bg-surface">
-      <div className="flex h-16 items-center gap-2 border-b border-border px-5">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-60 border-r border-hadona-yellow-dark bg-hadona-yellow">
+      <div className="flex h-16 items-center gap-2 border-b border-hadona-yellow-dark px-5">
         <Image
           src="/logo/logo-hadona.png"
           alt="Hadona Digital Media"
@@ -71,7 +71,7 @@ export function Sidebar() {
         />
         <div>
           <div className="text-sm font-bold text-gray-900">Hadona</div>
-          <div className="text-[10px] text-muted">Workspace</div>
+          <div className="text-[10px] font-medium text-gray-700">Workspace</div>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export function Sidebar() {
 
         {isManager && (
           <>
-            <div className="mt-3 px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
+            <div className="mt-3 px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-700">
               Management
             </div>
             {managerItems.map((item) => {
@@ -114,7 +114,7 @@ export function Sidebar() {
         )}
       </nav>
 
-      <div className="absolute bottom-0 left-0 right-0 border-t border-border p-3">
+      <div className="absolute bottom-0 left-0 right-0 border-t border-hadona-yellow-dark p-3">
         <Link href="/settings" className={cn("sidebar-link", pathname === "/settings" && "sidebar-link-active")}>
           <Settings size={16} />
           Settings
