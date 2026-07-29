@@ -372,7 +372,7 @@ export default function TasksPage() {
       {/* ==================== BOARD VIEW ==================== */}
       {viewMode === "board" && (
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid flex-1 grid-cols-1 gap-3 overflow-hidden overflow-x-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-x-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {COLUMNS.map((col) => {
             const colTasks = visibleTasks.filter((t) => t.status === col.id);
             return (
@@ -382,12 +382,12 @@ export default function TasksPage() {
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={cn(
-                      "flex flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors",
+                      "flex min-h-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors",
                       col.color,
                       snapshot.isDraggingOver && "bg-primary/5"
                     )}
                   >
-                    <div className="flex items-center justify-between border-b border-border p-3">
+                    <div className="flex shrink-0 items-center justify-between border-b border-border p-3">
                       <span className="text-sm font-semibold text-gray-900">{col.label}</span>
                       <span className="badge bg-background text-muted">{colTasks.length}</span>
                     </div>
