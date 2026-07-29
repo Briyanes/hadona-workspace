@@ -6,6 +6,7 @@
   :root {
     --font-inter: "Inter", system-ui, sans-serif;
     --font-jetbrains: "JetBrains Mono", monospace;
+    color-scheme: dark;
   }
 
   * {
@@ -93,6 +94,38 @@
 
   .input {
     @apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-white placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+  }
+
+  /* Custom select styling - dark mode arrow + options */
+  select.input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2371717a' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+
+  select.input option {
+    background-color: #16161a;
+    color: #fafafa;
+  }
+
+  select.input option:checked {
+    background-color: #6366f1;
+    color: white;
+  }
+
+  select.input:focus {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+  }
+
+  /* Disable default IE arrow */
+  select.input::-ms-expand {
+    display: none;
   }
 
   .badge {
