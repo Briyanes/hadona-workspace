@@ -7,6 +7,26 @@
 import { createClient } from "@supabase/supabase-js";
 import { parse } from "csv-parse";
 import { parseIDR, parsePercent } from "@/lib/utils";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+// ============================================
+// LOAD .env.local manually (tsx doesn't auto-load)
+// ============================================
+try {
+  const envPath = join(process.cwd(), ".env.local");
+  const envContent = readFileSync(envPath, "utf-8");
+  envContent.split("\n").forEach((line) => {
+    const match = line.match(/^([^#=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      const value = match[2].trim();
+      if (!process.env[key]) process.env[key] = value;
+    }
+  });
+} catch {
+  console.warn("⚠️ Could not load .env.local");
+}
 
 // ============================================
 // CONFIGURATION
@@ -322,9 +342,18 @@ async function importAdsSpend(clientMap: Map<string, string>) {
       return "inactive";
     };
 
+    // Map platform to match enum values: 'META', 'Google', 'TikTok'
+    const mapPlatform = (p: string): string => {
+      const lower = p.toLowerCase().trim();
+      if (lower === "meta" || lower === "facebook" || lower === "ig" || lower === "instagram") return "META";
+      if (lower === "google" || lower === "yt" || lower === "youtube") return "Google";
+      if (lower === "tiktok" || lower === "tt") return "TikTok";
+      return "META"; // default fallback
+    };
+
     const { error } = await supabase.from("ad_accounts").insert({
       client_id: clientId,
-      platform: platform.trim().toUpperCase(),
+      platform: mapPlatform(platform),
       ad_account_id: adAccountId?.trim() || `UNKNOWN-${i}`,
       objective: row[4]?.trim() || null,
       daily_budget: parseIDR(dailyBudget),
