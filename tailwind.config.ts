@@ -25,6 +25,11 @@ const config: Config = {
           DEFAULT: "#4A6AE8",
           foreground: "#FFFFFF",
         },
+        hadona: {
+          yellow: "#FFD60A",
+          "yellow-dark": "#E6BE00",
+          "yellow-light": "#FFE45C",
+        },
         success: "#10B981",
         warning: "#F59E0B",
         danger: "#EF4444",
