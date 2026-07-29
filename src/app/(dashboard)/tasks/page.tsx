@@ -57,6 +57,10 @@ export default function TasksPage() {
     priority: "medium",
     due_date: "",
     status: "todo",
+    division: "",
+    result: "",
+    blocker: "",
+    start_date: "",
   });
 
   useEffect(() => {
@@ -140,6 +144,10 @@ export default function TasksPage() {
       client_id: form.client_id || null,
       priority: form.priority,
       status: form.status,
+      division: form.division.trim() || null,
+      result: form.result.trim() || null,
+      blocker: form.blocker.trim() || null,
+      start_date: form.start_date || null,
       due_date: form.due_date || null,
       created_by: userData.user?.id,
     } as never);
@@ -148,7 +156,7 @@ export default function TasksPage() {
       toast.error("Gagal membuat task: " + error.message);
     } else {
       toast.success("Task berhasil dibuat!");
-      setForm({ title: "", description: "", client_id: "", priority: "medium", due_date: "", status: "todo" });
+      setForm({ title: "", description: "", client_id: "", priority: "medium", due_date: "", status: "todo", division: "", result: "", blocker: "", start_date: "" });
       setShowModal(false);
       loadTasks();
     }
@@ -253,7 +261,12 @@ export default function TasksPage() {
                       <p className="text-sm font-medium text-white">{task.title}</p>
                       <Flag size={12} className={priorityColors[task.priority] || "text-muted"} />
                     </div>
-                    {task.client && <p className="mb-2 text-xs text-muted">{task.client.name}</p>}
+                    {task.client && <p className="mb-1 text-xs text-muted">{task.client.name}</p>}
+                    {task.division && (
+                      <span className="mb-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        {task.division}
+                      </span>
+                    )}
                     <div className="flex items-center justify-between">
                       <div className="flex -space-x-1.5">
                         {task.task_assignees?.map((a) => (
@@ -371,6 +384,34 @@ export default function TasksPage() {
                   </select>
                 </div>
                 <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Divisi</label>
+                  <select
+                    value={form.division}
+                    onChange={(e) => setForm({ ...form, division: e.target.value })}
+                    className="input"
+                  >
+                    <option value="">— Pilih Divisi —</option>
+                    <option value="Creative">Creative</option>
+                    <option value="Advertising">Advertising</option>
+                    <option value="SMM">Social Media Management</option>
+                    <option value="SEO">SEO</option>
+                    <option value="Strategy">Strategy</option>
+                    <option value="Operations">Operations</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-white">Start Date</label>
+                  <input
+                    type="date"
+                    value={form.start_date}
+                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                    className="input"
+                  />
+                </div>
+                <div>
                   <label className="mb-1.5 block text-sm font-medium text-white">Deadline</label>
                   <input
                     type="date"
@@ -379,6 +420,30 @@ export default function TasksPage() {
                     className="input"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-white">Result / Output</label>
+                <input
+                  type="text"
+                  value={form.result}
+                  onChange={(e) => setForm({ ...form, result: e.target.value })}
+                  placeholder="Contoh: Monthly report selesai, 10 creative approved"
+                  className="input"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-white">
+                  Blocker / Kendala
+                </label>
+                <textarea
+                  rows={2}
+                  value={form.blocker}
+                  onChange={(e) => setForm({ ...form, blocker: e.target.value })}
+                  placeholder="Isi jika ada kendala/hambatan..."
+                  className="input resize-none"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
