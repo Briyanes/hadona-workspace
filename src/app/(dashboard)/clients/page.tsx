@@ -22,9 +22,11 @@ import {
   PauseCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { cn, formatIDR } from "@/lib/utils";
+import { cn, formatIDR, getInitials } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
+import { uploadFile } from "@/lib/upload";
+import { ImagePlus } from "lucide-react";
 
 interface Client {
   id: string;
@@ -42,6 +44,7 @@ interface Client {
   contract_start: string | null;
   contract_end: string | null;
   account_manager_id: string | null;
+  logo_url: string | null;
 }
 
 interface AccountManager {
@@ -80,6 +83,7 @@ const emptyForm = {
   contract_start: "",
   contract_end: "",
   account_manager_id: "",
+  logo_url: "",
 };
 
 export default function ClientsPage() {
@@ -100,6 +104,7 @@ export default function ClientsPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [accountManagers, setAccountManagers] = useState<AccountManager[]>([]);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     loadClients();
@@ -158,9 +163,37 @@ export default function ClientsPage() {
       contract_start: client.contract_start || "",
       contract_end: client.contract_end || "",
       account_manager_id: client.account_manager_id || "",
+      logo_url: client.logo_url || "",
     });
     setEditingId(client.id);
     setShowModal(true);
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate: image only, max 2MB
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran logo maksimal 2MB");
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const { publicUrl } = await uploadFile(file, "client-logos");
+      setForm((prev) => ({ ...prev, logo_url: publicUrl }));
+      toast.success("Logo berhasil diupload");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal upload logo: " + msg);
+    } finally {
+      setUploadingLogo(false);
+    }
   }
 
   function toggleService(service: string) {
@@ -195,6 +228,7 @@ export default function ClientsPage() {
         contract_start: form.contract_start || null,
         contract_end: form.contract_end || null,
         account_manager_id: form.account_manager_id || null,
+        logo_url: form.logo_url || null,
       };
 
       if (editingId) {
@@ -419,9 +453,14 @@ export default function ClientsPage() {
                 <div key={c.id} className="card card-hover group">
                   <div className="mb-3 flex items-start justify-between">
                     <Link href={`/clients/${c.id}`} className="flex flex-1 items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface text-primary">
-                        <Building2 size={18} />
-                      </div>
+                      {c.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.logo_url} alt={c.name} className="h-10 w-10 rounded-lg border border-border object-contain" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface text-xs font-bold text-primary">
+                          {getInitials(c.name)}
+                        </div>
+                      )}
                       <div>
                         <h3 className="font-semibold text-gray-900 hover:text-primary">{c.name}</h3>
                         <p className="text-xs text-muted">{c.industry || "-"}</p>
@@ -507,9 +546,14 @@ export default function ClientsPage() {
                   <tr key={c.id} className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-primary/5">
                     <td className="px-4 py-3">
                       <Link href={`/clients/${c.id}`} className="flex items-center gap-2 hover:text-primary">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface text-primary">
-                          <Building2 size={14} />
-                        </div>
+                        {c.logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.logo_url} alt={c.name} className="h-8 w-8 shrink-0 rounded-lg border border-border object-contain" />
+                        ) : (
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[10px] font-bold text-primary">
+                            {getInitials(c.name)}
+                          </div>
+                        )}
                         <span className="truncate font-medium text-gray-900">{c.name}</span>
                       </Link>
                     </td>
@@ -579,6 +623,58 @@ export default function ClientsPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
+              {/* Logo Upload */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  {form.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.logo_url}
+                      alt="Logo"
+                      className="h-16 w-16 rounded-lg border border-border object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-background text-muted">
+                      <Building2 size={20} />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Logo Client</label>
+                  <label className={cn(
+                    "inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-background",
+                    uploadingLogo && "cursor-wait opacity-60"
+                  )}>
+                    {uploadingLogo ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin" /> Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <ImagePlus size={12} /> Upload Logo
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={uploadingLogo}
+                      className="hidden"
+                    />
+                  </label>
+                  {form.logo_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, logo_url: "" })}
+                      className="ml-2 text-xs text-danger hover:underline"
+                    >
+                      Hapus
+                    </button>
+                  )}
+                  <p className="mt-1 text-[10px] text-muted">PNG/JPG, max 2MB</p>
+                </div>
+              </div>
+
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Nama Client *</label>
                 <input

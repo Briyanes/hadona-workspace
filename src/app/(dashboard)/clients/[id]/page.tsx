@@ -20,7 +20,7 @@ import {
   DollarSign,
   AlertTriangle,
 } from "lucide-react";
-import { formatDate, formatIDR, cn } from "@/lib/utils";
+import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
 
 interface ClientDetail {
   id: string;
@@ -32,6 +32,7 @@ interface ClientDetail {
   contact_phone: string | null;
   contact_email: string | null;
   notes: string | null;
+  logo_url: string | null;
   contract_value: number | null;
   contract_start: string | null;
   contract_end: string | null;
@@ -203,9 +204,14 @@ export default function ClientDetailPage() {
       <div className="card">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface text-primary">
-              <Building2 size={24} />
-            </div>
+            {client.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={client.logo_url} alt={client.name} className="h-14 w-14 rounded-xl border border-border object-contain" />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface text-lg font-bold text-primary">
+                {getInitials(client.name)}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>

@@ -13,6 +13,7 @@ const ALLOWED_FOLDERS = [
   "weekly-report-pdfs",
   "creative-assets",
   "avatar-assets",
+  "client-logos",
   "task-attachments",
   "uploads",
 ] as const;
