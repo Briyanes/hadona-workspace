@@ -15,6 +15,7 @@ import {
   Target,
   Megaphone,
   AlertCircle,
+  Plus,
 } from "lucide-react";
 import { formatDate, formatIDR, cn } from "@/lib/utils";
 
@@ -318,13 +319,19 @@ export default function ClientDetailPage() {
 
       {tab === "tasks" && (
         <div className="space-y-2">
+          <div className="flex justify-end">
+            <Link href={`/tasks?client=${client.id}`} className="btn-primary text-xs">
+              <Plus size={14} /> New Task
+            </Link>
+          </div>
           {tasks.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">Belum ada tugas untuk client ini</p>
           ) : (
             tasks.map((task) => (
-              <div
+              <Link
                 key={task.id}
-                className="flex items-center justify-between rounded-md border border-border bg-surface p-3"
+                href="/tasks"
+                className="flex items-center justify-between rounded-md border border-border bg-surface p-3 transition-colors hover:border-primary hover:bg-primary/5"
               >
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{task.title}</p>
@@ -340,7 +347,7 @@ export default function ClientDetailPage() {
                 >
                   {task.status.replace("_", " ")}
                 </span>
-              </div>
+              </Link>
             ))
           )}
         </div>
@@ -348,6 +355,11 @@ export default function ClientDetailPage() {
 
       {tab === "reports" && (
         <div className="space-y-2">
+          <div className="flex justify-end">
+            <Link href={`/reports?client=${client.id}`} className="btn-primary text-xs">
+              <Plus size={14} /> New Report
+            </Link>
+          </div>
           {reports.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">Belum ada laporan untuk client ini</p>
           ) : (
@@ -374,6 +386,11 @@ export default function ClientDetailPage() {
 
       {tab === "strategy" && (
         <div className="space-y-2">
+          <div className="flex justify-end">
+            <Link href={`/strategy?client=${client.id}`} className="btn-primary text-xs">
+              <Plus size={14} /> New Strategy
+            </Link>
+          </div>
           {strategies.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">Belum ada strategi untuk client ini</p>
           ) : (
@@ -392,6 +409,11 @@ export default function ClientDetailPage() {
 
       {tab === "ads" && (
         <div className="space-y-2">
+          <div className="flex justify-end">
+            <Link href={`/ads-spend?client=${client.id}`} className="btn-primary text-xs">
+              <Plus size={14} /> New Ad Account
+            </Link>
+          </div>
           {adAccounts.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">Belum ada ad account untuk client ini</p>
           ) : (
