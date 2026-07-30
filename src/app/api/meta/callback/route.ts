@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
 
     // Step 5: Upsert connection to DB
-    const { error: dbError } = await supabase
+    const { data: connectionDataRaw, error: dbError } = await supabase
       .from("meta_connections")
       .upsert({
         user_id: user.id,
@@ -89,19 +89,57 @@ export async function GET(request: NextRequest) {
         last_sync_status: "connected",
       } as never, {
         onConflict: "user_id,fb_user_id",
-      });
+      })
+      .select("id")
+      .single();
 
-    if (dbError) {
+    const connectionData = connectionDataRaw as unknown as { id: string } | null;
+
+    if (dbError || !connectionData) {
       console.error("DB Error saving Meta connection:", dbError);
       return NextResponse.redirect(
         new URL("/ads-spend?meta_error=db_error", origin)
       );
     }
 
+    // Step 6: Auto-link existing META ad accounts in DB to this connection
+    // Match by ad_account_id (Meta returns account_id without "act_" prefix)
+    let linkedCount = 0;
+    if (adAccounts.length > 0) {
+      const metaAccountIds = adAccounts.map((a) => a.account_id);
+
+      // Find existing ad_accounts in DB that match Meta's account_ids
+      const { data: existingAccountsRaw } = await supabase
+        .from("ad_accounts")
+        .select("id, ad_account_id")
+        .eq("platform", "META")
+        .in("ad_account_id", metaAccountIds);
+
+      const existingAccounts =
+        (existingAccountsRaw as unknown as Array<{ id: string; ad_account_id: string }>) || [];
+
+      if (existingAccounts.length > 0) {
+        // Link each matching account to this connection + enable sync
+        for (const acc of existingAccounts) {
+          await supabase
+            .from("ad_accounts")
+            .update({
+              meta_connection_id: connectionData.id,
+              meta_sync_enabled: true,
+            } as never)
+            .eq("id", acc.id);
+          linkedCount++;
+        }
+      }
+    }
+
     // Success — redirect back to ads-spend page
-    return NextResponse.redirect(
-      new URL("/ads-spend?meta_connected=true", origin)
-    );
+    const successUrl = new URL("/ads-spend", origin);
+    successUrl.searchParams.set("meta_connected", "true");
+    if (linkedCount > 0) {
+      successUrl.searchParams.set("meta_linked", linkedCount.toString());
+    }
+    return NextResponse.redirect(successUrl);
   } catch (err) {
     console.error("Meta callback error:", err);
     const message = err instanceof Error ? err.message : "unknown_error";

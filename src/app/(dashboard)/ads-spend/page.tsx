@@ -51,6 +51,8 @@ interface AdAccount {
   notes: string | null;
   client_id: string;
   pic_id: string | null;
+  meta_sync_enabled?: boolean | null;
+  meta_connection_id?: string | null;
   client?: { name: string };
   pic?: { full_name: string | null } | null;
 }
@@ -147,6 +149,7 @@ export default function AdsSpendPage() {
   // Meta Connection
   const [metaConnection, setMetaConnection] = useState<MetaConnection | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAccounts();
@@ -161,13 +164,35 @@ export default function AdsSpendPage() {
   function checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("meta_connected")) {
-      toast.success("Meta account berhasil terhubung!");
+      const linked = params.get("meta_linked");
+      const msg = linked
+        ? `Meta terhubung! ${linked} ad account otomatis di-link & auto-sync diaktifkan.`
+        : "Meta account berhasil terhubung!";
+      toast.success(msg);
       window.history.replaceState({}, "", "/ads-spend");
     }
     const metaError = params.get("meta_error");
     if (metaError) {
       toast.error(`Meta Error: ${metaError.replace(/_/g, " ")}`);
       window.history.replaceState({}, "", "/ads-spend");
+    }
+  }
+
+  async function handleToggleSync(accountId: string, currentEnabled: boolean) {
+    setTogglingId(accountId);
+    try {
+      const { error } = await supabase
+        .from("ad_accounts")
+        .update({ meta_sync_enabled: !currentEnabled } as never)
+        .eq("id", accountId);
+      if (error) throw error;
+
+      toast.success(`Auto-sync ${!currentEnabled ? "diaktifkan" : "dimatikan"}`);
+      loadAccounts();
+    } catch (err) {
+      toast.error("Gagal toggle sync: " + extractError(err));
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -1076,6 +1101,28 @@ export default function AdsSpendPage() {
                         <span className="text-muted">
                           {a.days_left !== null ? `${a.days_left}d` : "-"}
                         </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {a.platform === "META" && metaConnection ? (
+                        <button
+                          onClick={() => handleToggleSync(a.id, a.meta_sync_enabled || false)}
+                          disabled={togglingId === a.id}
+                          className={cn(
+                            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50",
+                            a.meta_sync_enabled ? "bg-success" : "bg-gray-300"
+                          )}
+                          title={a.meta_sync_enabled ? "Auto-sync ON (klik untuk matikan)" : "Auto-sync OFF (klik untuk aktifkan)"}
+                        >
+                          <span
+                            className={cn(
+                              "inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform",
+                              a.meta_sync_enabled ? "translate-x-4" : "translate-x-1"
+                            )}
+                          />
+                        </button>
+                      ) : (
+                        <span className="text-muted">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
