@@ -15,7 +15,7 @@ export async function GET() {
     const envStatus = {
       META_APP_ID: appId ? `✅ Set (${appId.length} chars)` : "❌ NOT SET",
       META_APP_SECRET: appSecret ? `✅ Set (${appSecret.length} chars)` : "❌ NOT SET",
-      META_API_VERSION: "v19.0",
+      META_API_VERSION: "v22.0",
     };
 
     // Check user auth
@@ -48,7 +48,7 @@ export async function GET() {
     // OAuth URL that would be generated
     const redirectUri = `https://workspace.hadona.id/api/meta/callback`;
     const oauthUrl = appId
-      ? `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=ads_read,ads_management,business_management,read_insights&response_type=code&state=${user.id}`
+      ? `https://www.facebook.com/v22.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=ads_read,ads_management&response_type=code&state=${user.id}`
       : null;
 
     return NextResponse.json({

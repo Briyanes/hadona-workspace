@@ -3,14 +3,14 @@
  * Handles OAuth flow, ad account listing, and insights pulling
  */
 
-const META_API_VERSION = "v19.0";
+const META_API_VERSION = "v22.0";
 const META_GRAPH_BASE = `https://graph.facebook.com/${META_API_VERSION}`;
 
+// Note: Only request scopes that are available in Development Mode without App Review.
+// "business_management" and "read_insights" cause "Invalid Scopes" error.
 const SCOPES = [
   "ads_read",          // Read ad account insights
   "ads_management",    // Manage ads
-  "business_management", // Access Business Manager
-  "read_insights",     // Read analytics/insights
 ].join(",");
 
 /**
@@ -209,4 +209,67 @@ export function extractConversions(actions?: Array<{ action_type: string; value:
     }
   }
   return total;
+}
+
+/**
+ * Debug/inspect a token to get its expiry, scopes, and validity.
+ * Uses the App Access Token to call the debug_token endpoint.
+ */
+export async function debugToken(accessTokenToInspect: string): Promise<{
+  data: {
+    app_id: string;
+    application: string;
+    expires_at: number;      // 0 = never expires
+    is_valid: boolean;
+    scopes: string[];
+    type: string;
+  };
+}> {
+  const appId = process.env.META_APP_ID;
+  const appSecret = process.env.META_APP_SECRET;
+  if (!appId || !appSecret) throw new Error("META_APP_ID or META_APP_SECRET not set");
+
+  // Generate app access token for debugging
+  const appTokenUrl = `${META_GRAPH_BASE}/oauth/access_token?${new URLSearchParams({
+    client_id: appId,
+    client_secret: appSecret,
+    grant_type: "client_credentials",
+  })}`;
+
+  const appTokenRes = await fetch(appTokenUrl);
+  const appTokenData = await appTokenRes.json();
+
+  if (appTokenData.error) {
+    throw new Error(`Failed to get app token: ${appTokenData.error.message}`);
+  }
+
+  const debugUrl = `${META_GRAPH_BASE}/debug_token?input_token=${accessTokenToInspect}&access_token=${appTokenData.access_token}`;
+  const res = await fetch(debugUrl);
+  const data = await res.json();
+
+  if (data.error) {
+    throw new Error(`Token Debug Error: ${data.error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Get extended token information including expiry date
+ */
+export async function getTokenInfo(accessToken: string): Promise<{
+  isValid: boolean;
+  expiresAt: Date | null;
+  scopes: string[];
+}> {
+  try {
+    const debugData = await debugToken(accessToken);
+    return {
+      isValid: debugData.data.is_valid,
+      expiresAt: debugData.data.expires_at > 0 ? new Date(debugData.data.expires_at * 1000) : null,
+      scopes: debugData.data.scopes || [],
+    };
+  } catch {
+    return { isValid: false, expiresAt: null, scopes: [] };
+  }
 }
