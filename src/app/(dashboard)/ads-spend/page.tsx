@@ -24,6 +24,8 @@ import {
   CheckCircle2,
   Link2,
   Unlink,
+  KeyRound,
+  ExternalLink,
 } from "lucide-react";
 import {
   AreaChart,
@@ -151,6 +153,11 @@ export default function AdsSpendPage() {
   const [syncing, setSyncing] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // Manual Token Modal (fallback if OAuth fails)
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [manualToken, setManualToken] = useState("");
+  const [savingToken, setSavingToken] = useState(false);
+
   useEffect(() => {
     loadAccounts();
     loadClients();
@@ -248,6 +255,38 @@ export default function AdsSpendPage() {
       toast.error("Gagal sync: " + msg);
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleManualTokenSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manualToken.trim() || manualToken.trim().length < 20) {
+      toast.error("Token tidak valid. Pastikan copy token dengan benar.");
+      return;
+    }
+
+    setSavingToken(true);
+    try {
+      const res = await fetch("/api/meta/manual-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: manualToken.trim() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan token");
+
+      toast.success(
+        `✅ ${data.message || "Meta terhubung!"} ${data.ad_accounts_linked > 0 ? `(${data.ad_accounts_linked} ad account ter-link)` : ""}`
+      );
+      setShowTokenModal(false);
+      setManualToken("");
+      loadMetaConnection();
+      loadAccounts();
+    } catch (err) {
+      toast.error("Gagal: " + extractError(err));
+    } finally {
+      setSavingToken(false);
     }
   }
 
@@ -794,9 +833,18 @@ export default function AdsSpendPage() {
               </p>
             </div>
           </div>
-          <a href="/api/meta/auth" className="btn-primary text-center">
-            <Link2 size={14} /> Connect Meta
-          </a>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={() => setShowTokenModal(true)}
+              className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+              title="Connect pakai token dari Graph API Explorer"
+            >
+              <KeyRound size={14} /> Manual Token
+            </button>
+            <a href="/api/meta/auth" className="btn-primary text-center">
+              <Link2 size={14} /> Connect Meta (OAuth)
+            </a>
+          </div>
         </div>
       )}
 
@@ -1381,6 +1429,89 @@ export default function AdsSpendPage() {
                     "Update Ad Account"
                   ) : (
                     "Simpan Ad Account"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Token Modal */}
+      {showTokenModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
+              <button
+                onClick={() => setShowTokenModal(false)}
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
+              <p className="mb-2 font-semibold">📋 Cara dapatkan Access Token:</p>
+              <ol className="list-decimal space-y-1 pl-4 text-[11px] text-muted">
+                <li>
+                  Buka{" "}
+                  <a
+                    href="https://developers.facebook.com/tools/explorer/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
+                  >
+                    Graph API Explorer <ExternalLink size={10} />
+                  </a>
+                </li>
+                <li>Pilih App Anda dari dropdown</li>
+                <li>
+                  Klik <strong>"Generate Access Token"</strong> → centang:{" "}
+                  <code className="rounded bg-background px-1">ads_read</code>,{" "}
+                  <code className="rounded bg-background px-1">ads_management</code>
+                </li>
+                <li>Copy token yang muncul, paste di bawah</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleManualTokenSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Access Token *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={manualToken}
+                  onChange={(e) => setManualToken(e.target.value)}
+                  placeholder="EAAGm0PX4ZCwBO..."
+                  className="input font-mono text-[11px] resize-none"
+                  disabled={savingToken}
+                />
+                <p className="mt-1 text-[10px] text-muted">
+                  💡 Token akan otomatis di-exchange jadi long-lived (60 hari). Short-lived token
+                  hanya berlaku ~1 jam.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTokenModal(false)}
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                >
+                  Batal
+                </button>
+                <button type="submit" disabled={savingToken} className="btn-primary">
+                  {savingToken ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Menghubungkan...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound size={14} /> Hubungkan
+                    </>
                   )}
                 </button>
               </div>
