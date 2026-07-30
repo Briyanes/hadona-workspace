@@ -22,7 +22,7 @@ import {
   PauseCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatIDR } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 
@@ -38,6 +38,15 @@ interface Client {
   contact_email: string | null;
   notes: string | null;
   created_at: string;
+  contract_value: number | null;
+  contract_start: string | null;
+  contract_end: string | null;
+  account_manager_id: string | null;
+}
+
+interface AccountManager {
+  id: string;
+  full_name: string;
 }
 
 const SERVICE_OPTIONS = [
@@ -67,6 +76,10 @@ const emptyForm = {
   contact_phone: "",
   contact_email: "",
   notes: "",
+  contract_value: "",
+  contract_start: "",
+  contract_end: "",
+  account_manager_id: "",
 };
 
 export default function ClientsPage() {
@@ -86,9 +99,11 @@ export default function ClientsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [accountManagers, setAccountManagers] = useState<AccountManager[]>([]);
 
   useEffect(() => {
     loadClients();
+    loadAccountManagers();
   }, []);
 
   async function loadClients() {
@@ -102,6 +117,17 @@ export default function ClientsPage() {
       toast.error("Gagal memuat data client");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAccountManagers() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("is_active", true)
+      .order("full_name");
+    if (!error && data) {
+      setAccountManagers(data as unknown as AccountManager[]);
     }
   }
 
@@ -128,6 +154,10 @@ export default function ClientsPage() {
       contact_phone: client.contact_phone || "",
       contact_email: client.contact_email || "",
       notes: client.notes || "",
+      contract_value: client.contract_value ? String(client.contract_value) : "",
+      contract_start: client.contract_start || "",
+      contract_end: client.contract_end || "",
+      account_manager_id: client.account_manager_id || "",
     });
     setEditingId(client.id);
     setShowModal(true);
@@ -161,6 +191,10 @@ export default function ClientsPage() {
         contact_phone: form.contact_phone.trim() || null,
         contact_email: form.contact_email.trim() || null,
         notes: form.notes.trim() || null,
+        contract_value: form.contract_value ? parseFloat(form.contract_value) : 0,
+        contract_start: form.contract_start || null,
+        contract_end: form.contract_end || null,
+        account_manager_id: form.account_manager_id || null,
       };
 
       if (editingId) {
@@ -214,6 +248,7 @@ export default function ClientsPage() {
     active: clients.filter((c) => c.status === "active").length,
     onboarding: clients.filter((c) => c.status === "onboarding").length,
     hold: clients.filter((c) => c.status === "hold").length,
+    totalMrr: clients.reduce((sum, c) => sum + (c.contract_value || 0), 0),
   };
 
   const activeFilterCount = (filterStatus !== "all" ? 1 : 0);
@@ -257,7 +292,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
         <div className="card p-4">
           <Building2 className="mb-2 text-muted" size={18} />
           <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
@@ -277,6 +312,11 @@ export default function ClientsPage() {
           <PauseCircle className="mb-2 text-warning" size={18} />
           <p className="text-2xl font-bold text-warning">{stats.hold}</p>
           <p className="text-xs text-muted">Hold</p>
+        </div>
+        <div className="card p-4">
+          <Building2 className="mb-2 text-success" size={18} />
+          <p className="text-lg font-bold text-success">{formatIDR(stats.totalMrr)}</p>
+          <p className="text-xs text-muted">Total MRR</p>
         </div>
       </div>
 
@@ -574,7 +614,56 @@ export default function ClientsPage() {
                     <option value="onboarding">Onboarding</option>
                     <option value="hold">Hold</option>
                     <option value="inactive">Inactive</option>
+                    <option value="churned">Churned</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Contract Section */}
+              <div className="rounded-lg border border-border bg-background p-3">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Kontrak</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Nilai Kontrak (IDR/bulan)</label>
+                    <input
+                      type="number"
+                      value={form.contract_value}
+                      onChange={(e) => setForm({ ...form, contract_value: e.target.value })}
+                      placeholder="Contoh: 5000000"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Account Manager</label>
+                    <select
+                      value={form.account_manager_id}
+                      onChange={(e) => setForm({ ...form, account_manager_id: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">— Pilih AM —</option>
+                      {accountManagers.map((am) => (
+                        <option key={am.id} value={am.id}>{am.full_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Mulai Kontrak</label>
+                    <input
+                      type="date"
+                      value={form.contract_start}
+                      onChange={(e) => setForm({ ...form, contract_start: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Akhir Kontrak</label>
+                    <input
+                      type="date"
+                      value={form.contract_end}
+                      onChange={(e) => setForm({ ...form, contract_end: e.target.value })}
+                      className="input"
+                    />
+                  </div>
                 </div>
               </div>
 

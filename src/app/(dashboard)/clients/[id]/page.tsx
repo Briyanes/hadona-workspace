@@ -16,6 +16,9 @@ import {
   Megaphone,
   AlertCircle,
   Plus,
+  Calendar,
+  DollarSign,
+  AlertTriangle,
 } from "lucide-react";
 import { formatDate, formatIDR, cn } from "@/lib/utils";
 
@@ -29,6 +32,11 @@ interface ClientDetail {
   contact_phone: string | null;
   contact_email: string | null;
   notes: string | null;
+  contract_value: number | null;
+  contract_start: string | null;
+  contract_end: string | null;
+  account_manager_id: string | null;
+  account_manager?: { full_name: string } | null;
 }
 
 interface Task {
@@ -108,7 +116,7 @@ export default function ClientDetailPage() {
         { data: strategiesData, error: strategiesErr },
         { data: adsData, error: adsErr },
       ] = await Promise.all([
-        supabase.from("clients").select("*").eq("id", clientId).single(),
+        supabase.from("clients").select("*, account_manager:profiles!account_manager_id(full_name)").eq("id", clientId).single(),
         supabase
           .from("tasks")
           .select("id, title, status, priority, due_date")
@@ -222,8 +230,17 @@ export default function ClientDetailPage() {
         )}
 
         {/* Contact Info */}
-        {(client.contact_person || client.contact_phone || client.contact_email) && (
-          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-3">
+        {(client.contact_person || client.contact_phone || client.contact_email || client.account_manager) && (
+          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-4">
+            {client.account_manager && (
+              <div className="flex items-center gap-2 text-sm">
+                <User size={14} className="text-muted" />
+                <div>
+                  <p className="text-xs text-muted">Account Manager</p>
+                  <p className="text-gray-900">{client.account_manager.full_name}</p>
+                </div>
+              </div>
+            )}
             {client.contact_person && (
               <div className="flex items-center gap-2 text-sm">
                 <User size={14} className="text-muted" />
@@ -248,6 +265,49 @@ export default function ClientDetailPage() {
                 <div>
                   <p className="text-xs text-muted">Email</p>
                   <p className="text-gray-900">{client.contact_email}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Contract Info */}
+        {(client.contract_value || client.contract_start || client.contract_end) && (
+          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
+            {client.contract_value != null && client.contract_value > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <DollarSign size={14} className="text-success" />
+                <div>
+                  <p className="text-xs text-muted">Nilai Kontrak</p>
+                  <p className="font-semibold text-gray-900">{formatIDR(client.contract_value)}/bulan</p>
+                </div>
+              </div>
+            )}
+            {client.contract_start && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar size={14} className="text-muted" />
+                <div>
+                  <p className="text-xs text-muted">Mulai Kontrak</p>
+                  <p className="text-gray-900">{formatDate(client.contract_start, { day: "numeric", month: "long", year: "numeric" })}</p>
+                </div>
+              </div>
+            )}
+            {client.contract_end && (
+              <div className="flex items-center gap-2 text-sm">
+                {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() ? (
+                  <AlertTriangle size={14} className="text-warning" />
+                ) : (
+                  <Calendar size={14} className="text-muted" />
+                )}
+                <div>
+                  <p className="text-xs text-muted">Akhir Kontrak</p>
+                  <p className={cn(
+                    "text-gray-900",
+                    new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && "font-medium text-warning"
+                  )}>
+                    {formatDate(client.contract_end, { day: "numeric", month: "long", year: "numeric" })}
+                    {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && " (Akan habis!)"}
+                  </p>
                 </div>
               </div>
             )}
