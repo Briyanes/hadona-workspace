@@ -13,6 +13,7 @@ import {
   Target,
   Palette,
   Calendar,
+  CalendarDays,
   Clock,
   FileText,
   Settings,
@@ -34,6 +35,7 @@ const navItems = [
   { label: "Strategy (OKR)", href: "/strategy", icon: Target },
   { label: "Creative Requests", href: "/creative", icon: Palette },
   { label: "Content Plans", href: "/content-plans", icon: Calendar },
+  { label: "Calendar", href: "/calendar", icon: CalendarDays },
   { label: "Timesheet", href: "/timesheet", icon: Clock },
 ];
 
