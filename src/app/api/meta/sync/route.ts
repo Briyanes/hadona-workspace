@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getAdAccountInsights, extractConversions, getAdAccounts } from "@/lib/meta";
+import { getAdAccountInsights, extractConversions, getAdAccounts, getBusinessAdAccounts } from "@/lib/meta";
+
+// Hadona's Business Portfolio ID
+const HADONA_BM_ID = process.env.META_BUSINESS_ID || "1380114199447586";
 
 interface MetaConnection {
   id: string;
@@ -121,7 +124,46 @@ export async function POST(request: NextRequest) {
         if (adAccounts.length === 0) {
           console.log(`[Sync] No linked ad accounts found. Auto-importing from Meta...`);
           try {
-            const metaAdAccounts = await getAdAccounts(conn.access_token);
+            // Strategy: Try Business Portfolio first (gets ALL 41+ accounts),
+            // fallback to personal accounts if BM query fails
+            let metaAdAccounts: Array<{
+              id: string;
+              account_id: string;
+              name: string;
+              account_status: number;
+              currency: string;
+              timezone_name: string;
+            }> = [];
+
+            // 1. Try Business Portfolio (BM) - gets all managed accounts
+            try {
+              console.log(`[Sync] Querying Business Portfolio ${HADONA_BM_ID}...`);
+              metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, conn.access_token);
+              console.log(`[Sync] ✅ Got ${metaAdAccounts.length} accounts from BM`);
+            } catch (bmErr) {
+              console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErr instanceof Error ? bmErr.message : bmErr);
+            }
+
+            // 2. Fallback: Get personal ad accounts
+            if (metaAdAccounts.length === 0) {
+              console.log(`[Sync] Falling back to personal ad accounts...`);
+              metaAdAccounts = await getAdAccounts(conn.access_token);
+              console.log(`[Sync] Got ${metaAdAccounts.length} personal accounts`);
+            }
+
+            // 3. Merge: Combine BM + personal accounts (dedup by account_id)
+            try {
+              const personalAccounts = await getAdAccounts(conn.access_token);
+              const existingIds = new Set(metaAdAccounts.map(a => a.account_id));
+              for (const pa of personalAccounts) {
+                if (!existingIds.has(pa.account_id)) {
+                  metaAdAccounts.push(pa);
+                }
+              }
+              console.log(`[Sync] Total unique accounts after merge: ${metaAdAccounts.length}`);
+            } catch {
+              // Personal accounts fetch is optional, BM data is primary
+            }
 
             for (const metaAcc of metaAdAccounts) {
               // Skip if account_status is not active (1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED)

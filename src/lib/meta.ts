@@ -112,7 +112,7 @@ export async function getMetaUser(accessToken: string): Promise<{
 }
 
 /**
- * List all ad accounts the user has access to
+ * List all ad accounts the user has access to (personal accounts only)
  */
 export async function getAdAccounts(accessToken: string): Promise<
   Array<{
@@ -135,6 +135,89 @@ export async function getAdAccounts(accessToken: string): Promise<
     const errMsg = data.error?.message || data.error?.type || `HTTP ${res.status}`;
     const errCode = data.error?.code || "unknown";
     throw new Error(`Meta AdAccounts Error [${errCode}]: ${errMsg}`);
+  }
+
+  return data.data || [];
+}
+
+/**
+ * List ALL ad accounts owned by a Business Portfolio (BM)
+ * This returns accounts that are managed under the business, not just personal ones.
+ *
+ * @param businessId - The Meta Business Portfolio ID (e.g., "1380114199447586")
+ * @param accessToken - User access token with access to the BM
+ */
+export async function getBusinessAdAccounts(
+  businessId: string,
+  accessToken: string
+): Promise<
+  Array<{
+    id: string;
+    account_id: string;
+    name: string;
+    account_status: number;
+    currency: string;
+    timezone_name: string;
+    spend_cap: string;
+    amount_spent: string;
+    balance: string;
+  }>
+> {
+  const fields = "id,account_id,name,account_status,currency,timezone_name,spend_cap,amount_spent,balance";
+  const url = `${META_GRAPH_BASE}/${businessId}/owned_ad_accounts?fields=${fields}&limit=100&access_token=${accessToken}`;
+
+  console.log(`[Meta] Fetching business ad accounts for BM ${businessId}...`);
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    const errMsg = data.error?.message || data.error?.type || `HTTP ${res.status}`;
+    const errCode = data.error?.code || "unknown";
+    throw new Error(`Meta Business AdAccounts Error [${errCode}]: ${errMsg}`);
+  }
+
+  const accounts = data.data || [];
+  console.log(`[Meta] Found ${accounts.length} ad accounts in BM ${businessId}`);
+
+  // Handle pagination if there are more results
+  let nextPage = data.paging?.next;
+  while (nextPage) {
+    console.log(`[Meta] Fetching next page of business ad accounts...`);
+    const pageRes = await fetch(nextPage);
+    const pageData = await pageRes.json();
+
+    if (pageData.error) {
+      console.error(`[Meta] Pagination error:`, pageData.error.message);
+      break;
+    }
+
+    accounts.push(...(pageData.data || []));
+    nextPage = pageData.paging?.next;
+  }
+
+  console.log(`[Meta] Total ad accounts fetched from BM: ${accounts.length}`);
+  return accounts;
+}
+
+/**
+ * Get all businesses the user has access to
+ * Useful for auto-detecting the Business Portfolio ID
+ */
+export async function getUserBusinesses(accessToken: string): Promise<
+  Array<{
+    id: string;
+    name: string;
+    vertical?: string;
+  }>
+> {
+  const url = `${META_GRAPH_BASE}/me/businesses?fields=id,name,vertical&limit=10&access_token=${accessToken}`;
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    const errMsg = data.error?.message || data.error?.type || `HTTP ${res.status}`;
+    const errCode = data.error?.code || "unknown";
+    throw new Error(`Meta Businesses Error [${errCode}]: ${errMsg}`);
   }
 
   return data.data || [];
