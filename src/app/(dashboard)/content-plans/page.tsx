@@ -3,15 +3,29 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Plus, X, ExternalLink, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  CalendarDays,
+  Plus,
+  X,
+  ExternalLink,
+  Trash2,
+  Pencil,
+  Search,
+  CheckCircle,
+  Clock,
+  Loader2,
+  FileText,
+} from "lucide-react";
+import { cn, formatDate } from "@/lib/utils";
 
 interface ContentPlan {
   id: string;
+  client_id: string;
   month: string;
   plan_url: string | null;
   services: string[];
   notes: string | null;
+  status: string;
   created_at: string;
   client?: { name: string };
 }
@@ -21,24 +35,53 @@ interface Client {
   name: string;
 }
 
-const SERVICE_OPTIONS = ["Meta Ads", "Google Ads", "TikTok", "SEO", "Content", "Social Media", "Web Dev"];
+const SERVICE_OPTIONS = [
+  "Meta Ads",
+  "Google Ads",
+  "TikTok",
+  "SEO",
+  "Content",
+  "Social Media",
+  "Web Dev",
+];
+
+const statusColors: Record<string, string> = {
+  draft: "bg-surface text-muted",
+  in_review: "bg-warning/20 text-warning",
+  approved: "bg-success/20 text-success",
+  published: "bg-primary/20 text-primary",
+};
+
+const statusLabels: Record<string, string> = {
+  draft: "Draft",
+  in_review: "In Review",
+  approved: "Approved",
+  published: "Published",
+};
+
+const emptyForm = {
+  client_id: "",
+  month: "",
+  plan_url: "",
+  notes: "",
+  services: [] as string[],
+  status: "draft",
+};
 
 export default function ContentPlansPage() {
   const supabase = createClient();
   const [plans, setPlans] = useState<ContentPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [clientFilter, setClientFilter] = useState("all");
 
   // Modal
   const [showModal, setShowModal] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    client_id: "",
-    month: "",
-    plan_url: "",
-    notes: "",
-    services: [] as string[],
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     loadPlans();
@@ -62,7 +105,11 @@ export default function ContentPlansPage() {
   }
 
   async function loadClients() {
-    const { data, error } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("status", "active")
+      .order("name");
     if (error) {
       toast.error("Gagal memuat daftar client");
       return;
@@ -70,7 +117,26 @@ export default function ContentPlansPage() {
     setClients((data as unknown as Client[]) || []);
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function openCreate() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setShowModal(true);
+  }
+
+  function openEdit(plan: ContentPlan) {
+    setEditingId(plan.id);
+    setForm({
+      client_id: plan.client_id,
+      month: plan.month,
+      plan_url: plan.plan_url || "",
+      notes: plan.notes || "",
+      services: plan.services || [],
+      status: plan.status || "draft",
+    });
+    setShowModal(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!form.client_id || !form.month) {
       toast.error("Client dan Bulan wajib diisi");
@@ -78,33 +144,51 @@ export default function ContentPlansPage() {
     }
 
     setSaving(true);
-    const { error } = await supabase.from("content_plans").insert({
-      client_id: form.client_id,
-      month: form.month,
-      plan_url: form.plan_url || null,
-      services: form.services,
-      notes: form.notes.trim() || null,
-    } as never);
+    try {
+      const payload = {
+        client_id: form.client_id,
+        month: form.month,
+        plan_url: form.plan_url || null,
+        services: form.services,
+        notes: form.notes.trim() || null,
+        status: form.status,
+      };
 
-    if (error) {
-      toast.error("Gagal: " + error.message);
-    } else {
-      toast.success("Content plan dibuat!");
-      setForm({ client_id: "", month: "", plan_url: "", notes: "", services: [] });
+      if (editingId) {
+        const { error } = await supabase
+          .from("content_plans")
+          .update(payload as never)
+          .eq("id", editingId);
+        if (error) throw error;
+        toast.success("Content plan diupdate!");
+      } else {
+        const { error } = await supabase.from("content_plans").insert(payload as never);
+        if (error) throw error;
+        toast.success("Content plan dibuat!");
+      }
+
+      setForm(emptyForm);
+      setEditingId(null);
       setShowModal(false);
       loadPlans();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal menyimpan: " + msg);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Hapus content plan ini?")) return;
-    const { error } = await supabase.from("content_plans").delete().eq("id", id);
-    if (error) {
-      toast.error("Gagal hapus: " + error.message);
-    } else {
+    try {
+      const { error } = await supabase.from("content_plans").delete().eq("id", id);
+      if (error) throw error;
       toast.success("Plan dihapus");
       loadPlans();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal hapus: " + msg);
     }
   }
 
@@ -117,6 +201,31 @@ export default function ContentPlansPage() {
     }));
   }
 
+  // Filter logic
+  const filtered = plans.filter((p) => {
+    const matchSearch =
+      !search ||
+      p.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.notes?.toLowerCase().includes(search.toLowerCase()) ||
+      p.month.includes(search);
+    const matchStatus = statusFilter === "all" || p.status === statusFilter;
+    const matchClient = clientFilter === "all" || p.client_id === clientFilter;
+    return matchSearch && matchStatus && matchClient;
+  });
+
+  // Stats
+  const totalPlans = plans.length;
+  const draftCount = plans.filter((p) => p.status === "draft").length;
+  const approvedCount = plans.filter((p) => p.status === "approved").length;
+  const publishedCount = plans.filter((p) => p.status === "published").length;
+
+  const statCards = [
+    { label: "Total Plans", value: totalPlans, icon: CalendarDays, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Draft", value: draftCount, icon: Clock, color: "text-muted", bg: "bg-surface" },
+    { label: "Approved", value: approvedCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+    { label: "Published", value: publishedCount, icon: FileText, color: "text-primary", bg: "bg-primary/10" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -124,9 +233,54 @@ export default function ContentPlansPage() {
           <h1 className="text-2xl font-bold text-gray-900">Content Plans</h1>
           <p className="text-sm text-muted">Content calendar & plan per klien</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
+        <button onClick={openCreate} className="btn-primary">
           <Plus size={16} /> New Plan
         </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.label} className="card p-4">
+              <div className={cn("mb-2 inline-flex rounded-lg p-2", card.bg)}>
+                <Icon className={card.color} size={18} />
+              </div>
+              <p className="text-xs text-muted">{card.label}</p>
+              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search & Filter */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+          <input
+            type="text"
+            placeholder="Cari client, bulan, atau catatan..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input pl-9"
+          />
+        </div>
+        <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Client</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Status</option>
+          <option value="draft">Draft</option>
+          <option value="in_review">In Review</option>
+          <option value="approved">Approved</option>
+          <option value="published">Published</option>
+        </select>
       </div>
 
       {loading ? (
@@ -135,37 +289,69 @@ export default function ContentPlansPage() {
             <div key={i} className="skeleton h-40 rounded-lg" />
           ))}
         </div>
-      ) : plans.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center">
           <CalendarDays className="mb-3 text-muted" size={32} />
-          <p className="text-muted">Belum ada content plan</p>
-          <button onClick={() => setShowModal(true)} className="btn-primary mt-4">
-            <Plus size={16} /> Buat Plan Pertama
-          </button>
+          <p className="text-muted">
+            {plans.length === 0 ? "Belum ada content plan" : "Tidak ada plan yang cocok dengan filter"}
+          </p>
+          {plans.length === 0 ? (
+            <button onClick={openCreate} className="btn-primary mt-4">
+              <Plus size={16} /> Buat Plan Pertama
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setClientFilter("all");
+              }}
+              className="btn-primary mt-4"
+            >
+              Reset Filter
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((p) => (
-            <div key={p.id} className="card">
+          {filtered.map((p) => (
+            <div key={p.id} className="card group">
               <div className="mb-3 flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-gray-900">{p.client?.name || "Unknown"}</h3>
                   <p className="flex items-center gap-1 text-xs text-muted">
-                    <CalendarDays size={12} /> {p.month}
+                    <CalendarDays size={12} /> {formatDate(p.month + "-01", { month: "long", year: "numeric" })}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className={cn("badge", statusColors[p.status] || statusColors.draft)}>
+                    {statusLabels[p.status] || p.status}
+                  </span>
+                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={() => openEdit(p)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                      title="Edit"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p.id)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {p.services.length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-1">
                   {p.services.map((s) => (
-                    <span key={s} className="badge bg-background text-muted">{s}</span>
+                    <span key={s} className="badge bg-background text-muted">
+                      {s}
+                    </span>
                   ))}
                 </div>
               )}
@@ -187,12 +373,14 @@ export default function ContentPlansPage() {
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Content Plan Baru</h2>
+              <h2 className="text-lg font-bold text-gray-900">
+                {editingId ? "Edit Content Plan" : "Content Plan Baru"}
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
@@ -201,7 +389,7 @@ export default function ContentPlansPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
                 <select
@@ -219,15 +407,30 @@ export default function ContentPlansPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Bulan *</label>
-                <input
-                  type="month"
-                  required
-                  value={form.month}
-                  onChange={(e) => setForm({ ...form, month: e.target.value })}
-                  className="input"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Bulan *</label>
+                  <input
+                    type="month"
+                    required
+                    value={form.month}
+                    onChange={(e) => setForm({ ...form, month: e.target.value })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="input"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="in_review">In Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -252,7 +455,9 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Plan URL (Google Sheets/Drive)</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                  Plan URL (Google Sheets/Drive)
+                </label>
                 <input
                   type="url"
                   value={form.plan_url}
@@ -282,7 +487,15 @@ export default function ContentPlansPage() {
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? "Menyimpan..." : "Simpan Plan"}
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
+                    </>
+                  ) : editingId ? (
+                    "Update Plan"
+                  ) : (
+                    "Simpan Plan"
+                  )}
                 </button>
               </div>
             </form>

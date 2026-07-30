@@ -3,11 +3,12 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare } from "lucide-react";
+import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil } from "lucide-react";
 import { formatDate, cn, extractError } from "@/lib/utils";
 
 interface CreativeRequest {
   id: string;
+  client_id: string | null;
   request_date: string;
   objective_campaign: string | null;
   funnel: string | null;
@@ -19,6 +20,7 @@ interface CreativeRequest {
   status: string;
   created_at: string;
   due_date: string | null;
+  assigned_to: string | null;
   client?: { name: string };
   creator?: { full_name: string | null };
   assignee?: { full_name: string | null };
@@ -65,6 +67,9 @@ export default function CreativePage() {
 
   // Modal
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [clientFilter, setClientFilter] = useState("all");
   const [clients, setClients] = useState<Client[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
@@ -113,15 +118,30 @@ export default function CreativePage() {
     setTeam((data as unknown as TeamMember[]) || []);
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function openEdit(r: CreativeRequest) {
+    setEditingId(r.id);
+    setForm({
+      client_id: r.client_id || "",
+      objective_campaign: r.objective_campaign || "",
+      funnel: r.funnel || "awareness",
+      format: r.format || "",
+      angle: r.angle || "",
+      content_url: r.content_url || "",
+      caption: r.caption || "",
+      prefilled_message: r.prefilled_message || "",
+      assigned_to: r.assigned_to || "",
+      due_date: r.due_date || "",
+    });
+    setShowModal(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
     const today = new Date().toISOString().split("T")[0];
 
-    const { data: userData } = await supabase.auth.getUser();
-
-    const { error } = await supabase.from("creative_requests").insert({
+    const payload = {
       client_id: form.client_id || null,
       request_date: today,
       objective_campaign: form.objective_campaign || null,
@@ -133,14 +153,27 @@ export default function CreativePage() {
       prefilled_message: form.prefilled_message || null,
       assigned_to: form.assigned_to || null,
       due_date: form.due_date || null,
-      created_by: userData.user?.id,
-      status: "requested",
-    } as never);
+    };
 
-    if (error) {
-      toast.error("Gagal: " + error.message);
-    } else {
-      toast.success("Creative request dibuat!");
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from("creative_requests")
+          .update(payload as never)
+          .eq("id", editingId);
+        if (error) throw error;
+        toast.success("Creative request diupdate!");
+      } else {
+        const { data: userData } = await supabase.auth.getUser();
+        const { error } = await supabase.from("creative_requests").insert({
+          ...payload,
+          created_by: userData.user?.id,
+          status: "requested",
+        } as never);
+        if (error) throw error;
+        toast.success("Creative request dibuat!");
+      }
+
       setForm({
         client_id: "",
         objective_campaign: "",
@@ -153,10 +186,15 @@ export default function CreativePage() {
         assigned_to: "",
         due_date: "",
       });
+      setEditingId(null);
       setShowModal(false);
       loadRequests();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal menyimpan: " + msg);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function updateStatus(id: string, status: string) {
@@ -184,7 +222,16 @@ export default function CreativePage() {
   }
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const filtered = requests.filter((r) => statusFilter === "all" || r.status === statusFilter);
+  const filtered = requests.filter((r) => {
+    const matchStatus = statusFilter === "all" || r.status === statusFilter;
+    const matchSearch =
+      !search ||
+      r.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      r.objective_campaign?.toLowerCase().includes(search.toLowerCase()) ||
+      r.angle?.toLowerCase().includes(search.toLowerCase());
+    const matchClient = clientFilter === "all" || r.client_id === clientFilter;
+    return matchStatus && matchSearch && matchClient;
+  });
 
   return (
     <div className="space-y-6">
@@ -193,12 +240,50 @@ export default function CreativePage() {
           <h1 className="text-2xl font-bold text-gray-900">Creative Requests</h1>
           <p className="text-sm text-muted">Request kreatif untuk tim design/copy</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
+        <button
+          onClick={() => {
+            setEditingId(null);
+            setForm({
+              client_id: "",
+              objective_campaign: "",
+              funnel: "awareness",
+              format: "",
+              angle: "",
+              content_url: "",
+              caption: "",
+              prefilled_message: "",
+              assigned_to: "",
+              due_date: "",
+            });
+            setShowModal(true);
+          }}
+          className="btn-primary"
+        >
           <Plus size={16} /> New Request
         </button>
       </div>
 
-      {/* Filter */}
+      {/* Search + Filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+          <input
+            type="text"
+            placeholder="Cari client, campaign, angle..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input pl-9"
+          />
+        </div>
+        <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Client</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="flex flex-wrap gap-2">
         {["all", "requested", "in_progress", "review", "approved", "rejected"].map((s) => (
           <button
@@ -320,24 +405,36 @@ export default function CreativePage() {
                     </a>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDelete(r.id)}
-                  className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => openEdit(r)}
+                    className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(r.id)}
+                    className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                    title="Hapus"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Creative Request Baru</h2>
+              <h2 className="text-lg font-bold text-gray-900">
+                {editingId ? "Edit Creative Request" : "Creative Request Baru"}
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
@@ -346,7 +443,7 @@ export default function CreativePage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
                 <select
@@ -481,7 +578,7 @@ export default function CreativePage() {
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? "Menyimpan..." : "Kirim Request"}
+                  {saving ? "Menyimpan..." : editingId ? "Update Request" : "Kirim Request"}
                 </button>
               </div>
             </form>

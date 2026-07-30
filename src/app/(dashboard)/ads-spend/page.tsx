@@ -17,6 +17,7 @@ import {
 import { formatIDR, cn, extractError } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
+import { DollarSign, Activity, Pause } from "lucide-react";
 
 interface AdAccount {
   id: string;
@@ -58,6 +59,7 @@ export default function AdsSpendPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [clientFilter, setClientFilter] = useState("all");
 
   // Modal
   const [showModal, setShowModal] = useState(false);
@@ -182,14 +184,70 @@ export default function AdsSpendPage() {
       a.ad_account_id.includes(search) ||
       a.account_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || a.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchClient = clientFilter === "all" || a.client_id === clientFilter;
+    return matchSearch && matchStatus && matchClient;
   });
 
-  const { sortedData, sortState, toggleSort } = useSortable<AdAccount>({ data: filtered });
-
+  // Stats
   const totalDaily = accounts
     .filter((a) => a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
+
+  const totalAccounts = accounts.length;
+  const activeCount = accounts.filter((a) => a.status === "active").length;
+  const holdCount = accounts.filter((a) => a.status === "hold").length;
+  const metaBudget = accounts
+    .filter((a) => a.platform === "META" && a.status === "active")
+    .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
+  const googleBudget = accounts
+    .filter((a) => a.platform === "Google" && a.status === "active")
+    .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
+  const tiktokBudget = accounts
+    .filter((a) => a.platform === "TikTok" && a.status === "active")
+    .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
+
+  const statCards = [
+    {
+      label: "Total Daily Budget",
+      value: formatIDR(totalDaily),
+      sub: `${activeCount} active accounts`,
+      icon: DollarSign,
+      color: "text-success",
+      bg: "bg-success/10",
+    },
+    {
+      label: "Total Accounts",
+      value: totalAccounts.toString(),
+      sub: `${holdCount} on hold`,
+      icon: Megaphone,
+      color: "text-primary",
+      bg: "bg-primary/10",
+    },
+    {
+      label: "Active",
+      value: activeCount.toString(),
+      sub: "running now",
+      icon: Activity,
+      color: "text-success",
+      bg: "bg-success/10",
+    },
+    {
+      label: "On Hold",
+      value: holdCount.toString(),
+      sub: "paused",
+      icon: Pause,
+      color: "text-warning",
+      bg: "bg-warning/10",
+    },
+  ];
+
+  const platformBreakdown = [
+    { name: "META", budget: metaBudget, color: "bg-primary" },
+    { name: "Google", budget: googleBudget, color: "bg-warning" },
+    { name: "TikTok", budget: tiktokBudget, color: "bg-gray-900" },
+  ];
+
+  const { sortedData, sortState, toggleSort } = useSortable<AdAccount>({ data: filtered });
 
   const platformColors: Record<string, string> = {
     META: "bg-primary/20 text-primary",
@@ -229,13 +287,52 @@ export default function AdsSpendPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
-          <p className="text-sm text-muted">
-            Total Budget Harian: <span className="font-semibold text-gray-900">{formatIDR(totalDaily)}</span>
-          </p>
+          <p className="text-sm text-muted">Pantau budget & performa ad account semua klien</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
           <Plus size={16} /> New Ad Account
         </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.label} className="card p-4">
+              <div className={cn("mb-2 inline-flex rounded-lg p-2", card.bg)}>
+                <Icon className={card.color} size={18} />
+              </div>
+              <p className="text-xs text-muted">{card.label}</p>
+              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+              <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Platform Breakdown */}
+      <div className="card p-4">
+        <p className="mb-3 text-xs font-medium text-muted">BUDGET BREAKDOWN PER PLATFORM (Active)</p>
+        <div className="space-y-2">
+          {platformBreakdown.map((p) => {
+            const pct = totalDaily > 0 ? (p.budget / totalDaily) * 100 : 0;
+            return (
+              <div key={p.name} className="flex items-center gap-3">
+                <span className="w-16 text-xs font-medium text-gray-900">{p.name}</span>
+                <div className="h-6 flex-1 overflow-hidden rounded-md bg-background">
+                  <div
+                    className={cn("flex h-full items-center justify-end rounded-md px-2 text-[10px] font-medium text-white transition-all", p.color)}
+                    style={{ width: `${Math.max(pct, p.budget > 0 ? 15 : 0)}%` }}
+                  >
+                    {p.budget > 0 && formatIDR(p.budget)}
+                  </div>
+                </div>
+                <span className="w-10 text-right text-xs text-muted">{pct.toFixed(0)}%</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -249,6 +346,18 @@ export default function AdsSpendPage() {
             className="input pl-9"
           />
         </div>
+        <select
+          value={clientFilter}
+          onChange={(e) => setClientFilter(e.target.value)}
+          className="input w-auto"
+        >
+          <option value="all">Semua Client</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}

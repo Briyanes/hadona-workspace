@@ -3,11 +3,12 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, FileText, ChevronRight, X, Pencil, Trash2, AlertCircle } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { Plus, FileText, X, Pencil, Trash2, AlertCircle, Search, Clock, CheckCircle, Send, Loader2 } from "lucide-react";
+import { formatDate, cn } from "@/lib/utils";
 
 interface Report {
   id: string;
+  client_id: string;
   period_start: string;
   period_end: string;
   summary: string | null;
@@ -28,6 +29,9 @@ export default function ReportsPage() {
   const supabase = createClient();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [clientFilter, setClientFilter] = useState("all");
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -81,7 +85,7 @@ export default function ReportsPage() {
   function openEdit(report: Report) {
     setEditingId(report.id);
     setForm({
-      client_id: report.client?.name ? "" : "",
+      client_id: report.client_id,
       period_start: report.period_start,
       period_end: report.period_end,
       summary: report.summary || "",
@@ -168,6 +172,31 @@ export default function ReportsPage() {
     reviewed: "bg-success/20 text-success",
   };
 
+  // Filter logic
+  const filtered = reports.filter((r) => {
+    const matchSearch =
+      !search ||
+      r.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      r.summary?.toLowerCase().includes(search.toLowerCase()) ||
+      r.performance_text?.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || r.status === statusFilter;
+    const matchClient = clientFilter === "all" || r.client_id === clientFilter;
+    return matchSearch && matchStatus && matchClient;
+  });
+
+  // Stats
+  const totalReports = reports.length;
+  const draftCount = reports.filter((r) => r.status === "draft").length;
+  const submittedCount = reports.filter((r) => r.status === "submitted").length;
+  const reviewedCount = reports.filter((r) => r.status === "reviewed").length;
+
+  const statCards = [
+    { label: "Total Reports", value: totalReports, icon: FileText, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Draft", value: draftCount, icon: Clock, color: "text-muted", bg: "bg-surface" },
+    { label: "Submitted", value: submittedCount, icon: Send, color: "text-warning", bg: "bg-warning/10" },
+    { label: "Reviewed", value: reviewedCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -180,23 +209,78 @@ export default function ReportsPage() {
         </button>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.label} className="card p-4">
+              <div className={cn("mb-2 inline-flex rounded-lg p-2", card.bg)}>
+                <Icon className={card.color} size={18} />
+              </div>
+              <p className="text-xs text-muted">{card.label}</p>
+              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search & Filter */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+          <input
+            type="text"
+            placeholder="Cari client, ringkasan, atau performa..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input pl-9"
+          />
+        </div>
+        <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Client</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Status</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Submitted</option>
+          <option value="reviewed">Reviewed</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="skeleton h-48 rounded-lg" />
           ))}
         </div>
-      ) : reports.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center">
           <FileText className="mb-3 text-muted" size={32} />
-          <p className="text-muted">Belum ada laporan mingguan</p>
-          <button onClick={() => setShowModal(true)} className="btn-primary mt-4">
-            <Plus size={16} /> Buat Laporan Pertama
-          </button>
+          <p className="text-muted">
+            {reports.length === 0 ? "Belum ada laporan mingguan" : "Tidak ada laporan yang cocok dengan filter"}
+          </p>
+          {reports.length === 0 ? (
+            <button onClick={() => setShowModal(true)} className="btn-primary mt-4">
+              <Plus size={16} /> Buat Laporan Pertama
+            </button>
+          ) : (
+            <button
+              onClick={() => { setSearch(""); setStatusFilter("all"); setClientFilter("all"); }}
+              className="btn-primary mt-4"
+            >
+              Reset Filter
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {reports.map((r) => (
+          {filtered.map((r) => (
             <div key={r.id} className="card card-hover group">
               <div className="mb-3 flex items-start justify-between">
                 <div>
@@ -366,7 +450,15 @@ export default function ReportsPage() {
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? "Menyimpan..." : editingId ? "Update Laporan" : "Simpan Laporan"}
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
+                    </>
+                  ) : editingId ? (
+                    "Update Laporan"
+                  ) : (
+                    "Simpan Laporan"
+                  )}
                 </button>
               </div>
             </form>
