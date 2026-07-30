@@ -131,8 +131,10 @@ export async function getAdAccounts(accessToken: string): Promise<
   const res = await fetch(url);
   const data = await res.json();
 
-  if (data.error) {
-    throw new Error(`Meta AdAccounts Error: ${data.error.message}`);
+  if (!res.ok || data.error) {
+    const errMsg = data.error?.message || data.error?.type || `HTTP ${res.status}`;
+    const errCode = data.error?.code || "unknown";
+    throw new Error(`Meta AdAccounts Error [${errCode}]: ${errMsg}`);
   }
 
   return data.data || [];
@@ -175,8 +177,10 @@ export async function getAdAccountInsights(
   const res = await fetch(url);
   const data = await res.json();
 
-  if (data.error) {
-    throw new Error(`Meta Insights Error (${actId}): ${data.error.message}`);
+  if (!res.ok || data.error) {
+    const errMsg = data.error?.message || data.error?.type || `HTTP ${res.status}`;
+    const errCode = data.error?.code || "unknown";
+    throw new Error(`Meta Insights Error (${actId}) [${errCode}]: ${errMsg}`);
   }
 
   return data.data || [];

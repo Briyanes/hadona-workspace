@@ -36,11 +36,13 @@ export async function GET(request: NextRequest) {
     const supabase = createClient();
 
     // Verify the user
+    console.log("[Meta Callback] Step 0: Verifying user auth...");
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user || user.id !== state) {
+      console.error("[Meta Callback] State mismatch:", { userId: user?.id, state });
       return NextResponse.redirect(
         new URL("/ads-spend?meta_error=state_mismatch", origin)
       );
@@ -49,9 +51,12 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${origin}/api/meta/callback`;
 
     // Step 1: Exchange code for short-lived token
+    console.log("[Meta Callback] Step 1: Exchanging code for token...");
     const tokenData = await exchangeCodeForToken(code, redirectUri);
+    console.log("[Meta Callback] Step 1 ✅ Token received (expires in:", tokenData.expires_in, "s)");
 
     // Step 2: Exchange for long-lived token (60 days)
+    console.log("[Meta Callback] Step 2: Getting long-lived token...");
     let longLivedToken = tokenData.access_token;
     let expiresInSeconds = tokenData.expires_in || 5184000; // default 60 days
 
@@ -59,21 +64,27 @@ export async function GET(request: NextRequest) {
       const longLived = await getLongLivedToken(tokenData.access_token);
       longLivedToken = longLived.access_token;
       expiresInSeconds = longLived.expires_in || expiresInSeconds;
+      console.log("[Meta Callback] Step 2 ✅ Long-lived token received");
     } catch (e) {
-      console.warn("Could not get long-lived token, using short-lived:", e);
+      console.warn("[Meta Callback] Step 2 ⚠️ Could not get long-lived token:", e instanceof Error ? e.message : e);
     }
 
     // Step 3: Get Meta user profile
+    console.log("[Meta Callback] Step 3: Getting Meta user profile...");
     const metaUser = await getMetaUser(longLivedToken);
+    console.log("[Meta Callback] Step 3 ✅ User:", metaUser.name, "(" + metaUser.id + ")");
 
     // Step 4: Get ad accounts cache
+    console.log("[Meta Callback] Step 4: Getting ad accounts...");
     const adAccounts = await getAdAccounts(longLivedToken);
+    console.log("[Meta Callback] Step 4 ✅ Found", adAccounts.length, "ad accounts");
 
     // Calculate expiry date
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
 
     // Step 5: Upsert connection to DB
+    console.log("[Meta Callback] Step 5: Saving to database...");
     const { data: connectionDataRaw, error: dbError } = await supabase
       .from("meta_connections")
       .upsert({
@@ -96,11 +107,12 @@ export async function GET(request: NextRequest) {
     const connectionData = connectionDataRaw as unknown as { id: string } | null;
 
     if (dbError || !connectionData) {
-      console.error("DB Error saving Meta connection:", dbError);
+      console.error("[Meta Callback] Step 5 ❌ DB Error:", dbError);
       return NextResponse.redirect(
         new URL("/ads-spend?meta_error=db_error", origin)
       );
     }
+    console.log("[Meta Callback] Step 5 ✅ Connection saved:", connectionData.id);
 
     // Step 6: Auto-link existing META ad accounts in DB to this connection
     // Match by ad_account_id (Meta returns account_id without "act_" prefix)
