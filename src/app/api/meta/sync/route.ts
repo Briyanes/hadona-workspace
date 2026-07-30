@@ -9,8 +9,8 @@ interface MetaConnection {
   id: string;
   user_id: string;
   fb_user_id: string;
-  fb_user_name: string | null;
   access_token: string;
+  fb_user_name: string | null;
   token_expires_at: string | null;
   is_active: boolean;
   auto_sync: boolean;
@@ -19,6 +19,13 @@ interface MetaConnection {
 interface MetaAdAccount {
   id: string;
   ad_account_id: string;
+  client_id: string | null;
+}
+
+interface ExistingAcc {
+  id: string;
+  ad_account_id: string;
+  account_name: string | null;
   client_id: string | null;
 }
 
@@ -109,123 +116,183 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Get all ad_accounts linked to this connection
+        // ====================================================================
+        // PHASE 1: ALWAYS sync ad accounts from Meta (not just when empty)
+        // ====================================================================
+        let autoImportedCount = 0;
+        let nameMatchedCount = 0;
+
+        try {
+          console.log(`[Sync] Phase 1: Syncing ad accounts from Meta...`);
+
+          // 1a. Fetch ALL accounts from Business Portfolio + personal
+          let metaAdAccounts: Array<{
+            id: string;
+            account_id: string;
+            name: string;
+            account_status: number;
+            currency: string;
+            timezone_name: string;
+          }> = [];
+
+          // Try Business Portfolio (BM) - gets all managed accounts
+          try {
+            console.log(`[Sync] Querying Business Portfolio ${HADONA_BM_ID}...`);
+            metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, conn.access_token);
+            console.log(`[Sync] ✅ Got ${metaAdAccounts.length} accounts from BM`);
+          } catch (bmErr) {
+            console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErr instanceof Error ? bmErr.message : bmErr);
+          }
+
+          // Fallback: Get personal ad accounts
+          if (metaAdAccounts.length === 0) {
+            console.log(`[Sync] Falling back to personal ad accounts...`);
+            metaAdAccounts = await getAdAccounts(conn.access_token);
+            console.log(`[Sync] Got ${metaAdAccounts.length} personal accounts`);
+          }
+
+          // Merge BM + personal (dedup by account_id)
+          try {
+            const personalAccounts = await getAdAccounts(conn.access_token);
+            const existingIds = new Set(metaAdAccounts.map((a) => a.account_id));
+            for (const pa of personalAccounts) {
+              if (!existingIds.has(pa.account_id)) {
+                metaAdAccounts.push(pa);
+              }
+            }
+            console.log(`[Sync] Total unique accounts after merge: ${metaAdAccounts.length}`);
+          } catch {
+            // Personal accounts fetch is optional
+          }
+
+          // 1b. Fetch ALL existing META accounts from DB (ONE query)
+          const { data: existingAccountsRaw } = await supabase
+            .from("ad_accounts")
+            .select("id, ad_account_id, account_name, client_id")
+            .eq("platform", "META");
+
+          const existingAccounts = (existingAccountsRaw as unknown as ExistingAcc[]) || [];
+
+          // Build lookup maps for fast matching
+          const existingByMetaId = new Map<string, ExistingAcc>();
+          const existingByName = new Map<string, ExistingAcc>();
+
+          for (const acc of existingAccounts) {
+            // Only add to "byMetaId" if it has a real ID (not UNKNOWN-XX)
+            if (acc.ad_account_id && !acc.ad_account_id.startsWith("UNKNOWN-")) {
+              existingByMetaId.set(acc.ad_account_id, acc);
+            }
+            if (acc.account_name) {
+              existingByName.set(acc.account_name.toLowerCase(), acc);
+            }
+          }
+
+          console.log(
+            `[Sync] DB has ${existingAccounts.length} META accounts (${existingByMetaId.size} with real IDs, ${existingAccounts.length - existingByMetaId.size} UNKNOWN)`
+          );
+
+          // 1c. Process each Meta account from BM
+          for (const metaAcc of metaAdAccounts) {
+            // Skip if account_status is not active (1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED)
+            if (metaAcc.account_status !== 1) continue;
+
+            const realId = metaAcc.account_id;
+
+            // Check 1: Already exists by real Meta ID?
+            if (existingByMetaId.has(realId)) {
+              const existing = existingByMetaId.get(realId)!;
+              // Ensure it's linked to this connection
+              await supabase
+                .from("ad_accounts")
+                .update({
+                  meta_connection_id: conn.id,
+                  meta_sync_enabled: true,
+                  account_name: metaAcc.name,
+                  currency: metaAcc.currency,
+                  timezone: metaAcc.timezone_name,
+                } as never)
+                .eq("id", existing.id);
+              continue;
+            }
+
+            // Check 2: Exists by NAME? (for accounts imported from Google Sheet with UNKNOWN-XX ID)
+            if (metaAcc.name && existingByName.has(metaAcc.name.toLowerCase())) {
+              const existing = existingByName.get(metaAcc.name.toLowerCase())!;
+              console.log(
+                `[Sync] 🔄 Name match: "${metaAcc.name}" → updating ${existing.ad_account_id} → ${realId}`
+              );
+
+              // UPDATE: Replace UNKNOWN-XX with real Meta ID
+              await supabase
+                .from("ad_accounts")
+                .update({
+                  ad_account_id: realId,
+                  meta_connection_id: conn.id,
+                  meta_sync_enabled: true,
+                  account_name: metaAcc.name,
+                  currency: metaAcc.currency,
+                  timezone: metaAcc.timezone_name,
+                } as never)
+                .eq("id", existing.id);
+
+              nameMatchedCount++;
+              // Update maps so we don't match again
+              existingByMetaId.set(realId, existing);
+              continue;
+            }
+
+            // Check 3: Create new account
+            const { data: newAccRaw } = await supabase
+              .from("ad_accounts")
+              .insert({
+                ad_account_id: realId,
+                platform: "META",
+                account_name: metaAcc.name,
+                currency: metaAcc.currency,
+                timezone: metaAcc.timezone_name,
+                meta_connection_id: conn.id,
+                meta_sync_enabled: true,
+                status: "active",
+              } as never)
+              .select("id, ad_account_id, client_id")
+              .single();
+
+            const newAcc = newAccRaw as unknown as MetaAdAccount | null;
+            if (newAcc) {
+              autoImportedCount++;
+              existingByMetaId.set(realId, { ...newAcc, account_name: metaAcc.name });
+            }
+          }
+
+          console.log(
+            `[Sync] ✅ Phase 1 done: ${autoImportedCount} new, ${nameMatchedCount} name-matched (UNKNOWN→real ID)`
+          );
+        } catch (e) {
+          console.error(`[Sync] Failed to sync ad accounts from Meta:`, e);
+        }
+
+        // ====================================================================
+        // PHASE 2: Get all syncable accounts and pull insights
+        // ====================================================================
+
+        // Get all syncable accounts (ONLY those with REAL Meta IDs, skip UNKNOWN-XX)
         const { data: adAccountsRaw } = await supabase
           .from("ad_accounts")
           .select("id, ad_account_id, client_id")
           .eq("meta_connection_id", conn.id)
           .eq("meta_sync_enabled", true)
-          .eq("platform", "META");
+          .eq("platform", "META")
+          .not("ad_account_id", "like", "UNKNOWN-%");
 
-        let adAccounts = (adAccountsRaw as unknown as MetaAdAccount[]) || [];
-        let autoImportedCount = 0;
-
-        // STEP: Auto-import ad accounts from Meta if none are linked yet
-        if (adAccounts.length === 0) {
-          console.log(`[Sync] No linked ad accounts found. Auto-importing from Meta...`);
-          try {
-            // Strategy: Try Business Portfolio first (gets ALL 41+ accounts),
-            // fallback to personal accounts if BM query fails
-            let metaAdAccounts: Array<{
-              id: string;
-              account_id: string;
-              name: string;
-              account_status: number;
-              currency: string;
-              timezone_name: string;
-            }> = [];
-
-            // 1. Try Business Portfolio (BM) - gets all managed accounts
-            try {
-              console.log(`[Sync] Querying Business Portfolio ${HADONA_BM_ID}...`);
-              metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, conn.access_token);
-              console.log(`[Sync] ✅ Got ${metaAdAccounts.length} accounts from BM`);
-            } catch (bmErr) {
-              console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErr instanceof Error ? bmErr.message : bmErr);
-            }
-
-            // 2. Fallback: Get personal ad accounts
-            if (metaAdAccounts.length === 0) {
-              console.log(`[Sync] Falling back to personal ad accounts...`);
-              metaAdAccounts = await getAdAccounts(conn.access_token);
-              console.log(`[Sync] Got ${metaAdAccounts.length} personal accounts`);
-            }
-
-            // 3. Merge: Combine BM + personal accounts (dedup by account_id)
-            try {
-              const personalAccounts = await getAdAccounts(conn.access_token);
-              const existingIds = new Set(metaAdAccounts.map(a => a.account_id));
-              for (const pa of personalAccounts) {
-                if (!existingIds.has(pa.account_id)) {
-                  metaAdAccounts.push(pa);
-                }
-              }
-              console.log(`[Sync] Total unique accounts after merge: ${metaAdAccounts.length}`);
-            } catch {
-              // Personal accounts fetch is optional, BM data is primary
-            }
-
-            for (const metaAcc of metaAdAccounts) {
-              // Skip if account_status is not active (1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED)
-              if (metaAcc.account_status !== 1) continue;
-
-              // Check if already exists (by ad_account_id + platform)
-              const { data: existingRaw } = await supabase
-                .from("ad_accounts")
-                .select("id, ad_account_id, client_id")
-                .eq("ad_account_id", metaAcc.account_id)
-                .eq("platform", "META")
-                .maybeSingle();
-
-              const existing = existingRaw as unknown as MetaAdAccount | null;
-
-              if (existing) {
-                // Link it
-                await supabase
-                  .from("ad_accounts")
-                  .update({
-                    meta_connection_id: conn.id,
-                    meta_sync_enabled: true,
-                  } as never)
-                  .eq("id", existing.id);
-                adAccounts.push(existing);
-                autoImportedCount++;
-              } else {
-                // Create new
-                const { data: newAccRaw } = await supabase
-                  .from("ad_accounts")
-                  .insert({
-                    ad_account_id: metaAcc.account_id,
-                    platform: "META",
-                    account_name: metaAcc.name,
-                    currency: metaAcc.currency,
-                    timezone: metaAcc.timezone_name,
-                    meta_connection_id: conn.id,
-                    meta_sync_enabled: true,
-                    status: "active",
-                  } as never)
-                  .select("id, ad_account_id, client_id")
-                  .single();
-
-                const newAcc = newAccRaw as unknown as MetaAdAccount | null;
-                if (newAcc) {
-                  adAccounts.push(newAcc);
-                  autoImportedCount++;
-                }
-              }
-            }
-
-            console.log(`[Sync] Auto-imported ${autoImportedCount} ad accounts`);
-          } catch (e) {
-            console.error(`[Sync] Failed to auto-import ad accounts:`, e);
-          }
-        }
+        const adAccounts = (adAccountsRaw as unknown as MetaAdAccount[]) || [];
 
         if (adAccounts.length === 0) {
           results.push({
             connection_id: conn.id,
             status: "skipped",
-            reason: "No active META ad accounts found after auto-import",
+            reason: "No META ad accounts with real IDs after Phase 1",
+            accounts_auto_imported: autoImportedCount,
+            accounts_name_matched: nameMatchedCount,
           });
           continue;
         }
@@ -259,18 +326,21 @@ export async function POST(request: NextRequest) {
 
               const { error: logError } = await supabase
                 .from("ad_spend_logs")
-                .upsert({
-                  ad_account_id: account.id,
-                  log_date: insight.date_start,
-                  spend,
-                  impressions,
-                  clicks,
-                  conversions,
-                  revenue: 0, // Revenue not available from Meta API by default
-                  notes: "Auto-synced from Meta API",
-                } as never, {
-                  onConflict: "ad_account_id,log_date",
-                });
+                .upsert(
+                  {
+                    ad_account_id: account.id,
+                    log_date: insight.date_start,
+                    spend,
+                    impressions,
+                    clicks,
+                    conversions,
+                    revenue: 0, // Revenue not available from Meta API by default
+                    notes: "Auto-synced from Meta API",
+                  } as never,
+                  {
+                    onConflict: "ad_account_id,log_date",
+                  }
+                );
 
               if (logError) {
                 console.error(`Error saving insight for ${account.ad_account_id}:`, logError);
@@ -327,6 +397,7 @@ export async function POST(request: NextRequest) {
           status,
           records_synced: totalRecords,
           accounts_auto_imported: autoImportedCount,
+          accounts_name_matched: nameMatchedCount,
           total_ad_accounts: adAccounts.length,
           errors: accountErrors,
         });
@@ -343,6 +414,8 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter((r) => r.status === "success").length;
     const errorCount = results.filter((r) => r.status === "error").length;
     const totalRecords = results.reduce((sum, r) => sum + (r.records_synced || 0), 0);
+    const totalImported = results.reduce((sum, r) => sum + (r.accounts_auto_imported || 0), 0);
+    const totalMatched = results.reduce((sum, r) => sum + (r.accounts_name_matched || 0), 0);
 
     return NextResponse.json({
       success: true,
@@ -351,6 +424,8 @@ export async function POST(request: NextRequest) {
       successful: successCount,
       errors: errorCount,
       total_records: totalRecords,
+      accounts_imported: totalImported,
+      accounts_matched: totalMatched,
       details: results,
     });
   } catch (err) {
@@ -381,21 +456,4 @@ function getYesterdayDate(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().split("T")[0];
-}
-
-/**
- * Extract a 4-digit suffix from a string (e.g., "WL Arum 1529" → "1529")
- */
-function extractSuffix(str: string | undefined | null): string | null {
-  if (!str) return null;
-  const match = str.match(/(\d{3,4})\s*$/);
-  return match ? match[1] : null;
-}
-
-/**
- * Escape a string for use in Supabase PostgREST filter queries.
- */
-function escapeForQuery(str: string): string {
-  // PostgREST uses parentheses for OR filters, so escape them
-  return str.replace(/[,()*]/g, " ").trim();
 }
