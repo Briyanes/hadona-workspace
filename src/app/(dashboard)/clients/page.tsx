@@ -606,11 +606,12 @@ export default function ClientsPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* ==================== Create/Edit Modal (2-Column + Sticky) ==================== */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="my-8 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            {/* ── Sticky Header ── */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit Client" : "Client Baru"}
               </h2>
@@ -622,226 +623,155 @@ export default function ClientsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              {/* Logo Upload */}
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  {form.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={form.logo_url}
-                      alt="Logo"
-                      className="h-16 w-16 rounded-lg border border-border object-contain"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-background text-muted">
-                      <Building2 size={20} />
+            {/* ── Scrollable Body ── */}
+            <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+              <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
+                {/* ════ LEFT COLUMN ════ */}
+                <div className="space-y-4">
+                  {/* Box: Informasi Dasar */}
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Informasi Dasar</p>
+
+                    {/* Logo Upload */}
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        {form.logo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={form.logo_url} alt="Logo" className="h-14 w-14 rounded-lg border border-border object-contain" />
+                        ) : (
+                          <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-surface text-muted">
+                            <Building2 size={18} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <label className={cn(
+                          "inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium transition-colors hover:bg-surface",
+                          uploadingLogo && "cursor-wait opacity-60"
+                        )}>
+                          {uploadingLogo ? (
+                            <><Loader2 size={11} className="animate-spin" /> Uploading...</>
+                          ) : (
+                            <><ImagePlus size={11} /> Upload Logo</>
+                          )}
+                          <input type="file" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} className="hidden" />
+                        </label>
+                        {form.logo_url && (
+                          <button type="button" onClick={() => setForm({ ...form, logo_url: "" })} className="ml-2 text-[11px] text-danger hover:underline">
+                            Hapus
+                          </button>
+                        )}
+                        <p className="mt-1 text-[10px] text-muted">PNG/JPG, max 2MB</p>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Logo Client</label>
-                  <label className={cn(
-                    "inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-background",
-                    uploadingLogo && "cursor-wait opacity-60"
-                  )}>
-                    {uploadingLogo ? (
-                      <>
-                        <Loader2 size={12} className="animate-spin" /> Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <ImagePlus size={12} /> Upload Logo
-                      </>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      disabled={uploadingLogo}
-                      className="hidden"
-                    />
-                  </label>
-                  {form.logo_url && (
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, logo_url: "" })}
-                      className="ml-2 text-xs text-danger hover:underline"
-                    >
-                      Hapus
-                    </button>
-                  )}
-                  <p className="mt-1 text-[10px] text-muted">PNG/JPG, max 2MB</p>
-                </div>
-              </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Nama Client *</label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Contoh: PT Maju Jaya"
-                  className="input"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Industri</label>
-                  <input
-                    type="text"
-                    value={form.industry}
-                    onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                    placeholder="Contoh: F&B, Fashion"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="input"
-                  >
-                    <option value="active">Active</option>
-                    <option value="onboarding">Onboarding</option>
-                    <option value="hold">Hold</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="churned">Churned</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Contract Section */}
-              <div className="rounded-lg border border-border bg-background p-3">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Kontrak</p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Nilai Kontrak (IDR/bulan)</label>
-                    <input
-                      type="number"
-                      value={form.contract_value}
-                      onChange={(e) => setForm({ ...form, contract_value: e.target.value })}
-                      placeholder="Contoh: 5000000"
-                      className="input"
-                    />
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">Nama Client *</label>
+                        <input type="text" required autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: PT Maju Jaya" className="input" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-gray-900">Industri</label>
+                          <input type="text" value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} placeholder="F&B, Fashion" className="input" />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-gray-900">Status</label>
+                          <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input">
+                            <option value="active">Active</option>
+                            <option value="onboarding">Onboarding</option>
+                            <option value="hold">Hold</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="churned">Churned</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Account Manager</label>
-                    <select
-                      value={form.account_manager_id}
-                      onChange={(e) => setForm({ ...form, account_manager_id: e.target.value })}
-                      className="input"
-                    >
-                      <option value="">— Pilih AM —</option>
-                      {accountManagers.map((am) => (
-                        <option key={am.id} value={am.id}>{am.full_name}</option>
+
+                  {/* Box: Kontrak */}
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Kontrak</p>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">Nilai Kontrak (IDR/bulan)</label>
+                        <input type="number" value={form.contract_value} onChange={(e) => setForm({ ...form, contract_value: e.target.value })} placeholder="Contoh: 5000000" className="input" />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">Account Manager</label>
+                        <select value={form.account_manager_id} onChange={(e) => setForm({ ...form, account_manager_id: e.target.value })} className="input">
+                          <option value="">— Pilih AM —</option>
+                          {accountManagers.map((am) => (
+                            <option key={am.id} value={am.id}>{am.full_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-gray-900">Mulai Kontrak</label>
+                          <input type="date" value={form.contract_start} onChange={(e) => setForm({ ...form, contract_start: e.target.value })} className="input" />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-gray-900">Akhir Kontrak</label>
+                          <input type="date" value={form.contract_end} onChange={(e) => setForm({ ...form, contract_end: e.target.value })} className="input" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ════ RIGHT COLUMN ════ */}
+                <div className="space-y-4">
+                  {/* Box: Services */}
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Services</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SERVICE_OPTIONS.map((s) => (
+                        <button key={s} type="button" onClick={() => toggleService(s)} className={cn(
+                          "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                          form.services.includes(s) ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+                        )}>
+                          {s}
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Mulai Kontrak</label>
-                    <input
-                      type="date"
-                      value={form.contract_start}
-                      onChange={(e) => setForm({ ...form, contract_start: e.target.value })}
-                      className="input"
-                    />
+
+                  {/* Box: Kontak */}
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Kontak</p>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">Contact Person</label>
+                        <input type="text" value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} placeholder="Nama PIC" className="input" />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">No. Telepon</label>
+                        <input type="tel" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} placeholder="08xxx" className="input" />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">Email</label>
+                        <input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="pic@client.com" className="input" />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Akhir Kontrak</label>
-                    <input
-                      type="date"
-                      value={form.contract_end}
-                      onChange={(e) => setForm({ ...form, contract_end: e.target.value })}
-                      className="input"
-                    />
+
+                  {/* Box: Catatan */}
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Catatan</p>
+                    <textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Catatan tambahan..." className="input resize-none" />
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-900">Services</label>
-                <div className="flex flex-wrap gap-2">
-                  {SERVICE_OPTIONS.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => toggleService(s)}
-                      className={cn(
-                        "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                        form.services.includes(s)
-                          ? "bg-primary text-white"
-                          : "bg-background text-muted hover:text-gray-900"
-                      )}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Contact Person</label>
-                  <input
-                    type="text"
-                    value={form.contact_person}
-                    onChange={(e) => setForm({ ...form, contact_person: e.target.value })}
-                    placeholder="Nama PIC"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">No. Telepon</label>
-                  <input
-                    type="tel"
-                    value={form.contact_phone}
-                    onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
-                    placeholder="08xxx"
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
-                <input
-                  type="email"
-                  value={form.contact_email}
-                  onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                  placeholder="pic@client.com"
-                  className="input"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
-                <textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Catatan tambahan..."
-                  className="input resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
-                >
+              {/* ── Sticky Footer ── */}
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
                   {saving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
-                    </>
+                    <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
                   ) : editingId ? (
                     "Update Client"
                   ) : (
