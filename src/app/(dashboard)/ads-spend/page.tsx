@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -16,11 +16,23 @@ import {
   Download,
   User,
   TrendingDown,
+  DollarSign,
+  Activity,
+  ClipboardList,
+  TrendingUp,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { formatIDR, cn, extractError } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
-import { DollarSign, Activity, Pause } from "lucide-react";
 
 interface AdAccount {
   id: string;
@@ -39,6 +51,18 @@ interface AdAccount {
   pic?: { full_name: string | null } | null;
 }
 
+interface SpendLog {
+  id: string;
+  ad_account_id: string;
+  log_date: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  revenue: number;
+  notes: string | null;
+}
+
 interface Client {
   id: string;
   name: string;
@@ -47,6 +71,12 @@ interface Client {
 interface TeamMember {
   id: string;
   full_name: string | null;
+}
+
+interface TrendData {
+  date: string;
+  spend: number;
+  revenue: number;
 }
 
 const emptyForm = {
@@ -62,16 +92,30 @@ const emptyForm = {
   pic_id: "",
 };
 
+const emptySpendForm = {
+  log_date: new Date().toISOString().split("T")[0],
+  spend: "",
+  impressions: "",
+  clicks: "",
+  conversions: "",
+  revenue: "",
+  notes: "",
+};
+
 export default function AdsSpendPage() {
   const supabase = createClient();
   const [accounts, setAccounts] = useState<AdAccount[]>([]);
+  const [spendLogs, setSpendLogs] = useState<SpendLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
 
-  // Modal
+  // Trend chart range
+  const [chartRange, setChartRange] = useState<7 | 30>(7);
+
+  // Modal: Create/Edit Ad Account
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
@@ -79,10 +123,17 @@ export default function AdsSpendPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
+  // Modal: Spend Log
+  const [showSpendModal, setShowSpendModal] = useState(false);
+  const [spendAccountId, setSpendAccountId] = useState<string | null>(null);
+  const [spendForm, setSpendForm] = useState(emptySpendForm);
+  const [savingSpend, setSavingSpend] = useState(false);
+
   useEffect(() => {
     loadAccounts();
     loadClients();
     loadTeam();
+    loadSpendLogs();
   }, []);
 
   async function loadAccounts() {
@@ -99,6 +150,26 @@ export default function AdsSpendPage() {
       toast.error("Gagal memuat ad accounts");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSpendLogs() {
+    try {
+      // Load last 30 days of spend logs
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data, error } = await supabase
+        .from("ad_spend_logs")
+        .select("*")
+        .gte("log_date", thirtyDaysAgo.toISOString().split("T")[0])
+        .order("log_date", { ascending: true });
+
+      if (error) throw error;
+      setSpendLogs((data as unknown as SpendLog[]) || []);
+    } catch (err) {
+      // Table might not exist yet (migration not run)
+      console.warn("Spend logs not loaded:", extractError(err));
     }
   }
 
@@ -136,6 +207,12 @@ export default function AdsSpendPage() {
     });
     setEditingId(account.id);
     setShowModal(true);
+  }
+
+  function openSpendLog(accountId: string) {
+    setSpendAccountId(accountId);
+    setSpendForm(emptySpendForm);
+    setShowSpendModal(true);
   }
 
   // Auto-calc days_left from remaining / daily
@@ -197,6 +274,57 @@ export default function AdsSpendPage() {
     }
   }
 
+  async function handleSaveSpend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!spendAccountId) return;
+    if (!spendForm.spend || parseFloat(spendForm.spend) <= 0) {
+      toast.error("Spend harus lebih dari 0");
+      return;
+    }
+
+    setSavingSpend(true);
+    try {
+      const payload = {
+        ad_account_id: spendAccountId,
+        log_date: spendForm.log_date,
+        spend: parseFloat(spendForm.spend),
+        impressions: spendForm.impressions ? parseInt(spendForm.impressions) : 0,
+        clicks: spendForm.clicks ? parseInt(spendForm.clicks) : 0,
+        conversions: spendForm.conversions ? parseFloat(spendForm.conversions) : 0,
+        revenue: spendForm.revenue ? parseFloat(spendForm.revenue) : 0,
+        notes: spendForm.notes.trim() || null,
+      };
+
+      const { error } = await supabase.from("ad_spend_logs").upsert(payload as never, {
+        onConflict: "ad_account_id,log_date",
+      });
+      if (error) throw error;
+
+      toast.success("Spend log disimpan! Budget auto-updated.");
+      setShowSpendModal(false);
+      loadSpendLogs();
+      loadAccounts(); // Reload to get updated remaining_budget
+    } catch (err) {
+      const msg = extractError(err);
+      toast.error("Gagal simpan spend: " + msg);
+    } finally {
+      setSavingSpend(false);
+    }
+  }
+
+  async function handleDeleteSpendLog(id: string) {
+    if (!confirm("Hapus log ini?")) return;
+    try {
+      const { error } = await supabase.from("ad_spend_logs").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Log dihapus");
+      loadSpendLogs();
+    } catch (err) {
+      const msg = extractError(err);
+      toast.error("Gagal hapus: " + msg);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Hapus ad account ini?")) return;
     try {
@@ -226,24 +354,35 @@ export default function AdsSpendPage() {
       "Days Left",
       "Status",
       "PIC",
+      "Today Spend",
+      "ROAS",
       "Notes",
     ];
-    const rows = filtered.map((a) => [
-      a.client?.name || "",
-      a.platform,
-      a.ad_account_id,
-      a.account_name || "",
-      a.objective || "",
-      a.daily_budget || 0,
-      a.remaining_budget || 0,
-      a.days_left || 0,
-      a.status,
-      a.pic?.full_name || "",
-      (a.notes || "").replace(/"/g, '""'),
-    ]);
-    const csv = [headers, ...rows]
-      .map((r) => r.map((c) => `"${c}"`).join(","))
-      .join("\n");
+    const today = new Date().toISOString().split("T")[0];
+    const rows = filtered.map((a) => {
+      const todayLog = spendLogs.filter(
+        (l) => l.ad_account_id === a.id && l.log_date === today
+      );
+      const todaySpend = todayLog.reduce((s, l) => s + (l.spend || 0), 0);
+      const revenue = todayLog.reduce((s, l) => s + (l.revenue || 0), 0);
+      const roas = todaySpend > 0 ? (revenue / todaySpend).toFixed(2) : "0";
+      return [
+        a.client?.name || "",
+        a.platform,
+        a.ad_account_id,
+        a.account_name || "",
+        a.objective || "",
+        a.daily_budget || 0,
+        a.remaining_budget || 0,
+        a.days_left || 0,
+        a.status,
+        a.pic?.full_name || "",
+        todaySpend,
+        roas,
+        (a.notes || "").replace(/"/g, '""'),
+      ];
+    });
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -272,6 +411,35 @@ export default function AdsSpendPage() {
     return matchSearch && matchStatus && matchClient;
   });
 
+  // Trend chart data: aggregate spend & revenue by date
+  const trendData: TrendData[] = useMemo(() => {
+    const days = chartRange;
+    const result: { [key: string]: { spend: number; revenue: number } } = {};
+
+    // Initialize last N days
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      result[key] = { spend: 0, revenue: 0 };
+    }
+
+    // Aggregate spend logs
+    const filteredAccountIds = new Set(filtered.map((a) => a.id));
+    spendLogs.forEach((log) => {
+      if (filteredAccountIds.has(log.ad_account_id) && result[log.log_date]) {
+        result[log.log_date].spend += log.spend || 0;
+        result[log.log_date].revenue += log.revenue || 0;
+      }
+    });
+
+    return Object.entries(result).map(([date, val]) => ({
+      date: new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short" }),
+      spend: val.spend,
+      revenue: val.revenue,
+    }));
+  }, [spendLogs, filtered, chartRange]);
+
   // Stats
   const totalDaily = accountsWithCalc
     .filter((a) => a.status === "active")
@@ -285,9 +453,19 @@ export default function AdsSpendPage() {
     (a) => a.days_left !== null && a.days_left <= 3 && a.status === "active"
   ).length;
 
-  const totalAccounts = accountsWithCalc.length;
   const activeCount = accountsWithCalc.filter((a) => a.status === "active").length;
   const holdCount = accountsWithCalc.filter((a) => a.status === "hold").length;
+
+  // Today's spend & ROAS
+  const today = new Date().toISOString().split("T")[0];
+  const todaySpend = spendLogs
+    .filter((l) => l.log_date === today)
+    .reduce((sum, l) => sum + (l.spend || 0), 0);
+  const todayRevenue = spendLogs
+    .filter((l) => l.log_date === today)
+    .reduce((sum, l) => sum + (l.revenue || 0), 0);
+  const todayROAS = todaySpend > 0 ? todayRevenue / todaySpend : 0;
+
   const metaBudget = accountsWithCalc
     .filter((a) => a.platform === "META" && a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
@@ -316,17 +494,17 @@ export default function AdsSpendPage() {
       bg: "bg-primary/10",
     },
     {
-      label: "Active",
-      value: activeCount.toString(),
-      sub: `${holdCount} on hold`,
+      label: "Today's Spend",
+      value: formatIDR(todaySpend),
+      sub: `Revenue: ${formatIDR(todayRevenue)}`,
       icon: Activity,
-      color: "text-success",
-      bg: "bg-success/10",
+      color: "text-warning",
+      bg: "bg-warning/10",
     },
     {
       label: "Low Budget Alert",
       value: lowBudgetCount.toString(),
-      sub: "≤ 3 days left",
+      sub: `ROAS today: ${todayROAS.toFixed(2)}x`,
       icon: AlertTriangle,
       color: lowBudgetCount > 0 ? "text-danger" : "text-muted",
       bg: lowBudgetCount > 0 ? "bg-danger/10" : "bg-surface",
@@ -352,6 +530,24 @@ export default function AdsSpendPage() {
     inactive: "bg-surface text-muted",
     hold: "bg-warning/20 text-warning",
   };
+
+  // Helper: get today's spend for an account
+  function getTodaySpend(accountId: string): { spend: number; revenue: number; roas: number } {
+    const logs = spendLogs.filter(
+      (l) => l.ad_account_id === accountId && l.log_date === today
+    );
+    const spend = logs.reduce((s, l) => s + (l.spend || 0), 0);
+    const revenue = logs.reduce((s, l) => s + (l.revenue || 0), 0);
+    return { spend, revenue, roas: spend > 0 ? revenue / spend : 0 };
+  }
+
+  // Helper: get spend logs for modal
+  const modalSpendLogs = spendLogs
+    .filter((l) => l.ad_account_id === spendAccountId)
+    .sort((a, b) => b.log_date.localeCompare(a.log_date))
+    .slice(0, 14);
+
+  const modalAccount = accounts.find((a) => a.id === spendAccountId);
 
   if (loading) {
     return (
@@ -379,7 +575,9 @@ export default function AdsSpendPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
-          <p className="text-sm text-muted">Pantau budget & performa ad account semua klien</p>
+          <p className="text-sm text-muted">
+            Pantau budget, spending harian & ROAS semua ad account
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -440,6 +638,118 @@ export default function AdsSpendPage() {
         </div>
       </div>
 
+      {/* Trend Chart */}
+      <div className="card p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
+              <TrendingUp size={14} /> SPEND & REVENUE TREND
+            </p>
+            <p className="mt-0.5 text-[10px] text-muted">
+              Total {filtered.length} accounts • {chartRange} hari terakhir
+            </p>
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setChartRange(7)}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                chartRange === 7
+                  ? "bg-primary text-white"
+                  : "bg-background text-muted hover:text-gray-900"
+              )}
+            >
+              7D
+            </button>
+            <button
+              onClick={() => setChartRange(30)}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                chartRange === 30
+                  ? "bg-primary text-white"
+                  : "bg-background text-muted hover:text-gray-900"
+              )}
+            >
+              30D
+            </button>
+          </div>
+        </div>
+        {trendData.every((d) => d.spend === 0) ? (
+          <div className="flex h-48 flex-col items-center justify-center text-center">
+            <TrendingUp className="mb-2 text-muted" size={24} />
+            <p className="text-xs text-muted">Belum ada data spend.</p>
+            <p className="text-[10px] text-muted">
+              Klik icon <ClipboardList size={10} className="inline" /> di tabel untuk log spend
+              harian.
+            </p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={trendData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                interval={chartRange === 30 ? 3 : 0}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+              />
+              <Tooltip
+                formatter={(value: number) => formatIDR(value)}
+                contentStyle={{
+                  borderRadius: "8px",
+                  border: "1px solid #e5e7eb",
+                  fontSize: "12px",
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="spend"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                fill="url(#colorSpend)"
+                name="Spend"
+              />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#10b981"
+                strokeWidth={2}
+                fill="url(#colorRevenue)"
+                name="Revenue"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+        {/* Legend */}
+        <div className="mt-3 flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-[10px] text-muted">
+            <span className="h-2 w-2 rounded-full bg-warning" /> Spend
+          </span>
+          <span className="flex items-center gap-1.5 text-[10px] text-muted">
+            <span className="h-2 w-2 rounded-full bg-success" /> Revenue
+          </span>
+        </div>
+      </div>
+
+      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
@@ -475,6 +785,7 @@ export default function AdsSpendPage() {
         </select>
       </div>
 
+      {/* Table */}
       {filtered.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center">
           <Megaphone className="mb-3 text-muted" size={32} />
@@ -510,13 +821,6 @@ export default function AdsSpendPage() {
                   onSort={toggleSort}
                 />
                 <SortableTh
-                  label="Objective"
-                  sortKey="objective"
-                  activeKey={sortState.key}
-                  direction={sortState.direction}
-                  onSort={toggleSort}
-                />
-                <SortableTh
                   label="Daily"
                   sortKey="daily_budget"
                   activeKey={sortState.key}
@@ -540,6 +844,8 @@ export default function AdsSpendPage() {
                   onSort={toggleSort}
                   align="center"
                 />
+                <th className="px-4 py-3 text-right font-medium">Today Spend</th>
+                <th className="px-4 py-3 text-center font-medium">ROAS</th>
                 <SortableTh
                   label="Status"
                   sortKey="status"
@@ -552,76 +858,113 @@ export default function AdsSpendPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {sortedData.map((a) => (
-                <tr key={a.id} className="group hover:bg-surface/50">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{a.client?.name || "-"}</div>
-                    <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        "badge",
-                        platformColors[a.platform] || "bg-surface text-muted"
+              {sortedData.map((a) => {
+                const todayStats = getTodaySpend(a.id);
+                return (
+                  <tr key={a.id} className="group hover:bg-surface/50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{a.client?.name || "-"}</div>
+                      <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "badge",
+                          platformColors[a.platform] || "bg-surface text-muted"
+                        )}
+                      >
+                        {a.platform}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {a.pic?.full_name ? (
+                        <span className="flex items-center gap-1 text-xs text-gray-700">
+                          <User size={12} className="text-muted" />
+                          {a.pic.full_name}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
                       )}
-                    >
-                      {a.platform}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {a.pic?.full_name ? (
-                      <span className="flex items-center gap-1 text-xs text-gray-700">
-                        <User size={12} className="text-muted" />
-                        {a.pic.full_name}
-                      </span>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-muted">{a.objective || "-"}</td>
-                  <td className="px-4 py-3 text-right font-medium text-gray-900">
-                    {formatIDR(a.daily_budget)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted">
-                    {formatIDR(a.remaining_budget)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {a.days_left !== null && a.days_left <= 3 ? (
-                      <span className="badge bg-danger/20 text-danger">
-                        <AlertTriangle size={10} /> {a.days_left}d
-                      </span>
-                    ) : (
-                      <span className="text-muted">
-                        {a.days_left !== null ? `${a.days_left}d` : "-"}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={cn("badge", statusColors[a.status] || statusColors.inactive)}>
-                      {a.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {/* Always visible on mobile, hover on desktop */}
-                    <div className="flex justify-end gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
-                      <button
-                        onClick={() => openEdit(a)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                        title="Edit"
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                      {formatIDR(a.daily_budget)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted">
+                      {formatIDR(a.remaining_budget)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {a.days_left !== null && a.days_left <= 3 ? (
+                        <span className="badge bg-danger/20 text-danger">
+                          <AlertTriangle size={10} /> {a.days_left}d
+                        </span>
+                      ) : (
+                        <span className="text-muted">
+                          {a.days_left !== null ? `${a.days_left}d` : "-"}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {todayStats.spend > 0 ? (
+                        <span className="text-xs font-medium text-warning">
+                          {formatIDR(todayStats.spend)}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {todayStats.roas > 0 ? (
+                        <span
+                          className={cn(
+                            "badge text-xs",
+                            todayStats.roas >= 3
+                              ? "bg-success/20 text-success"
+                              : todayStats.roas >= 1
+                                ? "bg-warning/20 text-warning"
+                                : "bg-danger/20 text-danger"
+                          )}
+                        >
+                          {todayStats.roas.toFixed(2)}x
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={cn("badge", statusColors[a.status] || statusColors.inactive)}
                       >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(a.id)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                        title="Hapus"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {a.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
+                        <button
+                          onClick={() => openSpendLog(a.id)}
+                          className="rounded p-1.5 text-muted hover:bg-background hover:text-warning"
+                          title="Log Spend Harian"
+                        >
+                          <ClipboardList size={14} />
+                        </button>
+                        <button
+                          onClick={() => openEdit(a)}
+                          className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                          title="Edit"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(a.id)}
+                          className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                          title="Hapus"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -644,12 +987,13 @@ export default function AdsSpendPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              {/* Section: Client & Platform */}
               <div className="space-y-3 rounded-lg bg-background p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Client & Platform</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">Client *</label>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Client *
+                    </label>
                     <select
                       required
                       value={form.client_id}
@@ -708,7 +1052,6 @@ export default function AdsSpendPage() {
                 </div>
               </div>
 
-              {/* Section: Budget */}
               <div className="space-y-3 rounded-lg bg-background p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Budget & Status</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -737,7 +1080,6 @@ export default function AdsSpendPage() {
                     />
                   </div>
                 </div>
-                {/* Auto-calc days left hint */}
                 {form.daily_budget && form.remaining_budget && (
                   <p className="text-[10px] text-muted">
                     <TrendingDown size={10} className="mr-1 inline" />
@@ -762,7 +1104,6 @@ export default function AdsSpendPage() {
                 </select>
               </div>
 
-              {/* Section: PIC & Notes */}
               <div className="space-y-3 rounded-lg bg-background p-3">
                 <p className="text-xs font-semibold uppercase text-muted">PIC & Catatan</p>
                 <select
@@ -814,6 +1155,186 @@ export default function AdsSpendPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Spend Log Modal */}
+      {showSpendModal && modalAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Log Spend Harian</h2>
+                <p className="text-xs text-muted">
+                  {modalAccount.client?.name} • {modalAccount.platform} •{" "}
+                  <span className="font-mono">{modalAccount.ad_account_id}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSpendModal(false)}
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveSpend} className="mb-4 space-y-3 rounded-lg bg-background p-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">Tanggal</label>
+                  <input
+                    type="date"
+                    required
+                    value={spendForm.log_date}
+                    onChange={(e) => setSpendForm({ ...spendForm, log_date: e.target.value })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                    Spend (Rp) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={spendForm.spend}
+                    onChange={(e) => setSpendForm({ ...spendForm, spend: e.target.value })}
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                    Impressions
+                  </label>
+                  <input
+                    type="number"
+                    value={spendForm.impressions}
+                    onChange={(e) => setSpendForm({ ...spendForm, impressions: e.target.value })}
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">Clicks</label>
+                  <input
+                    type="number"
+                    value={spendForm.clicks}
+                    onChange={(e) => setSpendForm({ ...spendForm, clicks: e.target.value })}
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                    Conversions
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={spendForm.conversions}
+                    onChange={(e) =>
+                      setSpendForm({ ...spendForm, conversions: e.target.value })
+                    }
+                    placeholder="0"
+                    className="input"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Revenue / Value (Rp)
+                </label>
+                <input
+                  type="number"
+                  value={spendForm.revenue}
+                  onChange={(e) => setSpendForm({ ...spendForm, revenue: e.target.value })}
+                  placeholder="0"
+                  className="input"
+                />
+                {spendForm.spend && spendForm.revenue && (
+                  <p className="mt-1 text-[10px] text-muted">
+                    ROAS:{" "}
+                    <strong className={cn(parseFloat(spendForm.revenue) / parseFloat(spendForm.spend) >= 1 ? "text-success" : "text-danger")}>
+                      {(parseFloat(spendForm.revenue) / parseFloat(spendForm.spend)).toFixed(2)}x
+                    </strong>
+                  </p>
+                )}
+              </div>
+              <input
+                type="text"
+                value={spendForm.notes}
+                onChange={(e) => setSpendForm({ ...spendForm, notes: e.target.value })}
+                placeholder="Catatan (opsional)"
+                className="input"
+              />
+              <div className="flex justify-end">
+                <button type="submit" disabled={savingSpend} className="btn-primary">
+                  {savingSpend ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
+                    </>
+                  ) : (
+                    "Simpan Log"
+                  )}
+                </button>
+              </div>
+            </form>
+
+            {/* History */}
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase text-muted">Riwayat (14 hari)</p>
+              {modalSpendLogs.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted">Belum ada log spend</p>
+              ) : (
+                <div className="max-h-48 space-y-1 overflow-y-auto">
+                  {modalSpendLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-xs"
+                    >
+                      <div>
+                        <span className="font-medium text-gray-900">
+                          {new Date(log.log_date).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                        <span className="ml-2 text-muted">
+                          {log.impressions > 0 && `${log.impressions.toLocaleString()} imp • `}
+                          {log.clicks > 0 && `${log.clicks.toLocaleString()} click • `}
+                          {log.revenue > 0 &&
+                            `Rev: ${formatIDR(log.revenue)} • `}
+                          {log.spend > 0 &&
+                            log.revenue > 0 &&
+                            `ROAS: ${(log.revenue / log.spend).toFixed(2)}x`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-warning">
+                          {formatIDR(log.spend)}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteSpendLog(log.id)}
+                          className="text-muted hover:text-danger"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-md bg-primary/5 p-3 text-[10px] text-muted">
+              💡 <strong>Auto-update:</strong> Saat spend log disimpan, remaining budget ad account
+              akan otomatis berkurang sesuai spend hari ini.
+            </div>
           </div>
         </div>
       )}
