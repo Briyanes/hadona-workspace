@@ -131,6 +131,14 @@ export default function AdsSpendPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
 
+  // Bulk operations
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkAssign, setShowBulkAssign] = useState(false);
+  const [bulkClientId, setBulkClientId] = useState("");
+  const [bulkDailyBudget, setBulkDailyBudget] = useState("");
+  const [bulkRemaining, setBulkRemaining] = useState("");
+  const [bulkSaving, setBulkSaving] = useState(false);
+
   // Trend chart range
   const [chartRange, setChartRange] = useState<7 | 30>(7);
 
@@ -553,6 +561,80 @@ export default function AdsSpendPage() {
     } catch (err) {
       const msg = extractError(err);
       toast.error("Gagal hapus: " + msg);
+    }
+  }
+
+  // ─── Bulk Operations ───
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((a) => a.id)));
+    }
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setShowBulkAssign(false);
+    setBulkClientId("");
+    setBulkDailyBudget("");
+    setBulkRemaining("");
+  }
+
+  async function handleBulkAssign() {
+    if (selectedIds.size === 0) {
+      toast.error("Pilih minimal 1 akun");
+      return;
+    }
+    if (!bulkClientId) {
+      toast.error("Pilih client untuk assign");
+      return;
+    }
+
+    setBulkSaving(true);
+    try {
+      const updates: Record<string, unknown> = { client_id: bulkClientId };
+
+      if (bulkDailyBudget) {
+        updates.daily_budget = parseFloat(bulkDailyBudget);
+      }
+      if (bulkRemaining) {
+        updates.remaining_budget = parseFloat(bulkRemaining);
+      }
+      if (bulkDailyBudget && bulkRemaining) {
+        updates.days_left = calcDaysLeft(
+          parseFloat(bulkRemaining),
+          parseFloat(bulkDailyBudget)
+        );
+      }
+
+      const { error } = await supabase
+        .from("ad_accounts")
+        .update(updates as never)
+        .in("id", Array.from(selectedIds));
+
+      if (error) throw error;
+
+      toast.success(`✅ ${selectedIds.size} akun berhasil di-assign!`, { duration: 5000 });
+      clearSelection();
+      loadAccounts();
+    } catch (err) {
+      toast.error("Gagal bulk assign: " + extractError(err));
+    } finally {
+      setBulkSaving(false);
     }
   }
 
@@ -1099,6 +1181,58 @@ export default function AdsSpendPage() {
         </select>
       </div>
 
+      {/* Floating Bulk Assign Toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky bottom-4 z-30 mx-auto flex max-w-3xl flex-col gap-3 rounded-lg border border-primary/30 bg-surface p-3 shadow-xl sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <span className="badge bg-primary/20 text-primary">✓ {selectedIds.size} dipilih</span>
+            <button
+              onClick={clearSelection}
+              className="text-xs text-muted hover:text-danger"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex flex-1 flex-wrap gap-2">
+            <select
+              value={bulkClientId}
+              onChange={(e) => setBulkClientId(e.target.value)}
+              className="input min-w-[140px] flex-1 text-xs"
+            >
+              <option value="">— Pilih Client —</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              value={bulkDailyBudget}
+              onChange={(e) => setBulkDailyBudget(e.target.value)}
+              placeholder="Daily (opsional)"
+              className="input w-28 text-xs"
+            />
+            <input
+              type="number"
+              value={bulkRemaining}
+              onChange={(e) => setBulkRemaining(e.target.value)}
+              placeholder="Remaining (opsional)"
+              className="input w-32 text-xs"
+            />
+            <button
+              onClick={handleBulkAssign}
+              disabled={bulkSaving || !bulkClientId}
+              className="btn-primary whitespace-nowrap text-xs"
+            >
+              {bulkSaving ? (
+                <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
+              ) : (
+                <>Assign ({selectedIds.size})</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {filtered.length === 0 ? (
         <div className="card flex flex-col items-center justify-center py-12 text-center">
@@ -1113,6 +1247,14 @@ export default function AdsSpendPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-surface">
               <tr className="text-left text-xs uppercase text-muted">
+                <th className="px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === filtered.length && filtered.length > 0}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                </th>
                 <SortableTh
                   label="Client"
                   sortKey="client.name"
@@ -1176,6 +1318,14 @@ export default function AdsSpendPage() {
                 const todayStats = getTodaySpend(a.id);
                 return (
                   <tr key={a.id} className={cn("group hover:bg-surface/50", !a.client_id && "bg-warning/5")}>
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(a.id)}
+                        onChange={() => toggleSelect(a.id)}
+                        className="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       {a.client?.name ? (
                         <div className="font-medium text-gray-900">{a.client.name}</div>
@@ -1184,6 +1334,9 @@ export default function AdsSpendPage() {
                           <AlertTriangle size={12} /> Unassigned
                         </div>
                       )}
+                      {a.account_name ? (
+                        <div className="text-[10px] text-gray-600">{a.account_name}</div>
+                      ) : null}
                       <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
                     </td>
                     <td className="px-4 py-3">
