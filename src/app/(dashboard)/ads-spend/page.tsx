@@ -158,6 +158,14 @@ export default function AdsSpendPage() {
   const [manualToken, setManualToken] = useState("");
   const [savingToken, setSavingToken] = useState(false);
 
+  // Import Sheet Modal
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState(
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSrMQ3VuFWBGtfbf8P-EV2kGEv6GB2UnCqXSgUNiNh4aTXEQD7mECzrnnWsAeF7rllx6dOCIpKImTLR/pubhtml"
+  );
+  const [sheetColumn, setSheetColumn] = useState("E");
+  const [importing, setImporting] = useState(false);
+
   useEffect(() => {
     loadAccounts();
     loadClients();
@@ -287,6 +295,38 @@ export default function AdsSpendPage() {
       toast.error("Gagal: " + extractError(err));
     } finally {
       setSavingToken(false);
+    }
+  }
+
+  async function handleImportSheet(e: React.FormEvent) {
+    e.preventDefault();
+    if (!sheetUrl.trim()) {
+      toast.error("URL Sheet wajib diisi");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const res = await fetch("/api/import/sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sheetUrl: sheetUrl.trim(),
+          column: sheetColumn,
+          platform: "META",
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Import gagal");
+
+      toast.success(data.message || `Import selesai! ${data.imported} baru.`);
+      setShowImportModal(false);
+      loadAccounts();
+    } catch (err) {
+      toast.error("Gagal import: " + extractError(err));
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -749,7 +789,14 @@ export default function AdsSpendPage() {
             Pantau budget, spending harian & ROAS semua ad account
           </p>
         </div>
-        <div className="flex gap-2">
+          <div className="flex gap-2">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+            title="Import ad accounts dari Google Sheet"
+          >
+            <Download size={14} className="rotate-180" /> Import Sheet
+          </button>
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
@@ -1511,6 +1558,91 @@ export default function AdsSpendPage() {
                   ) : (
                     <>
                       <KeyRound size={14} /> Hubungkan
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import Sheet Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
+              <p className="mb-1 font-semibold">📋 Cara kerja:</p>
+              <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
+                <li>Paste URL published Google Sheet (format pubhtml)</li>
+                <li>Pilih kolom yang berisi nama ad account (default: E)</li>
+                <li>Sistem akan parse dan import semua nama ke database</li>
+                <li>Setelah import, klik "Sync Now" untuk match dengan Meta API</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleImportSheet} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  URL Published Google Sheet *
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={sheetUrl}
+                  onChange={(e) => setSheetUrl(e.target.value)}
+                  placeholder="https://docs.google.com/spreadsheets/d/e/..."
+                  className="input text-[11px]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">
+                  Kolom Ad Account Name
+                </label>
+                <select
+                  value={sheetColumn}
+                  onChange={(e) => setSheetColumn(e.target.value)}
+                  className="input"
+                >
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E (default)</option>
+                  <option value="F">F</option>
+                  <option value="G">G</option>
+                </select>
+                <p className="mt-1 text-[10px] text-muted">
+                  Kolom mana yang berisi nama ad account di sheet Anda?
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowImportModal(false)}
+                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                >
+                  Batal
+                </button>
+                <button type="submit" disabled={importing} className="btn-primary">
+                  {importing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={14} className="rotate-180" /> Import Now
                     </>
                   )}
                 </button>

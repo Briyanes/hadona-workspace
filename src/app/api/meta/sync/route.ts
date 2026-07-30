@@ -340,3 +340,20 @@ function getYesterdayDate(): string {
   d.setDate(d.getDate() - 1);
   return d.toISOString().split("T")[0];
 }
+
+/**
+ * Extract a 4-digit suffix from a string (e.g., "WL Arum 1529" → "1529")
+ */
+function extractSuffix(str: string | undefined | null): string | null {
+  if (!str) return null;
+  const match = str.match(/(\d{3,4})\s*$/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Escape a string for use in Supabase PostgREST filter queries.
+ */
+function escapeForQuery(str: string): string {
+  // PostgREST uses parentheses for OR filters, so escape them
+  return str.replace(/[,()*]/g, " ").trim();
+}
