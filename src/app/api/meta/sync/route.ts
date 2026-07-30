@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getAdAccountInsights, extractConversions } from "@/lib/meta";
+import { getAdAccountInsights, extractConversions, getAdAccounts } from "@/lib/meta";
 
 interface MetaConnection {
   id: string;
@@ -16,7 +16,7 @@ interface MetaConnection {
 interface MetaAdAccount {
   id: string;
   ad_account_id: string;
-  client_id: string;
+  client_id: string | null;
 }
 
 /**
@@ -114,13 +114,76 @@ export async function POST(request: NextRequest) {
           .eq("meta_sync_enabled", true)
           .eq("platform", "META");
 
-        const adAccounts = (adAccountsRaw as unknown as MetaAdAccount[]) || [];
+        let adAccounts = (adAccountsRaw as unknown as MetaAdAccount[]) || [];
+        let autoImportedCount = 0;
+
+        // STEP: Auto-import ad accounts from Meta if none are linked yet
+        if (adAccounts.length === 0) {
+          console.log(`[Sync] No linked ad accounts found. Auto-importing from Meta...`);
+          try {
+            const metaAdAccounts = await getAdAccounts(conn.access_token);
+
+            for (const metaAcc of metaAdAccounts) {
+              // Skip if account_status is not active (1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED)
+              if (metaAcc.account_status !== 1) continue;
+
+              // Check if already exists (by ad_account_id + platform)
+              const { data: existingRaw } = await supabase
+                .from("ad_accounts")
+                .select("id, ad_account_id, client_id")
+                .eq("ad_account_id", metaAcc.account_id)
+                .eq("platform", "META")
+                .maybeSingle();
+
+              const existing = existingRaw as unknown as MetaAdAccount | null;
+
+              if (existing) {
+                // Link it
+                await supabase
+                  .from("ad_accounts")
+                  .update({
+                    meta_connection_id: conn.id,
+                    meta_sync_enabled: true,
+                  } as never)
+                  .eq("id", existing.id);
+                adAccounts.push(existing);
+                autoImportedCount++;
+              } else {
+                // Create new
+                const { data: newAccRaw } = await supabase
+                  .from("ad_accounts")
+                  .insert({
+                    ad_account_id: metaAcc.account_id,
+                    platform: "META",
+                    account_name: metaAcc.name,
+                    currency: metaAcc.currency,
+                    timezone: metaAcc.timezone_name,
+                    meta_connection_id: conn.id,
+                    meta_sync_enabled: true,
+                    status: "active",
+                  } as never)
+                  .select("id, ad_account_id, client_id")
+                  .single();
+
+                const newAcc = newAccRaw as unknown as MetaAdAccount | null;
+                if (newAcc) {
+                  adAccounts.push(newAcc);
+                  autoImportedCount++;
+                }
+              }
+            }
+
+            console.log(`[Sync] Auto-imported ${autoImportedCount} ad accounts`);
+          } catch (e) {
+            console.error(`[Sync] Failed to auto-import ad accounts:`, e);
+          }
+        }
 
         if (adAccounts.length === 0) {
           results.push({
             connection_id: conn.id,
             status: "skipped",
-            reason: "No META ad accounts linked to this connection",
+            reason: "No active META ad accounts found after auto-import",
           });
           continue;
         }
@@ -221,6 +284,8 @@ export async function POST(request: NextRequest) {
           fb_user: conn.fb_user_name,
           status,
           records_synced: totalRecords,
+          accounts_auto_imported: autoImportedCount,
+          total_ad_accounts: adAccounts.length,
           errors: accountErrors,
         });
       } catch (err) {
