@@ -20,6 +20,10 @@ import {
   Activity,
   ClipboardList,
   TrendingUp,
+  RefreshCw,
+  CheckCircle2,
+  Link2,
+  Unlink,
 } from "lucide-react";
 import {
   AreaChart,
@@ -71,6 +75,17 @@ interface Client {
 interface TeamMember {
   id: string;
   full_name: string | null;
+}
+
+interface MetaConnection {
+  id: string;
+  fb_user_name: string | null;
+  is_active: boolean;
+  auto_sync: boolean;
+  last_sync_at: string | null;
+  last_sync_status: string | null;
+  last_sync_error: string | null;
+  token_expires_at: string | null;
 }
 
 interface TrendData {
@@ -129,12 +144,95 @@ export default function AdsSpendPage() {
   const [spendForm, setSpendForm] = useState(emptySpendForm);
   const [savingSpend, setSavingSpend] = useState(false);
 
+  // Meta Connection
+  const [metaConnection, setMetaConnection] = useState<MetaConnection | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
   useEffect(() => {
     loadAccounts();
     loadClients();
     loadTeam();
     loadSpendLogs();
+    loadMetaConnection();
+    checkUrlParams();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function checkUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("meta_connected")) {
+      toast.success("Meta account berhasil terhubung!");
+      window.history.replaceState({}, "", "/ads-spend");
+    }
+    const metaError = params.get("meta_error");
+    if (metaError) {
+      toast.error(`Meta Error: ${metaError.replace(/_/g, " ")}`);
+      window.history.replaceState({}, "", "/ads-spend");
+    }
+  }
+
+  async function loadMetaConnection() {
+    try {
+      const { data } = await supabase
+        .from("meta_connections")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        setMetaConnection((data as unknown as MetaConnection[])[0] || null);
+      }
+    } catch {
+      // Table might not exist yet
+    }
+  }
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/meta/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || data.error || "Sync failed");
+
+      if (data.total_records > 0) {
+        toast.success(`Sync selesai! ${data.total_records} record ditarik.`);
+      } else if (data.connections_synced === 0) {
+        toast.info("Tidak ada koneksi Meta yang aktif");
+      } else {
+        toast.info(`Sync selesai. Tidak ada data baru untuk kemarin.`);
+      }
+
+      loadSpendLogs();
+      loadMetaConnection();
+    } catch (err) {
+      const msg = extractError(err);
+      toast.error("Gagal sync: " + msg);
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleDisconnectMeta() {
+    if (!metaConnection) return;
+    if (!confirm("Putuskan koneksi Meta? Anda perlu connect ulang untuk sync otomatis.")) return;
+
+    try {
+      await supabase
+        .from("meta_connections")
+        .update({ is_active: false, auto_sync: false } as never)
+        .eq("id", metaConnection.id);
+      toast.success("Koneksi Meta diputus");
+      setMetaConnection(null);
+    } catch (err) {
+      toast.error("Gagal disconnect: " + extractError(err));
+    }
+  }
 
   async function loadAccounts() {
     try {
@@ -591,6 +689,83 @@ export default function AdsSpendPage() {
           </button>
         </div>
       </div>
+
+      {/* Meta Connection Banner */}
+      {metaConnection ? (
+        <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <CheckCircle2 className="text-primary" size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900">
+                Meta Ads Terhubung: {metaConnection.fb_user_name || "Facebook User"}
+              </p>
+              <p className="text-[11px] text-muted">
+                {metaConnection.auto_sync ? "✅ Auto-sync aktif" : "⏸️ Auto-sync off"}
+                {metaConnection.last_sync_at && (
+                  <>
+                    {" • "}
+                    Sync terakhir:{" "}
+                    {new Date(metaConnection.last_sync_at).toLocaleString("id-ID", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </>
+                )}
+                {metaConnection.last_sync_status === "error" && (
+                  <span className="text-danger">
+                    {" • "}
+                    Error: {metaConnection.last_sync_error}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSyncNow}
+              disabled={syncing}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background disabled:opacity-50"
+            >
+              {syncing ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={14} /> Sync Now
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDisconnectMeta}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-danger transition-colors hover:bg-danger/5"
+            >
+              <Unlink size={14} /> Disconnect
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Link2 className="text-primary" size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900">Hubungkan Meta Ads Account</p>
+              <p className="text-[11px] text-muted">
+                Auto-sync spend harian dari Facebook/Meta Marketing API (tidak perlu input manual)
+              </p>
+            </div>
+          </div>
+          <a href="/api/meta/auth" className="btn-primary text-center">
+            <Link2 size={14} /> Connect Meta
+          </a>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
