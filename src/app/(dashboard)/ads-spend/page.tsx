@@ -173,7 +173,15 @@ export default function AdsSpendPage() {
     }
     const metaError = params.get("meta_error");
     if (metaError) {
-      toast.error(`Meta Error: ${metaError.replace(/_/g, " ")}`);
+      const errorMessages: Record<string, string> = {
+        not_configured: "Meta App belum dikonfigurasi. Hubungi admin untuk set META_APP_ID & META_APP_SECRET di Vercel/ENV.",
+        auth_failed: "Gagal connect ke Facebook. Coba lagi atau hubungi admin.",
+        permission_denied: "Anda menolak izin akses Meta.",
+        missing_params: "Parameter tidak lengkap. Coba connect ulang.",
+        state_mismatch: "Sesi tidak valid. Coba connect ulang.",
+        db_error: "Gagal menyimpan koneksi ke database.",
+      };
+      toast.error(errorMessages[metaError] || `Meta Error: ${metaError.replace(/_/g, " ")}`);
       window.history.replaceState({}, "", "/ads-spend");
     }
   }
