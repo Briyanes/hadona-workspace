@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { getAdAccountInsights, extractConversions, getAdAccounts, getBusinessAdAccounts } from "@/lib/meta";
 
 // Hadona's Business Portfolio ID
@@ -30,6 +30,21 @@ interface ExistingAcc {
 }
 
 /**
+ * Create Supabase admin client using SERVICE ROLE KEY (bypasses RLS).
+ * Required for sync operations: meta_connections, ad_accounts, ad_spend_logs.
+ *
+ * The default createClient() uses ANON_KEY + cookies → subject to RLS,
+ * which blocks admin operations like bulk INSERT/UPDATE on ad_accounts.
+ */
+function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
+
+/**
  * POST /api/meta/sync
  * Syncs spend data from Meta Marketing API → ad_spend_logs table
  *
@@ -49,10 +64,23 @@ export async function POST(request: NextRequest) {
   // If not cron, verify user session
   let userId: string | null = null;
   if (!isCron) {
-    const supabase = createClient();
+    // Verify user is logged in via Supabase Auth
+    const { createServerClient } = await import("@supabase/ssr");
+    const { cookies } = await import("next/headers");
+    const cookieStore = cookies();
+    const supabaseUser = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: () => {},
+        },
+      }
+    );
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabaseUser.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -70,7 +98,8 @@ export async function POST(request: NextRequest) {
     // Default: sync yesterday's data
     const syncDate = body.date || getYesterdayDate();
 
-    const supabase = createClient();
+    // ⚠️ Use ADMIN client (SERVICE_ROLE_KEY) to bypass RLS
+    const supabase = createAdminClient();
 
     // Get active connections to sync
     let connectionQuery = supabase
@@ -144,13 +173,6 @@ export async function POST(request: NextRequest) {
             console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErr instanceof Error ? bmErr.message : bmErr);
           }
 
-          // Fallback: Get personal ad accounts
-          if (metaAdAccounts.length === 0) {
-            console.log(`[Sync] Falling back to personal ad accounts...`);
-            metaAdAccounts = await getAdAccounts(conn.access_token);
-            console.log(`[Sync] Got ${metaAdAccounts.length} personal accounts`);
-          }
-
           // Merge BM + personal (dedup by account_id)
           try {
             const personalAccounts = await getAdAccounts(conn.access_token);
@@ -166,10 +188,14 @@ export async function POST(request: NextRequest) {
           }
 
           // 1b. Fetch ALL existing META accounts from DB (ONE query)
-          const { data: existingAccountsRaw } = await supabase
+          const { data: existingAccountsRaw, error: fetchErr } = await supabase
             .from("ad_accounts")
             .select("id, ad_account_id, account_name, client_id")
             .eq("platform", "META");
+
+          if (fetchErr) {
+            console.error(`[Sync] ❌ Failed to fetch existing accounts:`, fetchErr.message);
+          }
 
           const existingAccounts = (existingAccountsRaw as unknown as ExistingAcc[]) || [];
 
@@ -202,7 +228,7 @@ export async function POST(request: NextRequest) {
             if (existingByMetaId.has(realId)) {
               const existing = existingByMetaId.get(realId)!;
               // Ensure it's linked to this connection
-              await supabase
+              const { error: updErr } = await supabase
                 .from("ad_accounts")
                 .update({
                   meta_connection_id: conn.id,
@@ -212,6 +238,10 @@ export async function POST(request: NextRequest) {
                   timezone: metaAcc.timezone_name,
                 } as never)
                 .eq("id", existing.id);
+
+              if (updErr) {
+                console.error(`[Sync] ❌ Update failed for ${realId}:`, updErr.message);
+              }
               continue;
             }
 
@@ -223,7 +253,7 @@ export async function POST(request: NextRequest) {
               );
 
               // UPDATE: Replace UNKNOWN-XX with real Meta ID
-              await supabase
+              const { error: updErr } = await supabase
                 .from("ad_accounts")
                 .update({
                   ad_account_id: realId,
@@ -235,14 +265,18 @@ export async function POST(request: NextRequest) {
                 } as never)
                 .eq("id", existing.id);
 
-              nameMatchedCount++;
+              if (updErr) {
+                console.error(`[Sync] ❌ Name-match update failed for "${metaAcc.name}":`, updErr.message);
+              } else {
+                nameMatchedCount++;
+              }
               // Update maps so we don't match again
               existingByMetaId.set(realId, existing);
               continue;
             }
 
             // Check 3: Create new account
-            const { data: newAccRaw } = await supabase
+            const { data: newAccRaw, error: insertErr } = await supabase
               .from("ad_accounts")
               .insert({
                 ad_account_id: realId,
@@ -261,6 +295,8 @@ export async function POST(request: NextRequest) {
             if (newAcc) {
               autoImportedCount++;
               existingByMetaId.set(realId, { ...newAcc, account_name: metaAcc.name });
+            } else if (insertErr) {
+              console.error(`[Sync] ❌ Insert failed for ${realId}:`, insertErr.message);
             }
           }
 
@@ -418,6 +454,7 @@ export async function POST(request: NextRequest) {
     const totalMatched = results.reduce((sum, r) => sum + (r.accounts_name_matched || 0), 0);
 
     return NextResponse.json({
+      sync_method: "admin_client",
       success: true,
       date: syncDate,
       connections_synced: results.length,
