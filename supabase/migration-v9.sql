@@ -5,7 +5,7 @@
 -- 1. Timesheet table
 CREATE TABLE IF NOT EXISTS public.timesheets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   client_id UUID REFERENCES public.clients(id) ON DELETE SET NULL,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   hours DECIMAL(5,2) NOT NULL DEFAULT 0,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   items JSONB DEFAULT '[]'::jsonb,
   notes TEXT,
   paid_date DATE,
-  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
