@@ -19,6 +19,12 @@ import {
   Calendar,
   DollarSign,
   AlertTriangle,
+  Activity as ActivityIcon,
+  CheckCircle,
+  PencilLine,
+  Trash,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
 
@@ -71,7 +77,18 @@ interface AdAccount {
   status: string;
 }
 
-type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads";
+interface ActivityLog {
+  id: string;
+  entity_type: string;
+  entity_id: string | null;
+  action: string;
+  description: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  user: { full_name: string } | null;
+}
+
+type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "activity";
 
 const statusColors: Record<string, string> = {
   active: "bg-success/20 text-success",
@@ -97,6 +114,7 @@ export default function ClientDetailPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [adAccounts, setAdAccounts] = useState<AdAccount[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
@@ -116,6 +134,7 @@ export default function ClientDetailPage() {
         { data: reportsData, error: reportsErr },
         { data: strategiesData, error: strategiesErr },
         { data: adsData, error: adsErr },
+        { data: activityData, error: activityErr },
       ] = await Promise.all([
         supabase.from("clients").select("*, account_manager:profiles!account_manager_id(full_name)").eq("id", clientId).single(),
         supabase
@@ -138,6 +157,12 @@ export default function ClientDetailPage() {
           .select("id, platform, account_name, daily_budget, status")
           .eq("client_id", clientId)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("activity_logs")
+          .select("id, entity_type, entity_id, action, description, metadata, created_at, user:user_id(full_name)")
+          .eq("client_id", clientId)
+          .order("created_at", { ascending: false })
+          .limit(50),
       ]);
 
       if (clientErr) throw clientErr;
@@ -147,9 +172,10 @@ export default function ClientDetailPage() {
       setReports((reportsData as unknown as Report[]) || []);
       setStrategies((strategiesData as unknown as Strategy[]) || []);
       setAdAccounts((adsData as unknown as AdAccount[]) || []);
+      setActivityLogs((activityData as unknown as ActivityLog[]) || []);
 
-      if (tasksErr || reportsErr || strategiesErr || adsErr) {
-        console.warn("Some sub-queries failed", { tasksErr, reportsErr, strategiesErr, adsErr });
+      if (tasksErr || reportsErr || strategiesErr || adsErr || activityErr) {
+        console.warn("Some sub-queries failed", { tasksErr, reportsErr, strategiesErr, adsErr, activityErr });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -187,6 +213,7 @@ export default function ClientDetailPage() {
     { id: "reports", label: "Reports", icon: FileText, count: reports.length },
     { id: "strategy", label: "Strategy", icon: Target, count: strategies.length },
     { id: "ads", label: "Ad Accounts", icon: Megaphone, count: adAccounts.length },
+    { id: "activity", label: "Activity", icon: ActivityIcon, count: activityLogs.length },
   ];
 
   return (
@@ -500,6 +527,89 @@ export default function ClientDetailPage() {
           )}
         </div>
       )}
+
+      {tab === "activity" && (
+        <div className="card">
+          {activityLogs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <ActivityIcon className="mb-3 text-muted" size={32} />
+              <p className="text-sm text-muted">Belum ada aktivitas tercatat</p>
+              <p className="mt-1 text-xs text-muted">Aktivitas akan otomatis tercatat saat ada perubahan pada tugas, laporan, strategi, atau ad account.</p>
+            </div>
+          ) : (
+            <div className="relative space-y-1">
+              {/* Timeline line */}
+              <div className="absolute left-[15px] top-2 bottom-2 w-px bg-border" />
+
+              {activityLogs.map((log) => {
+                const icon = getActivityIcon(log.entity_type, log.action);
+                const Icon = icon.icon;
+                return (
+                  <div key={log.id} className="relative flex gap-3 py-2 pl-0">
+                    {/* Icon circle */}
+                    <div className={cn("relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface", icon.bg)}>
+                      <Icon size={14} className={icon.text} />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 pb-1">
+                      <p className="text-sm text-gray-900">{log.description}</p>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
+                        <Clock size={10} />
+                        <span>{formatDate(log.created_at, { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}</span>
+                        {log.user?.full_name && (
+                          <>
+                            <span>•</span>
+                            <span>{log.user.full_name}</span>
+                          </>
+                        )}
+                        <span className={cn("ml-auto rounded px-1.5 py-0.5 text-[9px] font-medium uppercase", getEntityBadgeColor(log.entity_type))}>
+                          {log.entity_type.replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+// ============================================
+// Helper: Activity icon based on entity + action
+// ============================================
+function getActivityIcon(entityType: string, action: string): { icon: typeof CheckCircle; bg: string; text: string } {
+  if (action === "created") return { icon: Plus, bg: "bg-primary/10", text: "text-primary" };
+  if (action === "completed") return { icon: CheckCircle, bg: "bg-success/10", text: "text-success" };
+  if (action === "status_changed") return { icon: PencilLine, bg: "bg-warning/10", text: "text-warning" };
+  if (action === "deleted") return { icon: Trash, bg: "bg-danger/10", text: "text-danger" };
+  if (action === "contract_updated") return { icon: TrendingUp, bg: "bg-success/10", text: "text-success" };
+
+  switch (entityType) {
+    case "task":
+      return { icon: CheckSquare, bg: "bg-primary/10", text: "text-primary" };
+    case "report":
+      return { icon: FileText, bg: "bg-warning/10", text: "text-warning" };
+    case "strategy":
+      return { icon: Target, bg: "bg-accent/10", text: "text-accent" };
+    case "ad_account":
+      return { icon: Megaphone, bg: "bg-success/10", text: "text-success" };
+    default:
+      return { icon: ActivityIcon, bg: "bg-surface", text: "text-muted" };
+  }
+}
+
+function getEntityBadgeColor(entityType: string): string {
+  const map: Record<string, string> = {
+    task: "bg-primary/10 text-primary",
+    report: "bg-warning/10 text-warning",
+    strategy: "bg-accent/10 text-accent",
+    ad_account: "bg-success/10 text-success",
+    client: "bg-surface text-muted",
+  };
+  return map[entityType] || "bg-surface text-muted";
 }
