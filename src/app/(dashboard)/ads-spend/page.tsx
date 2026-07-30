@@ -248,14 +248,22 @@ export default function AdsSpendPage() {
 
       if (!res.ok) throw new Error(data.message || data.error || "Sync failed");
 
-      if (data.total_records > 0) {
-        toast.success(`Sync selesai! ${data.total_records} record ditarik.`);
+      // Build detailed toast message
+      const parts: string[] = [];
+      if (data.accounts_imported > 0) parts.push(`📥 ${data.accounts_imported} akun baru`);
+      if (data.accounts_matched > 0) parts.push(`🔗 ${data.accounts_matched} akun di-match`);
+      if (data.total_records > 0) parts.push(`💰 ${data.total_records} spend record`);
+
+      if (parts.length > 0) {
+        toast.success(`Sync selesai! ${parts.join(" • ")}`, { duration: 6000 });
       } else if (data.connections_synced === 0) {
         toast.info("Tidak ada koneksi Meta yang aktif");
       } else {
         toast.info(`Sync selesai. Tidak ada data baru untuk kemarin.`);
       }
 
+      // FIX: Also reload accounts so newly imported ones appear in table
+      loadAccounts();
       loadSpendLogs();
       loadMetaConnection();
     } catch (err) {
@@ -617,7 +625,9 @@ export default function AdsSpendPage() {
       a.account_name?.toLowerCase().includes(search.toLowerCase()) ||
       a.pic?.full_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || a.status === statusFilter;
-    const matchClient = clientFilter === "all" || a.client_id === clientFilter;
+    const matchClient =
+      clientFilter === "all" ||
+      (clientFilter === "unassigned" ? !a.client_id : a.client_id === clientFilter);
     return matchSearch && matchStatus && matchClient;
   });
 
@@ -1070,6 +1080,7 @@ export default function AdsSpendPage() {
           className="input w-auto"
         >
           <option value="all">Semua Client</option>
+          <option value="unassigned">⚠️ Unassigned</option>
           {clients.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -1164,9 +1175,15 @@ export default function AdsSpendPage() {
               {sortedData.map((a) => {
                 const todayStats = getTodaySpend(a.id);
                 return (
-                  <tr key={a.id} className="group hover:bg-surface/50">
+                  <tr key={a.id} className={cn("group hover:bg-surface/50", !a.client_id && "bg-warning/5")}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{a.client?.name || "-"}</div>
+                      {a.client?.name ? (
+                        <div className="font-medium text-gray-900">{a.client.name}</div>
+                      ) : (
+                        <div className="font-medium text-warning flex items-center gap-1">
+                          <AlertTriangle size={12} /> Unassigned
+                        </div>
+                      )}
                       <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
                     </td>
                     <td className="px-4 py-3">
