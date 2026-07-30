@@ -7,6 +7,7 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-p
 import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
+import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 
@@ -76,6 +77,7 @@ export default function TasksPage() {
     blocker: "",
     start_date: "",
   });
+  const [formAssignees, setFormAssignees] = useState<string[]>([]);
 
   useEffect(() => {
     loadCurrentUser();
@@ -169,8 +171,25 @@ export default function TasksPage() {
     if (error) {
       toast.error("Gagal membuat task: " + error.message);
     } else {
+      // Insert assignees if any selected
+      const { data: newTask } = await supabase
+        .from("tasks")
+        .select("id")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (newTask && formAssignees.length > 0) {
+        const assigneeRows = formAssignees.map((uid) => ({
+          task_id: (newTask as { id: string }).id,
+          user_id: uid,
+        }));
+        await supabase.from("task_assignees").insert(assigneeRows as never);
+      }
+
       toast.success("Task berhasil dibuat!");
       setForm({ title: "", description: "", client_id: "", priority: "medium", due_date: "", status: "todo", division: "", result: "", blocker: "", start_date: "" });
+      setFormAssignees([]);
       setShowModal(false);
       loadTasks();
     }
@@ -683,6 +702,13 @@ export default function TasksPage() {
                   />
                 </div>
               </div>
+
+              {/* Assignees */}
+              <AssigneePicker
+                selectedIds={formAssignees}
+                onChange={setFormAssignees}
+                label="Assignee"
+              />
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>

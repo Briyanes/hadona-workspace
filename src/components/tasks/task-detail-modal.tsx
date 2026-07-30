@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { formatDate, timeUntil, getInitials, cn } from "@/lib/utils";
+import { AssigneePicker } from "@/components/tasks/assignee-picker";
 
 interface Task {
   id: string;
@@ -111,6 +112,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     notes: "",
     client_id: "",
   });
+  const [editAssignees, setEditAssignees] = useState<string[]>([]);
 
   const [activeTab, setActiveTab] = useState<"comments" | "subtasks">("comments");
 
@@ -172,6 +174,8 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       notes: taskData.notes || "",
       client_id: "",
     });
+    // Sync editAssignees from loaded task data
+    setEditAssignees(taskData.task_assignees?.map((a) => a.user_id) || []);
     setLoading(false);
   }
 
@@ -223,6 +227,19 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     if (error) {
       toast.error("Gagal update task: " + error.message);
     } else {
+      // Sync assignees: diff current vs selected
+      const currentIds = task?.task_assignees?.map((a) => a.user_id) || [];
+      const toAdd = editAssignees.filter((id) => !currentIds.includes(id));
+      const toRemove = currentIds.filter((id) => !editAssignees.includes(id));
+
+      if (toRemove.length > 0) {
+        await supabase.from("task_assignees").delete().in("user_id", toRemove).eq("task_id", taskId);
+      }
+      if (toAdd.length > 0) {
+        const rows = toAdd.map((uid) => ({ task_id: taskId, user_id: uid }));
+        await supabase.from("task_assignees").insert(rows as never);
+      }
+
       toast.success("Task berhasil diupdate!");
       setIsEditing(false);
       loadTask();
@@ -426,6 +443,9 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Notes</label>
                 <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="input resize-none" />
               </div>
+
+              {/* Assignees in edit mode */}
+              <AssigneePicker selectedIds={editAssignees} onChange={setEditAssignees} label="Assignee" />
 
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">Batal</button>
