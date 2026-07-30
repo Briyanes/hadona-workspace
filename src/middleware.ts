@@ -40,6 +40,13 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Allow API routes (they handle their own auth internally)
+  // Critical for OAuth callbacks (e.g., /api/meta/callback) where
+  // cross-domain redirects may cause cookie/session timing issues
+  if (pathname.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
   // Allow auth routes
   if (pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/auth")) {
     if (user && !pathname.startsWith("/auth")) {
