@@ -13,6 +13,8 @@ import {
   Target,
   Palette,
   Calendar,
+  Clock,
+  FileText,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,9 +34,13 @@ const navItems = [
   { label: "Strategy (OKR)", href: "/strategy", icon: Target },
   { label: "Creative Requests", href: "/creative", icon: Palette },
   { label: "Content Plans", href: "/content-plans", icon: Calendar },
+  { label: "Timesheet", href: "/timesheet", icon: Clock },
 ];
 
-const managerItems = [{ label: "User Management", href: "/users", icon: UserCog }];
+const managerItems = [
+  { label: "Invoices", href: "/invoices", icon: FileText },
+  { label: "User Management", href: "/users", icon: UserCog },
+];
 
 export function Sidebar() {
   const pathname = usePathname();
