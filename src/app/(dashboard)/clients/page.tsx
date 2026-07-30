@@ -609,7 +609,7 @@ export default function ClientsPage() {
       {/* ==================== Create/Edit Modal (2-Column + Sticky) ==================== */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+          <div className="my-8 flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* ── Sticky Header ── */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">
