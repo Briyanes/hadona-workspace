@@ -13,6 +13,9 @@ import {
   Trash2,
   Megaphone,
   Loader2,
+  Download,
+  User,
+  TrendingDown,
 } from "lucide-react";
 import { formatIDR, cn, extractError } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
@@ -31,12 +34,19 @@ interface AdAccount {
   status: string;
   notes: string | null;
   client_id: string;
+  pic_id: string | null;
   client?: { name: string };
+  pic?: { full_name: string | null } | null;
 }
 
 interface Client {
   id: string;
   name: string;
+}
+
+interface TeamMember {
+  id: string;
+  full_name: string | null;
 }
 
 const emptyForm = {
@@ -47,9 +57,9 @@ const emptyForm = {
   objective: "",
   daily_budget: "",
   remaining_budget: "",
-  days_left: "",
   status: "active",
   notes: "",
+  pic_id: "",
 };
 
 export default function AdsSpendPage() {
@@ -65,19 +75,21 @@ export default function AdsSpendPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     loadAccounts();
     loadClients();
+    loadTeam();
   }, []);
 
   async function loadAccounts() {
     try {
       const { data, error } = await supabase
         .from("ad_accounts")
-        .select("*, client:clients(name)")
+        .select("*, client:clients(name), pic:profiles!pic_id(full_name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setAccounts((data as unknown as AdAccount[]) || []);
@@ -95,6 +107,14 @@ export default function AdsSpendPage() {
     setClients((data as unknown as Client[]) || []);
   }
 
+  async function loadTeam() {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .order("full_name");
+    setTeam((data as unknown as TeamMember[]) || []);
+  }
+
   function openCreate() {
     setForm(emptyForm);
     setEditingId(null);
@@ -110,12 +130,18 @@ export default function AdsSpendPage() {
       objective: account.objective || "",
       daily_budget: account.daily_budget?.toString() || "",
       remaining_budget: account.remaining_budget?.toString() || "",
-      days_left: account.days_left?.toString() || "",
       status: account.status,
       notes: account.notes || "",
+      pic_id: account.pic_id || "",
     });
     setEditingId(account.id);
     setShowModal(true);
+  }
+
+  // Auto-calc days_left from remaining / daily
+  function calcDaysLeft(remaining: number | null, daily: number | null): number | null {
+    if (!remaining || !daily || daily <= 0) return null;
+    return Math.floor(remaining / daily);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -139,13 +165,20 @@ export default function AdsSpendPage() {
         objective: form.objective.trim() || null,
         daily_budget: form.daily_budget ? parseFloat(form.daily_budget) : null,
         remaining_budget: form.remaining_budget ? parseFloat(form.remaining_budget) : null,
-        days_left: form.days_left ? parseInt(form.days_left) : null,
+        days_left: calcDaysLeft(
+          form.remaining_budget ? parseFloat(form.remaining_budget) : null,
+          form.daily_budget ? parseFloat(form.daily_budget) : null
+        ),
         status: form.status,
         notes: form.notes.trim() || null,
+        pic_id: form.pic_id || null,
       };
 
       if (editingId) {
-        const { error } = await supabase.from("ad_accounts").update(payload as never).eq("id", editingId);
+        const { error } = await supabase
+          .from("ad_accounts")
+          .update(payload as never)
+          .eq("id", editingId);
         if (error) throw error;
         toast.success("Ad account diupdate!");
       } else {
@@ -177,32 +210,91 @@ export default function AdsSpendPage() {
     }
   }
 
-  const filtered = accounts.filter((a) => {
+  async function handleExportCSV() {
+    if (filtered.length === 0) {
+      toast.error("Tidak ada data untuk diexport");
+      return;
+    }
+    const headers = [
+      "Client",
+      "Platform",
+      "Ad Account ID",
+      "Account Name",
+      "Objective",
+      "Daily Budget",
+      "Remaining",
+      "Days Left",
+      "Status",
+      "PIC",
+      "Notes",
+    ];
+    const rows = filtered.map((a) => [
+      a.client?.name || "",
+      a.platform,
+      a.ad_account_id,
+      a.account_name || "",
+      a.objective || "",
+      a.daily_budget || 0,
+      a.remaining_budget || 0,
+      a.days_left || 0,
+      a.status,
+      a.pic?.full_name || "",
+      (a.notes || "").replace(/"/g, '""'),
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${c}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ads-spend-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV diexport!");
+  }
+
+  // Recalculate days_left for all accounts (auto-calc)
+  const accountsWithCalc = accounts.map((a) => ({
+    ...a,
+    days_left: calcDaysLeft(a.remaining_budget, a.daily_budget),
+  }));
+
+  const filtered = accountsWithCalc.filter((a) => {
     const matchSearch =
       !search ||
       a.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
       a.ad_account_id.includes(search) ||
-      a.account_name?.toLowerCase().includes(search.toLowerCase());
+      a.account_name?.toLowerCase().includes(search.toLowerCase()) ||
+      a.pic?.full_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || a.status === statusFilter;
     const matchClient = clientFilter === "all" || a.client_id === clientFilter;
     return matchSearch && matchStatus && matchClient;
   });
 
   // Stats
-  const totalDaily = accounts
+  const totalDaily = accountsWithCalc
     .filter((a) => a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
 
-  const totalAccounts = accounts.length;
-  const activeCount = accounts.filter((a) => a.status === "active").length;
-  const holdCount = accounts.filter((a) => a.status === "hold").length;
-  const metaBudget = accounts
+  const totalRemaining = accountsWithCalc
+    .filter((a) => a.status === "active")
+    .reduce((sum, a) => sum + (a.remaining_budget || 0), 0);
+
+  const lowBudgetCount = accountsWithCalc.filter(
+    (a) => a.days_left !== null && a.days_left <= 3 && a.status === "active"
+  ).length;
+
+  const totalAccounts = accountsWithCalc.length;
+  const activeCount = accountsWithCalc.filter((a) => a.status === "active").length;
+  const holdCount = accountsWithCalc.filter((a) => a.status === "hold").length;
+  const metaBudget = accountsWithCalc
     .filter((a) => a.platform === "META" && a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
-  const googleBudget = accounts
+  const googleBudget = accountsWithCalc
     .filter((a) => a.platform === "Google" && a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
-  const tiktokBudget = accounts
+  const tiktokBudget = accountsWithCalc
     .filter((a) => a.platform === "TikTok" && a.status === "active")
     .reduce((sum, a) => sum + (a.daily_budget || 0), 0);
 
@@ -216,28 +308,28 @@ export default function AdsSpendPage() {
       bg: "bg-success/10",
     },
     {
-      label: "Total Accounts",
-      value: totalAccounts.toString(),
-      sub: `${holdCount} on hold`,
-      icon: Megaphone,
+      label: "Total Remaining",
+      value: formatIDR(totalRemaining),
+      sub: "active budgets",
+      icon: TrendingDown,
       color: "text-primary",
       bg: "bg-primary/10",
     },
     {
       label: "Active",
       value: activeCount.toString(),
-      sub: "running now",
+      sub: `${holdCount} on hold`,
       icon: Activity,
       color: "text-success",
       bg: "bg-success/10",
     },
     {
-      label: "On Hold",
-      value: holdCount.toString(),
-      sub: "paused",
-      icon: Pause,
-      color: "text-warning",
-      bg: "bg-warning/10",
+      label: "Low Budget Alert",
+      value: lowBudgetCount.toString(),
+      sub: "≤ 3 days left",
+      icon: AlertTriangle,
+      color: lowBudgetCount > 0 ? "text-danger" : "text-muted",
+      bg: lowBudgetCount > 0 ? "bg-danger/10" : "bg-surface",
     },
   ];
 
@@ -289,9 +381,17 @@ export default function AdsSpendPage() {
           <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
           <p className="text-sm text-muted">Pantau budget & performa ad account semua klien</p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> New Ad Account
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+          >
+            <Download size={14} /> Export
+          </button>
+          <button onClick={openCreate} className="btn-primary">
+            <Plus size={16} /> New Ad Account
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -313,7 +413,9 @@ export default function AdsSpendPage() {
 
       {/* Platform Breakdown */}
       <div className="card p-4">
-        <p className="mb-3 text-xs font-medium text-muted">BUDGET BREAKDOWN PER PLATFORM (Active)</p>
+        <p className="mb-3 text-xs font-medium text-muted">
+          BUDGET BREAKDOWN PER PLATFORM (Active)
+        </p>
         <div className="space-y-2">
           {platformBreakdown.map((p) => {
             const pct = totalDaily > 0 ? (p.budget / totalDaily) * 100 : 0;
@@ -322,7 +424,10 @@ export default function AdsSpendPage() {
                 <span className="w-16 text-xs font-medium text-gray-900">{p.name}</span>
                 <div className="h-6 flex-1 overflow-hidden rounded-md bg-background">
                   <div
-                    className={cn("flex h-full items-center justify-end rounded-md px-2 text-[10px] font-medium text-white transition-all", p.color)}
+                    className={cn(
+                      "flex h-full items-center justify-end rounded-md px-2 text-[10px] font-medium text-white transition-all",
+                      p.color
+                    )}
                     style={{ width: `${Math.max(pct, p.budget > 0 ? 15 : 0)}%` }}
                   >
                     {p.budget > 0 && formatIDR(p.budget)}
@@ -340,7 +445,7 @@ export default function AdsSpendPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
             type="text"
-            placeholder="Cari client atau ad account..."
+            placeholder="Cari client, ad account, atau PIC..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input pl-9"
@@ -383,39 +488,112 @@ export default function AdsSpendPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-surface">
               <tr className="text-left text-xs uppercase text-muted">
-                <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Platform" sortKey="platform" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Ad Account ID" sortKey="ad_account_id" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Objective" sortKey="objective" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Daily Budget" sortKey="daily_budget" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" />
-                <SortableTh label="Remaining" sortKey="remaining_budget" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" />
-                <SortableTh label="Days Left" sortKey="days_left" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="center" />
-                <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="center" />
+                <SortableTh
+                  label="Client"
+                  sortKey="client.name"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                />
+                <SortableTh
+                  label="Platform"
+                  sortKey="platform"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                />
+                <SortableTh
+                  label="PIC"
+                  sortKey="pic.full_name"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                />
+                <SortableTh
+                  label="Objective"
+                  sortKey="objective"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                />
+                <SortableTh
+                  label="Daily"
+                  sortKey="daily_budget"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                  align="right"
+                />
+                <SortableTh
+                  label="Remaining"
+                  sortKey="remaining_budget"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                  align="right"
+                />
+                <SortableTh
+                  label="Days Left"
+                  sortKey="days_left"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                  align="center"
+                />
+                <SortableTh
+                  label="Status"
+                  sortKey="status"
+                  activeKey={sortState.key}
+                  direction={sortState.direction}
+                  onSort={toggleSort}
+                  align="center"
+                />
                 <th className="px-4 py-3 text-right font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {sortedData.map((a) => (
                 <tr key={a.id} className="group hover:bg-surface/50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{a.client?.name || "-"}</td>
                   <td className="px-4 py-3">
-                    <span className={cn("badge", platformColors[a.platform] || "bg-surface text-muted")}>
+                    <div className="font-medium text-gray-900">{a.client?.name || "-"}</div>
+                    <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={cn(
+                        "badge",
+                        platformColors[a.platform] || "bg-surface text-muted"
+                      )}
+                    >
                       {a.platform}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted">{a.ad_account_id}</td>
+                  <td className="px-4 py-3">
+                    {a.pic?.full_name ? (
+                      <span className="flex items-center gap-1 text-xs text-gray-700">
+                        <User size={12} className="text-muted" />
+                        {a.pic.full_name}
+                      </span>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted">{a.objective || "-"}</td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">
                     {formatIDR(a.daily_budget)}
                   </td>
-                  <td className="px-4 py-3 text-right text-muted">{formatIDR(a.remaining_budget)}</td>
+                  <td className="px-4 py-3 text-right text-muted">
+                    {formatIDR(a.remaining_budget)}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     {a.days_left !== null && a.days_left <= 3 ? (
                       <span className="badge bg-danger/20 text-danger">
                         <AlertTriangle size={10} /> {a.days_left}d
                       </span>
                     ) : (
-                      <span className="text-muted">{a.days_left ? `${a.days_left}d` : "-"}</span>
+                      <span className="text-muted">
+                        {a.days_left !== null ? `${a.days_left}d` : "-"}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -424,7 +602,8 @@ export default function AdsSpendPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    {/* Always visible on mobile, hover on desktop */}
+                    <div className="flex justify-end gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
                       <button
                         onClick={() => openEdit(a)}
                         className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
@@ -465,120 +644,146 @@ export default function AdsSpendPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
+              {/* Section: Client & Platform */}
+              <div className="space-y-3 rounded-lg bg-background p-3">
+                <p className="text-xs font-semibold uppercase text-muted">Client & Platform</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">Client *</label>
+                    <select
+                      required
+                      value={form.client_id}
+                      onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">— Pilih —</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Platform *
+                    </label>
+                    <select
+                      value={form.platform}
+                      onChange={(e) => setForm({ ...form, platform: e.target.value })}
+                      className="input"
+                    >
+                      <option value="META">META (FB/IG)</option>
+                      <option value="Google">Google Ads</option>
+                      <option value="TikTok">TikTok Ads</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Ad Account ID *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={form.ad_account_id}
+                      onChange={(e) => setForm({ ...form, ad_account_id: e.target.value })}
+                      placeholder="1234567890"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Account Name
+                    </label>
+                    <input
+                      type="text"
+                      value={form.account_name}
+                      onChange={(e) => setForm({ ...form, account_name: e.target.value })}
+                      placeholder="Nickname"
+                      className="input"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Budget */}
+              <div className="space-y-3 rounded-lg bg-background p-3">
+                <p className="text-xs font-semibold uppercase text-muted">Budget & Status</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Daily Budget (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.daily_budget}
+                      onChange={(e) => setForm({ ...form, daily_budget: e.target.value })}
+                      placeholder="0"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Remaining (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.remaining_budget}
+                      onChange={(e) => setForm({ ...form, remaining_budget: e.target.value })}
+                      placeholder="0"
+                      className="input"
+                    />
+                  </div>
+                </div>
+                {/* Auto-calc days left hint */}
+                {form.daily_budget && form.remaining_budget && (
+                  <p className="text-[10px] text-muted">
+                    <TrendingDown size={10} className="mr-1 inline" />
+                    Days left terhitung otomatis:{" "}
+                    <strong>
+                      {calcDaysLeft(
+                        parseFloat(form.remaining_budget),
+                        parseFloat(form.daily_budget)
+                      )}{" "}
+                      hari
+                    </strong>
+                  </p>
+                )}
                 <select
-                  required
-                  value={form.client_id}
-                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
                   className="input"
                 >
-                  <option value="">— Pilih Client —</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  <option value="active">Active</option>
+                  <option value="hold">Hold</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Platform *</label>
-                  <select
-                    value={form.platform}
-                    onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                    className="input"
-                  >
-                    <option value="META">META (Facebook/Instagram)</option>
-                    <option value="Google">Google Ads</option>
-                    <option value="TikTok">TikTok Ads</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="input"
-                  >
-                    <option value="active">Active</option>
-                    <option value="hold">Hold</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Ad Account ID *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.ad_account_id}
-                    onChange={(e) => setForm({ ...form, ad_account_id: e.target.value })}
-                    placeholder="Contoh: 1234567890"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Account Name</label>
-                  <input
-                    type="text"
-                    value={form.account_name}
-                    onChange={(e) => setForm({ ...form, account_name: e.target.value })}
-                    placeholder="Nickname untuk akun"
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Objective</label>
+              {/* Section: PIC & Notes */}
+              <div className="space-y-3 rounded-lg bg-background p-3">
+                <p className="text-xs font-semibold uppercase text-muted">PIC & Catatan</p>
+                <select
+                  value={form.pic_id}
+                  onChange={(e) => setForm({ ...form, pic_id: e.target.value })}
+                  className="input"
+                >
+                  <option value="">— Tanpa PIC —</option>
+                  {team.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.full_name || "Unknown"}
+                    </option>
+                  ))}
+                </select>
                 <input
                   type="text"
                   value={form.objective}
                   onChange={(e) => setForm({ ...form, objective: e.target.value })}
-                  placeholder="Contoh: Conversions, Traffic, Awareness"
+                  placeholder="Objective: Conversions, Traffic, Awareness..."
                   className="input"
                 />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Daily Budget (Rp)</label>
-                  <input
-                    type="number"
-                    value={form.daily_budget}
-                    onChange={(e) => setForm({ ...form, daily_budget: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Remaining (Rp)</label>
-                  <input
-                    type="number"
-                    value={form.remaining_budget}
-                    onChange={(e) => setForm({ ...form, remaining_budget: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Days Left</label>
-                  <input
-                    type="number"
-                    value={form.days_left}
-                    onChange={(e) => setForm({ ...form, days_left: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
