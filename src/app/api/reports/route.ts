@@ -6,13 +6,19 @@ import { createClient } from "@supabase/supabase-js";
  *
  * Actions:
  *   POST { action: "pull-ads", clientId, periodStart, periodEnd }
- *     -> Aggregate ad_spend_logs untuk client+periode, return structured metrics
+ *     -> Aggregate ad_spend_logs untuk client+periode, return structured metrics + budget pacing
  *
  *   POST { action: "save-metrics", reportId, metrics[] }
  *     -> Simpan structured metrics ke report_metrics table (replace existing)
  *
- *   POST { action: "get-previous", clientId, periodEnd }
+ *   POST { action: "get-previous", clientId, periodStart }
  *     -> Ambil report minggu sebelumnya untuk WoW comparison
+ *
+ *   POST { action: "delete", reportId }
+ *     -> Delete report + metrics terkait (admin/supabase bypass RLS)
+ *
+ *   POST { action: "clone", reportId, newPeriodStart, newPeriodEnd }
+ *     -> Clone report (untuk template minggu depan)
  */
 
 function getAdminClient() {
@@ -74,10 +80,10 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Ambil semua ad_account milik client ini
+        // Ambil semua ad_account milik client ini (+ budget untuk pacing)
         const { data: accounts, error: accountsError } = await supabase
           .from("ad_accounts")
-          .select("id, platform, account_name")
+          .select("id, platform, account_name, daily_budget, status")
           .eq("client_id", clientId);
 
         if (accountsError) throw accountsError;
@@ -89,6 +95,7 @@ export async function POST(request: NextRequest) {
             message: "Client ini belum punya ad account terdaftar",
             metrics: {},
             platformBreakdown: [],
+            budgetPacing: null,
           });
         }
 
@@ -112,6 +119,7 @@ export async function POST(request: NextRequest) {
             message: "Tidak ada data spend untuk periode ini",
             metrics: {},
             platformBreakdown: [],
+            budgetPacing: null,
           });
         }
 
@@ -128,6 +136,33 @@ export async function POST(request: NextRequest) {
         const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
         const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
         const roas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+        const frequency = totalImpressions > 0 && totalClicks > 0 ? totalImpressions / (totalClicks / ctr * 100) : 0;
+
+        // ─── Budget Pacing: target spend mingguan vs actual ───
+        const periodDays =
+          Math.ceil(
+            (new Date(periodEnd).getTime() - new Date(periodStart).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ) + 1;
+        const activeAccounts = accounts.filter((a) => a.status === "active");
+        const totalDailyBudget = activeAccounts.reduce(
+          (s, a) => s + (a.daily_budget || 0),
+          0
+        );
+        const targetWeeklySpend = totalDailyBudget * periodDays;
+        const pacingPercent =
+          targetWeeklySpend > 0
+            ? parseFloat(((totalSpend / targetWeeklySpend) * 100).toFixed(1))
+            : 0;
+
+        const budgetPacing = {
+          targetSpend: targetWeeklySpend,
+          actualSpend: totalSpend,
+          pacingPercent,
+          remainingBudget: Math.max(0, targetWeeklySpend - totalSpend),
+          activeAccountCount: activeAccounts.length,
+          periodDays,
+        };
 
         // Aggregate per platform
         const platformAgg: Record<
@@ -190,8 +225,10 @@ export async function POST(request: NextRequest) {
             cpc: parseFloat(cpc.toFixed(0)),
             cpm: parseFloat(cpm.toFixed(0)),
             roas: parseFloat(roas.toFixed(2)),
+            frequency: parseFloat(frequency.toFixed(2)),
           },
           platformBreakdown,
+          budgetPacing,
         });
       }
 
@@ -299,6 +336,90 @@ export async function POST(request: NextRequest) {
           hasPrevious: true,
           previousReport: prevReport,
           previousMetrics: aggregated,
+        });
+      }
+
+      // ─── DELETE: Hapus report + metrics terkait (bypass RLS) ───
+      case "delete": {
+        const { reportId } = body as { reportId: string };
+
+        if (!reportId) {
+          return NextResponse.json({ error: "reportId wajib diisi" }, { status: 400 });
+        }
+
+        // Hapus metrics dulu (foreign key constraint)
+        const { error: delMetricsErr } = await supabase
+          .from("report_metrics")
+          .delete()
+          .eq("weekly_report_id", reportId);
+
+        if (delMetricsErr) throw delMetricsErr;
+
+        // Lalu hapus report
+        const { error: delReportErr } = await supabase
+          .from("weekly_reports")
+          .delete()
+          .eq("id", reportId);
+
+        if (delReportErr) throw delReportErr;
+
+        return NextResponse.json({
+          success: true,
+          deleted: reportId,
+        });
+      }
+
+      // ─── CLONE: Duplicate report untuk periode baru ───
+      case "clone": {
+        const { reportId, newPeriodStart, newPeriodEnd, userId } = body as {
+          reportId: string;
+          newPeriodStart: string;
+          newPeriodEnd: string;
+          userId: string;
+        };
+
+        if (!reportId || !newPeriodStart || !newPeriodEnd) {
+          return NextResponse.json(
+            { error: "reportId, newPeriodStart, newPeriodEnd wajib diisi" },
+            { status: 400 }
+          );
+        }
+
+        // Ambil report source
+        const { data: sourceReport, error: srcErr } = await supabase
+          .from("weekly_reports")
+          .select("*")
+          .eq("id", reportId)
+          .single();
+
+        if (srcErr) throw srcErr;
+        if (!sourceReport) {
+          return NextResponse.json({ error: "Report source tidak ditemukan" }, { status: 404 });
+        }
+
+        // Insert report baru
+        const { data: newReport, error: insertErr } = await supabase
+          .from("weekly_reports")
+          .insert({
+            client_id: sourceReport.client_id,
+            pic_id: userId || sourceReport.pic_id,
+            period_start: newPeriodStart,
+            period_end: newPeriodEnd,
+            summary: "",
+            performance_text: "",
+            conclusion: "",
+            action: "",
+            status: "draft",
+          })
+          .select()
+          .single();
+
+        if (insertErr) throw insertErr;
+
+        return NextResponse.json({
+          success: true,
+          newReportId: newReport.id,
+          message: "Report berhasil di-clone. Metrik perlu di-pull ulang untuk periode baru.",
         });
       }
 

@@ -22,6 +22,7 @@ import {
   Download,
   Sparkles,
   BarChart3,
+  Copy,
 } from "lucide-react";
 import {
   AreaChart,
@@ -68,6 +69,15 @@ interface Client {
   name: string;
 }
 
+interface BudgetPacing {
+  targetSpend: number;
+  actualSpend: number;
+  pacingPercent: number;
+  remainingBudget: number;
+  activeAccountCount: number;
+  periodDays: number;
+}
+
 interface PulledMetrics {
   spend: number;
   impressions: number;
@@ -79,6 +89,7 @@ interface PulledMetrics {
   cpc: number;
   cpm: number;
   roas: number;
+  frequency: number;
 }
 
 interface PlatformBreakdown {
@@ -187,6 +198,7 @@ export default function ReportsPage() {
     platformBreakdown: PlatformBreakdown[];
     hasData: boolean;
     accountCount: number;
+    budgetPacing: BudgetPacing | null;
   } | null>(null);
 
   // WoW previous metrics
@@ -291,6 +303,7 @@ export default function ReportsPage() {
         platformBreakdown: data.platformBreakdown || [],
         hasData: true,
         accountCount: data.accountCount || 0,
+        budgetPacing: data.budgetPacing || null,
       });
 
       toast.success(
@@ -390,12 +403,62 @@ export default function ReportsPage() {
   async function handleDelete(id: string) {
     if (!confirm("Hapus laporan ini? Tindakan tidak dapat dibatalkan.")) return;
     try {
-      const { error } = await supabase.from("weekly_reports").delete().eq("id", id);
-      if (error) throw error;
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "delete", reportId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal hapus report");
       toast.success("Laporan dihapus");
       loadReports();
     } catch (err) {
       toast.error("Gagal hapus: " + extractError(err));
+    }
+  }
+
+  // ─── Clone report (duplicate untuk periode baru) ───
+  async function handleClone(report: Report) {
+    // Hitung periode minggu depan (period_end + 1 hari → +7 hari)
+    const prevEnd = new Date(report.period_end);
+    const newStart = new Date(prevEnd);
+    newStart.setDate(newStart.getDate() + 1);
+    const newEnd = new Date(newStart);
+    newEnd.setDate(newEnd.getDate() + 6);
+
+    const fmt = (d: Date) => d.toISOString().split("T")[0];
+    const newPeriodStart = fmt(newStart);
+    const newPeriodEnd = fmt(newEnd);
+
+    if (!confirm(`Clone report ini untuk periode ${formatDate(newPeriodStart)} - ${formatDate(newPeriodEnd)}?`)) return;
+
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "clone",
+          reportId: report.id,
+          newPeriodStart,
+          newPeriodEnd,
+          userId: userData.user?.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal clone report");
+      toast.success(`✅ Report di-clone untuk periode ${formatDate(newPeriodStart)}`);
+      loadReports();
+    } catch (err) {
+      toast.error("Gagal clone: " + extractError(err));
     }
   }
 
@@ -628,28 +691,35 @@ export default function ReportsPage() {
         return m?.value || 0;
       };
 
-      return [
-        r.client?.name || "",
-        r.period_start,
-        r.period_end,
-        r.status,
-        r.pic?.full_name || "",
-        getMetric("spend"),
+      // Strings: quote them; Numbers: leave raw so Excel detects as numbers
+      const stringCols = [
+        `"${r.client?.name || ""}"`,
+        `"${r.period_start}"`,
+        `"${r.period_end}"`,
+        `"${r.status}"`,
+        `"${r.pic?.full_name || ""}"`,
+      ];
+      const numCols = [
+        Number(getMetric("spend").toFixed(2)),
         getMetric("impressions"),
         getMetric("clicks"),
-        getMetric("ctr"),
+        Number(getMetric("ctr").toFixed(2)),
         getMetric("conversions"),
-        getMetric("cpr"),
-        getMetric("revenue"),
-        getMetric("roas"),
-        (r.summary || "").replace(/"/g, '""'),
-        (r.conclusion || "").replace(/"/g, '""'),
-        (r.action || "").replace(/"/g, '""'),
+        Number(getMetric("cpr").toFixed(2)),
+        Number(getMetric("revenue").toFixed(2)),
+        Number(getMetric("roas").toFixed(2)),
       ];
+      const textCols = [
+        `"${(r.summary || "").replace(/"/g, '""')}"`,
+        `"${(r.conclusion || "").replace(/"/g, '""')}"`,
+        `"${(r.action || "").replace(/"/g, '""')}"`,
+      ];
+
+      return [...stringCols, ...numCols, ...textCols];
     });
 
-    const csv = [headers, ...rows]
-      .map((r) => r.map((c) => `"${c}"`).join(","))
+    const csv = [headers.map((h) => `"${h}"`), ...rows]
+      .map((r) => r.join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -817,6 +887,13 @@ export default function ReportsPage() {
                       <Pencil size={14} />
                     </button>
                     <button
+                      onClick={() => handleClone(r)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-accent"
+                      title="Clone untuk minggu depan"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    <button
                       onClick={() => handleDelete(r.id)}
                       className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
                       title="Hapus"
@@ -960,6 +1037,144 @@ export default function ReportsPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* ─── F2: Budget Pacing + F4: Frequency Alert ─── */}
+              {pulledData?.hasData && pulledData.budgetPacing && pulledData.budgetPacing.targetSpend > 0 && (
+                <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-primary/5 p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase text-muted">🎯 Budget Pacing</p>
+                    <span className="text-[10px] text-muted">
+                      {pulledData.metrics.frequency > 0 && (
+                        <>
+                          {pulledData.metrics.frequency > 3 ? (
+                            <span className="text-danger font-semibold">⚠️ Frequency {pulledData.metrics.frequency}x — Audience Jenuh!</span>
+                          ) : (
+                            <span className="text-success">Frequency {pulledData.metrics.frequency}x — OK</span>
+                          )}
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {(() => {
+                    const bp = pulledData.budgetPacing!;
+                    const pacingColor =
+                      bp.pacingPercent >= 95 ? "text-success" :
+                      bp.pacingPercent >= 70 ? "text-warning" :
+                      bp.pacingPercent >= 40 ? "text-warning" : "text-danger";
+                    const pacingBg =
+                      bp.pacingPercent >= 95 ? "bg-success" :
+                      bp.pacingPercent >= 70 ? "bg-warning" : "bg-danger";
+
+                    return (
+                      <div className="space-y-2">
+                        {/* Progress bar */}
+                        <div className="relative h-4 w-full overflow-hidden rounded-full bg-background">
+                          <div
+                            className={cn("h-full rounded-full transition-all", pacingBg)}
+                            style={{ width: `${Math.min(bp.pacingPercent, 100)}%` }}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                            {bp.pacingPercent}%
+                          </span>
+                        </div>
+                        {/* Detail stats */}
+                        <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                          <div>
+                            <p className="text-muted">Target</p>
+                            <p className="font-bold text-gray-900">{formatIDR(bp.targetSpend)}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted">Actual</p>
+                            <p className={cn("font-bold", pacingColor)}>{formatIDR(bp.actualSpend)}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted">Sisa Budget</p>
+                            <p className="font-bold text-gray-900">{formatIDR(bp.remainingBudget)}</p>
+                          </div>
+                        </div>
+                        {/* Status alert */}
+                        {bp.pacingPercent < 40 && (
+                          <p className="text-center text-[10px] text-danger font-medium">
+                            ⚠️ Spending terlalu lambat! Hanya {bp.pacingPercent}% dari target ({bp.activeAccountCount} akun aktif, {bp.periodDays} hari)
+                          </p>
+                        )}
+                        {bp.pacingPercent >= 95 && bp.pacingPercent <= 105 && (
+                          <p className="text-center text-[10px] text-success font-medium">
+                            ✅ Pacing on-track! Spend optimal sesuai target harian
+                          </p>
+                        )}
+                        {bp.pacingPercent > 105 && (
+                          <p className="text-center text-[10px] text-warning font-medium">
+                            🔴 Overspending! {bp.pacingPercent}% dari target ({bp.periodDays} hari)
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* ─── F1: Funnel Visualization ─── */}
+              {pulledData?.hasData && (
+                <div className="rounded-lg border border-border p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase text-muted">🔻 Funnel Visualization</p>
+                  {(() => {
+                    const m = pulledData.metrics;
+                    const steps = [
+                      { label: "Impressions", value: m.impressions, pct: 100, color: "bg-primary" },
+                      {
+                        label: "Clicks",
+                        value: m.clicks,
+                        pct: m.impressions > 0 ? (m.clicks / m.impressions) * 100 : 0,
+                        color: "bg-accent",
+                      },
+                      {
+                        label: "Conversions",
+                        value: m.conversions,
+                        pct: m.clicks > 0 ? (m.conversions / m.clicks) * 100 : 0,
+                        color: "bg-success",
+                      },
+                    ];
+                    return (
+                      <div className="space-y-1.5">
+                        {steps.map((s, i) => (
+                          <div key={s.label} className="flex items-center gap-2">
+                            <span className="w-24 text-[10px] text-muted">{s.label}</span>
+                            <div className="relative h-6 flex-1 overflow-hidden rounded bg-background">
+                              <div
+                                className={cn("h-full rounded transition-all", s.color)}
+                                style={{ width: `${Math.max(s.pct, 5)}%`, opacity: 1 - i * 0.15 }}
+                              />
+                              <span className="absolute inset-0 flex items-center justify-between px-2 text-[10px] font-semibold text-white">
+                                <span>{formatCompact(s.value)}</span>
+                                <span>{s.pct.toFixed(1)}%</span>
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {/* Conversion rate summary */}
+                        <div className="flex justify-between pt-1 text-[10px]">
+                          <span className="text-muted">
+                            CTR: <b className="text-gray-900">{m.ctr.toFixed(2)}%</b>
+                          </span>
+                          <span className="text-muted">
+                            CVR:{" "}
+                            <b className={m.clicks > 0 && (m.conversions / m.clicks) * 100 >= 2 ? "text-success" : "text-warning"}>
+                              {m.clicks > 0 ? ((m.conversions / m.clicks) * 100).toFixed(2) : "0"}%
+                            </b>
+                          </span>
+                          <span className="text-muted">
+                            ROAS:{" "}
+                            <b className={m.roas >= 3 ? "text-success" : m.roas >= 1 ? "text-warning" : "text-danger"}>
+                              {m.roas.toFixed(2)}x
+                            </b>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
