@@ -168,11 +168,25 @@ export default function AdsSpendPage() {
 
   // Import Sheet Modal
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importMode, setImportMode] = useState<"assign" | "import">("assign");
   const [sheetUrl, setSheetUrl] = useState(
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vSrMQ3VuFWBGtfbf8P-EV2kGEv6GB2UnCqXSgUNiNh4aTXEQD7mECzrnnWsAeF7rllx6dOCIpKImTLR/pubhtml"
   );
   const [sheetColumn, setSheetColumn] = useState("E");
+  const [clientColumn, setClientColumn] = useState("B");
+  const [accountColumn, setAccountColumn] = useState("F");
   const [importing, setImporting] = useState(false);
+
+  // Auto-assign results
+  const [assignResult, setAssignResult] = useState<{
+    matched: number;
+    clients_created: number;
+    already_assigned: number;
+    duplicates: number;
+    no_match: number;
+    matched_details: Array<{ client: string; nomorAkun: string; accountName: string | null; action: string }>;
+    no_match_details: Array<{ client: string; nomorAkun: string }>;
+  } | null>(null);
 
   useEffect(() => {
     loadAccounts();
@@ -321,6 +335,11 @@ export default function AdsSpendPage() {
       return;
     }
 
+    // Route to auto-assign if in assign mode
+    if (importMode === "assign") {
+      return handleAutoAssign();
+    }
+
     setImporting(true);
     try {
       const res = await fetch("/api/import/sheet", {
@@ -341,6 +360,55 @@ export default function AdsSpendPage() {
       loadAccounts();
     } catch (err) {
       toast.error("Gagal import: " + extractError(err));
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function handleAutoAssign() {
+    if (!sheetUrl.trim()) {
+      toast.error("URL Sheet wajib diisi");
+      return;
+    }
+
+    setImporting(true);
+    setAssignResult(null);
+    try {
+      const res = await fetch("/api/import/assign-from-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sheetUrl: sheetUrl.trim(),
+          clientColumn: clientColumn,
+          accountColumn: accountColumn,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Auto-assign gagal");
+
+      setAssignResult({
+        matched: data.matched || 0,
+        clients_created: data.clients_created || 0,
+        already_assigned: data.already_assigned || 0,
+        duplicates: data.duplicates || 0,
+        no_match: data.no_match || 0,
+        matched_details: data.matched_details || [],
+        no_match_details: data.no_match_details || [],
+      });
+
+      const parts: string[] = [];
+      if (data.matched > 0) parts.push(`✅ ${data.matched} di-assign`);
+      if (data.clients_created > 0) parts.push(`✨ ${data.clients_created} client baru`);
+      if (data.already_assigned > 0) parts.push(`⏭️ ${data.already_assigned} sudah sesuai`);
+      if (data.no_match > 0) parts.push(`⚠️ ${data.no_match} tidak match`);
+
+      toast.success(`Auto-assign selesai! ${parts.join(" • ")}`, { duration: 8000 });
+
+      loadAccounts();
+      loadClients();
+    } catch (err) {
+      toast.error("Gagal auto-assign: " + extractError(err));
     } finally {
       setImporting(false);
     }
@@ -1740,84 +1808,288 @@ export default function AdsSpendPage() {
       {/* Import Sheet Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
+          <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
+                <p className="text-xs text-muted">
+                  Auto-assign client ke ad account berdasarkan mapping di sheet
+                </p>
+              </div>
               <button
-                onClick={() => setShowImportModal(false)}
+                onClick={() => {
+                  setShowImportModal(false);
+                  setAssignResult(null);
+                }}
                 className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
-              <p className="mb-1 font-semibold">📋 Cara kerja:</p>
-              <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
-                <li>Paste URL published Google Sheet (format pubhtml)</li>
-                <li>Pilih kolom yang berisi nama ad account (default: E)</li>
-                <li>Sistem akan parse dan import semua nama ke database</li>
-                <li>Setelah import, klik "Sync Now" untuk match dengan Meta API</li>
-              </ol>
+            {/* Mode Toggle */}
+            <div className="mb-4 flex gap-2 rounded-lg bg-background p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportMode("assign");
+                  setAssignResult(null);
+                }}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+                  importMode === "assign"
+                    ? "bg-primary text-white"
+                    : "text-muted hover:text-gray-900"
+                )}
+              >
+                🤖 Auto-Assign Client (Rekomendasi)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setImportMode("import");
+                  setAssignResult(null);
+                }}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+                  importMode === "import"
+                    ? "bg-primary text-white"
+                    : "text-muted hover:text-gray-900"
+                )}
+              >
+                📥 Import Account Baru
+              </button>
             </div>
 
-            <form onSubmit={handleImportSheet} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
-                  URL Published Google Sheet *
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={sheetUrl}
-                  onChange={(e) => setSheetUrl(e.target.value)}
-                  placeholder="https://docs.google.com/spreadsheets/d/e/..."
-                  className="input text-[11px]"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
-                  Kolom Ad Account Name
-                </label>
-                <select
-                  value={sheetColumn}
-                  onChange={(e) => setSheetColumn(e.target.value)}
-                  className="input"
-                >
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                  <option value="E">E (default)</option>
-                  <option value="F">F</option>
-                  <option value="G">G</option>
-                </select>
-                <p className="mt-1 text-[10px] text-muted">
-                  Kolom mana yang berisi nama ad account di sheet Anda?
-                </p>
-              </div>
+            {importMode === "assign" ? (
+              <>
+                {/* Auto-Assign Mode Info */}
+                <div className="mb-4 rounded-lg bg-success/5 p-3 text-xs text-gray-700">
+                  <p className="mb-1 font-semibold text-success">🤖 Cara kerja Auto-Assign:</p>
+                  <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
+                    <li>Baca kolom <strong>Client</strong> (B) & <strong>Nomor Akun</strong> (F)</li>
+                    <li>Auto-create client baru jika belum ada di database</li>
+                    <li>Match <code className="rounded bg-background px-1">account_name</code> di DB dengan Nomor Akun (fuzzy + FB ID)</li>
+                    <li>Bulk update <code className="rounded bg-background px-1">client_id</code> untuk semua match</li>
+                    <li>Skipped values: "BM LAMA", "BM MILIK CLIENT", "TOTAL"</li>
+                  </ol>
+                </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
-                >
-                  Batal
-                </button>
-                <button type="submit" disabled={importing} className="btn-primary">
-                  {importing ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={14} className="rotate-180" /> Import Now
-                    </>
+                <form onSubmit={handleImportSheet} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      URL Published Google Sheet *
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={sheetUrl}
+                      onChange={(e) => setSheetUrl(e.target.value)}
+                      placeholder="https://docs.google.com/spreadsheets/d/e/..."
+                      className="input text-[11px]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700">
+                        Kolom Nama Client
+                      </label>
+                      <select
+                        value={clientColumn}
+                        onChange={(e) => setClientColumn(e.target.value)}
+                        className="input"
+                      >
+                        <option value="A">A</option>
+                        <option value="B">B (default)</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="F">F</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700">
+                        Kolom Nomor Akun
+                      </label>
+                      <select
+                        value={accountColumn}
+                        onChange={(e) => setAccountColumn(e.target.value)}
+                        className="input"
+                      >
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                        <option value="F">F (default)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Results Report */}
+                  {assignResult && (
+                    <div className="space-y-3 rounded-lg border border-border bg-background p-4">
+                      <p className="text-sm font-bold text-gray-900">📊 Hasil Auto-Assign:</p>
+
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <div className="rounded-lg bg-success/10 p-2 text-center">
+                          <p className="text-lg font-bold text-success">{assignResult.matched}</p>
+                          <p className="text-[10px] text-muted">Di-assign</p>
+                        </div>
+                        <div className="rounded-lg bg-primary/10 p-2 text-center">
+                          <p className="text-lg font-bold text-primary">{assignResult.clients_created}</p>
+                          <p className="text-[10px] text-muted">Client Baru</p>
+                        </div>
+                        <div className="rounded-lg bg-warning/10 p-2 text-center">
+                          <p className="text-lg font-bold text-warning">{assignResult.already_assigned}</p>
+                          <p className="text-[10px] text-muted">Sudah Sesuai</p>
+                        </div>
+                        <div className="rounded-lg bg-danger/10 p-2 text-center">
+                          <p className="text-lg font-bold text-danger">{assignResult.no_match}</p>
+                          <p className="text-[10px] text-muted">Tidak Match</p>
+                        </div>
+                      </div>
+
+                      {/* Matched Details */}
+                      {assignResult.matched_details.length > 0 && (
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold text-success">
+                            ✅ Berhasil ({assignResult.matched_details.length}):
+                          </p>
+                          <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2">
+                            {assignResult.matched_details.map((d, i) => (
+                              <div key={i} className="flex items-center justify-between border-b border-border/50 py-1 text-[10px] last:border-0">
+                                <span className="font-medium text-gray-900">{d.client}</span>
+                                <span className="text-muted">
+                                  ← {d.nomorAkun.slice(0, 30)}{d.nomorAkun.length > 30 ? "..." : ""}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* No-Match Details */}
+                      {assignResult.no_match_details.length > 0 && (
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold text-danger">
+                            ⚠️ Tidak ditemukan match ({assignResult.no_match_details.length}):
+                          </p>
+                          <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2">
+                            {assignResult.no_match_details.map((d, i) => (
+                              <div key={i} className="flex items-center justify-between border-b border-border/50 py-1 text-[10px] last:border-0">
+                                <span className="font-medium text-gray-900">{d.client}</span>
+                                <span className="text-muted">→ {d.nomorAkun.slice(0, 30)}{d.nomorAkun.length > 30 ? "..." : ""}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="mt-1 text-[10px] text-muted">
+                            💡 Akun-akun ini mungkin sudah tidak aktif atau nama di sheet berbeda dengan di database.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </button>
-              </div>
-            </form>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowImportModal(false);
+                        setAssignResult(null);
+                      }}
+                      className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                    >
+                      Tutup
+                    </button>
+                    <button type="submit" disabled={importing} className="btn-primary">
+                      {importing ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" /> Processing...
+                        </>
+                      ) : assignResult ? (
+                        <>🔄 Run Again</>
+                      ) : (
+                        <>
+                          <Download size={14} className="rotate-180" /> Auto-Assign Now
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                {/* Import Mode Info */}
+                <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
+                  <p className="mb-1 font-semibold">📋 Cara kerja Import:</p>
+                  <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
+                    <li>Pilih kolom yang berisi nama ad account (default: E)</li>
+                    <li>Sistem akan parse dan import semua nama ke database</li>
+                    <li>Setelah import, klik "Sync Now" untuk match dengan Meta API</li>
+                  </ol>
+                </div>
+
+                <form onSubmit={handleImportSheet} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      URL Published Google Sheet *
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={sheetUrl}
+                      onChange={(e) => setSheetUrl(e.target.value)}
+                      placeholder="https://docs.google.com/spreadsheets/d/e/..."
+                      className="input text-[11px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">
+                      Kolom Ad Account Name
+                    </label>
+                    <select
+                      value={sheetColumn}
+                      onChange={(e) => setSheetColumn(e.target.value)}
+                      className="input"
+                    >
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D</option>
+                      <option value="E">E (default)</option>
+                      <option value="F">F</option>
+                      <option value="G">G</option>
+                    </select>
+                    <p className="mt-1 text-[10px] text-muted">
+                      Kolom mana yang berisi nama ad account di sheet Anda?
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowImportModal(false)}
+                      className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                    >
+                      Batal
+                    </button>
+                    <button type="submit" disabled={importing} className="btn-primary">
+                      {importing ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" /> Importing...
+                        </>
+                      ) : (
+                        <>
+                          <Download size={14} className="rotate-180" /> Import Now
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
