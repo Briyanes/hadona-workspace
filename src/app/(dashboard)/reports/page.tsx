@@ -23,6 +23,7 @@ import {
   Sparkles,
   BarChart3,
   Copy,
+  Mail,
 } from "lucide-react";
 import {
   AreaChart,
@@ -37,6 +38,7 @@ import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/ut
 import { CompareView } from "@/components/reports/compare-view";
 import { ShareButton } from "@/components/reports/share-button";
 import { GoalTracker } from "@/components/reports/goal-tracker";
+import { EmailScheduleManager } from "@/components/reports/email-schedule-manager";
 
 // ============================================
 // TYPES
@@ -216,8 +218,8 @@ export default function ReportsPage() {
     Array<{ period: string; spend: number; conversions: number; revenue: number }>
   >([]);
 
-  // Active tab: "list" (report cards) | "compare" (multi-week matrix)
-  const [activeTab, setActiveTab] = useState<"list" | "compare">("list");
+  // Active tab: "list" | "compare" | "automation"
+  const [activeTab, setActiveTab] = useState<"list" | "compare" | "automation">("list");
 
   // Compare view state
   const [compareClient, setCompareClient] = useState<string>("all");
@@ -823,10 +825,38 @@ export default function ReportsPage() {
         >
           <BarChart3 size={14} /> Multi-Week Compare
         </button>
+        <button
+          onClick={() => setActiveTab("automation")}
+          className={cn(
+            "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "automation"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted hover:text-gray-700"
+          )}
+        >
+          <Mail size={14} /> Automation
+        </button>
       </div>
 
       {/* Content berdasarkan tab */}
-      {activeTab === "compare" ? (
+      {activeTab === "automation" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <EmailScheduleManager clients={clients} />
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="mb-3 text-sm font-semibold text-gray-900">📋 Tentang Auto Email</p>
+            <div className="space-y-2 text-xs text-muted">
+              <p>✅ Email otomatis dikirim setiap minggu sesuai jadwal yang diatur.</p>
+              <p>✅ Cron job berjalan setiap jam untuk cek schedule yang aktif.</p>
+              <p>✅ Email berisi link share report (berlaku 30 hari).</p>
+              <p>✅ Sistem auto-skip jika report belum dibuat atau sudah dikirim.</p>
+              <p>✅ Log pengiriman tersimpan di database untuk audit.</p>
+            </div>
+            <div className="mt-4 rounded-md bg-warning/10 p-3 text-xs text-warning">
+              ⚠️ <strong>Setup Required:</strong> Set <code className="rounded bg-warning/20 px-1">RESEND_API_KEY</code> dan <code className="rounded bg-warning/20 px-1">CRON_SECRET</code> di Vercel env variables.
+            </div>
+          </div>
+        </div>
+      ) : activeTab === "compare" ? (
         <CompareView reports={reports} clients={clients} />
       ) : (
         <>
