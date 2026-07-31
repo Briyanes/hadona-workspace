@@ -40,6 +40,9 @@ import { ShareButton } from "@/components/reports/share-button";
 import { GoalTracker } from "@/components/reports/goal-tracker";
 import { EmailScheduleManager } from "@/components/reports/email-schedule-manager";
 import { CreativePerformanceTracker } from "@/components/reports/creative-performance-tracker";
+import { ObjectiveSelector } from "@/components/reports/objective-selector";
+import { ObjectiveKPIBar } from "@/components/reports/kpi-bar";
+import { OBJECTIVE_MAP, type ObjectiveKey } from "@/lib/ad-objectives";
 import { generateReportText } from "@/lib/report-generator";
 
 // ============================================
@@ -65,6 +68,7 @@ interface Report {
   conclusion: string | null;
   action: string | null;
   status: string;
+  objective?: string | null;
   created_at: string;
   client?: { name: string };
   pic?: { full_name: string };
@@ -173,6 +177,7 @@ function createEmptyForm() {
     conclusion: "",
     action: "",
     status: "draft" as string,
+    objective: "META_CTWA" as ObjectiveKey, // default objective
     // Structured metrics (key -> value)
     metrics: {} as Record<string, number | "">,
   };
@@ -400,6 +405,7 @@ export default function ReportsPage() {
       conclusion: report.conclusion || "",
       action: report.action || "",
       status: report.status,
+      objective: (report as { objective?: string }).objective || "META_CTWA",
       metrics: metricsMap,
     });
     setShowModal(true);
@@ -523,6 +529,7 @@ export default function ReportsPage() {
         conclusion: form.conclusion.trim() || null,
         action: form.action.trim() || null,
         status: form.status,
+        objective: form.objective,
       };
 
       let savedReportId = editingId;
@@ -1150,6 +1157,15 @@ export default function ReportsPage() {
                   <p className="text-xs text-danger">⚠️ Periode mulai tidak boleh setelah periode selesai</p>
                 )}
 
+                {/* P11: Objective Selector */}
+                <div className="border-t border-border pt-3">
+                  <label className="mb-1 block text-xs font-medium text-gray-700">🎯 Campaign Objective</label>
+                  <ObjectiveSelector
+                    value={form.objective}
+                    onChange={(obj) => setForm({ ...form, objective: obj })}
+                  />
+                </div>
+
                 {/* Auto-Pull Button */}
                 <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
                   <button
@@ -1656,6 +1672,23 @@ export default function ReportsPage() {
                     <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#colorDetailRev)" name="Revenue" />
                   </AreaChart>
                 </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* P11: Objective-Aware KPI Bar */}
+            {detailReport.objective && detailReport.report_metrics && detailReport.report_metrics.length > 0 && (
+              <div className="mb-4">
+                <ObjectiveKPIBar
+                  objectiveId={detailReport.objective}
+                  metrics={Object.fromEntries(
+                    detailReport.report_metrics.map((m) => [m.metric_type, m.value])
+                  )}
+                  previousMetrics={Object.fromEntries(
+                    detailReport.report_metrics
+                      .filter((m) => m.previous_value !== null)
+                      .map((m) => [m.metric_type, m.previous_value])
+                  )}
+                />
               </div>
             )}
 

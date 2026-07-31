@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { aggregateBaseMetrics, calculateAllMetrics } from "@/lib/metric-formulas";
+import { MetricKey, OBJECTIVE_MAP } from "@/lib/ad-objectives";
 
 /**
  * /api/reports — Server-side handler untuk fitur lanjutan weekly reports
@@ -80,10 +82,10 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Ambil semua ad_account milik client ini (+ budget untuk pacing)
+        // Ambil semua ad_account milik client ini (+ budget + objective untuk pacing)
         const { data: accounts, error: accountsError } = await supabase
           .from("ad_accounts")
-          .select("id, platform, account_name, daily_budget, status")
+          .select("id, platform, account_name, daily_budget, status, objective")
           .eq("client_id", clientId);
 
         if (accountsError) throw accountsError;
@@ -96,6 +98,7 @@ export async function POST(request: NextRequest) {
             metrics: {},
             platformBreakdown: [],
             budgetPacing: null,
+            objective: "SALES",
           });
         }
 
@@ -120,23 +123,67 @@ export async function POST(request: NextRequest) {
             metrics: {},
             platformBreakdown: [],
             budgetPacing: null,
+            objective: "SALES",
           });
         }
 
-        // Aggregate total
-        const totalSpend = logs.reduce((s, l) => s + (l.spend || 0), 0);
-        const totalImpressions = logs.reduce((s, l) => s + (l.impressions || 0), 0);
-        const totalClicks = logs.reduce((s, l) => s + (l.clicks || 0), 0);
-        const totalConversions = logs.reduce((s, l) => s + (l.conversions || 0), 0);
-        const totalRevenue = logs.reduce((s, l) => s + (l.revenue || 0), 0);
+        // ─── Deteksi objective dominan dari ad_accounts ───
+        const objectiveCounts: Record<string, number> = {};
+        accounts.forEach((a) => {
+          const obj = (a as { objective?: string }).objective || "SALES";
+          objectiveCounts[obj] = (objectiveCounts[obj] || 0) + 1;
+        });
+        const dominantObjective = Object.entries(objectiveCounts).sort(
+          (a, b) => b[1] - a[1]
+        )[0]?.[0] || "SALES";
 
-        // Calc derived metrics
-        const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-        const cpr = totalConversions > 0 ? totalSpend / totalConversions : 0;
-        const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
-        const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
-        const roas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
-        const frequency = totalImpressions > 0 && totalClicks > 0 ? totalImpressions / (totalClicks / ctr * 100) : 0;
+        // ─── Map logs ke BaseMetrics format ───
+        const baseLogs = logs.map((l) => ({
+          spend: l.spend || 0,
+          impressions: l.impressions || 0,
+          clicks: l.clicks || 0,
+          reach: (l as { reach?: number }).reach || 0,
+          link_clicks: (l as { link_clicks?: number }).link_clicks || 0,
+          outbound_clicks: (l as { outbound_clicks?: number }).outbound_clicks || 0,
+          messaging_conversations_started: (l as { messaging_conversations_started?: number }).messaging_conversations_started || 0,
+          content_views: (l as { content_views?: number }).content_views || 0,
+          adds_to_cart: (l as { adds_to_cart?: number }).adds_to_cart || 0,
+          purchases: (l as { purchases?: number }).purchases || (l.conversions || 0),
+          purchase_value: (l as { purchase_value?: number }).purchase_value || (l.revenue || 0),
+          landing_page_views: (l as { landing_page_views?: number }).landing_page_views || 0,
+          checkouts_initiated: (l as { checkouts_initiated?: number }).checkouts_initiated || 0,
+          instagram_follows: (l as { instagram_follows?: number }).instagram_follows || 0,
+          instagram_profile_visits: (l as { instagram_profile_visits?: number }).instagram_profile_visits || 0,
+          conversions: l.conversions || 0,
+          revenue: l.revenue || 0,
+          results: l.conversions || 0,
+        }));
+
+        // ─── Aggregate + Calculate semua 25+ derived metrics ───
+        const aggregatedBase = aggregateBaseMetrics(baseLogs);
+        const calculatedMetrics = calculateAllMetrics(aggregatedBase);
+
+        // Round all values to reasonable precision
+        const roundedMetrics: Record<string, number | null> = {};
+        for (const [key, value] of Object.entries(calculatedMetrics)) {
+          if (value === null || value === undefined) {
+            roundedMetrics[key] = null;
+          } else {
+            // Currency & percentages → 2 decimal, counts → integer
+            const isCurrency = ["amount_spent", "purchase_value", "aov", "add_to_cart_value"].includes(key);
+            const isCost = key.startsWith("cost_") || ["cpm", "cpc_all", "cpc_link", "cpv", "cpi", "vcpm"].includes(key);
+            const isPercent = key.includes("ctr") || key.includes("ratio") || key.includes("rate") || key === "vtr" || key === "engagement_rate" || key === "impression_share";
+            const isRatio = key === "purchase_roas" || key === "frequency" || key === "quality_score";
+
+            if (isCurrency || isCost) {
+              roundedMetrics[key] = Math.round(value);
+            } else if (isPercent || isRatio) {
+              roundedMetrics[key] = parseFloat(value.toFixed(2));
+            } else {
+              roundedMetrics[key] = Math.round(value);
+            }
+          }
+        }
 
         // ─── Budget Pacing: target spend mingguan vs actual ───
         const periodDays =
@@ -150,83 +197,89 @@ export async function POST(request: NextRequest) {
           0
         );
         const targetWeeklySpend = totalDailyBudget * periodDays;
+        const actualSpend = roundedMetrics.amount_spent || 0;
         const pacingPercent =
           targetWeeklySpend > 0
-            ? parseFloat(((totalSpend / targetWeeklySpend) * 100).toFixed(1))
+            ? parseFloat(((actualSpend / targetWeeklySpend) * 100).toFixed(1))
             : 0;
 
         const budgetPacing = {
           targetSpend: targetWeeklySpend,
-          actualSpend: totalSpend,
+          actualSpend,
           pacingPercent,
-          remainingBudget: Math.max(0, targetWeeklySpend - totalSpend),
+          remainingBudget: Math.max(0, targetWeeklySpend - actualSpend),
           activeAccountCount: activeAccounts.length,
           periodDays,
         };
 
-        // Aggregate per platform
+        // ─── Aggregate per platform (dengan full metrics) ───
         const platformAgg: Record<
           string,
-          { spend: number; impressions: number; clicks: number; conversions: number; revenue: number; accountCount: number }
+          { logs: typeof baseLogs; accountIds: Set<string> }
         > = {};
 
-        logs.forEach((log) => {
+        logs.forEach((log, idx) => {
           const account = accountMap.get(log.ad_account_id);
           if (!account) return;
           const platform = account.platform || "Unknown";
 
           if (!platformAgg[platform]) {
-            platformAgg[platform] = {
-              spend: 0,
-              impressions: 0,
-              clicks: 0,
-              conversions: 0,
-              revenue: 0,
-              accountCount: 0,
-            };
+            platformAgg[platform] = { logs: [], accountIds: new Set() };
           }
 
-          platformAgg[platform].spend += log.spend || 0;
-          platformAgg[platform].impressions += log.impressions || 0;
-          platformAgg[platform].clicks += log.clicks || 0;
-          platformAgg[platform].conversions += log.conversions || 0;
-          platformAgg[platform].revenue += log.revenue || 0;
+          platformAgg[platform].logs.push(baseLogs[idx]);
+          platformAgg[platform].accountIds.add(log.ad_account_id);
         });
 
-        // Hitung unique account per platform
-        accounts.forEach((a) => {
-          const platform = a.platform || "Unknown";
-          if (platformAgg[platform]) {
-            platformAgg[platform].accountCount++;
+        const platformBreakdown = Object.entries(platformAgg).map(([platform, data]) => {
+          const platBase = aggregateBaseMetrics(data.logs);
+          const platCalc = calculateAllMetrics(platBase);
+          return {
+            platform,
+            accountCount: data.accountIds.size,
+            spend: Math.round(platCalc.amount_spent || 0),
+            impressions: platCalc.impressions || 0,
+            clicks: platCalc.clicks_all || 0,
+            conversions: platCalc.results || 0,
+            revenue: Math.round(platCalc.purchase_value || 0),
+            ctr: platCalc.ctr_all || 0,
+            cpr: Math.round(platCalc.cost_per_result || 0),
+            roas: platCalc.purchase_roas || 0,
+            // Extended metrics per platform
+            cpm: Math.round(platCalc.cpm || 0),
+            cpc: Math.round(platCalc.cpc_all || 0),
+            frequency: platCalc.frequency || 0,
+            reach: platCalc.reach || 0,
+            link_clicks: platCalc.link_clicks || 0,
+            messaging_conversations_started: platCalc.messaging_conversations_started || 0,
+            purchases: platCalc.purchases || 0,
+          };
+        });
+
+        // ─── Filter visible metrics berdasarkan objective ───
+        const objectiveConfig = OBJECTIVE_MAP[dominantObjective];
+        const visibleMetricKeys: MetricKey[] = objectiveConfig
+          ? [...objectiveConfig.primaryMetrics, ...objectiveConfig.secondaryMetrics]
+          : Object.keys(roundedMetrics) as MetricKey[];
+
+        const filteredMetrics: Record<string, number | null> = {};
+        visibleMetricKeys.forEach((key) => {
+          if (key in roundedMetrics) {
+            filteredMetrics[key] = roundedMetrics[key];
           }
         });
-
-        const platformBreakdown = Object.entries(platformAgg).map(([platform, data]) => ({
-          platform,
-          ...data,
-          ctr: data.impressions > 0 ? (data.clicks / data.impressions) * 100 : 0,
-          cpr: data.conversions > 0 ? data.spend / data.conversions : 0,
-          roas: data.spend > 0 ? data.revenue / data.spend : 0,
-        }));
 
         return NextResponse.json({
           success: true,
           hasData: true,
           accountCount: accounts.length,
           logCount: logs.length,
-          metrics: {
-            spend: totalSpend,
-            impressions: totalImpressions,
-            clicks: totalClicks,
-            conversions: totalConversions,
-            revenue: totalRevenue,
-            ctr: parseFloat(ctr.toFixed(2)),
-            cpr: parseFloat(cpr.toFixed(0)),
-            cpc: parseFloat(cpc.toFixed(0)),
-            cpm: parseFloat(cpm.toFixed(0)),
-            roas: parseFloat(roas.toFixed(2)),
-            frequency: parseFloat(frequency.toFixed(2)),
-          },
+          objective: dominantObjective,
+          metrics: filteredMetrics,
+          allMetrics: roundedMetrics, // Full metrics untuk advanced view
+          primaryMetrics: objectiveConfig?.primaryMetrics || [],
+          funnelMetrics: objectiveConfig?.funnelMetrics || null,
+          hiddenMetrics: objectiveConfig?.hiddenMetrics || [],
           platformBreakdown,
           budgetPacing,
         });
@@ -385,19 +438,21 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Ambil report source
-        const { data: sourceReport, error: srcErr } = await supabase
-          .from("weekly_reports")
-          .select("*")
-          .eq("id", reportId)
-          .single();
+        // Ambil report source + metrics-nya
+        const [srcRepRes, srcMetricsRes] = await Promise.all([
+          supabase.from("weekly_reports").select("*").eq("id", reportId).single(),
+          supabase.from("report_metrics").select("*").eq("weekly_report_id", reportId),
+        ]);
 
-        if (srcErr) throw srcErr;
+        const sourceReport = srcRepRes.data;
+        const sourceMetrics = srcMetricsRes.data || [];
+
+        if (srcRepRes.error) throw srcRepRes.error;
         if (!sourceReport) {
           return NextResponse.json({ error: "Report source tidak ditemukan" }, { status: 404 });
         }
 
-        // Insert report baru
+        // Insert report baru - copy summary/notes sebagai template
         const { data: newReport, error: insertErr } = await supabase
           .from("weekly_reports")
           .insert({
@@ -405,21 +460,48 @@ export async function POST(request: NextRequest) {
             pic_id: userId || sourceReport.pic_id,
             period_start: newPeriodStart,
             period_end: newPeriodEnd,
-            summary: "",
-            performance_text: "",
-            conclusion: "",
-            action: "",
+            summary: sourceReport.summary || "",
+            performance_text: sourceReport.performance_text || "",
+            conclusion: sourceReport.conclusion || "",
+            action: sourceReport.action || "",
             status: "draft",
+            objective: (sourceReport as { objective?: string }).objective || "SALES",
           })
           .select()
           .single();
 
         if (insertErr) throw insertErr;
 
+        // Copy metrics dari source sebagai template (value/previous_value = null, perlu re-pull)
+        let copiedMetricsCount = 0;
+        if (sourceMetrics.length > 0) {
+          const metricsPayload = sourceMetrics.map((m) => ({
+            weekly_report_id: newReport.id,
+            metric_type: m.metric_type,
+            value: null, // Reset - perlu pull-ads untuk isi otomatis
+            previous_value: null,
+            platform: m.platform,
+            objective: (m as { objective?: string }).objective || null,
+          }));
+
+          const { error: metricsInsertErr, count } = await supabase
+            .from("report_metrics")
+            .insert(metricsPayload);
+
+          if (metricsInsertErr) {
+            console.warn("[clone] Failed to copy metrics:", metricsInsertErr.message);
+          } else {
+            copiedMetricsCount = count || sourceMetrics.length;
+          }
+        }
+
         return NextResponse.json({
           success: true,
           newReportId: newReport.id,
-          message: "Report berhasil di-clone. Metrik perlu di-pull ulang untuk periode baru.",
+          copiedMetricsCount,
+          message: copiedMetricsCount > 0
+            ? `Report di-clone dengan ${copiedMetricsCount} baris metrik (sebagai template). Jalankan "Pull Ads" untuk mengisi value periode baru.`
+            : "Report di-clone. Jalankan 'Pull Ads' untuk mengisi metrik periode baru.",
         });
       }
 

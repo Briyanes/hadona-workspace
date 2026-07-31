@@ -169,14 +169,88 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
     }
   }
 
+  /**
+   * Normalized Performance Score (0-100)
+   * Setiap metric di-normalize relative to max di batch ini (min-max scaling).
+   * Weighted: ROAS 35%, CTR 25%, Conversions 25%, CPR 15% (inverse).
+   * Skala konsisten 0-100 → comparable across creatives & objective.
+   */
+  function getNormalizedScores(): Map<string, number> {
+    if (creatives.length === 0) return new Map();
+
+    // Cari min/max untuk setiap metric
+    const ranges = {
+      roas: { min: Infinity, max: 0 },
+      ctr: { min: Infinity, max: 0 },
+      conversions: { min: Infinity, max: 0 },
+      cpr: { min: Infinity, max: 0 }, // lower is better → inverse
+    };
+
+    creatives.forEach((c) => {
+      const m = c.metrics;
+      if (m.roas !== undefined) {
+        ranges.roas.min = Math.min(ranges.roas.min, m.roas);
+        ranges.roas.max = Math.max(ranges.roas.max, m.roas);
+      }
+      if (m.ctr !== undefined) {
+        ranges.ctr.min = Math.min(ranges.ctr.min, m.ctr);
+        ranges.ctr.max = Math.max(ranges.ctr.max, m.ctr);
+      }
+      if (m.conversions !== undefined) {
+        ranges.conversions.min = Math.min(ranges.conversions.min, m.conversions);
+        ranges.conversions.max = Math.max(ranges.conversions.max, m.conversions);
+      }
+      if (m.cpr !== undefined && m.cpr > 0) {
+        ranges.cpr.min = Math.min(ranges.cpr.min, m.cpr);
+        ranges.cpr.max = Math.max(ranges.cpr.max, m.cpr);
+      }
+    });
+
+    const scoreMap = new Map<string, number>();
+
+    creatives.forEach((c) => {
+      const m = c.metrics;
+      let totalWeight = 0;
+      let totalScore = 0;
+
+      // ROAS: 35% weight, higher better
+      if (m.roas !== undefined && ranges.roas.max > ranges.roas.min) {
+        const normalized = (m.roas - ranges.roas.min) / (ranges.roas.max - ranges.roas.min);
+        totalScore += normalized * 35;
+        totalWeight += 35;
+      }
+
+      // CTR: 25% weight, higher better
+      if (m.ctr !== undefined && ranges.ctr.max > ranges.ctr.min) {
+        const normalized = (m.ctr - ranges.ctr.min) / (ranges.ctr.max - ranges.ctr.min);
+        totalScore += normalized * 25;
+        totalWeight += 25;
+      }
+
+      // Conversions: 25% weight, higher better
+      if (m.conversions !== undefined && ranges.conversions.max > ranges.conversions.min) {
+        const normalized = (m.conversions - ranges.conversions.min) / (ranges.conversions.max - ranges.conversions.min);
+        totalScore += normalized * 25;
+        totalWeight += 25;
+      }
+
+      // CPR: 15% weight, lower better (inverse normalization)
+      if (m.cpr !== undefined && m.cpr > 0 && ranges.cpr.max > ranges.cpr.min) {
+        const normalized = (ranges.cpr.max - m.cpr) / (ranges.cpr.max - ranges.cpr.min);
+        totalScore += normalized * 15;
+        totalWeight += 15;
+      }
+
+      // Final score = sum / totalWeight * 100 (scale to 0-100)
+      const finalScore = totalWeight > 0 ? Math.round((totalScore / totalWeight) * 100) : 0;
+      scoreMap.set(c.id, finalScore);
+    });
+
+    return scoreMap;
+  }
+
   function getScore(c: Creative): number {
-    const m = c.metrics;
-    let score = 0;
-    if (m.roas) score += m.roas * 25;
-    if (m.ctr) score += m.ctr * 10;
-    if (m.conversions) score += Math.min(m.conversions, 50);
-    if (m.cpr && m.cpr > 0) score -= Math.min(m.cpr / 1000, 10);
-    return Math.round(score);
+    return getNormalizedScores().get(c.id) ?? 0;
   }
 
   if (loading) {

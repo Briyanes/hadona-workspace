@@ -110,15 +110,28 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
       return;
     }
 
-    // Hitung periode berdasarkan period_type
+    // Hitung periode berdasarkan period_type (snap ke natural boundaries)
     const now = new Date();
+    let periodStart = new Date(now);
     let periodEnd = new Date(now);
-    if (newGoal.period_type === "monthly") {
-      periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0); // end of month
-    } else if (newGoal.period_type === "weekly") {
-      periodEnd.setDate(now.getDate() + 7);
+
+    if (newGoal.period_type === "weekly") {
+      // Snap ke Senin (ISO week: Senin-Minggu)
+      const dayOfWeek = now.getDay(); // 0=Min, 1=Sen, ..., 6=Sab
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      periodStart = new Date(now);
+      periodStart.setDate(now.getDate() + diffToMonday);
+      periodEnd = new Date(periodStart);
+      periodEnd.setDate(periodStart.getDate() + 6); // Minggu
+    } else if (newGoal.period_type === "monthly") {
+      // Awal sampai akhir bulan berjalan
+      periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     } else if (newGoal.period_type === "quarterly") {
-      periodEnd = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+      // Awal sampai akhir quarter berjalan (Q1=Jan-Mar, Q2=Apr-Jun, dst)
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      periodStart = new Date(now.getFullYear(), currentQuarter * 3, 1);
+      periodEnd = new Date(now.getFullYear(), currentQuarter * 3 + 3, 0);
     }
 
     try {
@@ -128,7 +141,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
         goal_type: newGoal.goal_type,
         target_value: Number(newGoal.target_value),
         period_type: newGoal.period_type,
-        period_start: now.toISOString().split("T")[0],
+        period_start: periodStart.toISOString().split("T")[0],
         period_end: periodEnd.toISOString().split("T")[0],
         is_active: true,
         created_by: userData.user?.id,

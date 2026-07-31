@@ -1,91 +1,111 @@
-"use client";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+import { ReportView } from "./report-view";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { SharedReportView } from "@/components/reports/share-button";
-import { FileText, Loader2, AlertCircle } from "lucide-react";
+/**
+ * Server component: fetch report server-side untuk generate OG meta tags
+ * + render client view.
+ */
 
-interface ReportMetric {
-  id: string;
-  metric_type: string;
-  value: number | null;
-  previous_value: number | null;
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
 }
 
-interface Report {
-  id: string;
-  client_id: string;
-  period_start: string;
-  period_end: string;
-  summary: string | null;
-  performance_text: string | null;
-  conclusion: string | null;
-  action: string | null;
-  status: string;
-  client?: { name: string };
-  report_metrics?: ReportMetric[];
+async function getReportByToken(token: string) {
+  const supabase = getAdminClient();
+  const { data: shareLink, error } = await supabase
+    .from("shared_reports")
+    .select("report_id, is_active, expires_at")
+    .eq("token", token)
+    .single();
+
+  if (error || !shareLink) return null;
+  if (!shareLink.is_active) return null;
+  if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) return null;
+
+  const { data: report } = await supabase
+    .from("weekly_reports")
+    .select("period_start, period_end, status, client:clients(name)")
+    .eq("id", shareLink.report_id)
+    .single();
+
+  if (!report) return null;
+
+  // Supabase return array untuk nested relation — normalize ke object
+  const clientArr = report.client as unknown as { name: string }[] | null;
+  return {
+    ...report,
+    client: Array.isArray(clientArr) && clientArr.length > 0 ? clientArr[0] : null,
+  };
 }
 
-export default function SharedReportPage() {
-  const params = useParams();
-  const token = params.token as string;
-  const [report, setReport] = useState<Report | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!token) return;
-
-    async function loadReport() {
-      try {
-        const res = await fetch(`/api/reports/public?token=${token}`);
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || "Gagal memuat report");
-        }
-        setReport(data.report);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadReport();
-  }, [token]);
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50">
-        <Loader2 className="animate-spin text-primary" size={32} />
-        <p className="text-sm text-muted">Memuat weekly report...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50 p-4">
-        <AlertCircle className="text-danger" size={32} />
-        <h1 className="text-lg font-bold text-gray-900">Report Tidak Tersedia</h1>
-        <p className="text-center text-sm text-muted">{error}</p>
-        <p className="text-xs text-muted">Hubungi account manager Anda untuk link baru.</p>
-      </div>
-    );
-  }
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const report = await getReportByToken(token);
 
   if (!report) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50">
-        <FileText className="text-muted" size={32} />
-        <p className="text-sm text-muted">Report tidak ditemukan</p>
-      </div>
-    );
+    return {
+      title: "Weekly Report — Hadona Workspace",
+      description: "Laporan performa iklan mingguan",
+    };
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <SharedReportView report={report} />
-    </div>
-  );
+  const clientName = report.client?.name || "Client";
+  const periodText = `${new Date(report.period_start).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  })} - ${new Date(report.period_end).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`;
+
+  const title = `Weekly Report ${clientName} (${periodText})`;
+  const description = `Laporan performa iklan ${clientName} periode ${periodText}. Hadona Workspace.`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://workspace.hadona.id";
+  const ogImageUrl = `${siteUrl}/api/reports/og?token=${token}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: `${siteUrl}/shared/${token}`,
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `Weekly Report ${clientName}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImageUrl],
+    },
+  };
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  if (!token) notFound();
+  return <ReportView token={token} />;
 }
