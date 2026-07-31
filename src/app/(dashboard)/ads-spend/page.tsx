@@ -226,11 +226,21 @@ export default function AdsSpendPage() {
   async function handleToggleSync(accountId: string, currentEnabled: boolean) {
     setTogglingId(accountId);
     try {
-      const { error } = await supabase
-        .from("ad_accounts")
-        .update({ meta_sync_enabled: !currentEnabled } as never)
-        .eq("id", accountId);
-      if (error) throw error;
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "toggle-sync",
+          accountId,
+          enabled: !currentEnabled,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal toggle sync");
 
       toast.success(`Auto-sync ${!currentEnabled ? "diaktifkan" : "dimatikan"}`);
       loadAccounts();
@@ -545,19 +555,20 @@ export default function AdsSpendPage() {
         pic_id: form.pic_id || null,
       };
 
-      if (editingId) {
-        const { error } = await supabase
-          .from("ad_accounts")
-          .update(payload as never)
-          .eq("id", editingId);
-        if (error) throw error;
-        toast.success("Ad account diupdate!");
-      } else {
-        const { error } = await supabase.from("ad_accounts").insert(payload as never);
-        if (error) throw error;
-        toast.success("Ad account dibuat!");
-      }
+      // Use API route (service role key bypasses RLS)
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "save", payload, editingId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan");
 
+      toast.success(editingId ? "Ad account diupdate!" : "Ad account dibuat!");
       setShowModal(false);
       loadAccounts();
     } catch (err) {
@@ -589,10 +600,18 @@ export default function AdsSpendPage() {
         notes: spendForm.notes.trim() || null,
       };
 
-      const { error } = await supabase.from("ad_spend_logs").upsert(payload as never, {
-        onConflict: "ad_account_id,log_date",
+      // Use API route (service role key bypasses RLS)
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "save-spend", payload }),
       });
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal simpan spend");
 
       toast.success("Spend log disimpan! Budget auto-updated.");
       setShowSpendModal(false);
@@ -609,8 +628,18 @@ export default function AdsSpendPage() {
   async function handleDeleteSpendLog(id: string) {
     if (!confirm("Hapus log ini?")) return;
     try {
-      const { error } = await supabase.from("ad_spend_logs").delete().eq("id", id);
-      if (error) throw error;
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "delete-spend", logId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal hapus log");
+
       toast.success("Log dihapus");
       loadSpendLogs();
     } catch (err) {
@@ -622,8 +651,18 @@ export default function AdsSpendPage() {
   async function handleDelete(id: string) {
     if (!confirm("Hapus ad account ini?")) return;
     try {
-      const { error } = await supabase.from("ad_accounts").delete().eq("id", id);
-      if (error) throw error;
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "delete", accountId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal hapus ad account");
+
       toast.success("Ad account dihapus");
       loadAccounts();
     } catch (err) {
@@ -674,29 +713,26 @@ export default function AdsSpendPage() {
 
     setBulkSaving(true);
     try {
-      const updates: Record<string, unknown> = { client_id: bulkClientId };
+      // Use API route (service role key bypasses RLS)
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "bulk-assign",
+          accountIds: Array.from(selectedIds),
+          clientId: bulkClientId,
+          dailyBudget: bulkDailyBudget || undefined,
+          remainingBudget: bulkRemaining || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal bulk assign");
 
-      if (bulkDailyBudget) {
-        updates.daily_budget = parseFloat(bulkDailyBudget);
-      }
-      if (bulkRemaining) {
-        updates.remaining_budget = parseFloat(bulkRemaining);
-      }
-      if (bulkDailyBudget && bulkRemaining) {
-        updates.days_left = calcDaysLeft(
-          parseFloat(bulkRemaining),
-          parseFloat(bulkDailyBudget)
-        );
-      }
-
-      const { error } = await supabase
-        .from("ad_accounts")
-        .update(updates as never)
-        .in("id", Array.from(selectedIds));
-
-      if (error) throw error;
-
-      toast.success(`✅ ${selectedIds.size} akun berhasil di-assign!`, { duration: 5000 });
+      toast.success(`✅ ${data.updated || selectedIds.size} akun berhasil di-assign!`, { duration: 5000 });
       clearSelection();
       loadAccounts();
     } catch (err) {
