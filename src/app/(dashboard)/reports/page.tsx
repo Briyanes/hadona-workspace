@@ -39,6 +39,7 @@ import { CompareView } from "@/components/reports/compare-view";
 import { ShareButton } from "@/components/reports/share-button";
 import { GoalTracker } from "@/components/reports/goal-tracker";
 import { EmailScheduleManager } from "@/components/reports/email-schedule-manager";
+import { CreativePerformanceTracker } from "@/components/reports/creative-performance-tracker";
 
 // ============================================
 // TYPES
@@ -1607,6 +1608,11 @@ export default function ReportsPage() {
                 </div>
               );
             })()}
+
+            {/* Creative Performance Tracker — FITUR 3 */}
+            <div className="mb-4">
+              <CreativePerformanceTracker reportId={detailReport.id} />
+            </div>
 
             {/* Text sections */}
             {detailReport.summary && (
