@@ -20,6 +20,7 @@ CREATE POLICY "report_metrics_select_all" ON public.report_metrics
   FOR SELECT TO authenticated USING (true);
 
 -- 2. INSERT: PIC weekly_report owner atau manager
+DROP POLICY IF EXISTS "report_metrics_insert_pic_or_manager" ON public.report_metrics;
 CREATE POLICY "report_metrics_insert_pic_or_manager" ON public.report_metrics
   FOR INSERT TO authenticated
   WITH CHECK (
@@ -32,6 +33,7 @@ CREATE POLICY "report_metrics_insert_pic_or_manager" ON public.report_metrics
   );
 
 -- 3. UPDATE: PIC weekly_report owner atau manager
+DROP POLICY IF EXISTS "report_metrics_update_pic_or_manager" ON public.report_metrics;
 CREATE POLICY "report_metrics_update_pic_or_manager" ON public.report_metrics
   FOR UPDATE TO authenticated
   USING (
@@ -52,6 +54,7 @@ CREATE POLICY "report_metrics_update_pic_or_manager" ON public.report_metrics
   );
 
 -- 4. DELETE: PIC weekly_report owner atau manager
+DROP POLICY IF EXISTS "report_metrics_delete_pic_or_manager" ON public.report_metrics;
 CREATE POLICY "report_metrics_delete_pic_or_manager" ON public.report_metrics
   FOR DELETE TO authenticated
   USING (
@@ -129,3 +132,30 @@ BEGIN
 END $$;
 
 COMMENT ON COLUMN public.clients.logo_url IS 'URL logo client (R2/S3 storage)';
+
+-- ============================================
+-- FIX BUG: RLS clients_write_manager terlalu ketat
+-- Hanya super_admin/project_manager yang bisa insert/update/delete.
+-- Padahal semua staff internal perlu bisa manage client.
+--
+-- SOLUSI: Allow all authenticated staff untuk INSERT/UPDATE.
+-- DELETE tetap manager-only (tindakan destruktif).
+-- ============================================
+
+-- Drop policy lama yang terlalu ketat
+DROP POLICY IF EXISTS "clients_write_manager" ON public.clients;
+
+-- INSERT: semua authenticated staff
+DROP POLICY IF EXISTS "clients_insert_all" ON public.clients;
+CREATE POLICY "clients_insert_all" ON public.clients
+  FOR INSERT TO authenticated WITH CHECK (true);
+
+-- UPDATE: semua authenticated staff
+DROP POLICY IF EXISTS "clients_update_all" ON public.clients;
+CREATE POLICY "clients_update_all" ON public.clients
+  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+-- DELETE: tetap manager-only (tindakan destruktif)
+DROP POLICY IF EXISTS "clients_delete_manager" ON public.clients;
+CREATE POLICY "clients_delete_manager" ON public.clients
+  FOR DELETE TO authenticated USING (public.is_manager());
