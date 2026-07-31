@@ -170,14 +170,27 @@ export async function POST(request: NextRequest) {
       // ─── SAVE SPEND LOG ───
       case "save-spend": {
         const { payload } = body as { payload: Record<string, unknown> };
+
+        // BUG FIX: Cek apakah log sudah ada (untuk hindari double deduction)
+        const { data: existingLog } = await supabase
+          .from("ad_spend_logs")
+          .select("id, spend")
+          .eq("ad_account_id", payload.ad_account_id as string)
+          .eq("log_date", payload.log_date as string)
+          .single();
+
+        const oldSpend = existingLog?.spend || 0;
+        const newSpend = (payload.spend as number) || 0;
+        const spendDelta = newSpend - oldSpend; // positif jika spend naik
+
         const { data, error } = await supabase
           .from("ad_spend_logs")
           .upsert(payload, { onConflict: "ad_account_id,log_date" })
           .select("id");
         if (error) throw error;
 
-        // Auto-update remaining budget
-        if (payload.ad_account_id && payload.spend) {
+        // Auto-update remaining budget (hanya deduksi DELTA, bukan total)
+        if (payload.ad_account_id && spendDelta !== 0) {
           const { data: account } = await supabase
             .from("ad_accounts")
             .select("remaining_budget, daily_budget")
@@ -186,7 +199,7 @@ export async function POST(request: NextRequest) {
 
           if (account) {
             const newRemaining =
-              (account.remaining_budget || 0) - (payload.spend as number);
+              (account.remaining_budget || 0) - spendDelta;
             await supabase
               .from("ad_accounts")
               .update({
@@ -200,7 +213,15 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        return NextResponse.json({ success: true, id: data?.[0]?.id });
+        return NextResponse.json({
+          success: true,
+          id: data?.[0]?.id,
+          budget_adjusted: spendDelta,
+          message:
+            oldSpend > 0
+              ? `Log diupdate. Budget disesuaikan (${spendDelta >= 0 ? "-" : "+"}${Math.abs(spendDelta)})`
+              : undefined,
+        });
       }
 
       // ─── DELETE SPEND LOG ───

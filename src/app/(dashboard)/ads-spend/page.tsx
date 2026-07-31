@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -129,8 +129,27 @@ export default function AdsSpendPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  // FASE 4: Debounced search untuk performance (hindari re-filter setiap ketik)
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce search input (300ms delay)
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [search]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
+  const [picFilter, setPicFilter] = useState("all");
+  // Pagination (performance untuk 100+ akun)
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const [showBudgetAlert, setShowBudgetAlert] = useState(true);
 
   // Bulk operations
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -199,6 +218,16 @@ export default function AdsSpendPage() {
     checkUrlParams();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // BUG FIX: Clear selection saat filter/search berubah (hindari bulk delete akun yang tidak terlihat)
+  // FASE 2: Reset halaman juga saat filter berubah
+  useEffect(() => {
+    if (selectedIds.size > 0) {
+      setSelectedIds(new Set());
+    }
+    setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, statusFilter, clientFilter, picFilter]);
 
   function checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
@@ -475,7 +504,11 @@ export default function AdsSpendPage() {
       setSpendLogs((data as unknown as SpendLog[]) || []);
     } catch (err) {
       // Table might not exist yet (migration not run)
-      console.warn("Spend logs not loaded:", extractError(err));
+      const msg = extractError(err);
+      console.warn("Spend logs not loaded:", msg);
+      toast.warning("Data spend log gagal dimuat. Chart & Today Spend mungkin kosong.", {
+        duration: 6000,
+      });
     }
   }
 
@@ -823,7 +856,16 @@ export default function AdsSpendPage() {
         (a.notes || "").replace(/"/g, '""'),
       ];
     });
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    // BUG FIX: Hanya quote cell yang mengandung koma/quote/newline; angka biarkan plain
+    // supaya Excel/Sheets mengenali sebagai number (bisa di-SUM)
+    const escapeCell = (c: string | number): string => {
+      const s = String(c);
+      if (/["\n,]/.test(s)) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+    const csv = [headers, ...rows].map((r) => r.map(escapeCell).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -840,18 +882,24 @@ export default function AdsSpendPage() {
     days_left: calcDaysLeft(a.remaining_budget, a.daily_budget),
   }));
 
+  // FASE 4: Pakai debouncedSearch untuk filter (bukan search langsung)
   const filtered = accountsWithCalc.filter((a) => {
+    const q = debouncedSearch.toLowerCase();
     const matchSearch =
-      !search ||
-      a.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      a.ad_account_id.includes(search) ||
-      a.account_name?.toLowerCase().includes(search.toLowerCase()) ||
-      a.pic?.full_name?.toLowerCase().includes(search.toLowerCase());
+      !debouncedSearch ||
+      a.client?.name?.toLowerCase().includes(q) ||
+      a.ad_account_id.includes(debouncedSearch) ||
+      a.account_name?.toLowerCase().includes(q) ||
+      a.pic?.full_name?.toLowerCase().includes(q);
     const matchStatus = statusFilter === "all" || a.status === statusFilter;
     const matchClient =
       clientFilter === "all" ||
       (clientFilter === "unassigned" ? !a.client_id : a.client_id === clientFilter);
-    return matchSearch && matchStatus && matchClient;
+    // FASE 2: Filter by PIC
+    const matchPic =
+      picFilter === "all" ||
+      (picFilter === "unassigned" ? !a.pic_id : a.pic_id === picFilter);
+    return matchSearch && matchStatus && matchClient && matchPic;
   });
 
   // Trend chart data: aggregate spend & revenue by date
@@ -962,6 +1010,13 @@ export default function AdsSpendPage() {
 
   const { sortedData, sortState, toggleSort } = useSortable<AdAccount>({ data: filtered });
 
+  // FASE 2: Pagination untuk performance (100+ akun)
+  const totalPages = Math.ceil(sortedData.length / pageSize);
+  const paginatedData = sortedData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   // ─── Shift+Click Range Selection ───
   const { onRowToggle, onHeaderToggle, clearSelection: clearShiftSelection } =
     useShiftSelect<AdAccount>({
@@ -992,13 +1047,41 @@ export default function AdsSpendPage() {
   };
 
   // Helper: get today's spend for an account
-  function getTodaySpend(accountId: string): { spend: number; revenue: number; roas: number } {
+  // FASE 3: Include impressions, clicks, CTR, CPC, CPM untuk advertising depth
+  function getTodaySpend(accountId: string): {
+    spend: number;
+    revenue: number;
+    roas: number;
+    impressions: number;
+    clicks: number;
+    ctr: number;
+    cpc: number;
+    cpm: number;
+  } {
     const logs = spendLogs.filter(
       (l) => l.ad_account_id === accountId && l.log_date === today
     );
     const spend = logs.reduce((s, l) => s + (l.spend || 0), 0);
     const revenue = logs.reduce((s, l) => s + (l.revenue || 0), 0);
-    return { spend, revenue, roas: spend > 0 ? revenue / spend : 0 };
+    const impressions = logs.reduce((s, l) => s + (l.impressions || 0), 0);
+    const clicks = logs.reduce((s, l) => s + (l.clicks || 0), 0);
+    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+    const cpc = clicks > 0 ? spend / clicks : 0;
+    const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
+    return { spend, revenue, roas: spend > 0 ? revenue / spend : 0, impressions, clicks, ctr, cpc, cpm };
+  }
+
+  // FASE 3: Budget Pacing (% budget terpakai dari total = daily * 30 hari asumsi bulanan)
+  function getBudgetPacing(account: AdAccount): { pct: number; status: "on_track" | "over" | "under" } {
+    if (!account.daily_budget || account.daily_budget <= 0) return { pct: 0, status: "on_track" };
+    // Hitung total spend 30 hari terakhir untuk akun ini
+    const last30Spend = spendLogs
+      .filter((l) => l.ad_account_id === account.id)
+      .reduce((s, l) => s + (l.spend || 0), 0);
+    const monthlyBudget = account.daily_budget * 30;
+    const pct = monthlyBudget > 0 ? (last30Spend / monthlyBudget) * 100 : 0;
+    const status = pct > 110 ? "over" : pct < 60 ? "under" : "on_track";
+    return { pct, status };
   }
 
   // Helper: get spend logs for modal
@@ -1142,6 +1225,28 @@ export default function AdsSpendPage() {
               <Link2 size={14} /> Connect Meta (OAuth)
             </a>
           </div>
+        </div>
+      )}
+
+      {/* FASE 2: Budget Alert Banner */}
+      {showBudgetAlert && lowBudgetCount > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/5 p-4">
+          <AlertTriangle className="mt-0.5 shrink-0 text-danger" size={18} />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-danger">
+              ⚠️ {lowBudgetCount} akun budget menipis (≤ 3 hari)!
+            </p>
+            <p className="mt-0.5 text-xs text-muted">
+              Gunakan filter status "Active" untuk melihat akun yang perlu top-up. Klik akun di tabel untuk detail budget.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowBudgetAlert(false)}
+            className="rounded p-1 text-muted hover:bg-danger/10 hover:text-danger"
+            title="Tutup banner"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
@@ -1337,6 +1442,20 @@ export default function AdsSpendPage() {
           <option value="inactive">Inactive</option>
           <option value="hold">Hold</option>
         </select>
+        {/* FASE 2: Filter by PIC */}
+        <select
+          value={picFilter}
+          onChange={(e) => setPicFilter(e.target.value)}
+          className="input w-auto"
+        >
+          <option value="all">Semua PIC</option>
+          <option value="unassigned">⚠️ Tanpa PIC</option>
+          {team.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.full_name || "Unknown"}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Floating Bulk Assign Toolbar */}
@@ -1470,6 +1589,11 @@ export default function AdsSpendPage() {
                   onSort={toggleSort}
                   align="center"
                 />
+                <th className="px-4 py-3 text-center font-medium" title="Auto-sync Meta">Sync</th>
+                {/* FASE 3: Kolom CTR, CPC, Pacing untuk advertising depth */}
+                <th className="px-4 py-3 text-center font-medium" title="Click-Through Rate">CTR</th>
+                <th className="px-4 py-3 text-center font-medium" title="Cost Per Click">CPC</th>
+                <th className="px-4 py-3 text-center font-medium" title="Budget Pacing (30 hari)">Pacing</th>
                 <th className="px-4 py-3 text-right font-medium">Today Spend</th>
                 <th className="px-4 py-3 text-center font-medium">ROAS</th>
                 <SortableTh
@@ -1484,7 +1608,8 @@ export default function AdsSpendPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {sortedData.map((a, index) => {
+              {paginatedData.map((a, displayIndex) => {
+                const index = (currentPage - 1) * pageSize + displayIndex;
                 const todayStats = getTodaySpend(a.id);
                 return (
                   <tr key={a.id} className={cn("group hover:bg-surface/50", !a.client_id && "bg-warning/5")}>
@@ -1537,7 +1662,12 @@ export default function AdsSpendPage() {
                       {formatIDR(a.remaining_budget)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {a.days_left !== null && a.days_left <= 3 ? (
+                      {/* BUG FIX: Handle days_left <= 0 (budget habis) */}
+                      {a.days_left !== null && a.days_left <= 0 ? (
+                        <span className="badge bg-danger/20 text-danger animate-pulse" title="Budget habis!">
+                          <AlertTriangle size={10} /> Habis
+                        </span>
+                      ) : a.days_left !== null && a.days_left <= 3 ? (
                         <span className="badge bg-danger/20 text-danger">
                           <AlertTriangle size={10} /> {a.days_left}d
                         </span>
@@ -1568,6 +1698,55 @@ export default function AdsSpendPage() {
                       ) : (
                         <span className="text-muted">—</span>
                       )}
+                    </td>
+                    {/* FASE 3: CTR */}
+                    <td className="px-4 py-3 text-center">
+                      {todayStats.ctr > 0 ? (
+                        <span className={cn(
+                          "text-xs font-medium",
+                          todayStats.ctr >= 2 ? "text-success" : todayStats.ctr >= 1 ? "text-warning" : "text-danger"
+                        )} title={`${todayStats.clicks} clicks / ${todayStats.impressions} impressions`}>
+                          {todayStats.ctr.toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    {/* FASE 3: CPC */}
+                    <td className="px-4 py-3 text-center">
+                      {todayStats.cpc > 0 ? (
+                        <span className="text-xs text-gray-700">
+                          {formatIDR(todayStats.cpc)}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    {/* FASE 3: Budget Pacing */}
+                    <td className="px-4 py-3 text-center">
+                      {(() => {
+                        const pacing = getBudgetPacing(a);
+                        if (pacing.pct === 0) return <span className="text-muted">—</span>;
+                        return (
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className={cn(
+                              "text-[10px] font-bold",
+                              pacing.status === "over" ? "text-danger" : pacing.status === "under" ? "text-warning" : "text-success"
+                            )}>
+                              {pacing.pct.toFixed(0)}%
+                            </span>
+                            <div className="h-1 w-12 overflow-hidden rounded-full bg-background" title={`${pacing.pct.toFixed(0)}% dari monthly budget (${formatIDR(a.daily_budget! * 30)})`}>
+                              <div
+                                className={cn(
+                                  "h-full rounded-full",
+                                  pacing.status === "over" ? "bg-danger" : pacing.status === "under" ? "bg-warning" : "bg-success"
+                                )}
+                                style={{ width: `${Math.min(pacing.pct, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {todayStats.spend > 0 ? (
@@ -1633,6 +1812,35 @@ export default function AdsSpendPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* FASE 2: Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted">
+            Menampilkan {(currentPage - 1) * pageSize + 1}–
+            {Math.min(currentPage * pageSize, sortedData.length)} dari {sortedData.length} akun
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-background disabled:opacity-50"
+            >
+              ← Prev
+            </button>
+            <span className="text-xs font-medium text-gray-900">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-background disabled:opacity-50"
+            >
+              Next →
+            </button>
+          </div>
         </div>
       )}
 
