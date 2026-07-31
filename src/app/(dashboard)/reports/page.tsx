@@ -36,6 +36,7 @@ import {
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
 import { CompareView } from "@/components/reports/compare-view";
 import { ShareButton } from "@/components/reports/share-button";
+import { GoalTracker } from "@/components/reports/goal-tracker";
 
 // ============================================
 // TYPES
@@ -1552,6 +1553,30 @@ export default function ReportsPage() {
                 </ResponsiveContainer>
               </div>
             )}
+
+            {/* Goal Tracking — FITUR 1 */}
+            {(() => {
+              const ms = detailReport.report_metrics || [];
+              const get = (t: string): number | undefined => {
+                const v = ms.find((x) => x.metric_type === t)?.value;
+                return v ?? undefined;
+              };
+              return (
+                <div className="mb-4">
+                  <GoalTracker
+                    clientId={detailReport.client_id}
+                    actualMetrics={{
+                      roas: get("roas"),
+                      cpr: get("cpr"),
+                      spend: get("spend"),
+                      conversions: get("conversions"),
+                      ctr: get("ctr"),
+                      cpa: get("cpr"), // cpa ≈ cpr dalam konteks ini
+                    }}
+                  />
+                </div>
+              );
+            })()}
 
             {/* Text sections */}
             {detailReport.summary && (
