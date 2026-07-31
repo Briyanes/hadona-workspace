@@ -132,6 +132,30 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, action: "deleted" });
       }
 
+      // ─── BULK DELETE ───
+      case "bulk-delete": {
+        const { accountIds } = body as { accountIds: string[] };
+
+        if (!accountIds || accountIds.length === 0) {
+          return NextResponse.json({ error: "Pilih minimal 1 akun" }, { status: 400 });
+        }
+
+        // ad_spend_logs has ON DELETE CASCADE, so logs auto-deleted
+        const { data, error } = await supabase
+          .from("ad_accounts")
+          .delete()
+          .in("id", accountIds)
+          .select("id");
+
+        if (error) throw error;
+
+        return NextResponse.json({
+          success: true,
+          deleted: data?.length || accountIds.length,
+          message: `${data?.length || accountIds.length} akun berhasil dihapus!`,
+        });
+      }
+
       // ─── TOGGLE SYNC ───
       case "toggle-sync": {
         const { accountId, enabled } = body as { accountId: string; enabled: boolean };

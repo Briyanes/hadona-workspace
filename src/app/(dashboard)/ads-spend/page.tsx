@@ -138,6 +138,7 @@ export default function AdsSpendPage() {
   const [bulkDailyBudget, setBulkDailyBudget] = useState("");
   const [bulkRemaining, setBulkRemaining] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Trend chart range
   const [chartRange, setChartRange] = useState<7 | 30>(7);
@@ -759,6 +760,52 @@ export default function AdsSpendPage() {
     }
   }
 
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) {
+      toast.error("Pilih minimal 1 akun");
+      return;
+    }
+
+    const count = selectedIds.size;
+    const confirmed = window.confirm(
+      `⚠️ Hapus ${count} ad account?\n\nTindakan ini tidak bisa dibatalkan. Semua data spend log terkait juga akan dihapus.`
+    );
+    if (!confirmed) return;
+
+    // Double confirmation for safety
+    const confirmed2 = window.confirm(
+      `Konfirmasi terakhir: Yakin hapus ${count} akun permanen?`
+    );
+    if (!confirmed2) return;
+
+    setBulkDeleting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/ad-accounts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "bulk-delete",
+          accountIds: Array.from(selectedIds),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal bulk delete");
+
+      toast.success(`🗑️ ${data.deleted || count} akun berhasil dihapus!`, { duration: 5000 });
+      clearSelection();
+      loadAccounts();
+      loadSpendLogs();
+    } catch (err) {
+      toast.error("Gagal hapus: " + extractError(err));
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   async function handleExportCSV() {
     if (filtered.length === 0) {
       toast.error("Tidak ada data untuk diexport");
@@ -1348,6 +1395,18 @@ export default function AdsSpendPage() {
                 <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
               ) : (
                 <>Assign ({selectedIds.size})</>
+              )}
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-xs font-medium text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
+              title="Hapus akun terpilih permanen"
+            >
+              {bulkDeleting ? (
+                <><Loader2 size={14} className="animate-spin" /> Menghapus...</>
+              ) : (
+                <><Trash2 size={14} /> Delete ({selectedIds.size})</>
               )}
             </button>
           </div>
