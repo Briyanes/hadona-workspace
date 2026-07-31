@@ -8,6 +8,7 @@ import {
   AlertCircle,
   AlertTriangle,
   TrendingUp,
+  TrendingDown,
   Users,
   Megaphone,
   DollarSign,
@@ -17,6 +18,9 @@ import {
   CheckCircle,
   Activity,
   ArrowRight,
+  BarChart3,
+  Trophy,
+  Send,
 } from "lucide-react";
 import { formatIDR, timeUntil, cn } from "@/lib/utils";
 
@@ -31,6 +35,18 @@ interface Stats {
   totalBudget: number;
   totalMrr: number;
   teamMembers: number;
+}
+
+interface AdsKPI {
+  weeklySpend: number;
+  weeklyConversions: number;
+  weeklyRevenue: number;
+  avgRoas: number;
+  bestClient: { name: string; roas: number } | null;
+  worstClient: { name: string; roas: number } | null;
+  reportDrafts: number;
+  reportSubmitted: number;
+  pendingReports: { id: string; clientName: string; periodEnd: string; status: string }[];
 }
 
 interface MyTask {
@@ -62,6 +78,7 @@ const entityIcons: Record<string, { icon: typeof Activity; color: string }> = {
 export default function DashboardPage() {
   const supabase = createClient();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [adsKpi, setAdsKpi] = useState<AdsKPI | null>(null);
   const [myTasks, setMyTasks] = useState<MyTask[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +140,95 @@ export default function DashboardPage() {
             .reduce((sum, c) => sum + (c.contract_value || 0), 0),
           teamMembers: profileList.length,
         });
+
+        // ─── P2: Fetch weekly reports untuk Ads KPI ───
+        const { data: reportsData } = await supabase
+          .from("weekly_reports")
+          .select(`
+            id, status, period_start, period_end,
+            client:clients(name),
+            report_metrics(metric_type, value)
+          `)
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+        if (cancelled) return;
+
+        if (reportsData && reportsData.length > 0) {
+          interface ReportRow {
+            id: string;
+            status: string;
+            period_start: string;
+            period_end: string;
+            client?: { name: string } | null;
+            report_metrics?: Array<{ metric_type: string; value: number | null }>;
+          }
+          const reports = reportsData as unknown as ReportRow[];
+
+          // Ambil report minggu ini (period_end >= 7 hari yang lalu)
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          const recentReports = reports.filter(
+            (r) => new Date(r.period_end) >= weekAgo
+          );
+
+          // Aggregate per client untuk best/worst ROAS
+          const clientRoasMap: Record<string, { spend: number; revenue: number }> = {};
+          let totalSpend = 0;
+          let totalConv = 0;
+          let totalRev = 0;
+
+          recentReports.forEach((r) => {
+            const clientName = r.client?.name || "Unknown";
+            const metrics = r.report_metrics || [];
+            const spend = metrics.filter((m) => m.metric_type === "spend").reduce((s, m) => s + (m.value || 0), 0);
+            const conv = metrics.filter((m) => m.metric_type === "conversions").reduce((s, m) => s + (m.value || 0), 0);
+            const rev = metrics.filter((m) => m.metric_type === "revenue").reduce((s, m) => s + (m.value || 0), 0);
+
+            totalSpend += spend;
+            totalConv += conv;
+            totalRev += rev;
+
+            if (!clientRoasMap[clientName]) clientRoasMap[clientName] = { spend: 0, revenue: 0 };
+            clientRoasMap[clientName].spend += spend;
+            clientRoasMap[clientName].revenue += rev;
+          });
+
+          // Hitung ROAS per client, cari best & worst
+          const clientRoasList = Object.entries(clientRoasMap)
+            .map(([name, data]) => ({
+              name,
+              roas: data.spend > 0 ? data.revenue / data.spend : 0,
+            }))
+            .filter((c) => c.roas > 0)
+            .sort((a, b) => b.roas - a.roas);
+
+          const bestClient = clientRoasList[0] || null;
+          const worstClient = clientRoasList[clientRoasList.length - 1] || null;
+
+          // Pending reports (draft atau submitted yang belum reviewed)
+          const pendingReports = reports
+            .filter((r) => r.status === "draft" || r.status === "submitted")
+            .slice(0, 5)
+            .map((r) => ({
+              id: r.id,
+              clientName: r.client?.name || "Unknown",
+              periodEnd: r.period_end,
+              status: r.status,
+            }));
+
+          setAdsKpi({
+            weeklySpend: totalSpend,
+            weeklyConversions: totalConv,
+            weeklyRevenue: totalRev,
+            avgRoas: totalSpend > 0 ? totalRev / totalSpend : 0,
+            bestClient,
+            worstClient,
+            reportDrafts: reports.filter((r) => r.status === "draft").length,
+            reportSubmitted: reports.filter((r) => r.status === "submitted").length,
+            pendingReports,
+          });
+        }
 
         // Fetch my tasks (overdue or due today, assigned to current user)
         if (user) {
@@ -222,13 +328,6 @@ export default function DashboardPage() {
     blocked: "bg-danger/20 text-danger",
   };
 
-  const priorityColors: Record<string, string> = {
-    low: "text-muted",
-    medium: "text-primary",
-    high: "text-warning",
-    urgent: "text-danger",
-  };
-
   const today = new Date().toISOString().split("T")[0];
 
   return (
@@ -273,8 +372,65 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* 2-Column Layout: My Tasks + Recent Activity */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* ════ P2: Ads Performance KPI Bar ════ */}
+      {adsKpi && adsKpi.weeklySpend > 0 && (
+        <div className="card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border bg-gradient-to-r from-accent/5 to-primary/5 px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="text-accent" size={16} />
+              <h2 className="text-sm font-semibold text-gray-900">Performa Iklan Minggu Ini</h2>
+            </div>
+            <Link href="/reports" className="flex items-center gap-1 text-xs text-primary hover:underline">
+              Detail <ArrowRight size={10} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
+            {/* Weekly Spend */}
+            <div className="rounded-lg bg-background p-3 text-center">
+              <p className="text-[10px] uppercase text-muted">Weekly Spend</p>
+              <p className="mt-1 text-base font-bold text-gray-900">{formatIDR(adsKpi.weeklySpend)}</p>
+            </div>
+            {/* Weekly Conversions */}
+            <div className="rounded-lg bg-background p-3 text-center">
+              <p className="text-[10px] uppercase text-muted">Conversions</p>
+              <p className="mt-1 text-base font-bold text-gray-900">{adsKpi.weeklyConversions}</p>
+            </div>
+            {/* Avg ROAS */}
+            <div className="rounded-lg bg-background p-3 text-center">
+              <p className="text-[10px] uppercase text-muted">Avg ROAS</p>
+              <p className={cn(
+                "mt-1 text-base font-bold",
+                adsKpi.avgRoas >= 3 ? "text-success" : adsKpi.avgRoas >= 1 ? "text-warning" : "text-danger"
+              )}>
+                {adsKpi.avgRoas.toFixed(2)}x
+              </p>
+            </div>
+            {/* Best Client */}
+            {adsKpi.bestClient && (
+              <div className="rounded-lg bg-success/5 p-3 text-center">
+                <p className="flex items-center justify-center gap-1 text-[10px] uppercase text-muted">
+                  <Trophy size={10} className="text-success" /> Best ROAS
+                </p>
+                <p className="mt-1 truncate text-sm font-bold text-success">{adsKpi.bestClient.name}</p>
+                <p className="text-[10px] text-muted">{adsKpi.bestClient.roas.toFixed(2)}x</p>
+              </div>
+            )}
+            {/* Worst Client */}
+            {adsKpi.worstClient && adsKpi.worstClient.name !== adsKpi.bestClient?.name && (
+              <div className="rounded-lg bg-danger/5 p-3 text-center">
+                <p className="flex items-center justify-center gap-1 text-[10px] uppercase text-muted">
+                  <TrendingDown size={10} className="text-danger" /> Perlu Atensi
+                </p>
+                <p className="mt-1 truncate text-sm font-bold text-danger">{adsKpi.worstClient.name}</p>
+                <p className="text-[10px] text-muted">{adsKpi.worstClient.roas.toFixed(2)}x</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3-Column Layout: My Tasks + Pending Reports + Recent Activity */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* ════ My Tasks Today ════ */}
         <div className="card">
           <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
@@ -330,6 +486,63 @@ export default function DashboardPage() {
                   </Link>
                 );
               })
+            )}
+          </div>
+        </div>
+
+        {/* ════ P2: Pending Reports ════ */}
+        <div className="card">
+          <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="text-accent" size={18} />
+              <h2 className="font-semibold text-gray-900">Laporan Pending</h2>
+            </div>
+            <Link href="/reports" className="flex items-center gap-1 text-xs text-primary hover:underline">
+              Semua <ArrowRight size={10} />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {adsKpi && adsKpi.pendingReports.length > 0 ? (
+              <>
+                <div className="flex gap-2">
+                  <span className="badge bg-surface text-muted text-[10px]">
+                    {adsKpi.reportDrafts} Draft
+                  </span>
+                  <span className="badge bg-warning/20 text-warning text-[10px]">
+                    {adsKpi.reportSubmitted} Submitted
+                  </span>
+                </div>
+                {adsKpi.pendingReports.map((r) => (
+                  <Link
+                    key={r.id}
+                    href="/reports"
+                    className="flex items-center gap-2 rounded-md border border-border bg-background p-2.5 transition-colors hover:border-accent hover:bg-accent/5"
+                  >
+                    <div className={cn(
+                      "h-8 w-1 shrink-0 rounded-full",
+                      r.status === "draft" ? "bg-muted" : "bg-warning"
+                    )} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900">{r.clientName}</p>
+                      <p className="text-xs text-muted">
+                        s/d {new Date(r.periodEnd).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                      </p>
+                    </div>
+                    <span className={cn(
+                      "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+                      r.status === "draft" ? "bg-surface text-muted" : "bg-warning/10 text-warning"
+                    )}>
+                      {r.status === "draft" ? <Clock size={9} /> : <Send size={9} />}
+                      {r.status}
+                    </span>
+                  </Link>
+                ))}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCircle className="mb-2 text-success" size={28} />
+                <p className="text-sm text-muted">Semua report up to date! ✅</p>
+              </div>
             )}
           </div>
         </div>
