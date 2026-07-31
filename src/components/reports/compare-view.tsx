@@ -21,6 +21,7 @@ interface Report {
   period_start: string;
   period_end: string;
   status: string;
+  objective?: string | null;
   client?: { name: string };
   report_metrics?: ReportMetric[];
 }
@@ -95,12 +96,18 @@ export function CompareView({
 }) {
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [weekCount, setWeekCount] = useState<number>(4);
+  const [objectiveFilter, setObjectiveFilter] = useState<string>("all");
 
-  // Filter & sort reports by client + period
+  // Filter & sort reports by client + period + objective
   const comparisonData = useMemo(() => {
-    const filtered = reports.filter(
-      (r) => selectedClient === "all" || r.client_id === selectedClient
-    );
+    const filtered = reports.filter((r) => {
+      const matchClient = selectedClient === "all" || r.client_id === selectedClient;
+      const matchObjective =
+        objectiveFilter === "all" ||
+        (objectiveFilter === "none" && !r.objective) ||
+        r.objective === objectiveFilter;
+      return matchClient && matchObjective;
+    });
 
     // Sort by period_start ascending, ambil N minggu terakhir
     const sorted = [...filtered].sort(
@@ -145,7 +152,7 @@ export function CompareView({
     });
 
     return result;
-  }, [reports, selectedClient, weekCount]);
+  }, [reports, selectedClient, weekCount, objectiveFilter]);
 
   // ─── Aggregate totals per metric (cross-client) ───
   const totals = useMemo(() => {
@@ -194,6 +201,46 @@ export function CompareView({
             <option value={6}>6 Minggu</option>
             <option value={8}>8 Minggu</option>
             <option value={12}>12 Minggu</option>
+          </select>
+        </div>
+        {/* B11: Objective Filter */}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-700">Objective</label>
+          <select
+            value={objectiveFilter}
+            onChange={(e) => setObjectiveFilter(e.target.value)}
+            className="input w-auto"
+          >
+            <option value="all">Semua Objective</option>
+            <option value="none">⚠️ Tanpa Objective</option>
+            <optgroup label="🔵 Meta">
+              <option value="META_CPAS">🛒 CPAS</option>
+              <option value="META_CTWA">💬 CTWA</option>
+              <option value="META_CTLP">🌐 CTLP</option>
+              <option value="META_TRAFFIC">🚦 Traffic</option>
+              <option value="META_SALES">💰 Sales</option>
+              <option value="META_LEAD_GEN">📋 Lead Gen</option>
+              <option value="META_AWARENESS">👁️ Awareness</option>
+              <option value="META_MESSAGES">📨 Messages</option>
+              <option value="META_ENGAGEMENT">❤️ Engagement</option>
+              <option value="META_VIDEO_VIEWS">🎬 Video Views</option>
+              <option value="META_APP_INSTALLS">📱 App Installs</option>
+            </optgroup>
+            <optgroup label="🟢 Google">
+              <option value="GOOGLE_GDN">📊 GDN</option>
+              <option value="GOOGLE_DEMAND_GEN">⚡ Demand Gen</option>
+              <option value="GOOGLE_SEARCH">🔍 Search</option>
+              <option value="GOOGLE_PMAX">🚀 PMax</option>
+              <option value="GOOGLE_YOUTUBE">▶️ YouTube</option>
+              <option value="GOOGLE_SHOPPING">🛍️ Shopping</option>
+            </optgroup>
+            <optgroup label="🔴 TikTok">
+              <option value="TIKTOK_GMX_MAX">📈 GMX Max</option>
+              <option value="TIKTOK_WEB_CONV">💻 Web Conv</option>
+              <option value="TIKTOK_REACH">📡 Reach</option>
+              <option value="TIKTOK_VIDEO_VIEWS">🎥 Video Views</option>
+              <option value="TIKTOK_COMMUNITY">👥 Community</option>
+            </optgroup>
           </select>
         </div>
         {/* Quick summary */}
