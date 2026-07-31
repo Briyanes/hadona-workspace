@@ -38,6 +38,7 @@ import {
 } from "recharts";
 import { formatIDR, cn, extractError } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
+import { useShiftSelect } from "@/hooks/use-shift-select";
 import { SortableTh } from "@/components/ui/sortable-th";
 
 interface AdAccount {
@@ -689,35 +690,7 @@ export default function AdsSpendPage() {
     }
   }
 
-  // ─── Bulk Operations ───
-
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }
-
-  function toggleSelectAll() {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map((a) => a.id)));
-    }
-  }
-
-  function clearSelection() {
-    setSelectedIds(new Set());
-    setShowBulkAssign(false);
-    setBulkClientId("");
-    setBulkDailyBudget("");
-    setBulkRemaining("");
-  }
+  // clearSelection akan didefinisikan setelah hook useShiftSelect (di bawah)
 
   async function handleBulkAssign() {
     if (selectedIds.size === 0) {
@@ -988,6 +961,23 @@ export default function AdsSpendPage() {
   ];
 
   const { sortedData, sortState, toggleSort } = useSortable<AdAccount>({ data: filtered });
+
+  // ─── Shift+Click Range Selection ───
+  const { onRowToggle, onHeaderToggle, clearSelection: clearShiftSelection } =
+    useShiftSelect<AdAccount>({
+      data: sortedData,
+      getId: (a) => a.id,
+      selectedIds,
+      setSelectedIds,
+    });
+
+  function clearSelection() {
+    clearShiftSelection();
+    setShowBulkAssign(false);
+    setBulkClientId("");
+    setBulkDailyBudget("");
+    setBulkRemaining("");
+  }
 
   const platformColors: Record<string, string> = {
     META: "bg-primary/20 text-primary",
@@ -1431,7 +1421,7 @@ export default function AdsSpendPage() {
                   <input
                     type="checkbox"
                     checked={selectedIds.size === filtered.length && filtered.length > 0}
-                    onChange={toggleSelectAll}
+                    onChange={onHeaderToggle}
                     className="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-primary"
                   />
                 </th>
@@ -1494,7 +1484,7 @@ export default function AdsSpendPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {sortedData.map((a) => {
+              {sortedData.map((a, index) => {
                 const todayStats = getTodaySpend(a.id);
                 return (
                   <tr key={a.id} className={cn("group hover:bg-surface/50", !a.client_id && "bg-warning/5")}>
@@ -1502,7 +1492,8 @@ export default function AdsSpendPage() {
                       <input
                         type="checkbox"
                         checked={selectedIds.has(a.id)}
-                        onChange={() => toggleSelect(a.id)}
+                        onClick={(e) => onRowToggle(a.id, index, e)}
+                        onChange={() => {}}
                         className="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-primary"
                       />
                     </td>
