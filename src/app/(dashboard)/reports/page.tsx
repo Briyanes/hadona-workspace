@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
 import { CompareView } from "@/components/reports/compare-view";
+import { ShareButton } from "@/components/reports/share-button";
 
 // ============================================
 // TYPES
@@ -1449,6 +1450,7 @@ export default function ReportsPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <ShareButton report={detailReport} />
                 <button
                   onClick={() => window.print()}
                   className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-gray-700 hover:bg-background"

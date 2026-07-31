@@ -423,6 +423,92 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // ─── CREATE SHARE LINK: Generate token untuk client portal ───
+      case "create-share": {
+        const { reportId } = body;
+        if (!reportId) {
+          return NextResponse.json({ error: "reportId required" }, { status: 400 });
+        }
+
+        // Generate random token (32 chars)
+        const { randomBytes } = await import("crypto");
+        const token = randomBytes(16).toString("hex");
+
+        const { data: shareData, error: shareErr } = await supabase
+          .from("shared_reports")
+          .insert({
+            report_id: reportId,
+            token,
+            created_by: user.id,
+            is_active: true,
+          })
+          .select("token")
+          .single();
+
+        if (shareErr) throw shareErr;
+
+        return NextResponse.json({
+          success: true,
+          token: shareData.token,
+          url: `/shared/${shareData.token}`,
+        });
+      }
+
+      // ─── GET SHARED REPORT: Public access via token ───
+      case "get-shared": {
+        const { token } = body;
+        if (!token) {
+          return NextResponse.json({ error: "token required" }, { status: 400 });
+        }
+
+        // Lookup token
+        const { data: shareLink, error: linkErr } = await supabase
+          .from("shared_reports")
+          .select("report_id, is_active, expires_at")
+          .eq("token", token)
+          .single();
+
+        if (linkErr || !shareLink) {
+          return NextResponse.json({ error: "Link tidak ditemukan" }, { status: 404 });
+        }
+
+        if (!shareLink.is_active) {
+          return NextResponse.json({ error: "Link telah dinonaktifkan" }, { status: 403 });
+        }
+
+        if (shareLink.expires_at && new Date(shareLink.expires_at) < new Date()) {
+          return NextResponse.json({ error: "Link telah kedaluwarsa" }, { status: 403 });
+        }
+
+        // Increment view count (best-effort, jangan block response kalau gagal)
+        try {
+          const { data: current } = await supabase
+            .from("shared_reports")
+            .select("view_count")
+            .eq("token", token)
+            .single();
+          if (current) {
+            await supabase
+              .from("shared_reports")
+              .update({ view_count: (current.view_count || 0) + 1 })
+              .eq("token", token);
+          }
+        } catch {
+          // view_count increment gagal = tidak fatal
+        }
+
+        // Get report data
+        const { data: report, error: reportErr } = await supabase
+          .from("weekly_reports")
+          .select("*, client:clients(name), report_metrics(*)")
+          .eq("id", shareLink.report_id)
+          .single();
+
+        if (reportErr) throw reportErr;
+
+        return NextResponse.json({ report });
+      }
+
       default:
         return NextResponse.json(
           { error: `Unknown action: ${action}` },
