@@ -478,16 +478,33 @@ export default function AdsSpendPage() {
   }
 
   async function loadClients() {
-    const { data } = await supabase.from("clients").select("id, name").order("name");
-    setClients((data as unknown as Client[]) || []);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/clients", {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!res.ok) throw new Error("Failed to load clients");
+      const json = await res.json();
+      setClients((json.clients as Client[]) || []);
+    } catch (err) {
+      console.error("Failed to load clients:", extractError(err));
+      setClients([]);
+    }
   }
 
   async function loadTeam() {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .order("full_name");
-    setTeam((data as unknown as TeamMember[]) || []);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/team", {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!res.ok) throw new Error("Failed to load team");
+      const json = await res.json();
+      setTeam((json.team as TeamMember[]) || []);
+    } catch (err) {
+      console.error("Failed to load team:", extractError(err));
+      setTeam([]);
+    }
   }
 
   function openCreate() {
@@ -1287,7 +1304,7 @@ export default function AdsSpendPage() {
 
       {/* Floating Bulk Assign Toolbar */}
       {selectedIds.size > 0 && (
-        <div className="sticky bottom-4 z-30 mx-auto flex max-w-3xl flex-col gap-3 rounded-lg border border-primary/30 bg-surface p-3 shadow-xl sm:flex-row sm:items-center">
+        <div className="sticky bottom-4 z-40 mx-auto flex max-w-3xl flex-col gap-3 rounded-lg border border-primary/30 bg-surface p-3 shadow-xl sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <span className="badge bg-primary/20 text-primary">✓ {selectedIds.size} dipilih</span>
             <button
@@ -1571,7 +1588,7 @@ export default function AdsSpendPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">
@@ -1760,7 +1777,7 @@ export default function AdsSpendPage() {
 
       {/* Manual Token Modal */}
       {showTokenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
@@ -1843,7 +1860,7 @@ export default function AdsSpendPage() {
 
       {/* Import Sheet Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -2132,7 +2149,7 @@ export default function AdsSpendPage() {
 
       {/* Spend Log Modal */}
       {showSpendModal && modalAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>

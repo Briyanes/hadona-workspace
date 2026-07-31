@@ -115,6 +115,19 @@
   select.input option {
     background-color: #ffffff;
     color: #18181b;
+    padding: 8px 12px;
+  }
+
+  /* Ensure dropdown renders above other elements */
+  select.input {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* Style for empty/disabled option placeholder */
+  select.input option:disabled {
+    color: #9ca3af;
+    font-style: italic;
   }
 
   select.input option:checked {
