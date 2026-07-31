@@ -5,6 +5,64 @@ import { getAdAccountInsights, extractConversions, getAdAccounts, getBusinessAdA
 // Hadona's Business Portfolio ID
 const HADONA_BM_ID = process.env.META_BUSINESS_ID || "1380114199447586";
 
+/**
+ * Sleep helper for rate-limit protection
+ */
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry wrapper for Meta API calls — handles rate limiting gracefully
+ */
+async function getInsightsWithRetry(
+  accessToken: string,
+  adAccountId: string,
+  dateStart: string,
+  dateEnd: string,
+  maxRetries = 3
+): Promise<{ data: Awaited<ReturnType<typeof getAdAccountInsights>>; error: string | null }> {
+  let lastError = "";
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const insights = await getAdAccountInsights(accessToken, adAccountId, dateStart, dateEnd);
+      return { data: insights, error: null };
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "unknown";
+      lastError = errMsg;
+
+      // Meta rate limit error codes: 4, 17, 32, 613
+      const isRateLimit =
+        errMsg.includes("rate limit") ||
+        errMsg.includes("[4]") ||
+        errMsg.includes("[17]") ||
+        errMsg.includes("[32]") ||
+        errMsg.includes("[613]") ||
+        errMsg.includes("too many calls");
+
+      if (isRateLimit && attempt < maxRetries - 1) {
+        // Exponential backoff: 2s, 4s, 8s
+        const waitMs = Math.pow(2, attempt + 1) * 1000;
+        console.warn(`[Sync] ⏳ Rate limited on ${adAccountId}, retry ${attempt + 1}/${maxRetries} in ${waitMs}ms...`);
+        await sleep(waitMs);
+        continue;
+      }
+
+      // Not a rate limit or max retries reached
+      return { data: [], error: errMsg };
+    }
+  }
+  return { data: [], error: lastError };
+}
+
+/**
+ * Detailed error entry for tracking
+ */
+interface AccountError {
+  id: string;
+  error: string;
+}
+
 interface MetaConnection {
   id: string;
   user_id: string;
@@ -334,69 +392,37 @@ export async function POST(request: NextRequest) {
         }
 
         let totalRecords = 0;
-        const accountErrors: string[] = [];
+        const accountErrors: AccountError[] = [];
+        let successCount = 0;
+        let rateLimitedCount = 0;
 
-        for (const account of adAccounts) {
-          try {
-            // Pull insights from Meta API
-            const insights = await getAdAccountInsights(
-              conn.access_token,
-              account.ad_account_id,
-              syncDate,
-              syncDate
-            );
+        console.log(`[Sync] Phase 2: Pulling insights for ${adAccounts.length} accounts (with delay)...`);
 
-            if (insights.length === 0) {
-              // No spend data for this date (account might be inactive)
-              continue;
-            }
+        for (let i = 0; i < adAccounts.length; i++) {
+          const account = adAccounts[i];
 
-            // Upsert each day's insight to ad_spend_logs
-            for (const insight of insights) {
-              const conversions = extractConversions(insight.actions);
-              const spend = parseFloat(insight.spend) || 0;
-              const impressions = parseInt(insight.impressions) || 0;
-              const clicks = parseInt(insight.clicks) || 0;
+          // Rate-limit protection: 300ms delay between each API call
+          if (i > 0) await sleep(300);
 
-              if (spend === 0 && impressions === 0) continue;
+          // Use retry wrapper instead of direct call
+          const { data: insights, error: apiError } = await getInsightsWithRetry(
+            conn.access_token,
+            account.ad_account_id,
+            syncDate,
+            syncDate
+          );
 
-              const { error: logError } = await supabase
-                .from("ad_spend_logs")
-                .upsert(
-                  {
-                    ad_account_id: account.id,
-                    log_date: insight.date_start,
-                    spend,
-                    impressions,
-                    clicks,
-                    conversions,
-                    revenue: 0, // Revenue not available from Meta API by default
-                    notes: "Auto-synced from Meta API",
-                  } as never,
-                  {
-                    onConflict: "ad_account_id,log_date",
-                  }
-                );
+          if (apiError) {
+            const isRateLimit =
+              apiError.includes("rate limit") ||
+              apiError.includes("[4]") ||
+              apiError.includes("[17]") ||
+              apiError.includes("[32]") ||
+              apiError.includes("[613]");
+            if (isRateLimit) rateLimitedCount++;
 
-              if (logError) {
-                console.error(`Error saving insight for ${account.ad_account_id}:`, logError);
-                accountErrors.push(account.ad_account_id);
-              } else {
-                totalRecords++;
-              }
-            }
-
-            // Log sync record
-            await supabase.from("meta_sync_logs").insert({
-              connection_id: conn.id,
-              ad_account_id: account.id,
-              sync_date: syncDate,
-              records_pulled: insights.length,
-              status: "success",
-            } as never);
-          } catch (err) {
-            console.error(`Error syncing account ${account.ad_account_id}:`, err);
-            accountErrors.push(account.ad_account_id);
+            console.error(`[Sync] ❌ ${account.ad_account_id}: ${apiError}`);
+            accountErrors.push({ id: account.ad_account_id, error: apiError });
 
             await supabase.from("meta_sync_logs").insert({
               connection_id: conn.id,
@@ -404,10 +430,71 @@ export async function POST(request: NextRequest) {
               sync_date: syncDate,
               records_pulled: 0,
               status: "error",
-              error_message: err instanceof Error ? err.message : "unknown",
+              error_message: apiError,
             } as never);
+            continue;
           }
+
+          if (insights.length === 0) {
+            // No spend data for this date — not an error, just inactive
+            continue;
+          }
+
+          // Upsert each day's insight to ad_spend_logs
+          let hasDbError = false;
+          for (const insight of insights) {
+            const conversions = extractConversions(insight.actions);
+            const spend = parseFloat(insight.spend) || 0;
+            const impressions = parseInt(insight.impressions) || 0;
+            const clicks = parseInt(insight.clicks) || 0;
+
+            if (spend === 0 && impressions === 0) continue;
+
+            const { error: logError } = await supabase
+              .from("ad_spend_logs")
+              .upsert(
+                {
+                  ad_account_id: account.id,
+                  log_date: insight.date_start,
+                  spend,
+                  impressions,
+                  clicks,
+                  conversions,
+                  revenue: 0,
+                  notes: "Auto-synced from Meta API",
+                } as never,
+                {
+                  onConflict: "ad_account_id,log_date",
+                }
+              );
+
+            if (logError) {
+              console.error(`[Sync] ❌ DB error for ${account.ad_account_id}:`, logError.message);
+              hasDbError = true;
+            } else {
+              totalRecords++;
+            }
+          }
+
+          if (hasDbError) {
+            accountErrors.push({ id: account.ad_account_id, error: "Database upsert failed" });
+          } else {
+            successCount++;
+          }
+
+          // Log sync record
+          await supabase.from("meta_sync_logs").insert({
+            connection_id: conn.id,
+            ad_account_id: account.id,
+            sync_date: syncDate,
+            records_pulled: insights.length,
+            status: "success",
+          } as never);
         }
+
+        console.log(
+          `[Sync] ✅ Phase 2 done: ${successCount} success, ${accountErrors.length} errors (${rateLimitedCount} rate-limited), ${totalRecords} records`
+        );
 
         // Update connection sync status
         const status =
@@ -417,13 +504,23 @@ export async function POST(request: NextRequest) {
               ? "partial"
               : "success";
 
+        // Format error summary: top 5 errors with reasons
+        const errorSummary =
+          accountErrors.length > 0
+            ? `${accountErrors.length} failed: ` +
+              accountErrors
+                .slice(0, 5)
+                .map((e) => `${e.id} (${e.error.slice(0, 50)})`)
+                .join(", ") +
+              (accountErrors.length > 5 ? `... +${accountErrors.length - 5} more` : "")
+            : null;
+
         await supabase
           .from("meta_connections")
           .update({
             last_sync_at: new Date().toISOString(),
             last_sync_status: status,
-            last_sync_error:
-              accountErrors.length > 0 ? `Failed accounts: ${accountErrors.join(", ")}` : null,
+            last_sync_error: errorSummary,
           } as never)
           .eq("id", conn.id);
 
@@ -447,9 +544,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const successCount = results.filter((r) => r.status === "success").length;
-    const errorCount = results.filter((r) => r.status === "error").length;
-    const totalRecords = results.reduce((sum, r) => sum + (r.records_synced || 0), 0);
+    const totalSuccessConnections = results.filter((r) => r.status === "success").length;
+    const totalErrorConnections = results.filter((r) => r.status === "error").length;
+    const grandTotalRecords = results.reduce((sum, r) => sum + (r.records_synced || 0), 0);
     const totalImported = results.reduce((sum, r) => sum + (r.accounts_auto_imported || 0), 0);
     const totalMatched = results.reduce((sum, r) => sum + (r.accounts_name_matched || 0), 0);
 
@@ -458,9 +555,9 @@ export async function POST(request: NextRequest) {
       success: true,
       date: syncDate,
       connections_synced: results.length,
-      successful: successCount,
-      errors: errorCount,
-      total_records: totalRecords,
+      successful: totalSuccessConnections,
+      errors: totalErrorConnections,
+      total_records: grandTotalRecords,
       accounts_imported: totalImported,
       accounts_matched: totalMatched,
       details: results,
