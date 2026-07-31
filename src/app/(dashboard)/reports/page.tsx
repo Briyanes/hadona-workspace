@@ -40,6 +40,7 @@ import { ShareButton } from "@/components/reports/share-button";
 import { GoalTracker } from "@/components/reports/goal-tracker";
 import { EmailScheduleManager } from "@/components/reports/email-schedule-manager";
 import { CreativePerformanceTracker } from "@/components/reports/creative-performance-tracker";
+import { generateReportText } from "@/lib/report-generator";
 
 // ============================================
 // TYPES
@@ -224,6 +225,9 @@ export default function ReportsPage() {
 
   // Compare view state
   const [compareClient, setCompareClient] = useState<string>("all");
+
+  // AI Generator state
+  const [generating, setGenerating] = useState(false);
 
   // Bulk Actions state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -616,6 +620,52 @@ export default function ReportsPage() {
     });
     setChartData(data);
   }, [detailReport, reports]);
+
+  // ─── P1: AI Smart Summary Generator ───
+  function handleGenerateText() {
+    const hasMetrics = Object.values(form.metrics).some((v) => v !== "" && v !== null && Number(v) > 0);
+    if (!hasMetrics) {
+      toast.error("Isi atau pull metrik dulu sebelum generate naratif");
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const clientName = clients.find((c) => c.id === form.client_id)?.name || "Client";
+
+      const metricsData = {
+        spend: Number(form.metrics.spend) || undefined,
+        impressions: Number(form.metrics.impressions) || undefined,
+        clicks: Number(form.metrics.clicks) || undefined,
+        ctr: Number(form.metrics.ctr) || undefined,
+        cpc: Number(form.metrics.cpc) || undefined,
+        cpm: Number(form.metrics.cpm) || undefined,
+        conversions: Number(form.metrics.conversions) || undefined,
+        cpr: Number(form.metrics.cpr) || undefined,
+        revenue: Number(form.metrics.revenue) || undefined,
+        roas: Number(form.metrics.roas) || undefined,
+        frequency: Number(form.metrics.frequency) || undefined,
+        wa_leads: Number(form.metrics.wa_leads) || undefined,
+        link_clicks: Number(form.metrics.link_clicks) || undefined,
+      };
+
+      const generated = generateReportText(metricsData, previousMetrics, clientName);
+
+      setForm((prev) => ({
+        ...prev,
+        summary: generated.summary,
+        performance_text: generated.performance_text,
+        conclusion: generated.conclusion,
+        action: generated.action,
+      }));
+
+      toast.success("✨ Naratif berhasil di-generate! Review & edit sesuai kebutuhan.", { duration: 4000 });
+    } catch (err) {
+      toast.error("Gagal generate: " + extractError(err));
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   // ─── Filter logic (B3 fix: include conclusion & action) ───
   const filtered = reports.filter((r) => {
@@ -1368,6 +1418,30 @@ export default function ReportsPage() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* ─── P1: AI Generate Button ─── */}
+              <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 p-3">
+                <div>
+                  <p className="text-xs font-semibold text-gray-900">⚡ Auto-Generate Naratif</p>
+                  <p className="text-[10px] text-muted">Buat ringkasan, kesimpulan & action plan otomatis dari metrik</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateText}
+                  disabled={generating}
+                  className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" /> Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={12} /> Generate dengan AI
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Text fields */}
