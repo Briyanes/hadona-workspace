@@ -473,16 +473,57 @@ export default function AdsSpendPage() {
 
   async function loadAccounts() {
     try {
+      // Try full query with joins (requires migration v10+)
       const { data, error } = await supabase
         .from("ad_accounts")
         .select("*, client:clients(name), pic:profiles!pic_id(full_name)")
         .order("created_at", { ascending: false });
+
       if (error) throw error;
       setAccounts((data as unknown as AdAccount[]) || []);
     } catch (err) {
       const msg = extractError(err);
-      setError("Gagal memuat data: " + msg);
-      toast.error("Gagal memuat ad accounts");
+
+      // Fallback: try basic query without joins (if pic_id column doesn't exist yet)
+      try {
+        const { data: fallbackData, error: fallbackErr } = await supabase
+          .from("ad_accounts")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (fallbackErr) throw fallbackErr;
+
+        const basicAccounts = (fallbackData as unknown as AdAccount[]) || [];
+
+        // Manually fetch client names for basic accounts
+        if (basicAccounts.length > 0) {
+          const clientIds = Array.from(new Set(basicAccounts.map((a) => a.client_id).filter(Boolean)));
+          if (clientIds.length > 0) {
+            const { data: clientsData } = await supabase
+              .from("clients")
+              .select("id, name")
+              .in("id", clientIds);
+            const clientMap = new Map(
+              (clientsData || []).map((c: { id: string; name: string }) => [c.id, c.name])
+            );
+            basicAccounts.forEach((a) => {
+              if (a.client_id) {
+                a.client = { name: clientMap.get(a.client_id) || "Unknown" };
+              }
+            });
+          }
+        }
+
+        setAccounts(basicAccounts);
+        toast.warning(
+          "Database belum lengkap. Jalankan migration v10-v14 di Supabase SQL Editor untuk fitur penuh.",
+          { duration: 10000 }
+        );
+      } catch (err2) {
+        const msg2 = extractError(err2);
+        setError("Gagal memuat data: " + msg2);
+        toast.error("Gagal memuat ad accounts: " + msg2);
+      }
     } finally {
       setLoading(false);
     }
