@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkPublicReportRateLimit, getClientIP } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +14,34 @@ function getAdminClient() {
 
 // GET /api/reports/public?token=xxx
 // Public endpoint (no auth required) untuk akses shared report
+// Protected by rate limiting (60 req / 5 min / IP)
 export async function GET(request: NextRequest) {
   try {
+    // ─── Rate limiting ───
+    const clientIP = getClientIP(request);
+    const rateLimit = checkPublicReportRateLimit(clientIP);
+
+    if (!rateLimit.allowed) {
+      const retryAfterSec = Math.ceil((rateLimit.resetAtMs - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: "Terlalu banyak request. Coba lagi nanti." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfterSec),
+            "X-RateLimit-Limit": "60",
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(Math.floor(rateLimit.resetAtMs / 1000)),
+          },
+        }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 
-    if (!token) {
-      return NextResponse.json({ error: "Token required" }, { status: 400 });
+    if (!token || token.length < 32) {
+      return NextResponse.json({ error: "Token tidak valid" }, { status: 400 });
     }
 
     const supabase = getAdminClient();
@@ -43,21 +65,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Link telah kedaluwarsa" }, { status: 403 });
     }
 
-    // Best-effort view count increment
+    // ─── Atomic view count increment (race-condition fix) ───
+    // Gunakan RPC function untuk atomic increment
     try {
-      const { data: current } = await supabase
-        .from("shared_reports")
-        .select("view_count")
-        .eq("token", token)
-        .single();
-      if (current) {
-        await supabase
-          .from("shared_reports")
-          .update({ view_count: (current.view_count || 0) + 1 })
-          .eq("token", token);
-      }
+      await supabase.rpc("increment_view_count", { token_input: token });
     } catch {
-      // view_count increment gagal = tidak fatal
+      // Fallback: ignore jika RPC tidak ada (tidak fatal)
     }
 
     // Get report data
@@ -69,7 +82,13 @@ export async function GET(request: NextRequest) {
 
     if (reportErr) throw reportErr;
 
-    return NextResponse.json({ report });
+    // Add rate limit headers to success response
+    const response = NextResponse.json({ report });
+    response.headers.set("X-RateLimit-Limit", "60");
+    response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
+    response.headers.set("X-RateLimit-Reset", String(Math.floor(rateLimit.resetAtMs / 1000)));
+
+    return response;
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[/api/reports/public] Error:", msg);
