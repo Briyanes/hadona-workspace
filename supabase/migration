@@ -1,0 +1,45 @@
+-- ============================================================
+-- MIGRATION V14: Fix RLS untuk clients & profiles (SELECT for all authenticated users)
+-- 
+-- Problem: RLS policy hanya allow Manager/PIC untuk SELECT clients & profiles
+-- Impact: Dropdown kosong untuk staff/designer/dll di 12+ halaman dashboard
+-- Solution: Allow ALL authenticated users to SELECT (read-only) clients & profiles
+-- ============================================================
+
+-- ============================================================
+-- TABLE: clients
+-- ============================================================
+
+-- Drop existing SELECT policies
+DROP POLICY IF EXISTS "clients_select_all" ON clients;
+DROP POLICY IF EXISTS "clients_select_managers" ON clients;
+DROP POLICY IF EXISTS "clients_select_staff" ON clients;
+DROP POLICY IF EXISTS "Users can read clients" ON clients;
+DROP POLICY IF EXISTS "Allow authenticated read clients" ON clients;
+
+-- Create new policy: ALL authenticated users can SELECT
+CREATE POLICY "clients_read_authenticated" ON clients
+  FOR SELECT TO authenticated
+  USING (true);
+
+-- ============================================================
+-- TABLE: profiles
+-- ============================================================
+
+-- Drop existing SELECT policies
+DROP POLICY IF EXISTS "profiles_select_all" ON profiles;
+DROP POLICY IF EXISTS "profiles_select_managers" ON profiles;
+DROP POLICY IF EXISTS "profiles_select_staff" ON profiles;
+DROP POLICY IF EXISTS "Users can read profiles" ON profiles;
+DROP POLICY IF EXISTS "Allow authenticated read profiles" ON profiles;
+
+-- Create new policy: ALL authenticated users can SELECT
+CREATE POLICY "profiles_read_authenticated" ON profiles
+  FOR SELECT TO authenticated
+  USING (true);
+
+-- ============================================================
+-- VERIFICATION (run manually to check)
+-- ============================================================
+-- SELECT tablename, policyname, cmd, roles FROM pg_policies WHERE tablename IN ('clients', 'profiles') ORDER BY tablename;
+-- ============================================================
