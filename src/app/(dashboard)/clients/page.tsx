@@ -244,7 +244,13 @@ export default function ClientsPage() {
       setShowModal(false);
       loadClients();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      let msg = "Unknown error";
+      if (err && typeof err === "object" && "message" in err) {
+        msg = String((err as { message: unknown }).message);
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+      console.error("[Client Save Error]", err);
       toast.error("Gagal menyimpan: " + msg);
     } finally {
       setSaving(false);
@@ -259,7 +265,13 @@ export default function ClientsPage() {
       toast.success("Client dihapus");
       loadClients();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      let msg = "Unknown error";
+      if (err && typeof err === "object" && "message" in err) {
+        msg = String((err as { message: unknown }).message);
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+      console.error("[Client Delete Error]", err);
       toast.error("Gagal hapus: " + msg);
     }
   }
@@ -608,8 +620,8 @@ export default function ClientsPage() {
 
       {/* ==================== Create/Edit Modal (2-Column + Sticky) ==================== */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* ── Sticky Header ── */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">

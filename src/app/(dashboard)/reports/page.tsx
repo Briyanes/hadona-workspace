@@ -1,10 +1,51 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { Plus, FileText, X, Pencil, Trash2, AlertCircle, Search, Clock, CheckCircle, Send, Loader2 } from "lucide-react";
-import { formatDate, cn } from "@/lib/utils";
+import {
+  Plus,
+  FileText,
+  X,
+  Pencil,
+  Trash2,
+  AlertCircle,
+  Search,
+  Clock,
+  CheckCircle,
+  Send,
+  Loader2,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Download,
+  Sparkles,
+  BarChart3,
+} from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
+
+// ============================================
+// TYPES
+// ============================================
+
+interface ReportMetric {
+  id: string;
+  weekly_report_id: string;
+  metric_type: string;
+  value: number | null;
+  previous_value: number | null;
+  platform?: string | null;
+}
 
 interface Report {
   id: string;
@@ -16,14 +57,112 @@ interface Report {
   conclusion: string | null;
   action: string | null;
   status: string;
+  created_at: string;
   client?: { name: string };
   pic?: { full_name: string };
+  report_metrics?: ReportMetric[];
 }
 
 interface Client {
   id: string;
   name: string;
 }
+
+interface PulledMetrics {
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  revenue: number;
+  ctr: number;
+  cpr: number;
+  cpc: number;
+  cpm: number;
+  roas: number;
+}
+
+interface PlatformBreakdown {
+  platform: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  revenue: number;
+  accountCount: number;
+  ctr: number;
+  cpr: number;
+  roas: number;
+}
+
+// ============================================
+// METRIC DEFINITIONS — untuk Advertiser
+// ============================================
+
+const METRIC_DEFS: Array<{
+  key: string;
+  label: string;
+  unit: "currency" | "number" | "percent" | "ratio";
+  description: string;
+  derived?: boolean;
+}> = [
+  { key: "spend", label: "Total Spend", unit: "currency", description: "Total biaya iklan minggu ini" },
+  { key: "impressions", label: "Impressions", unit: "number", description: "Total tayang iklan" },
+  { key: "clicks", label: "Clicks (Link)", unit: "number", description: "Total klik link iklan" },
+  { key: "ctr", label: "CTR", unit: "percent", description: "Click-Through Rate = clicks/impressions", derived: true },
+  { key: "cpc", label: "CPC", unit: "currency", description: "Cost Per Click = spend/clicks", derived: true },
+  { key: "cpm", label: "CPM", unit: "currency", description: "Cost Per 1000 Impressions", derived: true },
+  { key: "wa_leads", label: "WA Leads", unit: "number", description: "Chat WhatsApp masuk" },
+  { key: "conversions", label: "Conversions", unit: "number", description: "Total konversi/pembelian" },
+  { key: "cpr", label: "CPR", unit: "currency", description: "Cost Per Result = spend/conversions", derived: true },
+  { key: "revenue", label: "Revenue", unit: "currency", description: "Pendapatan dari konversi" },
+  { key: "roas", label: "ROAS", unit: "ratio", description: "Return On Ad Spend = revenue/spend", derived: true },
+  { key: "link_clicks", label: "Link Clicks", unit: "number", description: "Klik ke landing page" },
+  { key: "frequency", label: "Frequency", unit: "ratio", description: "Rata-rata iklan dilihat per orang" },
+];
+
+// ============================================
+// HELPERS
+// ============================================
+
+function formatMetric(value: number | null | undefined, unit: string): string {
+  if (value === null || value === undefined || isNaN(value)) return "-";
+  switch (unit) {
+    case "currency":
+      return formatIDR(value);
+    case "percent":
+      return `${value.toFixed(2)}%`;
+    case "ratio":
+      return `${value.toFixed(2)}x`;
+    case "number":
+      return formatCompact(value);
+    default:
+      return String(value);
+  }
+}
+
+function calcWowDelta(current: number | null, previous: number | null): number | null {
+  if (current === null || previous === null || previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+function createEmptyForm() {
+  return {
+    client_id: "",
+    period_start: "",
+    period_end: "",
+    summary: "",
+    performance_text: "",
+    conclusion: "",
+    action: "",
+    status: "draft" as string,
+    // Structured metrics (key -> value)
+    metrics: {} as Record<string, number | "">,
+  };
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 
 export default function ReportsPage() {
   const supabase = createClient();
@@ -39,50 +178,185 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [saving, setSaving] = useState(false);
-  const emptyForm = {
-    client_id: "",
-    period_start: "",
-    period_end: "",
-    summary: "",
-    performance_text: "",
-    conclusion: "",
-    action: "",
-    status: "draft",
-  };
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(createEmptyForm());
 
-  useEffect(() => {
-    loadReports();
-    loadClients();
-  }, [supabase]);
+  // Auto-pull state
+  const [pulling, setPulling] = useState(false);
+  const [pulledData, setPulledData] = useState<{
+    metrics: PulledMetrics;
+    platformBreakdown: PlatformBreakdown[];
+    hasData: boolean;
+    accountCount: number;
+  } | null>(null);
 
-  async function loadReports() {
+  // WoW previous metrics
+  const [previousMetrics, setPreviousMetrics] = useState<Record<string, number>>({});
+  const [loadingPrevious, setLoadingPrevious] = useState(false);
+
+  // Detail view modal
+  const [detailReport, setDetailReport] = useState<Report | null>(null);
+
+  // Chart data (history per client)
+  const [chartData, setChartData] = useState<
+    Array<{ period: string; spend: number; conversions: number; revenue: number }>
+  >([]);
+
+  const loadReports = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("weekly_reports")
-        .select("*, client:clients(name), pic:profiles(full_name)")
+        .select("*, client:clients(name), pic:profiles(full_name), report_metrics(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setReports((data as unknown as Report[]) || []);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = extractError(err);
       setError("Gagal memuat laporan: " + msg);
       toast.error("Gagal memuat data laporan");
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
 
-  async function loadClients() {
-    const { data, error } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
+  const loadClients = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("status", "active")
+      .order("name");
     if (error) {
       toast.error("Gagal memuat daftar client");
       return;
     }
     setClients((data as unknown as Client[]) || []);
+  }, [supabase]);
+
+  useEffect(() => {
+    loadReports();
+    loadClients();
+  }, [loadReports, loadClients]);
+
+  // ─── Auto-pull ads data ───
+  async function handlePullAds() {
+    if (!form.client_id || !form.period_start || !form.period_end) {
+      toast.error("Pilih client & isi periode dulu sebelum pull data");
+      return;
+    }
+    if (new Date(form.period_start) > new Date(form.period_end)) {
+      toast.error("Periode mulai harus sebelum periode selesai");
+      return;
+    }
+
+    setPulling(true);
+    setPulledData(null);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "pull-ads",
+          clientId: form.client_id,
+          periodStart: form.period_start,
+          periodEnd: form.period_end,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal pull data");
+
+      if (!data.hasData) {
+        toast.info(data.message || "Tidak ada data ads untuk periode ini");
+        return;
+      }
+
+      // Isi form metrics dengan data yang di-pull
+      const newMetrics = { ...form.metrics };
+      newMetrics.spend = data.metrics.spend || "";
+      newMetrics.impressions = data.metrics.impressions || "";
+      newMetrics.clicks = data.metrics.clicks || "";
+      newMetrics.ctr = data.metrics.ctr || "";
+      newMetrics.cpc = data.metrics.cpc || "";
+      newMetrics.cpm = data.metrics.cpm || "";
+      newMetrics.conversions = data.metrics.conversions || "";
+      newMetrics.cpr = data.metrics.cpr || "";
+      newMetrics.revenue = data.metrics.revenue || "";
+      newMetrics.roas = data.metrics.roas || "";
+
+      setForm({ ...form, metrics: newMetrics });
+      setPulledData({
+        metrics: data.metrics,
+        platformBreakdown: data.platformBreakdown || [],
+        hasData: true,
+        accountCount: data.accountCount || 0,
+      });
+
+      toast.success(
+        `✅ Data ads ter-pull! ${data.accountCount} akun • ${data.logCount} log • Spend: ${formatIDR(data.metrics.spend)}`,
+        { duration: 5000 }
+      );
+    } catch (err) {
+      toast.error("Gagal pull ads data: " + extractError(err));
+    } finally {
+      setPulling(false);
+    }
   }
 
+  // ─── Load previous week untuk WoW ───
+  async function loadPreviousWeek(clientId: string, periodStart: string) {
+    if (!clientId || !periodStart) return;
+    setLoadingPrevious(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "get-previous",
+          clientId,
+          periodStart,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal ambil data sebelumnya");
+
+      if (data.hasPrevious) {
+        setPreviousMetrics(data.previousMetrics || {});
+        toast.info(`WoW: Membandingkan dengan report ${formatDate(data.previousReport.period_start)} - ${formatDate(data.previousReport.period_end)}`);
+      } else {
+        setPreviousMetrics({});
+      }
+    } catch {
+      setPreviousMetrics({});
+    } finally {
+      setLoadingPrevious(false);
+    }
+  }
+
+  // ─── Trigger load previous saat client/period berubah ───
+  useEffect(() => {
+    if (showModal && form.client_id && form.period_start) {
+      loadPreviousWeek(form.client_id, form.period_start);
+    } else {
+      setPreviousMetrics({});
+      setPulledData(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.client_id, form.period_start, showModal]);
+
   function openEdit(report: Report) {
+    const metricsMap: Record<string, number | ""> = {};
+    (report.report_metrics || []).forEach((m) => {
+      // Aggregate per metric_type (ambil value total)
+      const existing = typeof metricsMap[m.metric_type] === "number" ? (metricsMap[m.metric_type] as number) : 0;
+      metricsMap[m.metric_type] = existing + (m.value || 0);
+    });
+
     setEditingId(report.id);
     setForm({
       client_id: report.client_id,
@@ -93,27 +367,36 @@ export default function ReportsPage() {
       conclusion: report.conclusion || "",
       action: report.action || "",
       status: report.status,
+      metrics: metricsMap,
     });
     setShowModal(true);
   }
 
+  function openCreate() {
+    setEditingId(null);
+    setForm(createEmptyForm());
+    setPulledData(null);
+    setPreviousMetrics({});
+    setShowModal(true);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+    setEditingId(null);
+    setPulledData(null);
+    setPreviousMetrics({});
+  }
+
   async function handleDelete(id: string) {
-    if (!confirm("Hapus laporan ini?")) return;
+    if (!confirm("Hapus laporan ini? Tindakan tidak dapat dibatalkan.")) return;
     try {
       const { error } = await supabase.from("weekly_reports").delete().eq("id", id);
       if (error) throw error;
       toast.success("Laporan dihapus");
       loadReports();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Gagal hapus: " + msg);
+      toast.error("Gagal hapus: " + extractError(err));
     }
-  }
-
-  function openCreate() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setShowModal(true);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -125,6 +408,25 @@ export default function ReportsPage() {
     if (!form.period_start || !form.period_end) {
       toast.error("Periode laporan wajib diisi");
       return;
+    }
+    // Bug fix B4: date validation
+    if (new Date(form.period_start) > new Date(form.period_end)) {
+      toast.error("Periode mulai harus sebelum periode selesai");
+      return;
+    }
+
+    // Bug fix B5: overlap check
+    const overlap = reports.find(
+      (r) =>
+        r.client_id === form.client_id &&
+        r.id !== editingId &&
+        new Date(form.period_start) <= new Date(r.period_end) &&
+        new Date(form.period_end) >= new Date(r.period_start)
+    );
+    if (overlap) {
+      if (!confirm(`Periode tumpang tindih dengan report ${formatDate(overlap.period_start)} - ${formatDate(overlap.period_end)}. Lanjutkan simpan?`)) {
+        return;
+      }
     }
 
     setSaving(true);
@@ -140,31 +442,146 @@ export default function ReportsPage() {
         status: form.status,
       };
 
+      let savedReportId = editingId;
+
       if (editingId) {
         const { error } = await supabase.from("weekly_reports").update(payload as never).eq("id", editingId);
         if (error) throw error;
         toast.success("Laporan berhasil diupdate!");
       } else {
         const { data: userData } = await supabase.auth.getUser();
-        const { error } = await supabase.from("weekly_reports").insert({
-          ...payload,
-          pic_id: userData.user?.id,
-        } as never);
+        const { data: newReport, error } = await supabase
+          .from("weekly_reports")
+          .insert({
+            ...payload,
+            pic_id: userData.user?.id,
+          } as never)
+          .select("id")
+          .single();
         if (error) throw error;
+        savedReportId = (newReport as { id?: string } | null)?.id ?? null;
         toast.success("Laporan berhasil dibuat!");
       }
 
-      setForm(emptyForm);
-      setEditingId(null);
-      setShowModal(false);
+      // Save structured metrics via API
+      if (savedReportId) {
+        const metricsArray = Object.entries(form.metrics)
+          .filter(([_, v]) => v !== "" && v !== null && !isNaN(Number(v)))
+          .map(([key, v]) => {
+            const prevVal = previousMetrics[key] || null;
+            return {
+              metric_type: key,
+              value: Number(v),
+              previous_value: prevVal,
+            };
+          });
+
+        if (metricsArray.length > 0) {
+          const { data: session } = await supabase.auth.getSession();
+          const res = await fetch("/api/reports", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.session?.access_token}`,
+            },
+            body: JSON.stringify({
+              action: "save-metrics",
+              reportId: savedReportId,
+              metrics: metricsArray,
+            }),
+          });
+          const metricsRes = await res.json();
+          if (!res.ok) throw new Error(metricsRes.error || "Gagal simpan metrics");
+        }
+      }
+
+      closeModal();
       loadReports();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      toast.error("Gagal menyimpan: " + msg);
+      toast.error("Gagal menyimpan: " + extractError(err));
     } finally {
       setSaving(false);
     }
   }
+
+  // ─── Load chart data saat detail report dibuka ───
+  useEffect(() => {
+    if (!detailReport) {
+      setChartData([]);
+      return;
+    }
+    // Ambil semua report untuk client yang sama, urutkan periode
+    const clientReports = reports
+      .filter((r) => r.client_id === detailReport.client_id)
+      .sort((a, b) => new Date(a.period_start).getTime() - new Date(b.period_start).getTime())
+      .slice(-8); // last 8 weeks
+
+    const data = clientReports.map((r) => {
+      const metrics = r.report_metrics || [];
+      const spend = metrics
+        .filter((m) => m.metric_type === "spend")
+        .reduce((s, m) => s + (m.value || 0), 0);
+      const conversions = metrics
+        .filter((m) => m.metric_type === "conversions")
+        .reduce((s, m) => s + (m.value || 0), 0);
+      const revenue = metrics
+        .filter((m) => m.metric_type === "revenue")
+        .reduce((s, m) => s + (m.value || 0), 0);
+
+      return {
+        period: `${formatDate(r.period_start, { day: "numeric", month: "short" })}`,
+        spend,
+        conversions,
+        revenue,
+      };
+    });
+    setChartData(data);
+  }, [detailReport, reports]);
+
+  // ─── Filter logic (B3 fix: include conclusion & action) ───
+  const filtered = reports.filter((r) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      !search ||
+      r.client?.name?.toLowerCase().includes(q) ||
+      r.summary?.toLowerCase().includes(q) ||
+      r.performance_text?.toLowerCase().includes(q) ||
+      r.conclusion?.toLowerCase().includes(q) ||
+      r.action?.toLowerCase().includes(q);
+    const matchStatus = statusFilter === "all" || r.status === statusFilter;
+    const matchClient = clientFilter === "all" || r.client_id === clientFilter;
+    return matchSearch && matchStatus && matchClient;
+  });
+
+  // ─── Stats ───
+  const totalReports = reports.length;
+  const draftCount = reports.filter((r) => r.status === "draft").length;
+  const submittedCount = reports.filter((r) => r.status === "submitted").length;
+  const reviewedCount = reports.filter((r) => r.status === "reviewed").length;
+
+  // Total spend dari semua report yang punya metrics
+  const totalSpend = reports.reduce((sum, r) => {
+    const spend = (r.report_metrics || [])
+      .filter((m) => m.metric_type === "spend")
+      .reduce((s, m) => s + (m.value || 0), 0);
+    return sum + spend;
+  }, 0);
+
+  const totalConversions = reports.reduce((sum, r) => {
+    const conv = (r.report_metrics || [])
+      .filter((m) => m.metric_type === "conversions")
+      .reduce((s, m) => s + (m.value || 0), 0);
+    return sum + conv;
+  }, 0);
+
+  const statCards = [
+    { label: "Total Reports", value: totalReports.toString(), icon: FileText, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Draft", value: draftCount.toString(), icon: Clock, color: "text-muted", bg: "bg-surface" },
+    { label: "Submitted", value: submittedCount.toString(), icon: Send, color: "text-warning", bg: "bg-warning/10" },
+    { label: "Reviewed", value: reviewedCount.toString(), icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+    { label: "Total Spend (All)", value: formatIDR(totalSpend), icon: TrendingUp, color: "text-accent", bg: "bg-accent/10" },
+    { label: "Total Conversions", value: formatCompact(totalConversions), icon: BarChart3, color: "text-primary", bg: "bg-primary/10" },
+  ];
 
   const statusColors: Record<string, string> = {
     draft: "bg-surface text-muted",
@@ -172,45 +589,103 @@ export default function ReportsPage() {
     reviewed: "bg-success/20 text-success",
   };
 
-  // Filter logic
-  const filtered = reports.filter((r) => {
-    const matchSearch =
-      !search ||
-      r.client?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.summary?.toLowerCase().includes(search.toLowerCase()) ||
-      r.performance_text?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || r.status === statusFilter;
-    const matchClient = clientFilter === "all" || r.client_id === clientFilter;
-    return matchSearch && matchStatus && matchClient;
-  });
+  const platformColors: Record<string, string> = {
+    META: "bg-primary/20 text-primary",
+    Google: "bg-warning/20 text-warning",
+    TikTok: "bg-gray-900 text-white",
+  };
 
-  // Stats
-  const totalReports = reports.length;
-  const draftCount = reports.filter((r) => r.status === "draft").length;
-  const submittedCount = reports.filter((r) => r.status === "submitted").length;
-  const reviewedCount = reports.filter((r) => r.status === "reviewed").length;
+  // ─── Export CSV ───
+  function handleExportCSV() {
+    if (filtered.length === 0) {
+      toast.error("Tidak ada data untuk diexport");
+      return;
+    }
 
-  const statCards = [
-    { label: "Total Reports", value: totalReports, icon: FileText, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Draft", value: draftCount, icon: Clock, color: "text-muted", bg: "bg-surface" },
-    { label: "Submitted", value: submittedCount, icon: Send, color: "text-warning", bg: "bg-warning/10" },
-    { label: "Reviewed", value: reviewedCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
-  ];
+    const headers = [
+      "Client",
+      "Periode Start",
+      "Periode End",
+      "Status",
+      "PIC",
+      "Spend",
+      "Impressions",
+      "Clicks",
+      "CTR (%)",
+      "Conversions",
+      "CPR",
+      "Revenue",
+      "ROAS",
+      "Summary",
+      "Conclusion",
+      "Action",
+    ];
+
+    const rows = filtered.map((r) => {
+      const metrics = r.report_metrics || [];
+      const getMetric = (type: string) => {
+        const m = metrics.find((x) => x.metric_type === type);
+        return m?.value || 0;
+      };
+
+      return [
+        r.client?.name || "",
+        r.period_start,
+        r.period_end,
+        r.status,
+        r.pic?.full_name || "",
+        getMetric("spend"),
+        getMetric("impressions"),
+        getMetric("clicks"),
+        getMetric("ctr"),
+        getMetric("conversions"),
+        getMetric("cpr"),
+        getMetric("revenue"),
+        getMetric("roas"),
+        (r.summary || "").replace(/"/g, '""'),
+        (r.conclusion || "").replace(/"/g, '""'),
+        (r.action || "").replace(/"/g, '""'),
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${c}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `reports-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV diexport!");
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Weekly Reports</h1>
-          <p className="text-sm text-muted">Laporan performa klien mingguan</p>
+          <p className="text-sm text-muted">
+            Laporan performa klien mingguan — auto-pull dari Ads Spend
+          </p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> New Report
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+          >
+            <Download size={14} /> Export
+          </button>
+          <button onClick={openCreate} className="btn-primary">
+            <Plus size={16} /> New Report
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -231,7 +706,7 @@ export default function ReportsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
             type="text"
-            placeholder="Cari client, ringkasan, atau performa..."
+            placeholder="Cari client, ringkasan, performa, kesimpulan, action plan..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input pl-9"
@@ -266,12 +741,16 @@ export default function ReportsPage() {
             {reports.length === 0 ? "Belum ada laporan mingguan" : "Tidak ada laporan yang cocok dengan filter"}
           </p>
           {reports.length === 0 ? (
-            <button onClick={() => setShowModal(true)} className="btn-primary mt-4">
+            <button onClick={openCreate} className="btn-primary mt-4">
               <Plus size={16} /> Buat Laporan Pertama
             </button>
           ) : (
             <button
-              onClick={() => { setSearch(""); setStatusFilter("all"); setClientFilter("all"); }}
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setClientFilter("all");
+              }}
               className="btn-primary mt-4"
             >
               Reset Filter
@@ -280,62 +759,93 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {filtered.map((r) => (
-            <div key={r.id} className="card card-hover group">
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{r.client?.name || "Unknown Client"}</h3>
-                  <p className="text-xs text-muted">
-                    {formatDate(r.period_start, { day: "numeric", month: "short" })} —{" "}
-                    {formatDate(r.period_end, { day: "numeric", month: "short", year: "numeric" })}
-                  </p>
+          {filtered.map((r) => {
+            const metrics = r.report_metrics || [];
+            const spend = metrics.find((m) => m.metric_type === "spend")?.value || null;
+            const conversions = metrics.find((m) => m.metric_type === "conversions")?.value || null;
+            const roas = metrics.find((m) => m.metric_type === "roas")?.value || null;
+            const ctr = metrics.find((m) => m.metric_type === "ctr")?.value || null;
+            const hasMetrics = metrics.length > 0;
+
+            return (
+              <div key={r.id} className="card card-hover group cursor-pointer" onClick={() => setDetailReport(r)}>
+                <div className="mb-3 flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{r.client?.name || "Unknown Client"}</h3>
+                    <p className="text-xs text-muted">
+                      {formatDate(r.period_start, { day: "numeric", month: "short" })} —{" "}
+                      {formatDate(r.period_end, { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <span className={`badge ${statusColors[r.status] || statusColors.draft}`}>{r.status}</span>
                 </div>
-                <span className={`badge ${statusColors[r.status] || statusColors.draft}`}>{r.status}</span>
+
+                {/* Key Metrics Bar — auto dari report_metrics */}
+                {hasMetrics ? (
+                  <div className="mb-3 grid grid-cols-4 gap-2 rounded-md border border-border bg-background p-2">
+                    <div className="text-center">
+                      <p className="text-[9px] text-muted">SPEND</p>
+                      <p className="text-xs font-bold text-gray-900">{spend ? formatIDR(spend) : "-"}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[9px] text-muted">CONV</p>
+                      <p className="text-xs font-bold text-gray-900">{conversions || "-"}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[9px] text-muted">CTR</p>
+                      <p className="text-xs font-bold text-gray-900">{ctr ? `${ctr}%` : "-"}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[9px] text-muted">ROAS</p>
+                      <p className={cn("text-xs font-bold", (roas ?? 0) >= 3 ? "text-success" : (roas ?? 0) >= 1 ? "text-warning" : "text-danger")}>
+                        {roas ? `${roas}x` : "-"}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {r.summary && <p className="mb-2 line-clamp-2 text-sm text-muted">{r.summary}</p>}
+
+                <div className="flex items-center justify-between border-t border-border pt-3">
+                  <span className="text-xs text-muted">PIC: {r.pic?.full_name || "-"}</span>
+                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => openEdit(r)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                      title="Edit"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              {r.summary && <p className="mb-2 line-clamp-2 text-sm text-muted">{r.summary}</p>}
-
-              {r.performance_text && (
-                <div className="mb-3 rounded-md border border-border bg-background p-2">
-                  <p className="text-xs text-muted">Performance:</p>
-                  <p className="text-sm text-gray-900">{r.performance_text}</p>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-xs text-muted">PIC: {r.pic?.full_name || "-"}</span>
-                <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    onClick={() => openEdit(r)}
-                    className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(r.id)}
-                    className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                    title="Hapus"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Create Report Modal */}
+      {/* ════════════════════════════════════════════ */}
+      {/* CREATE/EDIT MODAL                              */}
+      {/* ════════════════════════════════════════════ */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-3xl rounded-lg border border-border bg-surface p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">
-                {editingId ? "Edit Weekly Report" : "Buat Weekly Report"}
-              </h2>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">
+                  {editingId ? "Edit Weekly Report" : "Buat Weekly Report"}
+                </h2>
+                <p className="text-xs text-muted">Lengkapi metrik iklan & insight performa</p>
+              </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
                 <X size={18} />
@@ -343,46 +853,185 @@ export default function ReportsPage() {
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
-                <select
-                  required
-                  value={form.client_id}
-                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                  className="input"
-                >
-                  <option value="">— Pilih Client —</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+              {/* Client & Period */}
+              <div className="space-y-3 rounded-lg bg-background p-3">
+                <p className="text-xs font-semibold uppercase text-muted">Client & Periode</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">Client *</label>
+                    <select
+                      required
+                      value={form.client_id}
+                      onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">— Pilih Client —</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">Periode Mulai *</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.period_start}
+                      onChange={(e) => setForm({ ...form, period_start: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-700">Periode Selesai *</label>
+                    <input
+                      type="date"
+                      required
+                      value={form.period_end}
+                      onChange={(e) => setForm({ ...form, period_end: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                </div>
+                {/* Bug fix B4: validation hint */}
+                {form.period_start && form.period_end && new Date(form.period_start) > new Date(form.period_end) && (
+                  <p className="text-xs text-danger">⚠️ Periode mulai tidak boleh setelah periode selesai</p>
+                )}
+
+                {/* Auto-Pull Button */}
+                <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                  <button
+                    type="button"
+                    onClick={handlePullAds}
+                    disabled={pulling || !form.client_id || !form.period_start || !form.period_end}
+                    className="flex items-center gap-1.5 rounded-md bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                  >
+                    {pulling ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Pulling data...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} /> Pull dari Ads Data
+                      </>
+                    )}
+                  </button>
+                  {pulledData?.hasData && (
+                    <span className="badge bg-success/20 text-success">
+                      ✅ {pulledData.accountCount} akun • {formatIDR(pulledData.metrics.spend)}
+                    </span>
+                  )}
+                  {loadingPrevious && (
+                    <span className="text-xs text-muted">
+                      <Loader2 size={12} className="inline animate-spin" /> Cek minggu sebelumnya...
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Mulai *</label>
-                  <input
-                    type="date"
-                    required
-                    value={form.period_start}
-                    onChange={(e) => setForm({ ...form, period_start: e.target.value })}
-                    className="input"
-                  />
+              {/* Platform Breakdown dari pulled data */}
+              {pulledData?.hasData && pulledData.platformBreakdown.length > 0 && (
+                <div className="rounded-lg border border-border p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase text-muted">Breakdown Per Platform</p>
+                  <div className="space-y-2">
+                    {pulledData.platformBreakdown.map((p) => (
+                      <div key={p.platform} className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-xs">
+                        <span className={cn("badge", platformColors[p.platform] || "bg-surface text-muted")}>
+                          {p.platform}
+                        </span>
+                        <div className="flex gap-4">
+                          <span className="text-muted">
+                            Spend: <b className="text-gray-900">{formatIDR(p.spend)}</b>
+                          </span>
+                          <span className="text-muted">
+                            CTR: <b className="text-gray-900">{p.ctr.toFixed(2)}%</b>
+                          </span>
+                          <span className="text-muted">
+                            CPR: <b className="text-gray-900">{p.cpr > 0 ? formatIDR(p.cpr) : "-"}</b>
+                          </span>
+                          <span className="text-muted">
+                            ROAS:{" "}
+                            <b className={p.roas >= 3 ? "text-success" : p.roas >= 1 ? "text-warning" : "text-danger"}>
+                              {p.roas > 0 ? `${p.roas.toFixed(2)}x` : "-"}
+                            </b>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Selesai *</label>
-                  <input
-                    type="date"
-                    required
-                    value={form.period_end}
-                    onChange={(e) => setForm({ ...form, period_end: e.target.value })}
-                    className="input"
-                  />
+              )}
+
+              {/* Structured Metrics Grid — FASE 1 */}
+              <div className="space-y-3 rounded-lg bg-background p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase text-muted">
+                    Metrik Iklan (Structured)
+                  </p>
+                  {Object.keys(previousMetrics).length > 0 && (
+                    <span className="badge bg-primary/10 text-primary text-[10px]">
+                      📊 WoW comparison aktif
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {METRIC_DEFS.map((m) => {
+                    const val = form.metrics[m.key];
+                    const prev = previousMetrics[m.key];
+                    const delta = calcWowDelta(val ? Number(val) : null, prev || null);
+
+                    return (
+                      <div key={m.key} className="rounded-md border border-border bg-surface p-2">
+                        <label className="mb-0.5 flex items-center justify-between text-[10px] font-medium text-muted">
+                          <span>{m.label}</span>
+                          {m.derived && (
+                            <span className="rounded bg-primary/10 px-1 text-[8px] text-primary">auto</span>
+                          )}
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={val ?? ""}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              metrics: {
+                                ...form.metrics,
+                                [m.key]: e.target.value === "" ? "" : parseFloat(e.target.value),
+                              },
+                            })
+                          }
+                          placeholder="0"
+                          className="w-full rounded border-border bg-background px-2 py-1 text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        {/* WoW delta */}
+                        {delta !== null && (
+                          <div className="mt-0.5 flex items-center gap-1 text-[9px]">
+                            {delta > 0 ? (
+                              <TrendingUp size={9} className="text-success" />
+                            ) : delta < 0 ? (
+                              <TrendingDown size={9} className="text-danger" />
+                            ) : (
+                              <Minus size={9} className="text-muted" />
+                            )}
+                            <span
+                              className={cn(
+                                delta > 0 ? "text-success" : delta < 0 ? "text-danger" : "text-muted"
+                              )}
+                            >
+                              {delta > 0 ? "+" : ""}
+                              {delta.toFixed(1)}% vs {formatMetric(prev, m.unit)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
+              {/* Text fields */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Ringkasan</label>
                 <textarea
@@ -395,12 +1044,12 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Performance</label>
+                <label className="mb-1.5 block text-sm font-medium text-gray-900">Performance Notes</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={form.performance_text}
                   onChange={(e) => setForm({ ...form, performance_text: e.target.value })}
-                  placeholder="Detail metrik & performa (spend, CPR, CTR, dll)..."
+                  placeholder="Insight tambahan (creative performing, audience, dll)..."
                   className="input resize-none"
                 />
               </div>
@@ -444,7 +1093,7 @@ export default function ReportsPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeModal}
                   className="px-4 py-2 text-sm text-muted hover:text-gray-900"
                 >
                   Batal
@@ -462,6 +1111,151 @@ export default function ReportsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════ */}
+      {/* DETAIL VIEW MODAL                              */}
+      {/* ════════════════════════════════════════════ */}
+      {detailReport && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-8 w-full max-w-3xl rounded-lg border border-border bg-surface p-6 shadow-xl">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-900">
+                    {detailReport.client?.name || "Unknown Client"}
+                  </h2>
+                  <span className={`badge ${statusColors[detailReport.status] || statusColors.draft}`}>
+                    {detailReport.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted">
+                  {formatDate(detailReport.period_start, { day: "numeric", month: "long" })} —{" "}
+                  {formatDate(detailReport.period_end, { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setDetailReport(null);
+                    openEdit(detailReport);
+                  }}
+                  className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-primary hover:bg-background"
+                >
+                  <Pencil size={12} /> Edit
+                </button>
+                <button
+                  onClick={() => setDetailReport(null)}
+                  className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Metrics Display */}
+            {detailReport.report_metrics && detailReport.report_metrics.length > 0 && (
+              <div className="mb-4 rounded-lg border border-border bg-background p-3">
+                <p className="mb-2 text-xs font-semibold uppercase text-muted">📊 Metrik Iklan</p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {METRIC_DEFS.map((m) => {
+                    const metricVals = detailReport.report_metrics!.filter((x) => x.metric_type === m.key);
+                    if (metricVals.length === 0) return null;
+                    const val = metricVals.reduce((s, x) => s + (x.value || 0), 0);
+                    const prev = metricVals[0]?.previous_value;
+                    const delta = calcWowDelta(val, prev);
+
+                    return (
+                      <div key={m.key} className="rounded border border-border bg-surface p-2 text-center">
+                        <p className="text-[9px] text-muted">{m.label}</p>
+                        <p className="text-sm font-bold text-gray-900">{formatMetric(val, m.unit)}</p>
+                        {delta !== null && (
+                          <p
+                            className={cn(
+                              "text-[9px] flex items-center justify-center gap-0.5",
+                              delta > 0 ? "text-success" : delta < 0 ? "text-danger" : "text-muted"
+                            )}
+                          >
+                            {delta > 0 ? <TrendingUp size={8} /> : delta < 0 ? <TrendingDown size={8} /> : <Minus size={8} />}
+                            {delta > 0 ? "+" : ""}
+                            {delta.toFixed(1)}%
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Trend Chart — FASE 2 */}
+            {chartData.length > 1 && (
+              <div className="mb-4 rounded-lg border border-border p-3">
+                <p className="mb-2 text-xs font-semibold uppercase text-muted">📈 Trend 8 Minggu Terakhir</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorDetailSpend" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorDetailRev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                    <YAxis
+                      tick={{ fontSize: 9, fill: "#9ca3af" }}
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      axisLine={false}
+                      tickLine={false}
+                      width={35}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => formatIDR(value)}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
+                    />
+                    <Area type="monotone" dataKey="spend" stroke="#f59e0b" strokeWidth={2} fill="url(#colorDetailSpend)" name="Spend" />
+                    <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#colorDetailRev)" name="Revenue" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Text sections */}
+            {detailReport.summary && (
+              <div className="mb-3">
+                <p className="mb-1 text-xs font-semibold uppercase text-muted">Ringkasan</p>
+                <p className="text-sm text-gray-700">{detailReport.summary}</p>
+              </div>
+            )}
+            {detailReport.performance_text && (
+              <div className="mb-3">
+                <p className="mb-1 text-xs font-semibold uppercase text-muted">Performance Notes</p>
+                <p className="text-sm text-gray-700">{detailReport.performance_text}</p>
+              </div>
+            )}
+            {detailReport.conclusion && (
+              <div className="mb-3">
+                <p className="mb-1 text-xs font-semibold uppercase text-muted">Kesimpulan</p>
+                <p className="text-sm text-gray-700">{detailReport.conclusion}</p>
+              </div>
+            )}
+            {detailReport.action && (
+              <div className="mb-3">
+                <p className="mb-1 text-xs font-semibold uppercase text-muted">Action Plan</p>
+                <p className="text-sm text-gray-700">{detailReport.action}</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted">
+              <span>PIC: {detailReport.pic?.full_name || "-"}</span>
+              <span>Dibuat: {formatDate(detailReport.created_at)}</span>
+            </div>
           </div>
         </div>
       )}
