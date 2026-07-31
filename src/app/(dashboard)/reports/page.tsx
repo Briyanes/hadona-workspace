@@ -34,6 +34,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
+import { CompareView } from "@/components/reports/compare-view";
 
 // ============================================
 // TYPES
@@ -212,6 +213,16 @@ export default function ReportsPage() {
   const [chartData, setChartData] = useState<
     Array<{ period: string; spend: number; conversions: number; revenue: number }>
   >([]);
+
+  // Active tab: "list" (report cards) | "compare" (multi-week matrix)
+  const [activeTab, setActiveTab] = useState<"list" | "compare">("list");
+
+  // Compare view state
+  const [compareClient, setCompareClient] = useState<string>("all");
+
+  // Bulk Actions state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
 
   const loadReports = useCallback(async () => {
     try {
@@ -742,6 +753,22 @@ export default function ReportsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          {reports.length > 0 && (
+            <button
+              onClick={() => {
+                setBulkMode(!bulkMode);
+                setSelectedIds(new Set());
+              }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
+                bulkMode
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-surface text-gray-700 hover:bg-background"
+              )}
+            >
+              <CheckCircle size={14} /> {bulkMode ? "Buat Multi-Select" : "Bulk Action"}
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
@@ -770,6 +797,37 @@ export default function ReportsPage() {
         })}
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex gap-1 border-b border-border">
+        <button
+          onClick={() => setActiveTab("list")}
+          className={cn(
+            "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "list"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted hover:text-gray-700"
+          )}
+        >
+          <FileText size={14} /> Daftar Report
+        </button>
+        <button
+          onClick={() => setActiveTab("compare")}
+          className={cn(
+            "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "compare"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted hover:text-gray-700"
+          )}
+        >
+          <BarChart3 size={14} /> Multi-Week Compare
+        </button>
+      </div>
+
+      {/* Content berdasarkan tab */}
+      {activeTab === "compare" ? (
+        <CompareView reports={reports} clients={clients} />
+      ) : (
+        <>
       {/* Search & Filter */}
       <div className="flex flex-wrap gap-3">
         <div className="relative min-w-[200px] flex-1">
@@ -836,9 +894,40 @@ export default function ReportsPage() {
             const roas = metrics.find((m) => m.metric_type === "roas")?.value || null;
             const ctr = metrics.find((m) => m.metric_type === "ctr")?.value || null;
             const hasMetrics = metrics.length > 0;
+            const isSelected = selectedIds.has(r.id);
 
             return (
-              <div key={r.id} className="card card-hover group cursor-pointer" onClick={() => setDetailReport(r)}>
+              <div
+                key={r.id}
+                className={cn(
+                  "card card-hover group cursor-pointer",
+                  bulkMode && isSelected && "ring-2 ring-primary"
+                )}
+                onClick={() => {
+                  if (bulkMode) {
+                    const next = new Set(selectedIds);
+                    if (next.has(r.id)) next.delete(r.id);
+                    else next.add(r.id);
+                    setSelectedIds(next);
+                  } else {
+                    setDetailReport(r);
+                  }
+                }}
+              >
+                {bulkMode && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {
+                      const next = new Set(selectedIds);
+                      if (next.has(r.id)) next.delete(r.id);
+                      else next.add(r.id);
+                      setSelectedIds(next);
+                    }}
+                    className="absolute right-3 top-3 h-4 w-4 rounded border-border"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
                 <div className="mb-3 flex items-start justify-between">
                   <div>
                     <h3 className="font-semibold text-gray-900">{r.client?.name || "Unknown Client"}</h3>
@@ -906,6 +995,8 @@ export default function ReportsPage() {
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* ════════════════════════════════════════════ */}
@@ -1335,8 +1426,14 @@ export default function ReportsPage() {
       {/* ════════════════════════════════════════════ */}
       {detailReport && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-3xl rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-start justify-between">
+          <div className="print-area my-8 w-full max-w-3xl rounded-lg border border-border bg-surface p-6 shadow-xl">
+            {/* Print-only header */}
+            <div className="print-header">
+              <h1 className="text-xl font-bold">Hadona Workspace — Weekly Report</h1>
+              <p className="text-xs">{detailReport.client?.name} • {formatDate(detailReport.period_start)} - {formatDate(detailReport.period_end)}</p>
+            </div>
+
+            <div className="no-print mb-4 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-gray-900">
@@ -1352,6 +1449,13 @@ export default function ReportsPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-gray-700 hover:bg-background"
+                  title="Print / Save as PDF"
+                >
+                  <Download size={12} /> PDF
+                </button>
                 <button
                   onClick={() => {
                     setDetailReport(null);
@@ -1372,7 +1476,7 @@ export default function ReportsPage() {
 
             {/* Metrics Display */}
             {detailReport.report_metrics && detailReport.report_metrics.length > 0 && (
-              <div className="mb-4 rounded-lg border border-border bg-background p-3">
+              <div className="print-card mb-4 rounded-lg border border-border bg-background p-3">
                 <p className="mb-2 text-xs font-semibold uppercase text-muted">📊 Metrik Iklan</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {METRIC_DEFS.map((m) => {
@@ -1382,9 +1486,15 @@ export default function ReportsPage() {
                     const prev = metricVals[0]?.previous_value;
                     const delta = calcWowDelta(val, prev);
 
+                    // Anomaly detection: >30% change = flag
+                    const isAnomaly = delta !== null && Math.abs(delta) > 30;
+
                     return (
                       <div key={m.key} className="rounded border border-border bg-surface p-2 text-center">
-                        <p className="text-[9px] text-muted">{m.label}</p>
+                        <p className="text-[9px] text-muted">
+                          {m.label}
+                          {isAnomaly && <span className="ml-0.5 text-warning" title="Anomali: perubahan >30% vs minggu lalu">⚠️</span>}
+                        </p>
                         <p className="text-sm font-bold text-gray-900">{formatMetric(val, m.unit)}</p>
                         {delta !== null && (
                           <p

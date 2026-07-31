@@ -171,3 +171,54 @@
     );
   }
 }
+
+/* ============================================ */
+/* PRINT STYLES (PDF Export via window.print)   */
+/* ============================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+  }
+  .no-print {
+    display: none !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+  .print-card {
+    page-break-inside: avoid;
+    margin-bottom: 12px;
+  }
+  table {
+    font-size: 10px;
+  }
+}
+
+.print-header {
+  display: none;
+}
+@media print {
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+}
