@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 /**
  * /api/debug/ads-spend — Diagnostics endpoint
  *
  * Cek apakah semua tabel & kolom yang dibutuhkan halaman /ads-spend
  * sudah ada di database. Berguna untuk troubleshoot "tabel kosong".
+ *
+ * Bisa diakses 2 cara:
+ *   1. Visit langsung di browser (cookie auth) — https://workspace.hadona.id/api/debug/ads-spend
+ *   2. API call dengan Bearer token (untuk integrasi frontend)
  *
  * Returns JSON dengan status tiap komponen:
  *   { healthy: boolean, checks: [...], summary: "..." }
@@ -19,20 +24,43 @@ function getAdminClient() {
   );
 }
 
+/**
+ * Verify user via:
+ *   1. Bearer token in Authorization header (untuk API calls)
+ *   2. Supabase session cookie (untuk visit langsung di browser)
+ */
 async function verifyUser(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  let token: string | null = null;
+  const admin = getAdminClient();
 
+  // ─── 1. Cek Bearer token (untuk API calls dari frontend) ───
+  const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace("Bearer ", "");
+    const { data, error } = await admin.auth.getUser(token);
+    if (!error && data.user) return data.user;
   }
 
-  if (!token) return null;
+  // ─── 2. Fallback: Cek Supabase session cookie (untuk visit langsung di browser) ───
+  const cookieClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
+        },
+        setAll() {
+          // No-op for read-only API route
+        },
+      },
+    }
+  );
 
-  const admin = getAdminClient();
-  const { data, error } = await admin.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
+  const {
+    data: { user },
+  } = await cookieClient.auth.getUser();
+
+  return user || null;
 }
 
 export async function GET(request: NextRequest) {
