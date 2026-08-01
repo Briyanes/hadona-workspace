@@ -113,7 +113,7 @@ export function Sidebar() {
         </div>
 
         {/* Zone 2: Navigation (scrollable) */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3">
+        <nav className={cn("flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3", isCollapsed && "space-y-2")}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -126,7 +126,7 @@ export function Sidebar() {
                 className={cn(
                   "sidebar-link",
                   isActive && "sidebar-link-active",
-                  isCollapsed && "justify-center px-0"
+                  isCollapsed && "justify-center px-0 py-2.5"
                 )}
               >
                 <Icon size={16} className="shrink-0" />
@@ -155,7 +155,7 @@ export function Sidebar() {
                     className={cn(
                       "sidebar-link",
                       isActive && "sidebar-link-active",
-                      isCollapsed && "justify-center px-0"
+                      isCollapsed && "justify-center px-0 py-2.5"
                     )}
                   >
                     <Icon size={16} className="shrink-0" />
@@ -176,7 +176,7 @@ export function Sidebar() {
             className={cn(
               "sidebar-link",
               pathname === "/settings" && "sidebar-link-active",
-              isCollapsed && "justify-center px-0"
+              isCollapsed && "justify-center px-0 py-2.5"
             )}
           >
             <Settings size={16} className="shrink-0" />
