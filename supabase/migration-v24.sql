@@ -119,4 +119,3 @@ CREATE TRIGGER trg_task_status
 
 -- 7. Grant permissions
 GRANT SELECT, INSERT, UPDATE ON notifications TO authenticated;
-GRANT USAGE ON SEQUENCE notifications_id_seq TO authenticated;
