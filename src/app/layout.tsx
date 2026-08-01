@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ThemedToaster } from "@/components/ui/themed-toaster";
 import "./globals.css";
 
 // Anti-flicker: apply dark class before React hydrates
@@ -98,17 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <ThemeProvider>
           {children}
-          <Toaster
-            position="top-right"
-            theme="light"
-            toastOptions={{
-              style: {
-                background: "#FFFFFF",
-                border: "1px solid #E5E7EB",
-                color: "#18181B",
-              },
-            }}
-          />
+          <ThemedToaster />
         </ThemeProvider>
       </body>
     </html>

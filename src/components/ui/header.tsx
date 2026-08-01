@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { LogOut, Search, PanelLeftClose, PanelLeftOpen, UserCircle2, Settings, User, ChevronDown } from "lucide-react";
+import { LogOut, Search, PanelLeftClose, PanelLeftOpen, Menu, Settings, User, ChevronDown } from "lucide-react";
 import type { Profile } from "@/types";
 import { useSidebar } from "@/components/ui/sidebar-context";
 import { NotificationBell } from "@/components/ui/notification-bell";
@@ -25,8 +25,9 @@ export function Header() {
   const supabase = createClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const { isCollapsed, toggle } = useSidebar();
+  const { isCollapsed, toggle, openMobile } = useSidebar();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,26 +75,45 @@ export function Header() {
     router.push("/login");
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/tasks?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   const divisions: string[] = Array.isArray(profile?.division) ? (profile!.division as unknown as string[]) : [];
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile: Hamburger menu */}
+        <button
+          onClick={openMobile}
+          className="btn-ghost p-2 lg:hidden"
+          title="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+        {/* Desktop: Collapse/expand sidebar */}
         <button
           onClick={toggle}
-          className="btn-ghost p-2"
+          className="btn-ghost p-2 hidden lg:inline-flex"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
-        <div className="relative w-full max-w-md">
+        {/* Search bar (functional) */}
+        <form onSubmit={handleSearch} className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search tasks, clients..."
             className="input pl-9"
           />
-        </div>
+        </form>
       </div>
 
       <div className="flex items-center gap-3">

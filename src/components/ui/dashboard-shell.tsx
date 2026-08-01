@@ -10,9 +10,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <Sidebar />
-      <div className={isCollapsed ? "ml-[60px] transition-all duration-200" : "ml-60 transition-all duration-200"}>
+      <div
+        className={
+          isCollapsed
+            ? "lg:ml-[60px] transition-all duration-200"
+            : "lg:ml-60 transition-all duration-200"
+        }
+      >
         <Header />
-        <main className="p-6">{children}</main>
+        <main className="p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );
