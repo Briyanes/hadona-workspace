@@ -63,6 +63,15 @@ interface Subtask {
   order_index: number;
 }
 
+interface TimeLog {
+  id: string;
+  hours: number;
+  description: string | null;
+  date: string;
+  billable: boolean;
+  user?: { full_name: string };
+}
+
 const statusOptions = [
   { value: "todo", label: "To Do", color: "bg-muted/20 text-muted" },
   { value: "in_progress", label: "In Progress", color: "bg-warning/20 text-warning" },
@@ -128,11 +137,16 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   });
   const [editAssignees, setEditAssignees] = useState<string[]>([]);
 
-  const [activeTab, setActiveTab] = useState<"comments" | "subtasks">("comments");
-
   // Approval workflow state
   const [approvalNote, setApprovalNote] = useState("");
   const [approving, setApproving] = useState(false);
+
+  // Tab + Time log state
+  const [activeTab, setActiveTab] = useState<"comments" | "subtasks" | "timelog">("comments");
+  const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
+  const [logTimeForm, setLogTimeForm] = useState({ hours: "", description: "" });
+  const [loggingTime, setLoggingTime] = useState(false);
+  const [totalLoggedHours, setTotalLoggedHours] = useState(0);
 
   useEffect(() => {
     loadTask();
@@ -140,6 +154,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     loadSubtasks();
     loadClients();
     loadCurrentUser();
+    loadTimeLogs();
 
     // Realtime subscriptions
     const commentChannel = supabase
@@ -192,7 +207,6 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       notes: taskData.notes || "",
       client_id: "",
     });
-    // Sync editAssignees from loaded task data
     setEditAssignees(taskData.task_assignees?.map((a) => a.user_id) || []);
     setLoading(false);
   }
@@ -220,6 +234,55 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     setClients((data as unknown as Client[]) || []);
   }
 
+  async function loadTimeLogs() {
+    const { data } = await supabase
+      .from("timesheets")
+      .select("id, hours, description, date, billable, user:profiles(full_name)")
+      .eq("task_id", taskId)
+      .order("date", { ascending: false });
+    const logs = (data as unknown as TimeLog[]) || [];
+    setTimeLogs(logs);
+    setTotalLoggedHours(logs.reduce((sum, l) => sum + l.hours, 0));
+  }
+
+  async function handleLogTime(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentUserId || !logTimeForm.hours) {
+      toast.error("Jam wajib diisi");
+      return;
+    }
+    setLoggingTime(true);
+
+    const { data: taskData } = await supabase
+      .from("tasks")
+      .select("client_id")
+      .eq("id", taskId)
+      .single() as { data: { client_id: string | null } | null; error: unknown };
+
+    const insertPayload: Record<string, unknown> = {
+      user_id: currentUserId,
+      task_id: taskId,
+      client_id: taskData?.client_id || null,
+      date: new Date().toISOString().split("T")[0],
+      hours: parseFloat(logTimeForm.hours),
+      activity_type: "general",
+      description: logTimeForm.description.trim() || `Worked on: ${task?.title}`,
+      billable: true,
+    };
+
+    const { error } = await supabase.from("timesheets").insert(insertPayload as never);
+
+    if (error) {
+      toast.error("Gagal log time: " + error.message);
+    } else {
+      toast.success("Time logged!");
+      setLogTimeForm({ hours: "", description: "" });
+      loadTimeLogs();
+      onUpdated();
+    }
+    setLoggingTime(false);
+  }
+
   async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault();
     if (!editForm.title.trim()) {
@@ -245,7 +308,6 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     if (error) {
       toast.error("Gagal update task: " + error.message);
     } else {
-      // Sync assignees: diff current vs selected
       const currentIds = task?.task_assignees?.map((a) => a.user_id) || [];
       const toAdd = editAssignees.filter((id) => !currentIds.includes(id));
       const toRemove = currentIds.filter((id) => !editAssignees.includes(id));
@@ -672,7 +734,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 </div>
               )}
 
-              {/* Tabs: Comments & Subtasks */}
+              {/* Tabs: Comments, Subtasks & Time Log */}
               <div>
                 <div className="mb-3 flex gap-1 border-b border-border">
                   <button
@@ -686,6 +748,12 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "subtasks" ? "border-primary text-primary" : "border-transparent text-muted hover:text-gray-900")}
                   >
                     <CheckSquare size={14} /> Subtasks ({subtasks.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("timelog")}
+                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "timelog" ? "border-primary text-primary" : "border-transparent text-muted hover:text-gray-900")}
+                  >
+                    <Clock size={14} /> Time ({totalLoggedHours.toFixed(1)}h)
                   </button>
                 </div>
 
@@ -762,6 +830,71 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                       <button type="submit" disabled={!newSubtask.trim()} className="btn-primary px-3">
                         <Plus size={14} />
                       </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* Time Log Tab */}
+                {activeTab === "timelog" && (
+                  <div className="space-y-3">
+                    {/* Summary */}
+                    <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
+                      <Clock size={16} className="text-primary" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted">Total Time Logged</p>
+                        <p className="text-sm font-bold text-gray-900">{totalLoggedHours.toFixed(1)} hours</p>
+                      </div>
+                    </div>
+
+                    {/* Log List */}
+                    {timeLogs.length === 0 ? (
+                      <p className="py-4 text-center text-sm text-muted">Belum ada time log</p>
+                    ) : (
+                      timeLogs.map((log) => (
+                        <div key={log.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                            {log.hours}h
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-gray-900">{log.user?.full_name || "Unknown"}</span>
+                              <span className="text-[10px] text-muted">{formatDate(log.date, { day: "numeric", month: "short" })}</span>
+                              {log.billable && <span className="badge bg-success/10 text-success text-[10px]">Billable</span>}
+                            </div>
+                            {log.description && (
+                              <p className="mt-0.5 text-xs text-muted">{log.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+
+                    {/* Quick Log Form */}
+                    <form onSubmit={handleLogTime} className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <p className="text-xs font-semibold text-primary">Quick Log Time</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          step="0.25"
+                          min="0.25"
+                          required
+                          value={logTimeForm.hours}
+                          onChange={(e) => setLogTimeForm({ ...logTimeForm, hours: e.target.value })}
+                          placeholder="2.5"
+                          className="input w-24"
+                        />
+                        <input
+                          type="text"
+                          value={logTimeForm.description}
+                          onChange={(e) => setLogTimeForm({ ...logTimeForm, description: e.target.value })}
+                          placeholder="Deskripsi (opsional)..."
+                          className="input flex-1"
+                        />
+                        <button type="submit" disabled={loggingTime} className="btn-primary px-3 whitespace-nowrap">
+                          {loggingTime ? "..." : "Log"}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-muted">Jam langsung tercatat di Timesheet & terhubung ke task ini</p>
                     </form>
                   </div>
                 )}
