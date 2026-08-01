@@ -88,9 +88,9 @@ export default function NotificationsSettingsPage() {
       {/* Info Banner */}
       <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
         <div className="flex items-start gap-2">
-          <span className="badge bg-warning/15 text-warning shrink-0 text-[10px]">Coming Soon</span>
+          <span className="badge bg-success/15 text-success shrink-0 text-[10px]">In-App Active</span>
           <p className="text-xs text-muted">
-            Pengaturan notifikasi disimpan, tetapi sistem pengiriman email & Telegram otomatis sedang dalam pengembangan dan akan aktif segera.
+            ✅ <strong>In-app notifications</strong> sudah aktif — klik ikon 🔔 di header untuk melihat update task & assignment. Email & Telegram auto-delivery sedang dalam pengembangan dan akan segera aktif.
           </p>
         </div>
       </div>

@@ -26,6 +26,12 @@
   .dark .bg-surface { background-color: #1e293b !important; }
   .dark .bg-surface-hover { background-color: #334155 !important; }
 
+  /* Muted opacity backgrounds — dark mode */
+  .dark .bg-muted\/5 { background-color: rgba(148, 163, 184, 0.05) !important; }
+  .dark .bg-muted\/10 { background-color: rgba(148, 163, 184, 0.1) !important; }
+  .dark .bg-muted\/20 { background-color: rgba(148, 163, 184, 0.15) !important; }
+  .dark .bg-muted\/30 { background-color: rgba(148, 163, 184, 0.2) !important; }
+
   .dark .text-gray-900 { color: #f1f5f9 !important; }
   .dark .text-gray-800 { color: #e2e8f0 !important; }
   .dark .text-gray-700 { color: #cbd5e1 !important; }
@@ -35,6 +41,12 @@
 
   .dark .border-border { border-color: #334155 !important; }
   .dark .border-border-hover { border-color: #475569 !important; }
+
+  /* Toggle knob — ensure visible in dark mode */
+  .dark .toggle-knob { background-color: #ffffff !important; }
+
+  /* Dropdown menus dark */
+  .dark .dropdown-panel { background-color: #1e293b !important; border-color: #334155 !important; }
 
   /* Sidebar dark */
   .dark aside { background-color: #1e293b !important; }
@@ -107,6 +119,9 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
+  .dark .glass {
+    background: rgba(15, 23, 42, 0.8);
+  }
 
   .card {
     @apply rounded-lg border border-border bg-white p-5 transition-all duration-200 shadow-sm;
@@ -123,6 +138,9 @@
 
   .card-hover {
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gray-300/50;
+  }
+  .dark .card-hover {
+    @apply hover:shadow-black/20;
   }
 
   .btn {
@@ -226,6 +244,14 @@
       90deg,
       transparent,
       rgba(0, 0, 0, 0.04),
+      transparent
+    );
+  }
+  .dark .skeleton::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.06),
       transparent
     );
   }

@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { LogOut, Search, PanelLeftClose, PanelLeftOpen, UserCircle2, Settings, User, ChevronDown } from "lucide-react";
 import type { Profile } from "@/types";
 import { useSidebar } from "@/components/ui/sidebar-context";
+import { NotificationBell } from "@/components/ui/notification-bell";
 import { cn } from "@/lib/utils";
 
 const DIVISION_BADGE_COLORS: Record<string, string> = {
@@ -38,6 +39,23 @@ export function Header() {
       setAvatarUrl(p?.avatar_url ?? null);
     }
     load();
+  }, [supabase]);
+
+  // Listen for avatar/profile updates from settings page
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      async function reload() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+        const p = (data as unknown as Profile) ?? null;
+        setProfile(p);
+        setAvatarUrl(p?.avatar_url ?? null);
+      }
+      reload();
+    };
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    return () => window.removeEventListener("profile-updated", handleProfileUpdate);
   }, [supabase]);
 
   // Close dropdown on outside click
@@ -79,6 +97,9 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Notification Bell */}
+        <NotificationBell />
+
         {/* Branding: Name + Division Badges */}
         <div className="flex items-center gap-2.5">
           <div className="hidden text-right sm:block">
@@ -136,7 +157,7 @@ export function Header() {
 
             {/* Dropdown Menu */}
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-white shadow-lg">
+              <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-white shadow-lg dropdown-panel">
                 {/* User Info Header */}
                 <div className="border-b border-border px-4 py-3">
                   <p className="truncate text-sm font-semibold text-gray-900">

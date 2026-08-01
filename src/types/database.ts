@@ -392,6 +392,39 @@ export interface Database {
         };
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          link: string | null;
+          metadata: Json | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          type?: string;
+          title: string;
+          body?: string | null;
+          link?: string | null;
+          metadata?: Json | null;
+          is_read?: boolean;
+        };
+        Update: {
+          type?: string;
+          title?: string;
+          body?: string | null;
+          link?: string | null;
+          metadata?: Json | null;
+          is_read?: boolean;
+        };
+        Relationships: [
+          { foreignKeyName: "notifications_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

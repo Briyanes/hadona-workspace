@@ -214,3 +214,17 @@ export interface FileAttachment {
   uploaded_by: string;
   created_at: string;
 }
+
+export type NotificationType = "task_assigned" | "task_updated" | "report_deadline" | "mention" | "general";
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  metadata: Record<string, unknown> | null;
+  is_read: boolean;
+  created_at: string;
+}
