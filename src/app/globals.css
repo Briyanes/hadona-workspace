@@ -56,6 +56,19 @@
   .dark .text-gray-500 { color: #94a3b8 !important; }
   .dark .text-gray-400 { color: #94a3b8 !important; }
 
+  /* text-muted — dark mode: ensure action button icons are visible */
+  .dark .text-muted { color: #94a3b8 !important; }
+
+  /* Hover backgrounds: use slate-700 instead of main bg for better contrast */
+  .dark .hover\:bg-background:hover { background-color: #334155 !important; }
+  .dark .group-hover\:bg-background:hover { background-color: #334155 !important; }
+
+  /* Hover text colors — dark mode */
+  .dark .hover\:text-gray-900:hover { color: #f1f5f9 !important; }
+  .dark .hover\:text-primary:hover { color: #4a6ae8 !important; }
+  .dark .hover\:text-danger:hover { color: #ef4444 !important; }
+  .dark .hover\:text-success:hover { color: #10b981 !important; }
+
   /* bg-gray-* — dark mode */
   .dark .bg-gray-50 { background-color: #0f172a !important; }
   .dark .bg-gray-100 { background-color: #1e293b !important; }
@@ -256,8 +269,9 @@
     @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-surface-hover hover:text-gray-900;
   }
   .dark .sidebar-link {
-    @apply text-[#cbd5e1] hover:bg-[#334155] hover:text-white;
+    @apply text-[#cbd5e1] hover:bg-[#334155] hover:text-[#FFD60A];
   }
+  /* Kuning Hadona untuk hover — kontras tinggi & on-brand */
   .sidebar-link-active {
     @apply bg-primary text-white shadow-sm hover:bg-primary-dark hover:text-white;
   }
