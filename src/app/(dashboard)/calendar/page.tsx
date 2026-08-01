@@ -1,17 +1,22 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
-  Loader2,
   CheckSquare,
   FileText,
   DollarSign,
   CalendarClock,
+  LayoutGrid,
+  List,
+  CalendarDays,
+  AlertCircle,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { cn, formatIDR } from "@/lib/utils";
 
@@ -55,16 +60,44 @@ interface ClientRow {
   status: string;
 }
 
+type ViewMode = "month" | "week" | "agenda";
+type EventType = "task" | "report" | "invoice" | "contract";
+
 const WEEKDAYS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+const WEEKDAYS_LONG = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 const typeConfig: Record<
-  CalendarEvent["type"],
-  { dot: string; bg: string; icon: typeof CheckSquare; label: string }
+  EventType,
+  { dot: string; bg: string; icon: typeof CheckSquare; label: string; activeBg: string }
 > = {
-  task: { dot: "bg-primary", bg: "bg-primary/10", icon: CheckSquare, label: "Task" },
-  report: { dot: "bg-warning", bg: "bg-warning/10", icon: FileText, label: "Report" },
-  invoice: { dot: "bg-success", bg: "bg-success/10", icon: DollarSign, label: "Invoice" },
-  contract: { dot: "bg-accent", bg: "bg-accent/10", icon: CalendarClock, label: "Contract" },
+  task: {
+    dot: "bg-primary",
+    bg: "bg-primary/10",
+    activeBg: "bg-primary text-white",
+    icon: CheckSquare,
+    label: "Task",
+  },
+  report: {
+    dot: "bg-warning",
+    bg: "bg-warning/10",
+    activeBg: "bg-warning text-white",
+    icon: FileText,
+    label: "Report",
+  },
+  invoice: {
+    dot: "bg-success",
+    bg: "bg-success/10",
+    activeBg: "bg-success text-white",
+    icon: DollarSign,
+    label: "Invoice",
+  },
+  contract: {
+    dot: "bg-accent",
+    bg: "bg-accent/10",
+    activeBg: "bg-accent text-white",
+    icon: CalendarClock,
+    label: "Contract",
+  },
 };
 
 function pad(n: number) {
@@ -80,7 +113,13 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewDate, setViewDate] = useState(() => new Date());
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(
+    dateStr(new Date())
+  );
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
+  const [activeFilters, setActiveFilters] = useState<Set<EventType>>(
+    new Set<EventType>(["task", "report", "invoice", "contract"])
+  );
 
   useEffect(() => {
     loadAll();
@@ -170,6 +209,12 @@ export default function CalendarPage() {
     }
   }
 
+  // ─── Filtered Events ───
+  const filteredEvents = useMemo(() => {
+    return events.filter((e) => activeFilters.has(e.type));
+  }, [events, activeFilters]);
+
+  // ─── Month Grid ───
   const { weeks, monthLabel } = useMemo(() => {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
@@ -196,44 +241,148 @@ export default function CalendarPage() {
     return { weeks: weekRows, monthLabel: label };
   }, [viewDate]);
 
+  // ─── Week Grid (current week from viewDate) ───
+  const weekDays = useMemo(() => {
+    const d = new Date(viewDate);
+    const dayOfWeek = d.getDay();
+    const sunday = new Date(d);
+    sunday.setDate(d.getDate() - dayOfWeek);
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(sunday);
+      day.setDate(sunday.getDate() + i);
+      return day;
+    });
+  }, [viewDate]);
+
+  const weekLabel = useMemo(() => {
+    const start = weekDays[0];
+    const end = weekDays[6];
+    const fmt = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short" });
+    return `${fmt.format(start)} – ${fmt.format(end)}`;
+  }, [weekDays]);
+
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
-    events.forEach((e) => {
+    filteredEvents.forEach((e) => {
       if (!map[e.date]) map[e.date] = [];
       map[e.date].push(e);
     });
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   const todayStr = dateStr(new Date());
 
-  function prevMonth() {
+  const prevMonth = useCallback(() => {
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
-  }
-  function nextMonth() {
+  }, [viewDate]);
+  const nextMonth = useCallback(() => {
     setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
-  }
+  }, [viewDate]);
+  const prevWeek = useCallback(() => {
+    const d = new Date(viewDate);
+    d.setDate(d.getDate() - 7);
+    setViewDate(d);
+  }, [viewDate]);
+  const nextWeek = useCallback(() => {
+    const d = new Date(viewDate);
+    d.setDate(d.getDate() + 7);
+    setViewDate(d);
+  }, [viewDate]);
+
   function goToday() {
-    setViewDate(new Date());
-    setSelectedDate(todayStr);
+    const t = new Date();
+    setViewDate(t);
+    setSelectedDate(dateStr(t));
   }
 
   const selectedEvents = selectedDate ? eventsByDate[selectedDate] || [] : [];
-  const upcomingEvents = useMemo(() => {
-    return events
+
+  // ─── Upcoming Events (grouped) ───
+  const upcomingByGroup = useMemo(() => {
+    const upcoming = filteredEvents
       .filter((e) => e.date >= todayStr)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(0, 8);
-  }, [events, todayStr]);
+      .sort((a, b) => a.date.localeCompare(b.date));
 
-  const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = { task: 0, report: 0, invoice: 0, contract: 0 };
-    events.forEach((e) => {
-      counts[e.type] = (counts[e.type] || 0) + 1;
+    const groups: { label: string; events: CalendarEvent[] }[] = [
+      { label: "Hari Ini", events: [] },
+      { label: "Besok", events: [] },
+      { label: "Minggu Ini", events: [] },
+      { label: "Mendatang", events: [] },
+    ];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    upcoming.forEach((e) => {
+      const eventDate = new Date(e.date);
+      eventDate.setHours(0, 0, 0, 0);
+      const diff = Math.round(
+        (eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diff === 0) groups[0].events.push(e);
+      else if (diff === 1) groups[1].events.push(e);
+      else if (diff <= 7) groups[2].events.push(e);
+      else groups[3].events.push(e);
     });
-    return counts;
-  }, [events]);
 
+    return groups.filter((g) => g.events.length > 0);
+  }, [filteredEvents, todayStr]);
+
+  // ─── Stats ───
+  const stats = useMemo(() => {
+    const now = new Date();
+    const monthStart = dateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+    const monthEnd = dateStr(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+
+    const monthEvents = filteredEvents.filter(
+      (e) => e.date >= monthStart && e.date <= monthEnd
+    );
+    const urgentCount = filteredEvents.filter((e) => {
+      const diff = Math.round(
+        (new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+      return diff >= 0 && diff <= 2;
+    }).length;
+    const todayCount = (eventsByDate[todayStr] || []).length;
+    const taskCount = filteredEvents.filter((e) => e.type === "task").length;
+    const reportCount = filteredEvents.filter((e) => e.type === "report").length;
+    const invoiceCount = filteredEvents.filter((e) => e.type === "invoice").length;
+    const contractCount = filteredEvents.filter((e) => e.type === "contract").length;
+
+    return {
+      total: filteredEvents.length,
+      thisMonth: monthEvents.length,
+      urgent: urgentCount,
+      today: todayCount,
+      taskCount,
+      reportCount,
+      invoiceCount,
+      contractCount,
+    };
+  }, [filteredEvents, eventsByDate, todayStr]);
+
+  // ─── Filter Toggle ───
+  function toggleFilter(type: EventType) {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        if (next.size > 1) next.delete(type); // min 1 active
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }
+
+  // ─── Agenda Events (sorted list) ───
+  const agendaEvents = useMemo(() => {
+    return filteredEvents
+      .filter((e) => e.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredEvents, todayStr]);
+
+  // ─── Loading ───
   if (loading) {
     return (
       <div className="space-y-6">
@@ -244,7 +393,8 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* ─── Header ─── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Team Calendar</h1>
@@ -252,217 +402,527 @@ export default function CalendarPage() {
             Aggregate deadlines: tasks, reports, invoices, contracts
           </p>
         </div>
-        <button onClick={goToday} className="btn-primary text-xs">
-          Hari Ini
-        </button>
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <div className="flex gap-0.5 rounded-md border border-border bg-surface p-0.5">
+            <button
+              onClick={() => setViewMode("month")}
+              className={cn(
+                "flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
+                viewMode === "month"
+                  ? "bg-primary text-white"
+                  : "text-muted hover:text-gray-900"
+              )}
+              title="Month View"
+            >
+              <LayoutGrid size={14} />
+              <span className="hidden sm:inline">Month</span>
+            </button>
+            <button
+              onClick={() => setViewMode("week")}
+              className={cn(
+                "flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
+                viewMode === "week"
+                  ? "bg-primary text-white"
+                  : "text-muted hover:text-gray-900"
+              )}
+              title="Week View"
+            >
+              <CalendarDays size={14} />
+              <span className="hidden sm:inline">Week</span>
+            </button>
+            <button
+              onClick={() => setViewMode("agenda")}
+              className={cn(
+                "flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
+                viewMode === "agenda"
+                  ? "bg-primary text-white"
+                  : "text-muted hover:text-gray-900"
+              )}
+              title="Agenda View"
+            >
+              <List size={14} />
+              <span className="hidden sm:inline">Agenda</span>
+            </button>
+          </div>
+          <button onClick={goToday} className="btn-primary text-xs whitespace-nowrap">
+            Hari Ini
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="card lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold capitalize text-gray-900">{monthLabel}</h2>
-            <div className="flex gap-1">
-              <button
-                onClick={prevMonth}
-                className="rounded-md border border-border p-1.5 text-muted hover:bg-background hover:text-gray-900"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={nextMonth}
-                className="rounded-md border border-border p-1.5 text-muted hover:bg-background hover:text-gray-900"
-              >
-                <ChevronRight size={16} />
-              </button>
+      {/* ─── Stats Bar ─── */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="card flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <CalendarIcon className="text-primary" size={16} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+            <p className="truncate text-[10px] text-muted">Total Event</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-danger/10">
+            <AlertCircle className="text-danger" size={16} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-gray-900">{stats.urgent}</p>
+            <p className="truncate text-[10px] text-muted">Urgent (≤2 hari)</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
+            <Clock className="text-warning" size={16} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-gray-900">{stats.today}</p>
+            <p className="truncate text-[10px] text-muted">Hari Ini</p>
+          </div>
+        </div>
+        <div className="card flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10">
+            <CheckCircle2 className="text-success" size={16} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-gray-900">{stats.thisMonth}</p>
+            <p className="truncate text-[10px] text-muted">Bulan Ini</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Filter Chips (scrollable carousel) ─── */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {(Object.keys(typeConfig) as EventType[]).map((t) => {
+          const cfg = typeConfig[t];
+          const Icon = cfg.icon;
+          const isActive = activeFilters.has(t);
+          const count =
+            t === "task" ? stats.taskCount :
+            t === "report" ? stats.reportCount :
+            t === "invoice" ? stats.invoiceCount :
+            stats.contractCount;
+          return (
+            <button
+              key={t}
+              onClick={() => toggleFilter(t)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                isActive
+                  ? cn(cfg.activeBg, "border-transparent")
+                  : "border-border bg-surface text-muted hover:bg-background"
+              )}
+            >
+              <Icon size={12} />
+              {cfg.label}
+              <span className={cn(
+                "rounded-full px-1.5 text-[9px] font-bold",
+                isActive ? "bg-white/20" : "bg-background"
+              )}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ─── Main Content ─── */}
+      {viewMode === "agenda" ? (
+        /* ═══ AGENDA VIEW ═══ */
+        <div className="card p-4">
+          <div className="mb-4 flex items-center gap-2">
+            <List className="text-primary" size={18} />
+            <h2 className="text-sm font-semibold text-gray-900">Agenda Mendatang</h2>
+            <span className="badge bg-surface text-muted">{agendaEvents.length} items</span>
+          </div>
+          {agendaEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CalendarIcon className="mb-2 text-muted" size={32} />
+              <p className="text-sm text-muted">Tidak ada agenda mendatang</p>
             </div>
-          </div>
-
-          <div className="mb-1 grid grid-cols-7 gap-1">
-            {WEEKDAYS.map((d) => (
-              <div
-                key={d}
-                className="py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-1">
-            {weeks.map((week, wi) => (
-              <div key={wi} className="grid grid-cols-7 gap-1">
-                {week.map((day, di) => {
-                  if (!day) return <div key={di} className="min-h-[80px] rounded-md bg-background/30" />;
-                  const ds = dateStr(day);
-                  const dayEvents = eventsByDate[ds] || [];
-                  const isToday = ds === todayStr;
-                  const isSelected = ds === selectedDate;
-                  return (
-                    <button
-                      key={di}
-                      onClick={() => setSelectedDate(ds)}
-                      className={cn(
-                        "min-h-[80px] rounded-md border p-1.5 text-left transition-colors",
-                        isSelected
-                          ? "border-primary bg-primary/5"
-                          : "border-border bg-background hover:border-primary/50",
-                        isToday && "ring-1 ring-primary"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span
-                          className={cn(
-                            "text-xs font-medium",
-                            isToday ? "rounded-full bg-primary px-1.5 text-white" : "text-gray-900"
-                          )}
-                        >
-                          {day.getDate()}
-                        </span>
-                        {dayEvents.length > 0 && (
-                          <span className="rounded-full bg-surface px-1.5 text-[9px] font-bold text-muted">
-                            {dayEvents.length}
+          ) : (
+            <div className="space-y-1.5">
+              {agendaEvents.map((e) => {
+                const cfg = typeConfig[e.type];
+                const Icon = cfg.icon;
+                const days = Math.round(
+                  (new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                );
+                const isUrgent = days <= 2;
+                const isPast = days < 0;
+                return (
+                  <Link
+                    key={e.id}
+                    href={e.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary hover:bg-primary/5",
+                      isPast && "opacity-50"
+                    )}
+                  >
+                    {/* Date Block */}
+                    <div className={cn(
+                      "flex w-12 shrink-0 flex-col items-center rounded-md py-1.5",
+                      isToday(e.date) ? cfg.activeBg : cfg.bg
+                    )}>
+                      <span className="text-[9px] font-medium uppercase opacity-80">
+                        {new Date(e.date).toLocaleDateString("id-ID", { month: "short" })}
+                      </span>
+                      <span className="text-base font-bold leading-none">
+                        {new Date(e.date).getDate()}
+                      </span>
+                    </div>
+                    {/* Content */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <Icon size={12} className="shrink-0 text-gray-600" />
+                        <p className="truncate text-sm font-medium text-gray-900">{e.title}</p>
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted">
+                        <span className="rounded bg-surface px-1 capitalize">{cfg.label}</span>
+                        {e.clientName && <span className="truncate">{e.clientName}</span>}
+                        {e.meta && <span>• {e.meta}</span>}
+                        {e.status && (
+                          <span className="rounded bg-surface px-1 capitalize">
+                            {e.status.replace("_", " ")}
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 space-y-0.5">
-                        {dayEvents.slice(0, 2).map((e) => (
-                          <div
-                            key={e.id}
-                            className={cn(
-                              "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[9px]",
-                              typeConfig[e.type].bg
+                    </div>
+                    {/* Urgent Badge */}
+                    <span
+                      className={cn(
+                        "shrink-0 rounded px-2 py-1 text-[10px] font-bold",
+                        isPast
+                          ? "bg-surface text-muted"
+                          : isUrgent
+                            ? "bg-danger/10 text-danger"
+                            : "bg-surface text-muted"
+                      )}
+                    >
+                      {isPast
+                        ? `${Math.abs(days)}h lalu`
+                        : days === 0
+                          ? "Hari ini"
+                          : days === 1
+                            ? "Besok"
+                            : `${days}h`}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ═══ MONTH & WEEK VIEW ═══ */
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Calendar Grid */}
+          <div className="card lg:col-span-2">
+            {/* Toolbar */}
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-bold text-gray-900 sm:text-lg">
+                {viewMode === "month" ? (
+                  <span className="capitalize">{monthLabel}</span>
+                ) : (
+                  <span>{weekLabel}</span>
+                )}
+              </h2>
+              <div className="flex gap-1">
+                <button
+                  onClick={viewMode === "month" ? prevMonth : prevWeek}
+                  className="rounded-md border border-border p-1.5 text-muted transition-colors hover:bg-background hover:text-gray-900"
+                  title={viewMode === "month" ? "Bulan sebelumnya" : "Minggu sebelumnya"}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={viewMode === "month" ? nextMonth : nextWeek}
+                  className="rounded-md border border-border p-1.5 text-muted transition-colors hover:bg-background hover:text-gray-900"
+                  title={viewMode === "month" ? "Bulan berikutnya" : "Minggu berikutnya"}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Weekday Header */}
+            <div className="mb-1 grid grid-cols-7 gap-1">
+              {WEEKDAYS.map((d, i) => (
+                <div
+                  key={d}
+                  className={cn(
+                    "py-1 text-center text-[10px] font-semibold uppercase tracking-wide",
+                    i === 0 ? "text-danger" : i === 6 ? "text-primary" : "text-muted"
+                  )}
+                >
+                  <span className="hidden sm:inline">{WEEKDAYS_LONG[i]}</span>
+                  <span className="sm:hidden">{d}</span>
+                </div>
+              ))}
+            </div>
+
+            {viewMode === "month" ? (
+              /* ─── Month Grid ─── */
+              <div className="space-y-1">
+                {weeks.map((week, wi) => (
+                  <div key={wi} className="grid grid-cols-7 gap-1">
+                    {week.map((day, di) => {
+                      if (!day) return <div key={di} className="min-h-[70px] rounded-md bg-background/30 sm:min-h-[90px]" />;
+                      const ds = dateStr(day);
+                      const dayEvents = eventsByDate[ds] || [];
+                      const isTodayCell = ds === todayStr;
+                      const isSelected = ds === selectedDate;
+                      const isWeekend = di === 0 || di === 6;
+                      return (
+                        <button
+                          key={di}
+                          onClick={() => setSelectedDate(ds)}
+                          className={cn(
+                            "min-h-[70px] rounded-md border p-1 text-left transition-all sm:min-h-[90px] sm:p-1.5",
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-border bg-background hover:border-primary/50 hover:shadow-sm",
+                            isWeekend && "bg-background/50"
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={cn(
+                                "flex h-5 w-5 items-center justify-center text-[11px] font-semibold sm:text-xs",
+                                isTodayCell
+                                  ? "rounded-full bg-primary text-white"
+                                  : isWeekend
+                                    ? "text-muted"
+                                    : "text-gray-900"
+                              )}
+                            >
+                              {day.getDate()}
+                            </span>
+                            {dayEvents.length > 0 && (
+                              <span className={cn(
+                                "rounded-full px-1 text-[8px] font-bold sm:text-[9px]",
+                                dayEvents.length > 3 ? "bg-danger/10 text-danger" : "bg-surface text-muted"
+                              )}>
+                                {dayEvents.length}
+                              </span>
                             )}
-                          >
-                            <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", typeConfig[e.type].dot)} />
-                            <span className="truncate text-gray-900">{e.title}</span>
                           </div>
-                        ))}
-                        {dayEvents.length > 2 && (
-                          <p className="text-[9px] text-muted">+{dayEvents.length - 2} lagi</p>
+                          <div className="mt-1 space-y-0.5">
+                            {dayEvents.slice(0, 3).map((e) => (
+                              <div
+                                key={e.id}
+                                className={cn(
+                                  "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[8px] sm:text-[9px]",
+                                  typeConfig[e.type].bg
+                                )}
+                              >
+                                <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", typeConfig[e.type].dot)} />
+                                <span className="truncate text-gray-900">{e.title}</span>
+                              </div>
+                            ))}
+                            {dayEvents.length > 3 && (
+                              <p className="text-[8px] text-muted sm:text-[9px]">
+                                +{dayEvents.length - 3} lagi
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* ─── Week Grid (vertical) ─── */
+              <div className="space-y-1.5">
+                {weekDays.map((day) => {
+                  const ds = dateStr(day);
+                  const dayEvents = eventsByDate[ds] || [];
+                  const isTodayCell = ds === todayStr;
+                  const isSelected = ds === selectedDate;
+                  const dayOfWeek = day.getDay();
+                  return (
+                    <button
+                      key={ds}
+                      onClick={() => setSelectedDate(ds)}
+                      className={cn(
+                        "flex w-full items-start gap-3 rounded-lg border p-2.5 text-left transition-all sm:p-3",
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border bg-background hover:border-primary/50",
+                        isTodayCell && "ring-1 ring-primary"
+                      )}
+                    >
+                      {/* Date Block */}
+                      <div className={cn(
+                        "flex w-12 shrink-0 flex-col items-center rounded-md py-1.5",
+                        isTodayCell ? "bg-primary text-white" : "bg-surface text-gray-900"
+                      )}>
+                        <span className="text-[9px] font-medium uppercase opacity-80">
+                          {WEEKDAYS[dayOfWeek]}
+                        </span>
+                        <span className="text-lg font-bold leading-none">
+                          {day.getDate()}
+                        </span>
+                      </div>
+                      {/* Events */}
+                      <div className="min-w-0 flex-1">
+                        {dayEvents.length === 0 ? (
+                          <p className="py-2 text-xs text-muted">Tidak ada event</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {dayEvents.map((e) => {
+                              const cfg = typeConfig[e.type];
+                              const Icon = cfg.icon;
+                              return (
+                                <div
+                                  key={e.id}
+                                  className={cn(
+                                    "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs",
+                                    cfg.bg
+                                  )}
+                                >
+                                  <Icon size={10} className="shrink-0 text-gray-700" />
+                                  <span className="truncate text-gray-900">{e.title}</span>
+                                  {e.clientName && (
+                                    <span className="ml-auto shrink-0 text-[9px] text-muted">
+                                      {e.clientName}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
                     </button>
                   );
                 })}
               </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-3 border-t border-border pt-3">
-            {(Object.keys(typeConfig) as CalendarEvent["type"][]).map((t) => {
-              const cfg = typeConfig[t];
-              const Icon = cfg.icon;
-              return (
-                <div key={t} className="flex items-center gap-1.5">
-                  <div className={cn("flex h-5 w-5 items-center justify-center rounded", cfg.bg)}>
-                    <Icon size={10} className="text-gray-700" />
-                  </div>
-                  <span className="text-xs text-muted">
-                    {cfg.label} ({typeCounts[t] || 0})
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="card">
-            <h3 className="mb-3 border-b border-border pb-2 text-sm font-semibold text-gray-900">
-              {selectedDate
-                ? new Intl.DateTimeFormat("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  }).format(new Date(selectedDate))
-                : "Pilih Tanggal"}
-            </h3>
-            {selectedEvents.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted">
-                {selectedDate ? "Tidak ada event" : "Klik tanggal untuk lihat detail"}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {selectedEvents.map((e) => {
-                  const cfg = typeConfig[e.type];
-                  const Icon = cfg.icon;
-                  return (
-                    <Link
-                      key={e.id}
-                      href={e.href}
-                      className="flex items-start gap-2 rounded-md border border-border bg-background p-2 transition-colors hover:border-primary hover:bg-primary/5"
-                    >
-                      <div className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded", cfg.bg)}>
-                        <Icon size={12} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-gray-900">{e.title}</p>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-muted">
-                          {e.clientName && <span className="truncate">{e.clientName}</span>}
-                          {e.meta && <span>• {e.meta}</span>}
-                          {e.status && (
-                            <span className="rounded bg-surface px-1 capitalize">
-                              {e.status.replace("_", " ")}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
             )}
           </div>
 
-          <div className="card">
-            <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
-              <CalendarIcon className="text-primary" size={16} />
-              <h3 className="text-sm font-semibold text-gray-900">Deadline Mendatang</h3>
-            </div>
-            {upcomingEvents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                {loading ? (
-                  <Loader2 className="animate-spin text-muted" size={20} />
-                ) : (
-                  <CalendarIcon className="text-muted" size={24} />
-                )}
-                <p className="mt-2 text-xs text-muted">Tidak ada deadline mendatang</p>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {upcomingEvents.map((e) => {
-                  const cfg = typeConfig[e.type];
-                  const days = Math.round(
-                    (new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-                  );
-                  const isUrgent = days <= 2;
-                  return (
-                    <Link
-                      key={e.id}
-                      href={e.href}
-                      className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-background"
-                    >
-                      <div className={cn("h-1.5 w-1.5 shrink-0 rounded-full", cfg.dot)} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs text-gray-900">{e.title}</p>
-                        <p className="text-[10px] text-muted">{e.clientName}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          "shrink-0 rounded px-1 py-0.5 text-[9px] font-medium",
-                          isUrgent ? "bg-danger/10 text-danger" : "bg-surface text-muted"
-                        )}
+          {/* ─── Sidebar ─── */}
+          <div className="space-y-4">
+            {/* Selected Date Detail */}
+            <div className="card">
+              <h3 className="mb-3 border-b border-border pb-2 text-sm font-semibold text-gray-900">
+                {selectedDate
+                  ? new Intl.DateTimeFormat("id-ID", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    }).format(new Date(selectedDate))
+                  : "Pilih Tanggal"}
+              </h3>
+              {selectedEvents.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted">
+                  {selectedDate ? "Tidak ada event" : "Klik tanggal untuk lihat detail"}
+                </p>
+              ) : (
+                <div className="max-h-[300px] space-y-2 overflow-y-auto">
+                  {selectedEvents.map((e) => {
+                    const cfg = typeConfig[e.type];
+                    const Icon = cfg.icon;
+                    return (
+                      <Link
+                        key={e.id}
+                        href={e.href}
+                        className="flex items-start gap-2 rounded-md border border-border bg-background p-2 transition-colors hover:border-primary hover:bg-primary/5"
                       >
-                        {days === 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
-                      </span>
-                    </Link>
-                  );
-                })}
+                        <div className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded", cfg.bg)}>
+                          <Icon size={12} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-medium text-gray-900">{e.title}</p>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-muted">
+                            {e.clientName && <span className="truncate">{e.clientName}</span>}
+                            {e.meta && <span>• {e.meta}</span>}
+                            {e.status && (
+                              <span className="rounded bg-surface px-1 capitalize">
+                                {e.status.replace("_", " ")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Upcoming Deadlines (Grouped) */}
+            <div className="card">
+              <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
+                <CalendarIcon className="text-primary" size={16} />
+                <h3 className="text-sm font-semibold text-gray-900">Deadline Mendatang</h3>
               </div>
-            )}
+              {upcomingByGroup.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <CalendarIcon className="text-muted" size={24} />
+                  <p className="mt-2 text-xs text-muted">Tidak ada deadline mendatang</p>
+                </div>
+              ) : (
+                <div className="max-h-[400px] space-y-3 overflow-y-auto">
+                  {upcomingByGroup.map((group) => (
+                    <div key={group.label}>
+                      <p className={cn(
+                        "mb-1.5 text-[10px] font-bold uppercase tracking-wide",
+                        group.label === "Hari Ini"
+                          ? "text-danger"
+                          : group.label === "Besok"
+                            ? "text-warning"
+                            : "text-muted"
+                      )}>
+                        {group.label} ({group.events.length})
+                      </p>
+                      <div className="space-y-1">
+                        {group.events.map((e) => {
+                          const cfg = typeConfig[e.type];
+                          const Icon = cfg.icon;
+                          const days = Math.round(
+                            (new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                          );
+                          const isUrgent = days <= 2;
+                          return (
+                            <Link
+                              key={e.id}
+                              href={e.href}
+                              className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-background"
+                            >
+                              <div className={cn(
+                                "flex h-5 w-5 shrink-0 items-center justify-center rounded",
+                                cfg.bg
+                              )}>
+                                <Icon size={9} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs text-gray-900">{e.title}</p>
+                                <p className="truncate text-[10px] text-muted">{e.clientName}</p>
+                              </div>
+                              {isUrgent && (
+                                <span className="shrink-0 rounded bg-danger/10 px-1 py-0.5 text-[9px] font-bold text-danger">
+                                  {days === 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
+                                </span>
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
+}
+
+// ─── Helper ───
+function isToday(dateString: string): boolean {
+  return dateString === dateStr(new Date());
 }
