@@ -672,12 +672,14 @@ export default function TasksPage() {
                     className="input"
                   >
                     <option value="">— Pilih Divisi —</option>
-                    <option value="Creative">Creative</option>
-                    <option value="Advertising">Advertising</option>
-                    <option value="SMM">Social Media Management</option>
-                    <option value="SEO">SEO</option>
-                    <option value="Strategy">Strategy</option>
-                    <option value="Operations">Operations</option>
+                    <option value="Creative Director">Creative Director</option>
+                    <option value="Content Creator">Content Creator</option>
+                    <option value="Production">Production</option>
+                    <option value="Project Manager">Project Manager</option>
+                    <option value="Advertiser">Advertiser</option>
+                    <option value="Account Executive">Account Executive</option>
+                    <option value="Copywriter">Copywriter</option>
+                    <option value="Developer">Developer</option>
                   </select>
                 </div>
               </div>
@@ -703,12 +705,18 @@ export default function TasksPage() {
                 </div>
               </div>
 
-              {/* Assignees */}
+              {/* Assignees - scoped by division if selected */}
               <AssigneePicker
                 selectedIds={formAssignees}
                 onChange={setFormAssignees}
                 label="Assignee"
+                divisionFilter={form.division || null}
               />
+              {form.division && (
+                <p className="-mt-2 text-xs text-muted">
+                  💡 Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong>
+                </p>
+              )}
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>

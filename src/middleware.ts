@@ -67,6 +67,32 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Onboarding check: if user has no division set, redirect to /onboarding
+  // (skip for /onboarding itself, /settings, and /logout to avoid loops)
+  if (
+    !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/settings") &&
+    pathname !== "/logout"
+  ) {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("division")
+        .eq("id", user.id)
+        .single();
+
+      if (profile && !profile.division) {
+        const url = new URL("/onboarding", request.url);
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // If profile doesn't exist yet, the handle_new_user trigger may not have run.
+      // Let the onboarding page handle profile creation.
+      const url = new URL("/onboarding", request.url);
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 

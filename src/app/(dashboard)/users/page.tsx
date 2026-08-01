@@ -3,10 +3,11 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search, UserCog, ShieldCheck, ShieldOff, Loader2 } from "lucide-react";
+import { Search, UserCog, ShieldCheck, ShieldOff, Loader2, Filter } from "lucide-react";
 import type { Database } from "@/types/database";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
+import { cn } from "@/lib/utils";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -21,15 +22,39 @@ const ROLES = [
   { value: "developer", label: "Developer", color: "text-muted" },
 ] as const;
 
+const DIVISIONS = [
+  "Creative Director",
+  "Content Creator",
+  "Production",
+  "Project Manager",
+  "Advertiser",
+  "Account Executive",
+  "Copywriter",
+  "Developer",
+] as const;
+
+const DIVISION_COLORS: Record<string, string> = {
+  "Creative Director": "bg-primary/15 text-primary",
+  "Content Creator": "bg-success/15 text-success",
+  Production: "bg-warning/15 text-warning",
+  "Project Manager": "bg-accent/15 text-accent",
+  Advertiser: "bg-danger/15 text-danger",
+  "Account Executive": "bg-muted/20 text-muted",
+  Copywriter: "bg-primary/15 text-primary",
+  Developer: "bg-success/15 text-success",
+};
+
 export default function UsersPage() {
   const supabase = createClient();
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
+  const [filterDivision, setFilterDivision] = useState<string>("all");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<string>("");
+  const [editDivision, setEditDivision] = useState<string>("");
   const [editActive, setEditActive] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
 
@@ -60,7 +85,7 @@ export default function UsersPage() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ role: editRole, is_active: editActive } as never)
+      .update({ role: editRole, division: editDivision || null, is_active: editActive } as never)
       .eq("id", userId);
 
     if (error) {
@@ -68,7 +93,11 @@ export default function UsersPage() {
     } else {
       toast.success("User berhasil diupdate");
       setUsers(
-        users.map((u) => (u.id === userId ? { ...u, role: editRole, is_active: editActive } : u))
+        users.map((u) =>
+          u.id === userId
+            ? { ...u, role: editRole, division: editDivision || null, is_active: editActive }
+            : u
+        )
       );
       setEditingId(null);
     }
@@ -78,6 +107,7 @@ export default function UsersPage() {
   const startEdit = (user: Profile) => {
     setEditingId(user.id);
     setEditRole(user.role);
+    setEditDivision(user.division || "");
     setEditActive(user.is_active);
   };
 
@@ -86,7 +116,9 @@ export default function UsersPage() {
       u.full_name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase());
     const matchRole = filterRole === "all" || u.role === filterRole;
-    return matchSearch && matchRole;
+    const matchDivision =
+      filterDivision === "all" || u.division === filterDivision;
+    return matchSearch && matchRole && matchDivision;
   });
 
   const getRoleLabel = (role: string) => ROLES.find((r) => r.value === role)?.label || role;
@@ -101,7 +133,7 @@ export default function UsersPage() {
         <p className="text-sm text-muted">Kelola tim, role, dan status akun</p>
       </div>
 
-      {/* Stats */}
+        {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="card p-4">
           <p className="text-xs text-muted">Total User</p>
@@ -118,10 +150,32 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-xs text-muted">Managers</p>
-          <p className="text-2xl font-bold text-warning">
-            {users.filter((u) => u.role === "super_admin" || u.role === "project_manager").length}
+          <p className="text-xs text-muted">Not Onboarded</p>
+          <p className="text-2xl font-bold text-danger">
+            {users.filter((u) => !u.division).length}
           </p>
+        </div>
+      </div>
+
+      {/* Division Distribution */}
+      <div className="card p-4">
+        <p className="mb-2 text-xs font-medium text-muted">Distribusi Divisi</p>
+        <div className="flex flex-wrap gap-2">
+          {DIVISIONS.map((div) => {
+            const count = users.filter((u) => u.division === div).length;
+            return (
+              <span
+                key={div}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
+                  DIVISION_COLORS[div] || "bg-muted/20 text-muted"
+                )}
+              >
+                {div}
+                <span className="rounded-full bg-white/30 px-1.5 text-[10px]">{count}</span>
+              </span>
+            );
+          })}
         </div>
       </div>
 
@@ -138,9 +192,21 @@ export default function UsersPage() {
           />
         </div>
         <select
+          value={filterDivision}
+          onChange={(e) => setFilterDivision(e.target.value)}
+          className="input sm:w-52"
+        >
+          <option value="all">Semua Divisi</option>
+          {DIVISIONS.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+        <select
           value={filterRole}
           onChange={(e) => setFilterRole(e.target.value)}
-          className="input sm:w-52"
+          className="input sm:w-48"
         >
           <option value="all">Semua Role</option>
           {ROLES.map((r) => (
@@ -165,6 +231,7 @@ export default function UsersPage() {
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">
                   <SortableTh label="Email" sortKey="email" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
                 </th>
+                <SortableTh label="Divisi" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
                 <SortableTh label="Role" sortKey="role" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
                 <SortableTh label="Status" sortKey="is_active" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
                 <th className="px-4 py-3 text-right font-medium">Aksi</th>
@@ -188,6 +255,37 @@ export default function UsersPage() {
                     <p className="mt-1 text-xs text-muted sm:hidden">{user.email}</p>
                   </td>
                   <td className="hidden px-4 py-3 text-muted sm:table-cell">{user.email}</td>
+
+                  {/* Division */}
+                  <td className="px-4 py-3">
+                    {editingId === user.id ? (
+                      <select
+                        value={editDivision}
+                        onChange={(e) => setEditDivision(e.target.value)}
+                        className="input py-1 text-xs"
+                      >
+                        <option value="">— Belum dipilih —</option>
+                        {DIVISIONS.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      user.division ? (
+                        <span
+                          className={cn(
+                            "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+                            DIVISION_COLORS[user.division] || "bg-muted/20 text-muted"
+                          )}
+                        >
+                          {user.division}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-danger">⚠ Belum onboarded</span>
+                      )
+                    )}
+                  </td>
 
                   {/* Role */}
                   <td className="px-4 py-3">

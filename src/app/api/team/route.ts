@@ -40,10 +40,20 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getAdminClient();
-    const { data, error } = await supabase
+
+    // Support optional division filter: /api/team?division=Content Creator
+    const divisionFilter = request.nextUrl.searchParams.get("division");
+
+    let query = supabase
       .from("profiles")
-      .select("id, full_name")
-      .order("full_name");
+      .select("id, full_name, role, division, is_active")
+      .eq("is_active", true);
+
+    if (divisionFilter) {
+      query = query.eq("division", divisionFilter);
+    }
+
+    const { data, error } = await query.order("full_name");
 
     if (error) throw error;
 

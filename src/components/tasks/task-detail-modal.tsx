@@ -72,7 +72,14 @@ const priorityOptions = [
 ];
 
 const divisionOptions = [
-  "Creative", "Advertising", "Social Media Management", "SEO", "Strategy", "Operations",
+  "Creative Director",
+  "Content Creator",
+  "Production",
+  "Project Manager",
+  "Advertiser",
+  "Account Executive",
+  "Copywriter",
+  "Developer",
 ];
 
 interface TaskDetailModalProps {
@@ -444,8 +451,18 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="input resize-none" />
               </div>
 
-              {/* Assignees in edit mode */}
-              <AssigneePicker selectedIds={editAssignees} onChange={setEditAssignees} label="Assignee" />
+              {/* Assignees in edit mode - scoped by division */}
+              <AssigneePicker
+                selectedIds={editAssignees}
+                onChange={setEditAssignees}
+                label="Assignee"
+                divisionFilter={editForm.division || null}
+              />
+              {editForm.division && (
+                <p className="-mt-2 text-xs text-muted">
+                  💡 Assignee difilter berdasarkan divisi <strong>{editForm.division}</strong>
+                </p>
+              )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">Batal</button>
