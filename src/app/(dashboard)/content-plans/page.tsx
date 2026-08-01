@@ -228,13 +228,13 @@ export default function ContentPlansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Content Plans</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Content Plans</h1>
           <p className="text-sm text-muted">Content calendar & plan per klien</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> New Plan
+          <Plus size={16} /> <span className="hidden sm:inline">New Plan</span>
         </button>
       </div>
 

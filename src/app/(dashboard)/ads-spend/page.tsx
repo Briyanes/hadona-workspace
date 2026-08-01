@@ -1154,9 +1154,9 @@ export default function AdsSpendPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Ads Spend Tracker</h1>
           <p className="text-sm text-muted">
             Pantau budget, spending harian & ROAS semua ad account
           </p>
@@ -1173,10 +1173,10 @@ export default function AdsSpendPage() {
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
           >
-            <Download size={14} /> Export
+            <Download size={14} /> <span className="hidden sm:inline">Export</span>
           </button>
           <button onClick={openCreate} className="btn-primary">
-            <Plus size={16} /> New Ad Account
+            <Plus size={16} /> <span className="hidden sm:inline">New Ad Account</span>
           </button>
         </div>
       </div>

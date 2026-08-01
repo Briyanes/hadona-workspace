@@ -235,9 +235,9 @@ export default function CreativePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Creative Requests</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Creative Requests</h1>
           <p className="text-sm text-muted">Request kreatif untuk tim design/copy</p>
         </div>
         <button
@@ -259,7 +259,7 @@ export default function CreativePage() {
           }}
           className="btn-primary"
         >
-          <Plus size={16} /> New Request
+          <Plus size={16} /> <span className="hidden sm:inline">New Request</span>
         </button>
       </div>
 

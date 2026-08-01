@@ -806,9 +806,9 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Weekly Reports</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Weekly Reports</h1>
           <p className="text-sm text-muted">
             Laporan performa klien mingguan — auto-pull dari Ads Spend
           </p>
@@ -834,10 +834,10 @@ export default function ReportsPage() {
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
           >
-            <Download size={14} /> Export
+            <Download size={14} /> <span className="hidden sm:inline">Export</span>
           </button>
           <button onClick={openCreate} className="btn-primary">
-            <Plus size={16} /> New Report
+            <Plus size={16} /> <span className="hidden sm:inline">New Report</span>
           </button>
         </div>
       </div>

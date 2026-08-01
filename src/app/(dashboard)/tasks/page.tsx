@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -272,12 +272,12 @@ export default function TasksPage() {
   return (
     <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Task Board</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Task Board</h1>
           <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas • Klik kartu untuk detail</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex overflow-hidden rounded-md border border-border">
             <button
               onClick={() => setViewMode("board")}
@@ -286,7 +286,7 @@ export default function TasksPage() {
                 viewMode === "board" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
               )}
             >
-              <LayoutGrid size={14} /> Board
+              <LayoutGrid size={14} /> <span className="hidden sm:inline">Board</span>
             </button>
             <button
               onClick={() => setViewMode("table")}
@@ -295,20 +295,20 @@ export default function TasksPage() {
                 viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
               )}
             >
-              <List size={14} /> Table
+              <List size={14} /> <span className="hidden sm:inline">Table</span>
             </button>
           </div>
           <button
             onClick={() => setShowMyTasksOnly(!showMyTasksOnly)}
             className={cn(
-              "rounded-md px-3 py-2 text-xs font-medium transition-colors",
+              "flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
               showMyTasksOnly ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
-            My Tasks Only
+            <User size={14} /> <span className="hidden sm:inline">My Tasks</span>
           </button>
           <button onClick={() => setShowModal(true)} className="btn-primary">
-            <Plus size={16} /> New Task
+            <Plus size={16} /> <span className="hidden sm:inline">New Task</span>
           </button>
         </div>
       </div>

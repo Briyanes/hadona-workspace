@@ -331,13 +331,13 @@ export default function TimesheetPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Timesheet</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Timesheet</h1>
           <p className="text-sm text-muted">Track billable hours & aktivitas tim</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> Log Time
+          <Plus size={16} /> <span className="hidden sm:inline">Log Time</span>
         </button>
       </div>
 

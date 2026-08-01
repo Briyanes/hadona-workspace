@@ -245,9 +245,9 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Calendar</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Team Calendar</h1>
           <p className="text-sm text-muted">
             Aggregate deadlines: tasks, reports, invoices, contracts
           </p>

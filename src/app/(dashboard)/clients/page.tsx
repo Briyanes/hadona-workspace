@@ -327,13 +327,13 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Clients</h1>
           <p className="text-sm text-muted">Daftar klien Hadona Digital Media</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> New Client
+          <Plus size={16} /> <span className="hidden sm:inline">New Client</span>
         </button>
       </div>
 
@@ -406,7 +406,7 @@ export default function ClientsPage() {
               viewMode === "grid" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
-            <LayoutGrid size={14} /> Grid
+            <LayoutGrid size={14} /> <span className="hidden sm:inline">Grid</span>
           </button>
           <button
             onClick={() => setViewMode("table")}
@@ -415,7 +415,7 @@ export default function ClientsPage() {
               viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
-            <List size={14} /> Table
+            <List size={14} /> <span className="hidden sm:inline">Table</span>
           </button>
         </div>
       </div>
