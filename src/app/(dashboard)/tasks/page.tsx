@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -713,8 +713,9 @@ export default function TasksPage() {
                 divisionFilter={form.division || null}
               />
               {form.division && (
-                <p className="-mt-2 text-xs text-muted">
-                  💡 Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong>
+                <p className="-mt-2 flex items-start gap-1 text-xs text-muted">
+                  <Lightbulb size={12} className="mt-0.5 shrink-0 text-warning" />
+                  <span>Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong></span>
                 </p>
               )}
 

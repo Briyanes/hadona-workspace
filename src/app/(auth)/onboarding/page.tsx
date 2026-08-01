@@ -4,58 +4,71 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Check } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Palette,
+  PenTool,
+  Video,
+  KanbanSquare,
+  Megaphone,
+  Handshake,
+  FileText,
+  Code2,
+  Lightbulb,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-const DIVISIONS = [
+const DIVISIONS: { value: string; label: string; desc: string; icon: LucideIcon }[] = [
   {
     value: "Creative Director",
     label: "Creative Director",
     desc: "Mengarahkan strategi kreatif & approve creative team",
-    icon: "🎨",
+    icon: Palette,
   },
   {
     value: "Content Creator",
     label: "Content Creator",
     desc: "Membuat konten, menerima task dari PM",
-    icon: "✍️",
+    icon: PenTool,
   },
   {
     value: "Production",
     label: "Production",
     desc: "Video shooting, editing, creative production",
-    icon: "🎬",
+    icon: Video,
   },
   {
     value: "Project Manager",
     label: "Project Manager",
     desc: "Membuat task, assign ke division, manage timeline",
-    icon: "📊",
+    icon: KanbanSquare,
   },
   {
     value: "Advertiser",
     label: "Advertiser",
     desc: "Manage Meta/Google Ads, optimize ad spend",
-    icon: "📢",
+    icon: Megaphone,
   },
   {
     value: "Account Executive",
     label: "Account Executive",
     desc: "Manage client relationship & strategy",
-    icon: "🤝",
+    icon: Handshake,
   },
   {
     value: "Copywriter",
     label: "Copywriter",
     desc: "Writing tasks, caption, script iklan",
-    icon: "📝",
+    icon: FileText,
   },
   {
     value: "Developer",
     label: "Developer",
     desc: "Technical tasks, web development",
-    icon: "💻",
+    icon: Code2,
   },
 ];
 
@@ -192,9 +205,9 @@ export default function OnboardingPage() {
                       : "border-border bg-surface hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background text-xl">
-                    {div.icon}
-                  </div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background">
+                  <div.icon size={20} className="text-primary" />
+                </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-900">{div.label}</span>
@@ -222,9 +235,10 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          <div className="mt-5 rounded-lg border border-border bg-surface p-3">
+          <div className="mt-5 flex items-start gap-2 rounded-lg border border-border bg-surface p-3">
+            <Lightbulb size={14} className="mt-0.5 shrink-0 text-warning" />
             <p className="text-xs text-muted">
-              💡 <span className="font-medium">Catatan:</span> Divisi menentukan scope task yang akan
+              <span className="font-medium">Catatan:</span> Divisi menentukan scope task yang akan
               Anda terima. Project Manager dapat assign task spesifik ke divisi Anda. Admin dapat
               mengubah divisi Anda kapan saja melalui User Management.
             </p>

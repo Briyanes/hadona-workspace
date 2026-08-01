@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search, UserCog, ShieldCheck, ShieldOff, Loader2, Filter } from "lucide-react";
+import { Search, UserCog, ShieldCheck, ShieldOff, Loader2, Filter, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import type { Database } from "@/types/database";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
@@ -306,7 +306,9 @@ export default function UsersPage() {
                           ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-danger">⚠ Belum onboarded</span>
+                        <span className="inline-flex items-center gap-0.5 text-xs text-danger">
+                          <AlertTriangle size={10} /> Belum onboarded
+                        </span>
                       )
                     )}
                   </td>
@@ -337,9 +339,13 @@ export default function UsersPage() {
                     {editingId === user.id ? (
                       <button
                         onClick={() => setEditActive(!editActive)}
-                        className="text-xs font-medium underline"
+                        className="inline-flex items-center gap-1 text-xs font-medium underline"
                       >
-                        {editActive ? "🟢 Active" : "🔴 Inactive"}
+                        {editActive ? (
+                          <><CheckCircle2 size={12} className="text-success" /> Active</>
+                        ) : (
+                          <><XCircle size={12} className="text-muted" /> Inactive</>
+                        )}
                       </button>
                     ) : (
                       <span
@@ -347,7 +353,11 @@ export default function UsersPage() {
                           user.is_active ? "text-success" : "text-muted"
                         }`}
                       >
-                        {user.is_active ? "🟢 Active" : "🔴 Inactive"}
+                        {user.is_active ? (
+                          <><CheckCircle2 size={12} /> Active</>
+                        ) : (
+                          <><XCircle size={12} /> Inactive</>
+                        )}
                       </span>
                     )}
                   </td>

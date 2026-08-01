@@ -336,7 +336,7 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {greeting}{currentUserName ? `, ${currentUserName.split(" ")[0]}` : ""}! 👋
+            {greeting}{currentUserName ? `, ${currentUserName.split(" ")[0]}` : ""}!
           </h1>
           <p className="text-sm text-muted">
             {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -446,7 +446,10 @@ export default function DashboardPage() {
             {myTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle className="mb-2 text-success" size={28} />
-                <p className="text-sm text-muted">Tidak ada tugas mendesak! 🎉</p>
+                <p className="flex items-center justify-center gap-1 text-sm text-muted">
+                  <CheckCircle size={14} className="text-success" />
+                  Tidak ada tugas mendesak!
+                </p>
               </div>
             ) : (
               myTasks.map((task) => {
@@ -541,7 +544,10 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle className="mb-2 text-success" size={28} />
-                <p className="text-sm text-muted">Semua report up to date! ✅</p>
+                <p className="flex items-center justify-center gap-1 text-sm text-muted">
+                  <CheckCircle size={14} className="text-success" />
+                  Semua report up to date!
+                </p>
               </div>
             )}
           </div>
