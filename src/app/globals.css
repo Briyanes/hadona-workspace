@@ -374,12 +374,3 @@
   }
 }
 
-/* ============================================ */
-/* DARK MODE OVERRIDES (plain CSS — no @layer)  */
-/* ============================================ */
-
-/* Active nav tab/link — dark mode: Hadona yellow for visibility */
-.dark .border-primary.text-primary {
-  border-color: #FFD60A !important;
-  color: #FFD60A !important;
-}
