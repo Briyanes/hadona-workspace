@@ -216,7 +216,6 @@ export default function AdsSpendPage() {
     loadSpendLogs();
     loadMetaConnection();
     checkUrlParams();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // BUG FIX: Clear selection saat filter/search berubah (hindari bulk delete akun yang tidak terlihat)
@@ -226,7 +225,6 @@ export default function AdsSpendPage() {
       setSelectedIds(new Set());
     }
     setCurrentPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, statusFilter, clientFilter, picFilter]);
 
   function checkUrlParams() {

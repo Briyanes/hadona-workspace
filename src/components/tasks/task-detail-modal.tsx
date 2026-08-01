@@ -171,7 +171,6 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       supabase.removeChannel(commentChannel);
       supabase.removeChannel(subtaskChannel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   async function loadCurrentUser() {

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Force dynamic rendering — this route reads request.headers at runtime
+export const dynamic = "force-dynamic";
+
 /**
  * /api/clients — Server-side handler that uses SERVICE ROLE KEY
  * to bypass RLS policies that block non-manager users from reading clients.

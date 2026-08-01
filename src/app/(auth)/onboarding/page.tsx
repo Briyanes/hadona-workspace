@@ -106,7 +106,6 @@ export default function OnboardingPage() {
       }
     };
     loadUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function toggleDivision(value: string) {

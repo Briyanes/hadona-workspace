@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 
+// Force dynamic rendering — this route reads request.headers at runtime
+export const dynamic = "force-dynamic";
+
 /**
  * /api/debug/ads-spend — Diagnostics endpoint
  *

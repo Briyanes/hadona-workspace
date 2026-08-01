@@ -384,7 +384,6 @@ export default function ReportsPage() {
       setPreviousMetrics({});
       setPulledData(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.client_id, form.period_start, showModal]);
 
   function openEdit(report: Report) {

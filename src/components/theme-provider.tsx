@@ -71,7 +71,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
   // Update isDark when theme changes
