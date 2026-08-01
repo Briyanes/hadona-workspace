@@ -225,7 +225,7 @@ export default function StrategyPage() {
           <p className="text-sm text-muted">Objectives and Key Results tracker</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> <span className="hidden sm:inline">New OKR</span>
+          <Plus size={16} /> New OKR
         </button>
       </div>
 

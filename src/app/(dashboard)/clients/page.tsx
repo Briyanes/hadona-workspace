@@ -333,7 +333,7 @@ export default function ClientsPage() {
           <p className="text-sm text-muted">Daftar klien Hadona Digital Media</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> <span className="hidden sm:inline">New Client</span>
+          <Plus size={16} /> New Client
         </button>
       </div>
 
@@ -406,7 +406,7 @@ export default function ClientsPage() {
               viewMode === "grid" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
-            <LayoutGrid size={14} /> <span className="hidden sm:inline">Grid</span>
+            <LayoutGrid size={14} /> Grid
           </button>
           <button
             onClick={() => setViewMode("table")}
@@ -415,7 +415,7 @@ export default function ClientsPage() {
               viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
-            <List size={14} /> <span className="hidden sm:inline">Table</span>
+            <List size={14} /> Table
           </button>
         </div>
       </div>

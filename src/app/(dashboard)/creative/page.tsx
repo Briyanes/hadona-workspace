@@ -259,7 +259,7 @@ export default function CreativePage() {
           }}
           className="btn-primary"
         >
-          <Plus size={16} /> <span className="hidden sm:inline">New Request</span>
+          <Plus size={16} /> New Request
         </button>
       </div>
 

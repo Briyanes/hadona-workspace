@@ -1173,10 +1173,10 @@ export default function AdsSpendPage() {
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
           >
-            <Download size={14} /> <span className="hidden sm:inline">Export</span>
+            <Download size={14} /> Export
           </button>
           <button onClick={openCreate} className="btn-primary">
-            <Plus size={16} /> <span className="hidden sm:inline">New Ad Account</span>
+            <Plus size={16} /> New Ad Account
           </button>
         </div>
       </div>

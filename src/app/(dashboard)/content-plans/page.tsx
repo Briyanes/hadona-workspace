@@ -234,7 +234,7 @@ export default function ContentPlansPage() {
           <p className="text-sm text-muted">Content calendar & plan per klien</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> <span className="hidden sm:inline">New Plan</span>
+          <Plus size={16} /> New Plan
         </button>
       </div>
 

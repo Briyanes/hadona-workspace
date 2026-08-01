@@ -286,7 +286,7 @@ export default function TasksPage() {
                 viewMode === "board" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
               )}
             >
-              <LayoutGrid size={14} /> <span className="hidden sm:inline">Board</span>
+              <LayoutGrid size={14} /> Board
             </button>
             <button
               onClick={() => setViewMode("table")}
@@ -295,7 +295,7 @@ export default function TasksPage() {
                 viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
               )}
             >
-              <List size={14} /> <span className="hidden sm:inline">Table</span>
+              <List size={14} /> Table
             </button>
           </div>
           <button
@@ -305,10 +305,10 @@ export default function TasksPage() {
               showMyTasksOnly ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
             )}
           >
-            <User size={14} /> <span className="hidden sm:inline">My Tasks</span>
+            <User size={14} /> My Tasks
           </button>
           <button onClick={() => setShowModal(true)} className="btn-primary">
-            <Plus size={16} /> <span className="hidden sm:inline">New Task</span>
+            <Plus size={16} /> New Task
           </button>
         </div>
       </div>

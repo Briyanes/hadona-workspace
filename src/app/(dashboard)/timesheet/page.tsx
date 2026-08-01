@@ -337,7 +337,7 @@ export default function TimesheetPage() {
           <p className="text-sm text-muted">Track billable hours & aktivitas tim</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> <span className="hidden sm:inline">Log Time</span>
+          <Plus size={16} /> Log Time
         </button>
       </div>
 

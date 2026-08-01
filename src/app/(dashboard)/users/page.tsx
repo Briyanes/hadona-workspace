@@ -222,7 +222,7 @@ export default function UsersPage() {
             title="Export CSV"
           >
             <Download size={14} />
-            <span className="hidden sm:inline">Export CSV</span>
+            Export CSV
           </button>
           <button
             onClick={() => setShowInvite(!showInvite)}
