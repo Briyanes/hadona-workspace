@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { formatIDR, timeUntil, cn } from "@/lib/utils";
 import { BudgetAlertsBar } from "@/components/dashboard/budget-alerts-bar";
+import { TeamWorkloadWidget } from "@/components/dashboard/team-workload-widget";
 
 // ── Types ──
 interface Stats {
@@ -430,6 +431,13 @@ export default function DashboardPage() {
               })
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ════ Team Workload ════ */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <TeamWorkloadWidget />
         </div>
       </div>
     </div>
