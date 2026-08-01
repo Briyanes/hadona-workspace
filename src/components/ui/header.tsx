@@ -126,7 +126,7 @@ export function Header() {
               <span
                 key={d}
                 className={cn(
-                  "rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight",
+                  "whitespace-nowrap rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight",
                   DIVISION_BADGE_COLORS[d] || "border-border text-muted"
                 )}
               >
