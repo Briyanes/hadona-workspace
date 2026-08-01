@@ -22,6 +22,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { formatIDR, timeUntil, cn } from "@/lib/utils";
+import { BudgetAlertsBar } from "@/components/dashboard/budget-alerts-bar";
 
 // ── Types ──
 interface Stats {
@@ -214,6 +215,9 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      {/* ════ Budget Pacing Alerts ════ */}
+      <BudgetAlertsBar />
 
       {/* ════ Ads Performance KPI Bar ════ */}
       {adsKpi && adsKpi.weeklySpend > 0 && (
