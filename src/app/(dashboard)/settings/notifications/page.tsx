@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Loader2, Save, Bell, Send, MessageSquare } from "lucide-react";
 import type { NotificationPrefs } from "@/types";
-import { cn } from "@/lib/utils";
+import { Toggle } from "@/components/ui/toggle";
 
 export default function NotificationsSettingsPage() {
   const supabase = createClient();
@@ -44,39 +44,6 @@ export default function NotificationsSettingsPage() {
     setSaving(false);
   };
 
-  const Toggle = ({ checked, onChange, label, description, icon: Icon }: {
-    checked: boolean;
-    onChange: () => void;
-    label: string;
-    description: string;
-    icon: React.ElementType;
-  }) => (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-4 last:border-0">
-      <div className="flex items-start gap-3">
-        <div className={cn("mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg", checked ? "bg-primary/15 text-primary" : "bg-muted/10 text-muted")}>
-          <Icon size={16} />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-gray-900">{label}</p>
-          <p className="text-xs text-muted">{description}</p>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onChange}
-        className={cn(
-          "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-          checked ? "bg-primary" : "bg-muted/30"
-        )}
-      >
-        <span className={cn(
-          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-          checked ? "translate-x-5" : "translate-x-0.5"
-        )} />
-      </button>
-    </div>
-  );
-
   if (loading) return (
     <div className="flex items-center justify-center py-12">
       <Loader2 className="h-6 w-6 animate-spin text-muted" />
@@ -100,6 +67,7 @@ export default function NotificationsSettingsPage() {
         <h3 className="mb-2 text-sm font-semibold text-gray-900">Email Notifications</h3>
         <p className="mb-2 text-xs text-muted">Atur email apa yang ingin Anda terima.</p>
         <Toggle
+          showRow
           checked={prefs.email_task}
           onChange={() => setPrefs({ ...prefs, email_task: !prefs.email_task })}
           label="Task Assignment"
@@ -107,6 +75,7 @@ export default function NotificationsSettingsPage() {
           icon={Bell}
         />
         <Toggle
+          showRow
           checked={prefs.email_report}
           onChange={() => setPrefs({ ...prefs, email_report: !prefs.email_report })}
           label="Report Deadlines"
@@ -114,6 +83,7 @@ export default function NotificationsSettingsPage() {
           icon={Send}
         />
         <Toggle
+          showRow
           checked={prefs.email_weekly}
           onChange={() => setPrefs({ ...prefs, email_weekly: !prefs.email_weekly })}
           label="Weekly Summary"
@@ -127,6 +97,7 @@ export default function NotificationsSettingsPage() {
         <h3 className="mb-2 text-sm font-semibold text-gray-900">Telegram Integration</h3>
         <p className="mb-2 text-xs text-muted">Hubungkan bot Telegram untuk notifikasi real-time.</p>
         <Toggle
+          showRow
           checked={prefs.telegram_enabled}
           onChange={() => setPrefs({ ...prefs, telegram_enabled: !prefs.telegram_enabled })}
           label="Enable Telegram"
