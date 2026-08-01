@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUploadUrl } from "@/lib/r2";
 import { createClient } from "@/lib/supabase/server";
+import { applyRateLimit } from "@/lib/auth-api";
 
 const ALLOWED_FOLDERS = [
   "client-attachments",
@@ -16,6 +17,10 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 20 uploads per minute per IP
+    const rateLimited = applyRateLimit(request, "upload", 20);
+    if (rateLimited) return rateLimited;
+
     // Verify auth
     const supabase = createClient();
     const {
