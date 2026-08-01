@@ -1,13 +1,11 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Clock,
   AlertCircle,
   AlertTriangle,
-  TrendingUp,
   TrendingDown,
   Users,
   Megaphone,
@@ -21,9 +19,11 @@ import {
   BarChart3,
   Trophy,
   Send,
+  TrendingUp,
 } from "lucide-react";
 import { formatIDR, timeUntil, cn } from "@/lib/utils";
 
+// ── Types ──
 interface Stats {
   totalTasks: number;
   todoTasks: number;
@@ -67,6 +67,14 @@ interface ActivityLog {
   client?: { name: string };
 }
 
+interface DashboardData {
+  stats: Stats;
+  userName: string;
+  adsKpi: AdsKPI | null;
+  myTasks: MyTask[];
+  activities: ActivityLog[];
+}
+
 const entityIcons: Record<string, { icon: typeof Activity; color: string }> = {
   task: { icon: CheckCircle, color: "text-primary bg-primary/10" },
   report: { icon: FileText, color: "text-accent bg-accent/10" },
@@ -76,198 +84,28 @@ const entityIcons: Record<string, { icon: typeof Activity; color: string }> = {
 };
 
 export default function DashboardPage() {
-  const supabase = createClient();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [adsKpi, setAdsKpi] = useState<AdsKPI | null>(null);
-  const [myTasks, setMyTasks] = useState<MyTask[]>([]);
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUserName, setCurrentUserName] = useState<string>("");
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
     let cancelled = false;
 
     async function load() {
       try {
-        timeout = setTimeout(() => {
-          if (!cancelled) {
-            setError("Timeout: Server tidak merespons. Cek koneksi internet.");
-            setLoading(false);
-          }
-        }, 10000);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
 
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", user.id)
-            .single();
-          if (profile) setCurrentUserName((profile as { full_name: string }).full_name);
-        }
-
-        const [tasks, clients, adAccounts, profiles] = await Promise.all([
-          supabase.from("tasks").select("status, due_date, priority"),
-          supabase.from("clients").select("status, contract_value"),
-          supabase.from("ad_accounts").select("daily_budget, status").eq("status", "active"),
-          supabase.from("profiles").select("id").eq("is_active", true),
-        ]);
-
-        if (cancelled) return;
-
-        const allTasks = (tasks.data as { status: string; due_date: string | null; priority: string }[]) || [];
-        const clientList = (clients.data as { status: string; contract_value: number | null }[]) || [];
-        const accountList = (adAccounts.data as { daily_budget: number | null; status: string }[]) || [];
-        const profileList = (profiles.data as { id: string }[]) || [];
-        const today = new Date().toISOString().split("T")[0];
-
-        setStats({
-          totalTasks: allTasks.length,
-          todoTasks: allTasks.filter((t) => t.status === "todo").length,
-          inProgressTasks: allTasks.filter((t) => t.status === "in_progress").length,
-          doneTasks: allTasks.filter((t) => t.status === "done").length,
-          overdueTasks: allTasks.filter(
-            (t) => t.due_date && t.due_date < today && t.status !== "done" && t.status !== "blocked"
-          ).length,
-          activeClients: clientList.filter((c) => c.status === "active").length,
-          activeAdAccounts: accountList.length,
-          totalBudget: accountList.reduce((sum, a) => sum + (a.daily_budget || 0), 0),
-          totalMrr: clientList
-            .filter((c) => c.status === "active" || c.status === "onboarding")
-            .reduce((sum, c) => sum + (c.contract_value || 0), 0),
-          teamMembers: profileList.length,
-        });
-
-        // ─── P2: Fetch weekly reports untuk Ads KPI ───
-        const { data: reportsData } = await supabase
-          .from("weekly_reports")
-          .select(`
-            id, status, period_start, period_end,
-            client:clients(name),
-            report_metrics(metric_type, value)
-          `)
-          .order("created_at", { ascending: false })
-          .limit(50);
-
-        if (cancelled) return;
-
-        if (reportsData && reportsData.length > 0) {
-          interface ReportRow {
-            id: string;
-            status: string;
-            period_start: string;
-            period_end: string;
-            client?: { name: string } | null;
-            report_metrics?: Array<{ metric_type: string; value: number | null }>;
-          }
-          const reports = reportsData as unknown as ReportRow[];
-
-          // Ambil report minggu ini (period_end >= 7 hari yang lalu)
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          const recentReports = reports.filter(
-            (r) => new Date(r.period_end) >= weekAgo
-          );
-
-          // Aggregate per client untuk best/worst ROAS
-          const clientRoasMap: Record<string, { spend: number; revenue: number }> = {};
-          let totalSpend = 0;
-          let totalConv = 0;
-          let totalRev = 0;
-
-          recentReports.forEach((r) => {
-            const clientName = r.client?.name || "Unknown";
-            const metrics = r.report_metrics || [];
-            const spend = metrics.filter((m) => m.metric_type === "spend").reduce((s, m) => s + (m.value || 0), 0);
-            const conv = metrics.filter((m) => m.metric_type === "conversions").reduce((s, m) => s + (m.value || 0), 0);
-            const rev = metrics.filter((m) => m.metric_type === "revenue").reduce((s, m) => s + (m.value || 0), 0);
-
-            totalSpend += spend;
-            totalConv += conv;
-            totalRev += rev;
-
-            if (!clientRoasMap[clientName]) clientRoasMap[clientName] = { spend: 0, revenue: 0 };
-            clientRoasMap[clientName].spend += spend;
-            clientRoasMap[clientName].revenue += rev;
-          });
-
-          // Hitung ROAS per client, cari best & worst
-          const clientRoasList = Object.entries(clientRoasMap)
-            .map(([name, data]) => ({
-              name,
-              roas: data.spend > 0 ? data.revenue / data.spend : 0,
-            }))
-            .filter((c) => c.roas > 0)
-            .sort((a, b) => b.roas - a.roas);
-
-          const bestClient = clientRoasList[0] || null;
-          const worstClient = clientRoasList[clientRoasList.length - 1] || null;
-
-          // Pending reports (draft atau submitted yang belum reviewed)
-          const pendingReports = reports
-            .filter((r) => r.status === "draft" || r.status === "submitted")
-            .slice(0, 5)
-            .map((r) => ({
-              id: r.id,
-              clientName: r.client?.name || "Unknown",
-              periodEnd: r.period_end,
-              status: r.status,
-            }));
-
-          setAdsKpi({
-            weeklySpend: totalSpend,
-            weeklyConversions: totalConv,
-            weeklyRevenue: totalRev,
-            avgRoas: totalSpend > 0 ? totalRev / totalSpend : 0,
-            bestClient,
-            worstClient,
-            reportDrafts: reports.filter((r) => r.status === "draft").length,
-            reportSubmitted: reports.filter((r) => r.status === "submitted").length,
-            pendingReports,
-          });
-        }
-
-        // Fetch my tasks (overdue or due today, assigned to current user)
-        if (user) {
-          const { data: myTasksData } = await supabase
-            .from("tasks")
-            .select(
-              `
-              id, title, status, priority, due_date,
-              client:clients(name),
-              task_assignees!inner(user_id)
-            `
-            )
-            .eq("task_assignees.user_id", user.id)
-            .in("status", ["todo", "in_progress", "review"])
-            .or(`due_date.lte.${today},due_date.is.null`)
-            .order("due_date", { ascending: true, nullsFirst: false })
-            .limit(8);
-
-          if (cancelled) return;
-          setMyTasks((myTasksData as unknown as MyTask[]) || []);
-        }
-
-        // Fetch recent activity logs
-        const { data: activityData } = await supabase
-          .from("activity_logs")
-          .select(
-            `
-            id, description, entity_type, action, created_at,
-            client:clients(name)
-          `
-          )
-          .order("created_at", { ascending: false })
-          .limit(8);
-
-        if (cancelled) return;
-        setActivities((activityData as unknown as ActivityLog[]) || []);
-
-        setLoading(false);
+        const res = await fetch("/api/dashboard", { signal: controller.signal });
         clearTimeout(timeout);
+
+        if (!res.ok) throw new Error("Failed to load dashboard");
+
+        const json = await res.json();
+        if (!cancelled) {
+          setData(json);
+          setLoading(false);
+        }
       } catch {
         if (!cancelled) {
           setError("Gagal memuat data. Cek koneksi atau login ulang.");
@@ -279,9 +117,8 @@ export default function DashboardPage() {
 
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
     };
-  }, [supabase]);
+  }, []);
 
   if (loading) {
     return (
@@ -307,6 +144,12 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const stats = data?.stats;
+  const adsKpi = data?.adsKpi;
+  const myTasks = data?.myTasks || [];
+  const activities = data?.activities || [];
+  const currentUserName = data?.userName || "";
 
   const hour = new Date().getHours();
   const greeting = hour < 11 ? "Selamat Pagi" : hour < 15 ? "Selamat Siang" : hour < 19 ? "Selamat Sore" : "Selamat Malam";
@@ -372,7 +215,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* ════ P2: Ads Performance KPI Bar ════ */}
+      {/* ════ Ads Performance KPI Bar ════ */}
       {adsKpi && adsKpi.weeklySpend > 0 && (
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-border bg-gradient-to-r from-accent/5 to-primary/5 px-4 py-2.5">
@@ -385,17 +228,14 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
-            {/* Weekly Spend */}
             <div className="rounded-lg bg-background p-3 text-center">
               <p className="text-[10px] uppercase text-muted">Weekly Spend</p>
               <p className="mt-1 text-base font-bold text-gray-900">{formatIDR(adsKpi.weeklySpend)}</p>
             </div>
-            {/* Weekly Conversions */}
             <div className="rounded-lg bg-background p-3 text-center">
               <p className="text-[10px] uppercase text-muted">Conversions</p>
               <p className="mt-1 text-base font-bold text-gray-900">{adsKpi.weeklyConversions}</p>
             </div>
-            {/* Avg ROAS */}
             <div className="rounded-lg bg-background p-3 text-center">
               <p className="text-[10px] uppercase text-muted">Avg ROAS</p>
               <p className={cn(
@@ -405,7 +245,6 @@ export default function DashboardPage() {
                 {adsKpi.avgRoas.toFixed(2)}x
               </p>
             </div>
-            {/* Best Client */}
             {adsKpi.bestClient && (
               <div className="rounded-lg bg-success/5 p-3 text-center">
                 <p className="flex items-center justify-center gap-1 text-[10px] uppercase text-muted">
@@ -415,7 +254,6 @@ export default function DashboardPage() {
                 <p className="text-[10px] text-muted">{adsKpi.bestClient.roas.toFixed(2)}x</p>
               </div>
             )}
-            {/* Worst Client */}
             {adsKpi.worstClient && adsKpi.worstClient.name !== adsKpi.bestClient?.name && (
               <div className="rounded-lg bg-danger/5 p-3 text-center">
                 <p className="flex items-center justify-center gap-1 text-[10px] uppercase text-muted">
@@ -461,7 +299,6 @@ export default function DashboardPage() {
                     href="/tasks"
                     className="flex items-center gap-2 rounded-md border border-border bg-background p-2.5 transition-colors hover:border-primary hover:bg-primary/5"
                   >
-                    {/* Priority indicator */}
                     <div className={cn("h-8 w-1 shrink-0 rounded-full", 
                       task.priority === "urgent" ? "bg-danger" : 
                       task.priority === "high" ? "bg-warning" : 
@@ -493,7 +330,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ════ P2: Pending Reports ════ */}
+        {/* ════ Pending Reports ════ */}
         <div className="card">
           <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
