@@ -117,29 +117,32 @@ export function Header() {
         </form>
       </div>
 
-      {/* SECTION 2: Center — Division Badges */}
-      <div className="hidden items-center justify-center gap-1.5 md:flex">
-        {divisions.length > 0 ? (
-          divisions.map((d) => (
-            <span
-              key={d}
-              className={cn(
-                "rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight",
-                DIVISION_BADGE_COLORS[d] || "border-border text-muted"
-              )}
-            >
-              {d}
-            </span>
-          ))
-        ) : (
-          <span className="text-[10px] font-medium text-muted">
-            {profile?.role ? profile.role.replace(/_/g, " ") : "No division"}
-          </span>
-        )}
-      </div>
-
-      {/* SECTION 3: Right — Name → Avatar → Bell */}
+      {/* SECTION 2: Right — Badges → Divider → Name → Avatar → Bell */}
       <div className="flex flex-1 items-center justify-end gap-3">
+        {/* Division Badges */}
+        <div className="hidden items-center gap-1.5 md:flex">
+          {divisions.length > 0 ? (
+            divisions.map((d) => (
+              <span
+                key={d}
+                className={cn(
+                  "rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight",
+                  DIVISION_BADGE_COLORS[d] || "border-border text-muted"
+                )}
+              >
+                {d}
+              </span>
+            ))
+          ) : (
+            <span className="text-[10px] font-medium text-muted">
+              {profile?.role ? profile.role.replace(/_/g, " ") : "No division"}
+            </span>
+          )}
+        </div>
+
+        {/* Vertical Divider */}
+        <div className="hidden h-8 w-px bg-border md:block" />
+
         {/* Profile Name */}
         <div className="hidden text-right sm:block">
           <div className="text-sm font-semibold text-gray-900">
