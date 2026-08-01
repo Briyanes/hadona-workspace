@@ -108,8 +108,18 @@
   .dark .border-border { border-color: #334155 !important; }
   .dark .border-border-hover { border-color: #475569 !important; }
 
-  /* Toggle knob — ensure visible in dark mode */
-  .dark .toggle-knob { background-color: #ffffff !important; }
+  /* Toggle knob — dark on yellow track in dark mode */
+  .dark .toggle-knob { background-color: #0f172a !important; }
+
+  /* === CRITICAL: text-white on bg-primary → text dark in dark mode === */
+  /* bg-primary becomes kuning #FFD60A in dark mode, so white text is unreadable */
+  .dark .bg-primary.text-white {
+    color: #0f172a !important;
+  }
+  /* Also handle cases where text-white is on a child element inside bg-primary */
+  .dark .bg-primary .text-white {
+    color: #0f172a !important;
+  }
 
   /* Dropdown menus dark */
   .dark .dropdown-panel { background-color: #1e293b !important; border-color: #334155 !important; }
