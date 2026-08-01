@@ -35,7 +35,7 @@ CREATE POLICY "notif_insert_own" ON notifications
 
 -- 3. Enable Realtime
 ALTER TABLE notifications REPLICA IDENTITY FULL;
-DO $$
+DO $do_pub$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables
@@ -43,7 +43,7 @@ BEGIN
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
   END IF;
-END $$;
+END $do_pub$;
 
 -- 4. Helper function: create notification (callable via service_role)
 CREATE OR REPLACE FUNCTION create_notification(
@@ -53,76 +53,70 @@ CREATE OR REPLACE FUNCTION create_notification(
   p_body TEXT DEFAULT NULL,
   p_link TEXT DEFAULT NULL,
   p_metadata JSONB DEFAULT '{}'::jsonb
-) RETURNS VOID AS $$
+) RETURNS VOID AS $func$
 BEGIN
   INSERT INTO notifications (user_id, type, title, body, link, metadata)
   VALUES (p_user_id, p_type, p_title, p_body, p_link, p_metadata);
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$func$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. Trigger: auto-create notification when task_assignees row is inserted
--- Note: task_assignees may or may not exist as a junction table yet
--- This trigger works if the junction table exists
-DO $$
+-- 5. Trigger function: auto-create notification when task_assignees row is inserted
+CREATE OR REPLACE FUNCTION notify_task_assigned() RETURNS TRIGGER AS $trigger$
+DECLARE
+  v_task_title TEXT;
+  v_created_by UUID;
+BEGIN
+  SELECT title, created_by INTO v_task_title, v_created_by
+  FROM tasks WHERE id = NEW.task_id;
+  
+  IF NEW.user_id IS NOT NULL AND (v_created_by IS NULL OR NEW.user_id != v_created_by) THEN
+    PERFORM create_notification(
+      NEW.user_id,
+      'task_assigned',
+      'Task Baru Ditugaskan',
+      v_task_title,
+      '/tasks',
+      jsonb_build_object('task_id', NEW.task_id)
+    );
+  END IF;
+  RETURN NEW;
+END;
+$trigger$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger only if task_assignees table exists
+DO $do_trigger$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'task_assignees') THEN
-    DROP FUNCTION IF EXISTS notify_task_assigned() CASCADE;
-    
-    CREATE OR REPLACE FUNCTION notify_task_assigned() RETURNS TRIGGER AS $$
-    DECLARE
-      v_task_title TEXT;
-      v_created_by UUID;
-    BEGIN
-      SELECT title, created_by INTO v_task_title, v_created_by
-      FROM tasks WHERE id = NEW.task_id;
-      
-      IF NEW.assignee_id != v_created_by THEN
-        PERFORM create_notification(
-          NEW.assignee_id,
-          'task_assigned',
-          'Task Baru Ditugaskan',
-          v_task_title,
-          '/tasks',
-          jsonb_build_object('task_id', NEW.task_id)
-        );
-      END IF;
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
-
     DROP TRIGGER IF EXISTS trg_task_assigned ON task_assignees;
-    CREATE TRIGGER trg_task_assigned
-      AFTER INSERT ON task_assignees
-      FOR EACH ROW EXECUTE FUNCTION notify_task_assigned();
+    EXECUTE 'CREATE TRIGGER trg_task_assigned AFTER INSERT ON task_assignees FOR EACH ROW EXECUTE FUNCTION notify_task_assigned()';
   END IF;
-END $$;
+END $do_trigger$;
 
--- 6. Trigger: notification when task status changes to "review" 
-DO $$
+-- 6. Trigger function: notification when task status changes
+CREATE OR REPLACE FUNCTION notify_task_status_change() RETURNS TRIGGER AS $trigger2$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'assignee_id') THEN
-    -- Single-assignee model
-    DROP FUNCTION IF EXISTS notify_task_status_change() CASCADE;
-    
-    CREATE OR REPLACE FUNCTION notify_task_status_change() RETURNS TRIGGER AS $$
-    BEGIN
-      IF OLD.status IS DISTINCT FROM NEW.status AND NEW.assignee_id IS NOT NULL THEN
-        PERFORM create_notification(
-          NEW.assignee_id,
-          'task_updated',
-          'Status Task Diperbarui',
-          NEW.title || ' → ' || NEW.status,
-          '/tasks',
-          jsonb_build_object('task_id', NEW.id, 'status', NEW.status)
-        );
-      END IF;
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-    DROP TRIGGER IF EXISTS trg_task_status ON tasks;
-    CREATE TRIGGER trg_task_status
-      AFTER UPDATE OF status ON tasks
-      FOR EACH ROW EXECUTE FUNCTION notify_task_status_change();
+  IF OLD.status IS DISTINCT FROM NEW.status THEN
+    -- Notify the creator that status changed (if they're not the one changing it)
+    IF NEW.created_by IS NOT NULL AND NEW.created_by != auth.uid() THEN
+      PERFORM create_notification(
+        NEW.created_by,
+        'task_updated',
+        'Status Task Diperbarui',
+        NEW.title || ' → ' || NEW.status,
+        '/tasks',
+        jsonb_build_object('task_id', NEW.id, 'status', NEW.status)
+      );
+    END IF;
   END IF;
-END $$;
+  RETURN NEW;
+END;
+$trigger2$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_task_status ON tasks;
+CREATE TRIGGER trg_task_status
+  AFTER UPDATE OF status ON tasks
+  FOR EACH ROW EXECUTE FUNCTION notify_task_status_change();
+
+-- 7. Grant permissions
+GRANT SELECT, INSERT, UPDATE ON notifications TO authenticated;
+GRANT USAGE ON SEQUENCE notifications_id_seq TO authenticated;
