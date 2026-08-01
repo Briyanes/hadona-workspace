@@ -105,7 +105,7 @@ export function Header() {
           {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
         {/* Search bar (functional) */}
-        <form onSubmit={handleSearch} className="relative w-full max-w-md">
+        <form onSubmit={handleSearch} className="relative w-full max-w-[200px] sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
             type="text"
