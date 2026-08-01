@@ -114,13 +114,13 @@ export default function OnboardingPage() {
     }
 
     // Upsert profile with selected division
+    // Note: role is omitted — DB trigger already set it to 'advertiser' default
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       email: user.email || "",
       full_name: user.user_metadata?.full_name || userName,
       division: selectedDivision,
       avatar_url: user.user_metadata?.avatar_url || null,
-      role: "staff",
       is_active: true,
     } as never, {
       onConflict: "id",
