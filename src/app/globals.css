@@ -56,6 +56,19 @@
   .dark .text-gray-500 { color: #94a3b8 !important; }
   .dark .text-gray-400 { color: #94a3b8 !important; }
 
+  /* bg-gray-* — dark mode */
+  .dark .bg-gray-50 { background-color: #0f172a !important; }
+  .dark .bg-gray-100 { background-color: #1e293b !important; }
+  .dark .bg-gray-200 { background-color: #334155 !important; }
+  .dark .bg-gray-300 { background-color: #475569 !important; }
+
+  /* border-gray-* — dark mode */
+  .dark .border-gray-200 { border-color: #334155 !important; }
+  .dark .border-gray-300 { border-color: #475569 !important; }
+
+  /* divide-gray-* — dark mode */
+  .dark .divide-gray-200 > * + * { border-color: #334155 !important; }
+
   .dark .border-border { border-color: #334155 !important; }
   .dark .border-border-hover { border-color: #475569 !important; }
 
@@ -315,6 +328,11 @@
 .print-header {
   display: none;
 }
+
+/* Print Area — hidden on screen, shown only during print */
+.print-area {
+  display: none;
+}
 @media print {
   .print-header {
     display: block !important;
@@ -322,5 +340,22 @@
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 2px solid #e5e7eb;
+  }
+  /* Show print-only areas */
+  .print-area {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: white;
+    padding: 20px;
+    overflow: visible;
+  }
+  /* Hide everything else when printing an invoice */
+  body.printing > *:not(.print-area) {
+    display: none !important;
+  }
+  .print-area * {
+    visibility: visible;
   }
 }

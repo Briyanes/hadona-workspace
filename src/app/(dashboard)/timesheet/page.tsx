@@ -15,6 +15,8 @@ import {
   Calendar,
 } from "lucide-react";
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
+import { useTimer, formatTimerTime } from "@/hooks/use-timer";
+import { Play, Square, Timer as TimerIcon } from "lucide-react";
 
 interface Timesheet {
   id: string;
@@ -80,9 +82,53 @@ export default function TimesheetPage() {
   const [form, setForm] = useState(emptyForm);
   const [currentUser, setCurrentUser] = useState<string>("");
 
+  // Live Timer
+  const timer = useTimer();
+  const [timerDesc, setTimerDesc] = useState("");
+  const [timerClient, setTimerClient] = useState("");
+  const [timerActivity, setTimerActivity] = useState("general");
+
   useEffect(() => {
     initialLoad();
   }, []);
+
+  async function handleStopTimer() {
+    const totalSeconds = timer.stop();
+    const hours = parseFloat((totalSeconds / 3600).toFixed(2));
+
+    if (hours < 0.01) {
+      toast.info("Timer terlalu singkat (< 1 menit), tidak disimpan.");
+      timer.reset();
+      return;
+    }
+
+    try {
+      const payload = {
+        user_id: currentUser,
+        client_id: timerClient || null,
+        date: new Date().toISOString().split("T")[0],
+        hours,
+        activity_type: timerActivity,
+        description: timerDesc.trim() || "Tracked via timer",
+        billable: !!timerClient,
+        hourly_rate: null,
+      };
+      const { error } = await supabase.from("timesheets").insert(payload as never);
+      if (error) throw error;
+
+      toast.success(`Timer stopped! ${hours}h logged.`);
+      timer.reset();
+      setTimerDesc("");
+      setTimerClient("");
+      setTimerActivity("general");
+      loadEntries();
+    } catch (err) {
+      const msg = extractError(err);
+      toast.error("Gagal menyimpan timer: " + msg);
+      // Re-enable timer so user can retry
+      timer.start({ description: timerDesc, clientId: timerClient, activityType: timerActivity });
+    }
+  }
 
   async function initialLoad() {
     const { data: userData } = await supabase.auth.getUser();
@@ -293,6 +339,102 @@ export default function TimesheetPage() {
         <button onClick={openCreate} className="btn-primary">
           <Plus size={16} /> Log Time
         </button>
+      </div>
+
+      {/* Live Timer Widget */}
+      <div className={cn(
+        "rounded-lg border p-4 transition-colors",
+        timer.isRunning
+          ? "border-success/30 bg-success/5"
+          : "border-border bg-surface"
+      )}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: Timer info */}
+          <div className="flex items-center gap-4">
+            <div className={cn(
+              "flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
+              timer.isRunning
+                ? "bg-success/10 animate-pulse"
+                : "bg-primary/10"
+            )}>
+              <TimerIcon
+                size={24}
+                className={timer.isRunning ? "text-success" : "text-primary"}
+              />
+            </div>
+            <div>
+              <div className="font-mono text-3xl font-bold tabular-nums text-gray-900">
+                {formatTimerTime(timer.elapsed)}
+              </div>
+              <div className="text-xs text-muted">
+                {timer.isRunning
+                  ? "Timer berjalan..."
+                  : "Timer idle — klik Start untuk mulai"}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            {!timer.isRunning ? (
+              <>
+                <select
+                  value={timerClient}
+                  onChange={(e) => setTimerClient(e.target.value)}
+                  className="input w-auto min-w-[140px] text-xs"
+                >
+                  <option value="">— Internal —</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={timerActivity}
+                  onChange={(e) => setTimerActivity(e.target.value)}
+                  className="input w-auto min-w-[120px] text-xs"
+                >
+                  {ACTIVITY_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t.charAt(0).toUpperCase() + t.slice(1).replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Deskripsi..."
+                  value={timerDesc}
+                  onChange={(e) => setTimerDesc(e.target.value)}
+                  className="input w-auto min-w-[150px] text-xs"
+                />
+                <button
+                  onClick={() =>
+                    timer.start({
+                      description: timerDesc,
+                      clientId: timerClient,
+                      activityType: timerActivity,
+                    })
+                  }
+                  className="btn-primary text-xs"
+                >
+                  <Play size={14} /> Start
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="badge bg-success/10 text-success">
+                  {ACTIVITY_TYPES.find((t) => t === timerActivity)?.replace(/_/g, " ") || "general"}
+                </span>
+                <button
+                  onClick={handleStopTimer}
+                  className="btn text-xs"
+                  style={{ background: "#dc2626", color: "white" }}
+                >
+                  <Square size={14} /> Stop & Save
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}

@@ -15,8 +15,10 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Printer,
 } from "lucide-react";
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
+import { PrintableInvoice } from "@/components/invoices/printable-invoice";
 
 interface Invoice {
   id: string;
@@ -87,6 +89,19 @@ export default function InvoicesPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  // Print
+  const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
+
+  function handlePrint(inv: Invoice) {
+    setPrintInvoice(inv);
+    // Wait for DOM to render the printable area, then trigger print
+    setTimeout(() => {
+      window.print();
+      // Clean up after print dialog closes
+      setTimeout(() => setPrintInvoice(null), 500);
+    }, 200);
+  }
 
   useEffect(() => {
     loadInvoices();
@@ -412,6 +427,13 @@ export default function InvoicesPage() {
                           </button>
                         )}
                         <button
+                          onClick={() => handlePrint(inv)}
+                          className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                          title="Print / Save as PDF"
+                        >
+                          <Printer size={14} />
+                        </button>
+                        <button
                           onClick={() => openEdit(inv)}
                           className="rounded p-1.5 text-muted opacity-0 transition-opacity hover:bg-background hover:text-primary group-hover:opacity-100"
                           title="Edit"
@@ -596,6 +618,9 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
+
+      {/* Print Area — hidden on screen, visible only during print */}
+      <PrintableInvoice invoice={printInvoice} />
     </div>
   );
 }
