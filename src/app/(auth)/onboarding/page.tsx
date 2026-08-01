@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const DIVISIONS = [
   {
@@ -138,74 +139,89 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-      <div className="w-full max-w-2xl space-y-6">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-primary to-primary-dark px-4 py-8">
+      {/* Decorative shapes */}
+      <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-hadona-yellow/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-light/5 blur-3xl" />
+
+      <div className="relative z-10 w-full max-w-2xl">
         {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-xl font-bold text-white">
-            H
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
+            <Image
+              src="/logo/logo-hadona.png"
+              alt="Hadona Digital Media"
+              width={48}
+              height={48}
+              className="h-full w-full object-contain"
+              priority
+            />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Selamat Datang di Hadona!</h1>
-          <p className="mt-1 text-sm text-muted">
-            Hai <span className="font-medium text-gray-900">{userName}</span> ({userEmail}),
+          <h1 className="text-2xl font-bold text-white">Selamat Datang di Hadona!</h1>
+          <p className="mt-1 text-sm text-white/70">
+            Hai <span className="font-medium text-white">{userName}</span> ({userEmail}),
             <br />
             pilih divisi Anda untuk mulai berkontribusi
           </p>
         </div>
 
-        {/* Division Grid */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {DIVISIONS.map((div) => (
-            <button
-              key={div.value}
-              onClick={() => setSelectedDivision(div.value)}
-              className={cn(
-                "flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all",
-                selectedDivision === div.value
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                  : "border-border bg-surface hover:border-primary/40 hover:bg-primary/5"
-              )}
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background text-xl">
-                {div.icon}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-900">{div.label}</span>
-                  {selectedDivision === div.value && (
-                    <Check size={14} className="text-primary" />
-                  )}
+        {/* Onboarding Card */}
+        <div className="rounded-2xl bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
+          {/* Division Grid */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {DIVISIONS.map((div) => (
+              <button
+                key={div.value}
+                onClick={() => setSelectedDivision(div.value)}
+                className={cn(
+                  "flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all",
+                  selectedDivision === div.value
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border bg-surface hover:border-primary/40 hover:bg-primary/5"
+                )}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background text-xl">
+                  {div.icon}
                 </div>
-                <p className="mt-0.5 text-xs text-muted">{div.desc}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900">{div.label}</span>
+                    {selectedDivision === div.value && (
+                      <Check size={14} className="text-primary" />
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted">{div.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
 
-        {/* Info note */}
-        <div className="rounded-lg border border-border bg-surface p-3">
-          <p className="text-xs text-muted">
-            💡 <span className="font-medium">Catatan:</span> Divisi menentukan scope task yang akan
-            Anda terima. Project Manager dapat assign task spesifik ke divisi Anda. Admin dapat
-            mengubah divisi Anda kapan saja melalui User Management.
-          </p>
-        </div>
+          {/* Info note */}
+          <div className="mt-5 rounded-lg border border-border bg-surface p-3">
+            <p className="text-xs text-muted">
+              💡 <span className="font-medium">Catatan:</span> Divisi menentukan scope task yang akan
+              Anda terima. Project Manager dapat assign task spesifik ke divisi Anda. Admin dapat
+              mengubah divisi Anda kapan saja melalui User Management.
+            </p>
+          </div>
 
-        {/* Submit Button */}
-        <button
-          onClick={handleSave}
-          disabled={!selectedDivision || saving}
-          className="btn-primary flex w-full items-center justify-center gap-2"
-        >
-          {saving ? (
-            "Menyimpan..."
-          ) : (
-            <>
-              Mulai dengan Divisi Ini
-              <ArrowRight size={16} />
-            </>
-          )}
-        </button>
+          {/* Submit Button */}
+          <button
+            onClick={handleSave}
+            disabled={!selectedDivision || saving}
+            className="btn-primary mt-5 flex w-full items-center justify-center gap-2"
+          >
+            {saving ? (
+              "Menyimpan..."
+            ) : (
+              <>
+                Mulai dengan Divisi Ini
+                <ArrowRight size={16} />
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
