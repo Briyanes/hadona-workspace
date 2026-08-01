@@ -16,14 +16,14 @@ const config: Config = {
         border: "#E5E7EB",
         "border-hover": "#CBD5E1",
         primary: {
-          DEFAULT: "#2B46BB",
-          foreground: "#FFFFFF",
-          dark: "#1E3190",
-          light: "#4A6AE8",
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          foreground: "rgb(var(--color-primary-foreground) / <alpha-value>)",
+          dark: "rgb(var(--color-primary-dark) / <alpha-value>)",
+          light: "rgb(var(--color-primary-light) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "#4A6AE8",
-          foreground: "#FFFFFF",
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          foreground: "rgb(var(--color-accent-foreground) / <alpha-value>)",
         },
         hadona: {
           yellow: "#FFD60A",

@@ -6,15 +6,38 @@
   :root {
     --font-inter: "Inter", system-ui, sans-serif;
     --font-jetbrains: "JetBrains Mono", monospace;
+
+    /* Primary color — RGB space-separated for Tailwind opacity support */
+    --color-primary: 43 70 187;           /* #2B46BB biru Hadona */
+    --color-primary-foreground: 255 255 255;
+    --color-primary-dark: 30 49 144;      /* #1E3190 */
+    --color-primary-light: 74 106 232;    /* #4A6AE8 */
+
+    /* Accent color */
+    --color-accent: 74 106 232;           /* #4A6AE8 */
+    --color-accent-foreground: 255 255 255;
+
+    /* Legacy vars (backwards compat) */
     --hadona-primary: #2b46bb;
     --hadona-dark: #1e3190;
     --hadona-light: #4a6ae8;
+
     color-scheme: light;
   }
 
   /* === DARK MODE OVERRIDES === */
   .dark {
     color-scheme: dark;
+
+    /* Primary → Kuning Hadona di dark mode */
+    --color-primary: 255 214 10;          /* #FFD60A kuning Hadona */
+    --color-primary-foreground: 15 23 42; /* text gelap di atas kuning */
+    --color-primary-dark: 230 190 0;      /* #E6BE00 */
+    --color-primary-light: 255 228 92;    /* #FFE45C */
+
+    /* Accent → amber emas */
+    --color-accent: 245 200 20;           /* #F5C814 */
+    --color-accent-foreground: 15 23 42;
   }
   .dark body {
     background-color: #0f172a !important;
@@ -38,13 +61,13 @@
   .dark .bg-background\/60 { background-color: rgba(15, 23, 42, 0.6) !important; }
 
   /* Notification icon circle backgrounds — dark mode */
-  .dark .bg-primary\/15 { background-color: rgba(59, 130, 246, 0.15) !important; }
+  /* NOTE: bg-primary/15 now auto-resolved via CSS variable — no hardcode needed */
   .dark .bg-success\/15 { background-color: rgba(34, 197, 94, 0.15) !important; }
   .dark .bg-accent\/15 { background-color: rgba(168, 85, 247, 0.15) !important; }
   .dark .bg-warning\/15 { background-color: rgba(245, 158, 11, 0.15) !important; }
 
   /* Notification unread background — dark mode */
-  .dark .bg-primary\/\[0\.03\] { background-color: rgba(59, 130, 246, 0.08) !important; }
+  /* NOTE: bg-primary/[0.03] now auto-resolved via CSS variable */
 
   /* Notification badge backgrounds — dark mode */
   .dark .bg-danger\/15 { background-color: rgba(239, 68, 68, 0.15) !important; }
@@ -65,7 +88,7 @@
 
   /* Hover text colors — dark mode */
   .dark .hover\:text-gray-900:hover { color: #f1f5f9 !important; }
-  .dark .hover\:text-primary:hover { color: #4a6ae8 !important; }
+  /* hover:text-primary now auto-resolved via CSS variable — kuning in dark mode */
   .dark .hover\:text-danger:hover { color: #ef4444 !important; }
   .dark .hover\:text-success:hover { color: #10b981 !important; }
 
@@ -102,7 +125,7 @@
   .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
   /* Selection dark */
-  .dark ::selection { background-color: #2B46BB; color: #ffffff; }
+  .dark ::selection { background-color: #FFD60A; color: #0f172a; }
 
   * {
     border-color: theme("colors.border");
@@ -192,6 +215,10 @@
   .btn-primary {
     @apply btn gradient-primary text-white hover:opacity-90 active:scale-[0.98] shadow-sm;
   }
+  /* Dark mode: btn-primary text harus gelap (di atas gradient kuning) */
+  .dark .btn-primary {
+    color: #0f172a !important;
+  }
   .btn-secondary {
     @apply btn border border-border bg-white text-gray-700 hover:bg-surface-hover active:scale-[0.98] shadow-sm;
   }
@@ -253,7 +280,7 @@
   }
 
   select.input:focus {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232B46BB' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFD60A' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
   }
 
   /* Disable default IE arrow */
@@ -274,6 +301,10 @@
   /* Kuning Hadona untuk hover — kontras tinggi & on-brand */
   .sidebar-link-active {
     @apply bg-primary text-white shadow-sm hover:bg-primary-dark hover:text-white;
+  }
+  /* Dark mode: sidebar active jadi kuning bg, text gelap */
+  .dark .sidebar-link-active {
+    @apply bg-[#FFD60A] text-[#0f172a] hover:bg-[#E6BE00] hover:text-[#0f172a];
   }
 }
 
