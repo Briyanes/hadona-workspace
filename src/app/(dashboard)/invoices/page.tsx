@@ -296,7 +296,7 @@ export default function InvoicesPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Invoices</h1>
         <div className="skeleton h-64 rounded-lg" />
       </div>
     );
@@ -304,9 +304,9 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Invoices</h1>
           <p className="text-sm text-muted">Kelola tagihan & pembayaran client</p>
         </div>
         <button onClick={openCreate} className="btn-primary">

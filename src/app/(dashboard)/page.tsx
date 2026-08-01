@@ -126,7 +126,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="card skeleton h-32" />
@@ -181,7 +181,7 @@ export default function DashboardPage() {
       {/* Header with greeting */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
             {greeting}{currentUserName ? `, ${currentUserName.split(" ")[0]}` : ""}!
           </h1>
           <p className="text-sm text-muted">

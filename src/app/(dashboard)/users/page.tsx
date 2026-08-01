@@ -212,7 +212,7 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">User Management</h1>
           <p className="text-sm text-muted">Kelola tim, role, dan status akun</p>
         </div>
         <div className="flex items-center gap-2">

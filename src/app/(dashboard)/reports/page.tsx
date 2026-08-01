@@ -858,12 +858,12 @@ export default function ReportsPage() {
         })}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-1 border-b border-border">
+      {/* Tab Navigation - Scrollable Carousel */}
+      <div className="flex gap-1 overflow-x-auto border-b border-border pb-px [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           onClick={() => setActiveTab("list")}
           className={cn(
-            "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "list"
               ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-transparent text-muted hover:text-gray-700"
@@ -874,7 +874,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setActiveTab("compare")}
           className={cn(
-            "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "compare"
               ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-transparent text-muted hover:text-gray-700"
@@ -885,7 +885,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setActiveTab("automation")}
           className={cn(
-            "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "automation"
               ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-transparent text-muted hover:text-gray-700"

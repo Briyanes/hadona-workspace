@@ -19,12 +19,12 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Settings</h1>
         <p className="text-sm text-muted">Kelola akun, preferensi, dan workspace</p>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-1 border-b border-border">
+      {/* Tab Navigation - Scrollable Carousel */}
+      <div className="flex gap-1 overflow-x-auto border-b border-border pb-px [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = pathname === tab.href;
@@ -33,7 +33,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                "flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
                   : "border-transparent text-muted hover:text-gray-900 dark:hover:text-[#FFD60A]"

@@ -229,7 +229,7 @@ export default function ClientDetailPage() {
 
       {/* Header */}
       <div className="card">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
             {client.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -240,8 +240,8 @@ export default function ClientDetailPage() {
               </div>
             )}
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{client.name}</h1>
                 <span className={cn("badge", statusColors[client.status] || statusColors.inactive)}>
                   {client.status}
                 </span>
@@ -355,8 +355,8 @@ export default function ClientDetailPage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      {/* Tabs - Scrollable Carousel */}
+      <div className="flex gap-1 overflow-x-auto border-b border-border pb-px [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((t) => {
           const Icon = t.icon;
           return (
@@ -364,7 +364,7 @@ export default function ClientDetailPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                "flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
                 tab === t.id
                   ? "border-primary text-gray-900"
                   : "border-transparent text-muted hover:text-gray-900"
