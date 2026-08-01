@@ -86,7 +86,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur">
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* SECTION 1: Left — Sidebar toggle + Search */}
+      <div className="flex flex-1 items-center gap-2 sm:gap-3">
         {/* Mobile: Hamburger menu */}
         <button
           onClick={openMobile}
@@ -116,116 +117,117 @@ export function Header() {
         </form>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Notification Bell */}
-        <NotificationBell />
-
-        {/* Branding: Name + Division Badges */}
-        <div className="flex items-center gap-2.5">
-          <div className="hidden text-right sm:block">
-            <div className="text-sm font-semibold text-gray-900">
-              {profile?.full_name || "User"}
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-1">
-              {divisions.length > 0 ? (
-                divisions.map((d) => (
-                  <span
-                    key={d}
-                    className={cn(
-                      "rounded-full border bg-surface px-1.5 py-0 text-[10px] font-medium leading-tight",
-                      DIVISION_BADGE_COLORS[d] || "border-border text-muted"
-                    )}
-                  >
-                    {d}
-                  </span>
-                ))
-              ) : (
-                <span className="text-[10px] text-muted">
-                  {profile?.role ? profile.role.replace(/_/g, " ") : "No division"}
-                </span>
+      {/* SECTION 2: Center — Division Badges */}
+      <div className="hidden items-center justify-center gap-1.5 md:flex">
+        {divisions.length > 0 ? (
+          divisions.map((d) => (
+            <span
+              key={d}
+              className={cn(
+                "rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight",
+                DIVISION_BADGE_COLORS[d] || "border-border text-muted"
               )}
-            </div>
-          </div>
-
-          {/* Clickable Avatar with Dropdown */}
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-1 rounded-full transition-transform hover:scale-105 active:scale-95"
-              title="Profile menu"
             >
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt="Avatar"
-                  className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
-                />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border">
-                  {profile?.full_name?.charAt(0).toUpperCase() || "?"}
-                </div>
-              )}
-              <ChevronDown
-                size={14}
-                className={cn(
-                  "text-muted transition-transform duration-200",
-                  menuOpen && "rotate-180"
-                )}
-              />
-            </button>
+              {d}
+            </span>
+          ))
+        ) : (
+          <span className="text-[10px] font-medium text-muted">
+            {profile?.role ? profile.role.replace(/_/g, " ") : "No division"}
+          </span>
+        )}
+      </div>
 
-            {/* Dropdown Menu */}
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-white shadow-lg dropdown-panel">
-                {/* User Info Header */}
-                <div className="border-b border-border px-4 py-3">
-                  <p className="truncate text-sm font-semibold text-gray-900">
-                    {profile?.full_name || "User"}
-                  </p>
-                  <p className="truncate text-xs text-muted">
-                    {profile?.email || ""}
-                  </p>
-                </div>
-
-                {/* Menu Items */}
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/settings/profile");
-                    }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
-                  >
-                    <User size={15} className="text-muted" />
-                    My Profile
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/settings");
-                    }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
-                  >
-                    <Settings size={15} className="text-muted" />
-                    Settings
-                  </button>
-                </div>
-
-                {/* Divider + Logout */}
-                <div className="border-t border-border py-1">
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-danger transition-colors hover:bg-danger/5"
-                  >
-                    <LogOut size={15} />
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* SECTION 3: Right — Name → Avatar → Bell */}
+      <div className="flex flex-1 items-center justify-end gap-3">
+        {/* Profile Name */}
+        <div className="hidden text-right sm:block">
+          <div className="text-sm font-semibold text-gray-900">
+            {profile?.full_name || "User"}
           </div>
         </div>
+
+        {/* Clickable Avatar with Dropdown */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="flex items-center gap-1 rounded-full transition-transform hover:scale-105 active:scale-95"
+            title="Profile menu"
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border">
+                {profile?.full_name?.charAt(0).toUpperCase() || "?"}
+              </div>
+            )}
+            <ChevronDown
+              size={14}
+              className={cn(
+                "text-muted transition-transform duration-200",
+                menuOpen && "rotate-180"
+              )}
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-white shadow-lg dropdown-panel">
+              {/* User Info Header */}
+              <div className="border-b border-border px-4 py-3">
+                <p className="truncate text-sm font-semibold text-gray-900">
+                  {profile?.full_name || "User"}
+                </p>
+                <p className="truncate text-xs text-muted">
+                  {profile?.email || ""}
+                </p>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/settings/profile");
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
+                >
+                  <User size={15} className="text-muted" />
+                  My Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
+                >
+                  <Settings size={15} className="text-muted" />
+                  Settings
+                </button>
+              </div>
+
+              {/* Divider + Logout */}
+              <div className="border-t border-border py-1">
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-danger transition-colors hover:bg-danger/5"
+                >
+                  <LogOut size={15} />
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Notification Bell */}
+        <NotificationBell />
       </div>
     </header>
   );
