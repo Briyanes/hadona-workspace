@@ -15,6 +15,9 @@ import {
   Plus,
   Clock,
   AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  FileText,
 } from "lucide-react";
 import { formatDate, timeUntil, getInitials, cn } from "@/lib/utils";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -30,6 +33,10 @@ interface Task {
   due_date: string | null;
   start_date: string | null;
   notes: string | null;
+  approval_status: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  approval_note: string | null;
   client?: { name: string };
   task_assignees?: { user_id: string; user: { full_name: string } }[];
 }
@@ -123,6 +130,10 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
   const [activeTab, setActiveTab] = useState<"comments" | "subtasks">("comments");
 
+  // Approval workflow state
+  const [approvalNote, setApprovalNote] = useState("");
+  const [approving, setApproving] = useState(false);
+
   useEffect(() => {
     loadTask();
     loadComments();
@@ -157,7 +168,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     setLoading(true);
     const { data, error } = await supabase
       .from("tasks")
-      .select(`id, title, description, result, status, priority, division, due_date, start_date, notes, client:clients(name), task_assignees(user_id, user:profiles(full_name))`)
+      .select(`id, title, description, result, status, priority, division, due_date, start_date, notes, approval_status, approved_by, approved_at, approval_note, client:clients(name), task_assignees(user_id, user:profiles(full_name))`)
       .eq("id", taskId)
       .single();
 
@@ -324,6 +335,34 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       return;
     }
     loadSubtasks();
+  }
+
+  async function handleApproval(action: "approved" | "rejected" | "changes_requested") {
+    if (!currentUserId) return;
+    setApproving(true);
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        approval_status: action,
+        approved_by: currentUserId,
+        approved_at: new Date().toISOString(),
+        approval_note: approvalNote.trim() || null,
+      } as never)
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Gagal update approval: " + error.message);
+    } else {
+      toast.success(
+        action === "approved" ? "Task approved!" :
+        action === "rejected" ? "Task ditolak" :
+        "Changes requested"
+      );
+      setApprovalNote("");
+      loadTask();
+      onUpdated();
+    }
+    setApproving(false);
   }
 
   const today = new Date().toISOString().split("T")[0];
@@ -541,6 +580,80 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     <div className="rounded-lg border border-border bg-background p-3">
                       <p className="mb-1 text-xs font-semibold text-muted">Notes</p>
                       <p className="text-sm text-gray-700">{task.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Approval Workflow Section */}
+              {task.status === "review" && (
+                <div className="rounded-lg border-2 border-accent/40 bg-accent/5 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <FileText size={16} className="text-accent" />
+                    <h4 className="text-sm font-semibold text-gray-900">Approval Workflow</h4>
+                    {task.approval_status && task.approval_status !== "pending" && (
+                      <span className={cn(
+                        "ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                        task.approval_status === "approved" && "bg-success/20 text-success",
+                        task.approval_status === "rejected" && "bg-danger/20 text-danger",
+                        task.approval_status === "changes_requested" && "bg-warning/20 text-warning"
+                      )}>
+                        {task.approval_status === "approved" && <CheckCircle2 size={11} />}
+                        {task.approval_status === "rejected" && <XCircle size={11} />}
+                        {task.approval_status?.replace("_", " ")}
+                      </span>
+                    )}
+                  </div>
+
+                  {task.approval_status === "approved" ? (
+                    <p className="text-sm text-muted">
+                      ✅ Task ini sudah di-approve
+                      {task.approved_at && ` pada ${formatDate(task.approved_at, { day: "numeric", month: "short", year: "numeric" })}`}
+                    </p>
+                  ) : task.approval_status === "rejected" ? (
+                    <p className="text-sm text-danger">❌ Task ditolak. Silakan revisi dan resubmit.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-medium text-muted">Catatan / Feedback (opsional)</label>
+                        <textarea
+                          rows={2}
+                          value={approvalNote}
+                          onChange={(e) => setApprovalNote(e.target.value)}
+                          placeholder="Tulis catatan untuk approver..."
+                          className="input resize-none text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleApproval("approved")}
+                          disabled={approving}
+                          className="flex items-center gap-1.5 rounded-md bg-success px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-success/90 disabled:opacity-50"
+                        >
+                          <CheckCircle2 size={14} /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleApproval("changes_requested")}
+                          disabled={approving}
+                          className="flex items-center gap-1.5 rounded-md bg-warning px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-warning/90 disabled:opacity-50"
+                        >
+                          <AlertTriangle size={14} /> Request Changes
+                        </button>
+                        <button
+                          onClick={() => handleApproval("rejected")}
+                          disabled={approving}
+                          className="flex items-center gap-1.5 rounded-md bg-danger px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
+                        >
+                          <XCircle size={14} /> Reject
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {task.approval_note && (
+                    <div className="mt-3 rounded-md border border-border bg-background p-2">
+                      <p className="text-xs text-muted">Approval Note:</p>
+                      <p className="mt-0.5 text-sm text-gray-700">{task.approval_note}</p>
                     </div>
                   )}
                 </div>
