@@ -133,7 +133,7 @@ export function AssigneePicker({
           className={cn(
             "inline-flex items-center gap-1 rounded-full border border-dashed px-2.5 py-1 text-xs font-medium transition-colors",
             open
-              ? "border-primary text-primary"
+              ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-border text-muted hover:border-primary hover:text-primary"
           )}
         >

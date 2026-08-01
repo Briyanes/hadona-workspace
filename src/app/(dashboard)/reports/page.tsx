@@ -865,7 +865,7 @@ export default function ReportsPage() {
           className={cn(
             "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "list"
-              ? "border-primary text-primary"
+              ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-transparent text-muted hover:text-gray-700"
           )}
         >
@@ -876,7 +876,7 @@ export default function ReportsPage() {
           className={cn(
             "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "compare"
-              ? "border-primary text-primary"
+              ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-transparent text-muted hover:text-gray-700"
           )}
         >
@@ -887,7 +887,7 @@ export default function ReportsPage() {
           className={cn(
             "flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "automation"
-              ? "border-primary text-primary"
+              ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
               : "border-transparent text-muted hover:text-gray-700"
           )}
         >

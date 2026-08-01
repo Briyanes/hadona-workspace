@@ -738,19 +738,19 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <div className="mb-3 flex gap-1 border-b border-border">
                   <button
                     onClick={() => setActiveTab("comments")}
-                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "comments" ? "border-primary text-primary" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "comments" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
                   >
                     <MessageCircle size={14} /> Comments ({comments.length})
                   </button>
                   <button
                     onClick={() => setActiveTab("subtasks")}
-                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "subtasks" ? "border-primary text-primary" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "subtasks" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
                   >
                     <CheckSquare size={14} /> Subtasks ({subtasks.length})
                   </button>
                   <button
                     onClick={() => setActiveTab("timelog")}
-                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "timelog" ? "border-primary text-primary" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "timelog" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
                   >
                     <Clock size={14} /> Time ({totalLoggedHours.toFixed(1)}h)
                   </button>
