@@ -20,7 +20,7 @@ export interface Database {
           email: string;
           full_name: string;
           role: string;
-          division: string | null;
+          division: string[] | null;
           avatar_url: string | null;
           phone: string | null;
           is_active: boolean;
@@ -31,7 +31,7 @@ export interface Database {
           email: string;
           full_name: string;
           role?: string;
-          division?: string | null;
+          division?: string[] | null;
           avatar_url?: string | null;
           phone?: string | null;
           is_active?: boolean;
@@ -40,7 +40,7 @@ export interface Database {
           email?: string;
           full_name?: string;
           role?: string;
-          division?: string | null;
+          division?: string[] | null;
           avatar_url?: string | null;
           phone?: string | null;
           is_active?: boolean;

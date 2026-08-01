@@ -54,7 +54,7 @@ export default function UsersPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRole, setEditRole] = useState<string>("");
-  const [editDivision, setEditDivision] = useState<string>("");
+  const [editDivisions, setEditDivisions] = useState<string[]>([]);
   const [editActive, setEditActive] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
 
@@ -81,11 +81,17 @@ export default function UsersPage() {
     setLoading(false);
   };
 
+  function toggleEditDivision(value: string) {
+    setEditDivisions((prev) =>
+      prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]
+    );
+  }
+
   const handleSave = async (userId: string) => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ role: editRole, division: editDivision || null, is_active: editActive } as never)
+      .update({ role: editRole, division: editDivisions.length > 0 ? editDivisions : null, is_active: editActive } as never)
       .eq("id", userId);
 
     if (error) {
@@ -95,7 +101,7 @@ export default function UsersPage() {
       setUsers(
         users.map((u) =>
           u.id === userId
-            ? { ...u, role: editRole, division: editDivision || null, is_active: editActive }
+            ? { ...u, role: editRole, division: editDivisions.length > 0 ? editDivisions : null, is_active: editActive }
             : u
         )
       );
@@ -107,7 +113,7 @@ export default function UsersPage() {
   const startEdit = (user: Profile) => {
     setEditingId(user.id);
     setEditRole(user.role);
-    setEditDivision(user.division || "");
+    setEditDivisions(user.division || []);
     setEditActive(user.is_active);
   };
 
@@ -117,7 +123,7 @@ export default function UsersPage() {
       u.email.toLowerCase().includes(search.toLowerCase());
     const matchRole = filterRole === "all" || u.role === filterRole;
     const matchDivision =
-      filterDivision === "all" || u.division === filterDivision;
+      filterDivision === "all" || (u.division && u.division.includes(filterDivision));
     return matchSearch && matchRole && matchDivision;
   });
 
@@ -152,7 +158,7 @@ export default function UsersPage() {
         <div className="card p-4">
           <p className="text-xs text-muted">Not Onboarded</p>
           <p className="text-2xl font-bold text-danger">
-            {users.filter((u) => !u.division).length}
+            {users.filter((u) => !u.division || u.division.length === 0).length}
           </p>
         </div>
       </div>
@@ -162,7 +168,7 @@ export default function UsersPage() {
         <p className="mb-2 text-xs font-medium text-muted">Distribusi Divisi</p>
         <div className="flex flex-wrap gap-2">
           {DIVISIONS.map((div) => {
-            const count = users.filter((u) => u.division === div).length;
+            const count = users.filter((u) => u.division && u.division.includes(div)).length;
             return (
               <span
                 key={div}
@@ -259,28 +265,46 @@ export default function UsersPage() {
                   {/* Division */}
                   <td className="px-4 py-3">
                     {editingId === user.id ? (
-                      <select
-                        value={editDivision}
-                        onChange={(e) => setEditDivision(e.target.value)}
-                        className="input py-1 text-xs"
-                      >
-                        <option value="">— Belum dipilih —</option>
-                        {DIVISIONS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex flex-col gap-1 min-w-[160px]">
+                        <div className="flex flex-wrap gap-1">
+                          {DIVISIONS.map((d) => {
+                            const checked = editDivisions.includes(d);
+                            return (
+                              <button
+                                key={d}
+                                type="button"
+                                onClick={() => toggleEditDivision(d)}
+                                className={cn(
+                                  "rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors",
+                                  checked
+                                    ? DIVISION_COLORS[d] || "bg-primary/15 text-primary"
+                                    : "bg-muted/10 text-muted hover:bg-muted/20"
+                                )}
+                              >
+                                {checked ? "✓ " : ""}{d}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {editDivisions.length === 0 && (
+                          <span className="text-[10px] text-danger">Pilih minimal 1</span>
+                        )}
+                      </div>
                     ) : (
-                      user.division ? (
-                        <span
-                          className={cn(
-                            "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
-                            DIVISION_COLORS[user.division] || "bg-muted/20 text-muted"
-                          )}
-                        >
-                          {user.division}
-                        </span>
+                      user.division && user.division.length > 0 ? (
+                        <div className="flex flex-wrap gap-0.5">
+                          {user.division.map((d) => (
+                            <span
+                              key={d}
+                              className={cn(
+                                "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                DIVISION_COLORS[d] || "bg-muted/20 text-muted"
+                              )}
+                            >
+                              {d}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-xs text-danger">⚠ Belum onboarded</span>
                       )

@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
       .eq("is_active", true);
 
     if (divisionFilter) {
-      query = query.eq("division", divisionFilter);
+      // division is now TEXT[] — use "cs" (contains) operator
+      query = query.filter("division", "cs", `{${divisionFilter}}`);
     }
 
     const { data, error } = await query.order("full_name");

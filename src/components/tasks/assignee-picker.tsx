@@ -9,7 +9,7 @@ interface User {
   id: string;
   full_name: string;
   role: string;
-  division: string | null;
+  division: string[] | null;
 }
 
 interface AssigneePickerProps {
@@ -58,9 +58,10 @@ export function AssigneePicker({
       .select("id, full_name, role, division")
       .eq("is_active", true);
 
-    // If division filter is set, only load users from that division
+    // If division filter is set, only load users who belong to that division
+    // division is TEXT[] — use "cs" (contains) operator
     if (divisionFilter) {
-      query = query.eq("division", divisionFilter);
+      query = query.filter("division", "cs", `{${divisionFilter}}`);
     }
 
     const { data } = await query.order("full_name", { ascending: true });
@@ -206,10 +207,14 @@ export function AssigneePicker({
                       <p className="font-medium text-gray-900">{u.full_name}</p>
                       <div className="flex items-center gap-1.5">
                         <p className="text-[10px] text-muted">{u.role.replace(/_/g, " ")}</p>
-                        {u.division && (
-                          <span className="rounded bg-primary/10 px-1 text-[9px] text-primary">
-                            {u.division}
-                          </span>
+                        {u.division && u.division.length > 0 && (
+                          <div className="flex flex-wrap gap-0.5">
+                            {u.division.map((d) => (
+                              <span key={d} className="rounded bg-primary/10 px-1 text-[9px] text-primary">
+                                {d}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>

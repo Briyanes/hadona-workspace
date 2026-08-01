@@ -29,7 +29,7 @@ export interface Profile {
   email: string;
   full_name: string;
   role: UserRole;
-  division: Division;
+  division: Division[] | null;
   avatar_url: string | null;
   phone: string | null;
   is_active: boolean;

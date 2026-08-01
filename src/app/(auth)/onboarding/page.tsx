@@ -62,7 +62,7 @@ const DIVISIONS = [
 export default function OnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [selectedDivision, setSelectedDivision] = useState<string | null>(null);
+  const [selectedDivisions, setSelectedDivisions] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -86,9 +86,9 @@ export default function OnboardingPage() {
         .eq("id", user.id)
         .single();
 
-      const profile = profileRaw as unknown as { division: string | null } | null;
+      const profile = profileRaw as unknown as { division: string[] | null } | null;
 
-      if (profile?.division) {
+      if (profile?.division && profile.division.length > 0) {
         router.push("/");
       }
     };
@@ -96,9 +96,15 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function toggleDivision(value: string) {
+    setSelectedDivisions((prev) =>
+      prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]
+    );
+  }
+
   const handleSave = async () => {
-    if (!selectedDivision) {
-      toast.error("Silakan pilih divisi Anda");
+    if (selectedDivisions.length === 0) {
+      toast.error("Silakan pilih minimal 1 divisi");
       return;
     }
 
@@ -113,13 +119,13 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Upsert profile with selected division
+    // Upsert profile with selected divisions (array)
     // Note: role is omitted — DB trigger already set it to 'advertiser' default
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       email: user.email || "",
       full_name: user.user_metadata?.full_name || userName,
-      division: selectedDivision,
+      division: selectedDivisions,
       avatar_url: user.user_metadata?.avatar_url || null,
       is_active: true,
     } as never, {
@@ -132,7 +138,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    toast.success(`Selamat datang! Anda terdaftar sebagai ${selectedDivision}`);
+    toast.success(`Selamat datang! Anda terdaftar di ${selectedDivisions.length} divisi`);
     setSaving(false);
     router.push("/");
     router.refresh();
@@ -164,40 +170,58 @@ export default function OnboardingPage() {
             <br />
             pilih divisi Anda untuk mulai berkontribusi
           </p>
+          <p className="mt-0.5 text-xs text-white/50">
+            Anda bisa memilih lebih dari 1 divisi
+          </p>
         </div>
 
         {/* Onboarding Card */}
         <div className="rounded-2xl bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
           {/* Division Grid */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {DIVISIONS.map((div) => (
-              <button
-                key={div.value}
-                onClick={() => setSelectedDivision(div.value)}
-                className={cn(
-                  "flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all",
-                  selectedDivision === div.value
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-border bg-surface hover:border-primary/40 hover:bg-primary/5"
-                )}
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background text-xl">
-                  {div.icon}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900">{div.label}</span>
-                    {selectedDivision === div.value && (
-                      <Check size={14} className="text-primary" />
-                    )}
+            {DIVISIONS.map((div) => {
+              const isSelected = selectedDivisions.includes(div.value);
+              return (
+                <button
+                  key={div.value}
+                  onClick={() => toggleDivision(div.value)}
+                  className={cn(
+                    "flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-all",
+                    isSelected
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border bg-surface hover:border-primary/40 hover:bg-primary/5"
+                  )}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-background text-xl">
+                    {div.icon}
                   </div>
-                  <p className="mt-0.5 text-xs text-muted">{div.desc}</p>
-                </div>
-              </button>
-            ))}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900">{div.label}</span>
+                      {isSelected && (
+                        <Check size={14} className="text-primary" />
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted">{div.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Info note */}
+          {/* Selected counter */}
+          {selectedDivisions.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {selectedDivisions.map((d) => (
+                <span key={d} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                  <Check size={12} />
+                  {d}
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="mt-5 rounded-lg border border-border bg-surface p-3">
             <p className="text-xs text-muted">
               💡 <span className="font-medium">Catatan:</span> Divisi menentukan scope task yang akan
@@ -209,14 +233,16 @@ export default function OnboardingPage() {
           {/* Submit Button */}
           <button
             onClick={handleSave}
-            disabled={!selectedDivision || saving}
+            disabled={selectedDivisions.length === 0 || saving}
             className="btn-primary mt-5 flex w-full items-center justify-center gap-2"
           >
             {saving ? (
               "Menyimpan..."
             ) : (
               <>
-                Mulai dengan Divisi Ini
+                {selectedDivisions.length > 0
+                  ? `Mulai (${selectedDivisions.length} Divisi Terpilih)`
+                  : "Pilih minimal 1 divisi"}
                 <ArrowRight size={16} />
               </>
             )}

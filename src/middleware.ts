@@ -81,7 +81,7 @@ export async function updateSession(request: NextRequest) {
         .eq("id", user.id)
         .single();
 
-      if (profile && !profile.division) {
+      if (profile && (!profile.division || (Array.isArray(profile.division) && profile.division.length === 0))) {
         const url = new URL("/onboarding", request.url);
         return NextResponse.redirect(url);
       }
