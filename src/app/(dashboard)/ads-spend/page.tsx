@@ -1164,16 +1164,17 @@ export default function AdsSpendPage() {
           <div className="flex gap-2">
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
-            title="Import ad accounts dari Google Sheet"
+            className="flex items-center justify-center rounded-md border border-border bg-surface px-2.5 py-2 text-gray-700 transition-colors hover:bg-background"
+            title="Import Sheet"
           >
-            <Download size={14} className="rotate-180" /> Import Sheet
+            <Download size={14} className="rotate-180" />
           </button>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+            className="flex items-center justify-center rounded-md border border-border bg-surface px-2.5 py-2 text-gray-700 transition-colors hover:bg-background"
+            title="Export"
           >
-            <Download size={14} /> Export
+            <Download size={14} />
           </button>
           <button onClick={openCreate} className="btn-primary">
             <Plus size={16} /> New Ad Account
