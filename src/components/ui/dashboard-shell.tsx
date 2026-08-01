@@ -13,7 +13,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <div
         className={
           isCollapsed
-            ? "lg:ml-[60px] transition-all duration-200"
+            ? "lg:ml-16 transition-all duration-200"
             : "lg:ml-60 transition-all duration-200"
         }
       >

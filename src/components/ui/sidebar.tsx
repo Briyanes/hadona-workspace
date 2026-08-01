@@ -68,6 +68,8 @@ export function Sidebar() {
     checkRole();
   }, [supabase]);
 
+  const iconSize = isCollapsed ? 20 : 18;
+
   return (
     <>
       {/* Mobile Backdrop Overlay */}
@@ -81,8 +83,8 @@ export function Sidebar() {
       <aside
         className={cn(
           "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-white transition-all duration-200",
-          // Desktop: collapse to 60px or expand to 240px
-          isCollapsed ? "w-[60px]" : "w-60",
+          // Desktop: collapse to 64px or expand to 240px
+          isCollapsed ? "w-16" : "w-60",
           // Mobile: off-screen by default, slides in when open (below lg breakpoint)
           "lg:transition-all",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -99,9 +101,9 @@ export function Sidebar() {
           <Image
             src="/logo/logo-hadona.png"
             alt="Hadona Digital Media"
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 rounded-lg object-cover"
             priority
           />
           {!isCollapsed && (
@@ -113,10 +115,17 @@ export function Sidebar() {
         </div>
 
         {/* Zone 2: Navigation (scrollable) */}
-        <nav className={cn("flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3", isCollapsed && "space-y-2")}>
+        <nav
+          className={cn(
+            "flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3",
+            isCollapsed && "space-y-2"
+          )}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}
@@ -129,7 +138,7 @@ export function Sidebar() {
                   isCollapsed && "justify-center px-0 py-2.5"
                 )}
               >
-                <Icon size={16} className="shrink-0" />
+                <Icon size={iconSize} className="shrink-0" />
                 {!isCollapsed && item.label}
               </Link>
             );
@@ -158,7 +167,7 @@ export function Sidebar() {
                       isCollapsed && "justify-center px-0 py-2.5"
                     )}
                   >
-                    <Icon size={16} className="shrink-0" />
+                    <Icon size={iconSize} className="shrink-0" />
                     {!isCollapsed && item.label}
                   </Link>
                 );
@@ -179,7 +188,7 @@ export function Sidebar() {
               isCollapsed && "justify-center px-0 py-2.5"
             )}
           >
-            <Settings size={16} className="shrink-0" />
+            <Settings size={iconSize} className="shrink-0" />
             {!isCollapsed && "Settings"}
           </Link>
         </div>
