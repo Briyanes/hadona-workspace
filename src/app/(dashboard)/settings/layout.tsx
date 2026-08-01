@@ -35,8 +35,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
               className={cn(
                 "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted hover:text-gray-900"
+                  ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
+                  : "border-transparent text-muted hover:text-gray-900 dark:hover:text-[#FFD60A]"
               )}
             >
               <Icon size={16} />

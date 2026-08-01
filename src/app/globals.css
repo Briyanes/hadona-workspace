@@ -69,6 +69,12 @@
   .dark .hover\:text-danger:hover { color: #ef4444 !important; }
   .dark .hover\:text-success:hover { color: #10b981 !important; }
 
+  /* Active nav tab/link — dark mode: Hadona yellow for visibility */
+  .dark .border-primary.text-primary {
+    border-color: #FFD60A !important;
+    color: #FFD60A !important;
+  }
+
   /* bg-gray-* — dark mode */
   .dark .bg-gray-50 { background-color: #0f172a !important; }
   .dark .bg-gray-100 { background-color: #1e293b !important; }
