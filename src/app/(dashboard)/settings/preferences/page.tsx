@@ -3,8 +3,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Sun, Moon, Globe, Clock } from "lucide-react";
+import { Loader2, Save, Sun, Moon, Globe, Clock, Sparkles } from "lucide-react";
 import type { UserPreferences } from "@/types";
+import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const TIMEZONES = [
@@ -19,8 +20,9 @@ const TIMEZONES = [
 
 export default function PreferencesSettingsPage() {
   const supabase = createClient();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setLoadingPrefs] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<UserPreferences>({
     theme: "light",
@@ -43,13 +45,20 @@ export default function PreferencesSettingsPage() {
 
   useEffect(() => { loadPrefs(); }, [loadPrefs]);
 
+  // Live theme toggle: apply immediately when user clicks
+  const handleThemeChange = async (newTheme: "light" | "dark" | "system") => {
+    setPrefs({ ...prefs, theme: newTheme });
+    setTheme(newTheme); // This applies immediately + saves to DB
+    toast.success(`Theme changed to ${newTheme}`);
+  };
+
   const handleSave = async () => {
     if (!userId) return;
-    setSaving(true);
+    setLoadingPrefs(true);
     const { error } = await supabase.from("profiles").update({ preferences: prefs } as never).eq("id", userId);
     if (error) toast.error("Failed: " + error.message);
     else toast.success("Preferences saved");
-    setSaving(false);
+    setLoadingPrefs(false);
   };
 
   if (loading) return (
@@ -65,8 +74,9 @@ export default function PreferencesSettingsPage() {
         <div className="mb-1 flex items-center gap-2">
           <Sun size={16} className="text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">Theme</h3>
+          <span className="badge bg-success/10 text-success text-[10px]">Live</span>
         </div>
-        <p className="mb-4 text-xs text-muted">Pilih tampilan yang Anda sukai.</p>
+        <p className="mb-4 text-xs text-muted">Pilih tampilan yang Anda sukai. Perubahan langsung aktif.</p>
         <div className="grid grid-cols-3 gap-3">
           {[
             { value: "light", label: "Light", icon: Sun },
@@ -74,14 +84,16 @@ export default function PreferencesSettingsPage() {
             { value: "system", label: "System", icon: Globe },
           ].map((opt) => {
             const Icon = opt.icon;
-            const isActive = prefs.theme === opt.value;
+            const isActive = theme === opt.value;
             return (
               <button
                 key={opt.value}
-                onClick={() => setPrefs({ ...prefs, theme: opt.value as UserPreferences["theme"] })}
+                onClick={() => handleThemeChange(opt.value as UserPreferences["theme"])}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors",
-                  isActive ? "border-primary bg-primary/5 text-primary" : "border-border text-muted hover:border-muted"
+                  "flex flex-col items-center gap-2 rounded-lg border p-4 transition-all",
+                  isActive
+                    ? "border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]"
+                    : "border-border text-muted hover:border-muted hover:scale-[1.01]"
                 )}
               >
                 <Icon size={20} />
@@ -97,29 +109,33 @@ export default function PreferencesSettingsPage() {
         <div className="mb-1 flex items-center gap-2">
           <Globe size={16} className="text-primary" />
           <h3 className="text-sm font-semibold text-gray-900">Language</h3>
+          <span className="badge bg-warning/10 text-warning text-[10px]">Coming Soon</span>
         </div>
         <p className="mb-4 text-xs text-muted">Bahasa yang digunakan di aplikasi.</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 opacity-60">
           {[
             { value: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
             { value: "en", label: "English", flag: "🇬🇧" },
           ].map((opt) => {
             const isActive = prefs.language === opt.value;
             return (
-              <button
+              <div
                 key={opt.value}
-                onClick={() => setPrefs({ ...prefs, language: opt.value as UserPreferences["language"] })}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors",
-                  isActive ? "border-primary bg-primary/5 text-primary" : "border-border text-muted hover:border-muted"
+                  "flex cursor-not-allowed items-center gap-2 rounded-lg border p-3 text-sm",
+                  isActive ? "border-primary bg-primary/5 text-primary" : "border-border text-muted"
                 )}
               >
                 <span className="text-lg">{opt.flag}</span>
                 <span className="font-medium">{opt.label}</span>
-              </button>
+                {isActive && <Sparkles size={12} className="ml-auto" />}
+              </div>
             );
           })}
         </div>
+        <p className="mt-3 text-[11px] text-muted">
+          🚧 Dukungan multi-bahasa sedang dalam pengembangan dan akan tersedia segera.
+        </p>
       </div>
 
       {/* Timezone */}

@@ -12,6 +12,43 @@
     color-scheme: light;
   }
 
+  /* === DARK MODE OVERRIDES === */
+  .dark {
+    color-scheme: dark;
+  }
+  .dark body {
+    background-color: #0f172a !important;
+    color: #e2e8f0;
+  }
+  /* Dark mode: override Tailwind color tokens via CSS */
+  .dark .bg-white { background-color: #1e293b !important; }
+  .dark .bg-background { background-color: #0f172a !important; }
+  .dark .bg-surface { background-color: #1e293b !important; }
+  .dark .bg-surface-hover { background-color: #334155 !important; }
+
+  .dark .text-gray-900 { color: #f1f5f9 !important; }
+  .dark .text-gray-800 { color: #e2e8f0 !important; }
+  .dark .text-gray-700 { color: #cbd5e1 !important; }
+  .dark .text-gray-600 { color: #94a3b8 !important; }
+  .dark .text-gray-500 { color: #94a3b8 !important; }
+  .dark .text-gray-400 { color: #94a3b8 !important; }
+
+  .dark .border-border { border-color: #334155 !important; }
+  .dark .border-border-hover { border-color: #475569 !important; }
+
+  /* Sidebar dark */
+  .dark aside { background-color: #1e293b !important; }
+  .dark aside .bg-white { background-color: #1e293b !important; }
+  .dark aside .bg-surface { background-color: #0f172a !important; }
+
+  /* Scrollbar dark */
+  .dark ::-webkit-scrollbar-track { background: #1e293b; }
+  .dark ::-webkit-scrollbar-thumb { background: #475569; }
+  .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+  /* Selection dark */
+  .dark ::selection { background-color: #2B46BB; color: #ffffff; }
+
   * {
     border-color: theme("colors.border");
   }
@@ -77,6 +114,12 @@
   .card:hover {
     @apply border-border-hover shadow-md;
   }
+  .dark .card {
+    @apply bg-[#1e293b] border-[#334155];
+  }
+  .dark .card:hover {
+    @apply border-[#475569];
+  }
 
   .card-hover {
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gray-300/50;
@@ -91,12 +134,21 @@
   .btn-secondary {
     @apply btn border border-border bg-white text-gray-700 hover:bg-surface-hover active:scale-[0.98] shadow-sm;
   }
+  .dark .btn-secondary {
+    @apply bg-[#1e293b] border-[#334155] text-[#e2e8f0] hover:bg-[#334155];
+  }
   .btn-ghost {
     @apply btn text-muted hover:bg-surface-hover hover:text-gray-900;
   }
 
   .input {
     @apply w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors;
+  }
+  .dark .input {
+    @apply bg-[#0f172a] border-[#334155] text-[#f1f5f9] placeholder:text-[#64748b];
+  }
+  .dark .input:focus {
+    @apply border-primary;
   }
 
   /* Custom select styling - light mode arrow */
@@ -116,6 +168,10 @@
     background-color: #ffffff;
     color: #18181b;
     padding: 8px 12px;
+  }
+  .dark select.input option {
+    background-color: #1e293b;
+    color: #f1f5f9;
   }
 
   /* Ensure dropdown renders above other elements */
@@ -150,6 +206,9 @@
 
   .sidebar-link {
     @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-800 transition-colors hover:bg-surface-hover hover:text-gray-900;
+  }
+  .dark .sidebar-link {
+    @apply text-[#cbd5e1] hover:bg-[#334155] hover:text-white;
   }
   .sidebar-link-active {
     @apply bg-primary text-white shadow-sm hover:bg-primary-dark hover:text-white;

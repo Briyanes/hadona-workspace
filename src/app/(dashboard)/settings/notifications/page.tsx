@@ -85,6 +85,16 @@ export default function NotificationsSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Info Banner */}
+      <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+        <div className="flex items-start gap-2">
+          <span className="badge bg-warning/15 text-warning shrink-0 text-[10px]">Coming Soon</span>
+          <p className="text-xs text-muted">
+            Pengaturan notifikasi disimpan, tetapi sistem pengiriman email & Telegram otomatis sedang dalam pengembangan dan akan aktif segera.
+          </p>
+        </div>
+      </div>
+
       {/* Email Notifications */}
       <div className="card p-6">
         <h3 className="mb-2 text-sm font-semibold text-gray-900">Email Notifications</h3>

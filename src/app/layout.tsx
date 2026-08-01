@@ -1,7 +1,21 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
+
+// Anti-flicker: apply dark class before React hydrates
+const themeScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('theme');
+    if (!stored) stored = 'light';
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var shouldDark = stored === 'dark' || (stored === 'system' && prefersDark);
+    if (shouldDark) document.documentElement.classList.add('dark');
+  } catch(e) {}
+})();
+`;
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
@@ -77,20 +91,25 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        {children}
-        <Toaster
-          position="top-right"
-          theme="light"
-          toastOptions={{
-            style: {
-              background: "#FFFFFF",
-              border: "1px solid #E5E7EB",
-              color: "#18181B",
-            },
-          }}
-        />
+        <ThemeProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            theme="light"
+            toastOptions={{
+              style: {
+                background: "#FFFFFF",
+                border: "1px solid #E5E7EB",
+                color: "#18181B",
+              },
+            }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );

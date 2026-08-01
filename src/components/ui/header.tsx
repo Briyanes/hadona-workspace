@@ -2,8 +2,8 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LogOut, Search, PanelLeftClose, PanelLeftOpen, UserCircle2 } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { LogOut, Search, PanelLeftClose, PanelLeftOpen, UserCircle2, Settings, User, ChevronDown } from "lucide-react";
 import type { Profile } from "@/types";
 import { useSidebar } from "@/components/ui/sidebar-context";
 import { cn } from "@/lib/utils";
@@ -23,17 +23,33 @@ export function Header() {
   const router = useRouter();
   const supabase = createClient();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { isCollapsed, toggle } = useSidebar();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setProfile((data as unknown as Profile) ?? null);
+      const p = (data as unknown as Profile) ?? null;
+      setProfile(p);
+      setAvatarUrl(p?.avatar_url ?? null);
     }
     load();
   }, [supabase]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -89,16 +105,86 @@ export function Header() {
               )}
             </div>
           </div>
-          <UserCircle2 size={28} className="shrink-0 text-muted" />
+
+          {/* Clickable Avatar with Dropdown */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center gap-1 rounded-full transition-transform hover:scale-105 active:scale-95"
+              title="Profile menu"
+            >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border">
+                  {profile?.full_name?.charAt(0).toUpperCase() || "?"}
+                </div>
+              )}
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "text-muted transition-transform duration-200",
+                  menuOpen && "rotate-180"
+                )}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-white shadow-lg">
+                {/* User Info Header */}
+                <div className="border-b border-border px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {profile?.full_name || "User"}
+                  </p>
+                  <p className="truncate text-xs text-muted">
+                    {profile?.email || ""}
+                  </p>
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push("/settings/profile");
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
+                  >
+                    <User size={15} className="text-muted" />
+                    My Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push("/settings");
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
+                  >
+                    <Settings size={15} className="text-muted" />
+                    Settings
+                  </button>
+                </div>
+
+                {/* Divider + Logout */}
+                <div className="border-t border-border py-1">
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-danger transition-colors hover:bg-danger/5"
+                  >
+                    <LogOut size={15} />
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="btn-ghost flex items-center gap-1.5 p-2 text-xs"
-          title="Logout"
-        >
-          <LogOut size={16} />
-          <span className="hidden lg:inline">Logout</span>
-        </button>
       </div>
     </header>
   );
