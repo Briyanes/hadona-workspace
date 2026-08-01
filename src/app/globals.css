@@ -29,8 +29,25 @@
   /* Muted opacity backgrounds — dark mode */
   .dark .bg-muted\/5 { background-color: rgba(148, 163, 184, 0.05) !important; }
   .dark .bg-muted\/10 { background-color: rgba(148, 163, 184, 0.1) !important; }
+  .dark .bg-muted\/15 { background-color: rgba(148, 163, 184, 0.15) !important; }
   .dark .bg-muted\/20 { background-color: rgba(148, 163, 184, 0.15) !important; }
   .dark .bg-muted\/30 { background-color: rgba(148, 163, 184, 0.2) !important; }
+
+  /* Navbar background with opacity — dark mode */
+  .dark .bg-background\/80 { background-color: rgba(15, 23, 42, 0.8) !important; }
+  .dark .bg-background\/60 { background-color: rgba(15, 23, 42, 0.6) !important; }
+
+  /* Notification icon circle backgrounds — dark mode */
+  .dark .bg-primary\/15 { background-color: rgba(59, 130, 246, 0.15) !important; }
+  .dark .bg-success\/15 { background-color: rgba(34, 197, 94, 0.15) !important; }
+  .dark .bg-accent\/15 { background-color: rgba(168, 85, 247, 0.15) !important; }
+  .dark .bg-warning\/15 { background-color: rgba(245, 158, 11, 0.15) !important; }
+
+  /* Notification unread background — dark mode */
+  .dark .bg-primary\/\[0\.03\] { background-color: rgba(59, 130, 246, 0.08) !important; }
+
+  /* Notification badge backgrounds — dark mode */
+  .dark .bg-danger\/15 { background-color: rgba(239, 68, 68, 0.15) !important; }
 
   .dark .text-gray-900 { color: #f1f5f9 !important; }
   .dark .text-gray-800 { color: #e2e8f0 !important; }
