@@ -24,6 +24,20 @@ export type MetricType = "spend" | "cpr" | "results" | "ctr" | "frequency" | "im
 
 // ---- Database Entities ----
 
+export interface NotificationPrefs {
+  email_task: boolean;
+  email_report: boolean;
+  email_weekly: boolean;
+  telegram_enabled: boolean;
+  telegram_webhook: string | null;
+}
+
+export interface UserPreferences {
+  theme: "light" | "dark" | "system";
+  language: "id" | "en";
+  timezone: string;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -32,8 +46,15 @@ export interface Profile {
   division: Division[] | null;
   avatar_url: string | null;
   phone: string | null;
+  bio: string | null;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  portfolio_url: string | null;
+  notification_prefs: NotificationPrefs | null;
+  preferences: UserPreferences | null;
   is_active: boolean;
   created_at: string;
+  updated_at: string | null;
 }
 
 export interface Client {

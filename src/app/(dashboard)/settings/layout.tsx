@@ -1,0 +1,52 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { User, Bell, Shield, Settings2, Palette } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const TABS = [
+  { href: "/settings/profile", label: "Profile", icon: User },
+  { href: "/settings/notifications", label: "Notifications", icon: Bell },
+  { href: "/settings/security", label: "Security", icon: Shield },
+  { href: "/settings/workspace", label: "Workspace", icon: Settings2 },
+  { href: "/settings/preferences", label: "Preferences", icon: Palette },
+];
+
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <p className="text-sm text-muted">Kelola akun, preferensi, dan workspace</p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex flex-wrap gap-1 border-b border-border">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = pathname === tab.href;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={cn(
+                "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                isActive
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted hover:text-gray-900"
+              )}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div>{children}</div>
+    </div>
+  );
+}

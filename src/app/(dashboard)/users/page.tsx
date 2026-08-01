@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search, UserCog, ShieldCheck, ShieldOff, Loader2, Filter, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Search, UserCog, ShieldCheck, ShieldOff, Loader2, Filter, CheckCircle2, XCircle, AlertTriangle, Trash2, UserPlus, Download } from "lucide-react";
 import type { Database } from "@/types/database";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
@@ -57,10 +57,86 @@ export default function UsersPage() {
   const [editDivisions, setEditDivisions] = useState<string[]>([]);
   const [editActive, setEditActive] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Delete user (soft or hard)
+  const handleDelete = async (userId: string, mode: "soft" | "hard") => {
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/users?id=${userId}&mode=${mode}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed");
+      toast.success(mode === "hard" ? "User permanently deleted" : "User deactivated");
+      setUsers(users.filter((u) => u.id !== userId));
+      setDeleteConfirm(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete user");
+    }
+    setDeleting(false);
+  };
+
+  // Invite user by email
+  const handleInvite = async () => {
+    if (!inviteEmail || !inviteEmail.includes("@")) {
+      toast.error("Masukkan email yang valid");
+      return;
+    }
+    setInviting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ email: inviteEmail, action: "invite" }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed");
+      toast.success(`Invitation sent to ${inviteEmail}`);
+      setInviteEmail("");
+      setShowInvite(false);
+      fetchUsers(); // refresh list
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to invite");
+    }
+    setInviting(false);
+  };
+
+  // Export CSV
+  const handleExportCSV = () => {
+    const headers = ["Name", "Email", "Role", "Divisions", "Active", "Created At"];
+    const rows = filtered.map((u) => [
+      `"${u.full_name}"`,
+      `"${u.email}"`,
+      u.role,
+      `"${(u.division || []).join("; ")}"`,
+      u.is_active ? "Active" : "Inactive",
+      new Date(u.created_at).toLocaleDateString("id-ID"),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `hadona-users-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV exported");
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -134,10 +210,62 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-        <p className="text-sm text-muted">Kelola tim, role, dan status akun</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <p className="text-sm text-muted">Kelola tim, role, dan status akun</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs"
+            title="Export CSV"
+          >
+            <Download size={14} />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+          <button
+            onClick={() => setShowInvite(!showInvite)}
+            className="btn-primary flex items-center gap-1.5 px-3 py-2 text-xs"
+          >
+            <UserPlus size={14} />
+            <span>Invite User</span>
+          </button>
+        </div>
       </div>
+
+      {/* Invite Form */}
+      {showInvite && (
+        <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs font-medium text-muted">Email Address</label>
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="colleague@hadona.id"
+              className="input"
+              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleInvite}
+              disabled={inviting}
+              className="btn-primary flex items-center gap-1.5 px-4 py-2 text-xs"
+            >
+              {inviting ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+              {inviting ? "Sending..." : "Send Invite"}
+            </button>
+            <button
+              onClick={() => { setShowInvite(false); setInviteEmail(""); }}
+              className="btn-ghost px-4 py-2 text-xs"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
 
         {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -380,14 +508,48 @@ export default function UsersPage() {
                           Batal
                         </button>
                       </div>
+                    ) : deleteConfirm === user.id ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleDelete(user.id, "soft")}
+                          disabled={deleting}
+                          className="rounded bg-warning/15 px-2 py-1 text-[10px] font-medium text-warning hover:bg-warning/25"
+                        >
+                          {deleting ? "..." : "Deactivate"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id, "hard")}
+                          disabled={deleting}
+                          className="rounded bg-danger/15 px-2 py-1 text-[10px] font-medium text-danger hover:bg-danger/25"
+                        >
+                          {deleting ? "..." : "Delete"}
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(null)}
+                          className="px-2 py-1 text-[10px] text-muted hover:text-gray-900"
+                        >
+                          Batal
+                        </button>
+                      </div>
                     ) : (
-                      <button
-                        onClick={() => startEdit(user)}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <UserCog size={14} />
-                        Edit
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => startEdit(user)}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          <UserCog size={14} />
+                          Edit
+                        </button>
+                        {user.id !== currentUserId && (
+                          <button
+                            onClick={() => setDeleteConfirm(user.id)}
+                            className="text-danger hover:opacity-70"
+                            title="Delete user"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
