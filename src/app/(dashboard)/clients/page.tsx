@@ -636,8 +636,8 @@ export default function ClientsPage() {
             </div>
 
             {/* ── Scrollable Body ── */}
-            <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
-              <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
+            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
                 {/* ════ LEFT COLUMN ════ */}
                 <div className="space-y-4">
                   {/* Box: Informasi Dasar */}

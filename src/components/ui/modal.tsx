@@ -109,7 +109,7 @@ export function Modal({
 
         {/* Body — scrollable if scrollable=true, otherwise static */}
         {scrollable ? (
-          <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
         ) : (
           <div className="px-6 py-4">{children}</div>
         )}

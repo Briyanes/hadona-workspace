@@ -1887,8 +1887,8 @@ export default function AdsSpendPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <form onSubmit={handleSave} className="flex h-full flex-col">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
               {/* Sticky Header */}
               <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
                 <h2 className="text-lg font-bold text-gray-900">
@@ -1904,7 +1904,7 @@ export default function AdsSpendPage() {
               </div>
 
               {/* Scrollable Body */}
-              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
               <div className="space-y-3 rounded-lg bg-background p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Client & Platform</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -2082,7 +2082,7 @@ export default function AdsSpendPage() {
       {/* Manual Token Modal */}
       {showTokenModal && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
@@ -2095,9 +2095,9 @@ export default function AdsSpendPage() {
               </button>
             </div>
 
-            <form onSubmit={handleManualTokenSubmit} className="flex flex-col">
+            <form onSubmit={handleManualTokenSubmit} className="flex min-h-0 flex-1 flex-col">
               {/* Scrollable Body */}
-              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
                 <div className="rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
                   <p className="mb-2 font-semibold">📋 Cara dapatkan Access Token:</p>
                   <ol className="list-decimal space-y-1 pl-4 text-[11px] text-muted">
@@ -2171,7 +2171,7 @@ export default function AdsSpendPage() {
       {/* Import Sheet Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
@@ -2190,7 +2190,7 @@ export default function AdsSpendPage() {
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
 
             {/* Mode Toggle */}
             <div className="mb-4 flex gap-2 rounded-lg bg-background p-1">
@@ -2463,7 +2463,7 @@ export default function AdsSpendPage() {
       {/* Spend Log Modal */}
       {showSpendModal && modalAccount && (
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <div>
@@ -2483,7 +2483,7 @@ export default function AdsSpendPage() {
             </div>
 
             {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {/* Form */}
             <form onSubmit={handleSaveSpend} className="mb-4 space-y-3 rounded-lg bg-background p-3">
               <div className="grid grid-cols-2 gap-3">
