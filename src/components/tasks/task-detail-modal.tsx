@@ -447,10 +447,10 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="relative my-8 w-full max-w-2xl rounded-lg border border-border bg-surface shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+      <div className="relative my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-gray-900">{isEditing ? "Edit Task" : "Task Detail"}</h2>
             {!isEditing && (
@@ -487,7 +487,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         </div>
 
         {/* Content */}
-        <div className="max-h-[calc(100vh-10rem)] overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {isEditing ? (
             /* ==================== EDIT MODE ==================== */
             <form onSubmit={handleSaveEdit} className="space-y-4">

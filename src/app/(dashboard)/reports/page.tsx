@@ -1093,8 +1093,8 @@ export default function ReportsPage() {
       {/* ════════════════════════════════════════════ */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-3xl rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
                   {editingId ? "Edit Weekly Report" : "Buat Weekly Report"}
@@ -1109,7 +1109,8 @@ export default function ReportsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
+            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
               {/* Client & Period */}
               <div className="space-y-3 rounded-lg bg-background p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Client & Periode</p>
@@ -1517,8 +1518,9 @@ export default function ReportsPage() {
                   <option value="reviewed">Reviewed</option>
                 </select>
               </div>
+              </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
                 <button
                   type="button"
                   onClick={closeModal}
@@ -1548,14 +1550,14 @@ export default function ReportsPage() {
       {/* ════════════════════════════════════════════ */}
       {detailReport && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="print-area my-8 w-full max-w-3xl rounded-lg border border-border bg-surface p-6 shadow-xl">
+          <div className="print-area my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Print-only header */}
             <div className="print-header">
               <h1 className="text-xl font-bold">Hadona Workspace — Weekly Report</h1>
               <p className="text-xs">{detailReport.client?.name} • {formatDate(detailReport.period_start)} - {formatDate(detailReport.period_end)}</p>
             </div>
 
-            <div className="no-print mb-4 flex items-start justify-between">
+            <div className="no-print flex shrink-0 items-start justify-between border-b border-border bg-surface px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-gray-900">
@@ -1597,6 +1599,8 @@ export default function ReportsPage() {
               </div>
             </div>
 
+            {/* Scrollable Content */}
+            <div className="min-h-0 overflow-y-auto px-6 py-4">
             {/* Metrics Display */}
             {detailReport.report_metrics && detailReport.report_metrics.length > 0 && (
               <div className="print-card mb-4 rounded-lg border border-border bg-background p-3">
@@ -1749,6 +1753,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted">
               <span>PIC: {detailReport.pic?.full_name || "-"}</span>
               <span>Dibuat: {formatDate(detailReport.created_at)}</span>
+            </div>
             </div>
           </div>
         </div>

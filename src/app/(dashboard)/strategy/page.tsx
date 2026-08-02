@@ -417,8 +417,8 @@ export default function StrategyPage() {
             </div>
 
             {/* Scrollable Body */}
-            <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
-              <div className="space-y-4 overflow-y-auto px-6 py-4">
+            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-900">
                     Objective *
