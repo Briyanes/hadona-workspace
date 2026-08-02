@@ -15,19 +15,70 @@ export async function GET(request: NextRequest) {
     const { user, supabase } = auth;
     const today = new Date().toISOString().split("T")[0];
 
-    // ── Parallel batch #1: Basic stats ──
-    const [tasks, clients, adAccounts, profiles, profileData] = await Promise.all([
+    // ── Parallel batch #1: Basic stats + Division analytics ──
+    const [tasks, clients, adAccounts, profiles, profileData, divisionTasksRes, divisionMembersRes] = await Promise.all([
       supabase.from("tasks").select("status, due_date, priority"),
       supabase.from("clients").select("status, contract_value"),
       supabase.from("ad_accounts").select("daily_budget, status").eq("status", "active"),
       supabase.from("profiles").select("id").eq("is_active", true),
       supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+      // Division analytics: tasks with assignee divisions
+      supabase.from("task_assignees").select(`
+        task:tasks(status, due_date),
+        user:profiles(division)
+      `),
+      // Division members count
+      supabase.from("profiles").select("division").eq("is_active", true).eq("approval_status", "approved"),
     ]);
 
     const allTasks = (tasks.data as { status: string; due_date: string | null; priority: string }[]) || [];
     const clientList = (clients.data as { status: string; contract_value: number | null }[]) || [];
     const accountList = (adAccounts.data as { daily_budget: number | null; status: string }[]) || [];
     const profileList = (profiles.data as { id: string }[]) || [];
+
+    // ── Process Division Analytics ──
+    interface DivisionTaskRow {
+      task: { status: string; due_date: string | null } | { status: string; due_date: string | null }[];
+      user: { division: string | string[] | null } | { division: string | string[] | null }[];
+    }
+    const divisionTaskRows = (divisionTasksRes.data as unknown as DivisionTaskRow[]) || [];
+    interface DivisionMemberRow {
+      division: string | string[] | null;
+    }
+    const divisionMemberRows = (divisionMembersRes.data as unknown as DivisionMemberRow[]) || [];
+
+    const divisionMap: Record<string, { total: number; todo: number; in_progress: number; done: number; overdue: number; members: number }> = {};
+
+    // Count members per division
+    divisionMemberRows.forEach((m) => {
+      const divs = Array.isArray(m.division) ? m.division : (m.division ? [m.division] : []);
+      divs.forEach((d) => {
+        if (!divisionMap[d]) divisionMap[d] = { total: 0, todo: 0, in_progress: 0, done: 0, overdue: 0, members: 0 };
+        divisionMap[d].members++;
+      });
+    });
+
+    // Count tasks per division
+    divisionTaskRows.forEach((row) => {
+      const task = Array.isArray(row.task) ? row.task[0] : row.task;
+      const user = Array.isArray(row.user) ? row.user[0] : row.user;
+      if (!task || !user) return;
+      const divs = Array.isArray(user.division) ? user.division : (user.division ? [user.division] : []);
+      divs.forEach((d) => {
+        if (!divisionMap[d]) divisionMap[d] = { total: 0, todo: 0, in_progress: 0, done: 0, overdue: 0, members: 0 };
+        divisionMap[d].total++;
+        if (task.status === "todo") divisionMap[d].todo++;
+        if (task.status === "in_progress") divisionMap[d].in_progress++;
+        if (task.status === "done") divisionMap[d].done++;
+        if (task.due_date && task.due_date < today && task.status !== "done" && task.status !== "blocked") {
+          divisionMap[d].overdue++;
+        }
+      });
+    });
+
+    const divisionStats = Object.entries(divisionMap)
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.total - a.total);
 
     const stats = {
       totalTasks: allTasks.length,
@@ -148,6 +199,7 @@ export async function GET(request: NextRequest) {
       stats,
       userName,
       adsKpi,
+      divisionStats,
       myTasks: myTasksRes.data || [],
       activities: activityRes.data || [],
     });

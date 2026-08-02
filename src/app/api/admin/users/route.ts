@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logActivity } from "@/lib/activity-logger";
+import { approvalEmailTemplate, rejectionEmailTemplate, sendEmail } from "@/lib/email-templates";
 
 /**
  * /api/admin/users — Admin-only endpoints for user management
@@ -149,8 +151,40 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error;
 
-      // Kirim notifikasi ke semua admin lain (informasi)
-      // (User yang di-approve akan otomatis redirect dari waiting-approval page via realtime)
+      // ─── Activity Log ───
+      await logActivity({
+        supabase,
+        userId: adminUser.id,
+        action: "approve",
+        entityType: "user",
+        entityId: userId,
+        description: `Menyetujui user baru`,
+      });
+
+      // ─── Send Approval Email ───
+      try {
+        const { data: targetUser } = await supabase
+          .from("profiles")
+          .select("full_name, email, division")
+          .eq("id", userId)
+          .single();
+
+        if (targetUser?.email) {
+          const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "https://workspace.hadona.id"}/login`;
+          const html = approvalEmailTemplate({
+            userName: targetUser.full_name || targetUser.email,
+            loginUrl,
+            division: targetUser.division as string | string[] | undefined,
+          });
+          await sendEmail({
+            to: targetUser.email,
+            subject: "✅ Akun Anda Disetujui — Hadona Workspace",
+            html,
+          });
+        }
+      } catch (emailErr) {
+        console.error("[approve] Failed to send email:", emailErr instanceof Error ? emailErr.message : "Unknown");
+      }
 
       return NextResponse.json({
         success: true,
@@ -177,6 +211,39 @@ export async function POST(request: NextRequest) {
         .eq("id", userId);
 
       if (error) throw error;
+
+      // ─── Activity Log ───
+      await logActivity({
+        supabase,
+        userId: adminUser.id,
+        action: "reject",
+        entityType: "user",
+        entityId: userId,
+        description: `Menolak permintaan akses user`,
+      });
+
+      // ─── Send Rejection Email ───
+      try {
+        const { data: targetUser } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", userId)
+          .single();
+
+        if (targetUser?.email) {
+          const html = rejectionEmailTemplate({
+            userName: targetUser.full_name || targetUser.email,
+            reason: reason || "Permintaan akses ditolak oleh admin",
+          });
+          await sendEmail({
+            to: targetUser.email,
+            subject: "⚠️ Update Status Akses — Hadona Workspace",
+            html,
+          });
+        }
+      } catch (emailErr) {
+        console.error("[reject] Failed to send email:", emailErr instanceof Error ? emailErr.message : "Unknown");
+      }
 
       return NextResponse.json({
         success: true,

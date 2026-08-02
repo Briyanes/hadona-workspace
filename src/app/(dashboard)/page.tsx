@@ -27,6 +27,7 @@ import { formatIDR, timeUntil, cn } from "@/lib/utils";
 import { BudgetAlertsBar } from "@/components/dashboard/budget-alerts-bar";
 import { TeamWorkloadWidget } from "@/components/dashboard/team-workload-widget";
 import { ActivityLogWidget } from "@/components/dashboard/activity-log-widget";
+import { DivisionAnalyticsWidget } from "@/components/dashboard/division-analytics-widget";
 
 // ── Types ──
 interface Stats {
@@ -451,15 +452,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ════ Team Workload ════ */}
+      {/* ════ Team Workload + Division Analytics ════ */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div>
           <TeamWorkloadWidget />
         </div>
         <div>
-          <ActivityLogWidget />
+          <DivisionAnalyticsWidget />
         </div>
       </div>
+
+      {/* ════ Activity Log (Full Width) ════ */}
+      <ActivityLogWidget />
     </div>
   );
 }
