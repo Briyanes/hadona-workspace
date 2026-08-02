@@ -28,6 +28,7 @@ import { BudgetAlertsBar } from "@/components/dashboard/budget-alerts-bar";
 import { TeamWorkloadWidget } from "@/components/dashboard/team-workload-widget";
 import { ActivityLogWidget } from "@/components/dashboard/activity-log-widget";
 import { DivisionAnalyticsWidget } from "@/components/dashboard/division-analytics-widget";
+import { ProfitabilityWidget } from "@/components/dashboard/profitability-widget";
 
 // ── Types ──
 interface Stats {
@@ -461,6 +462,9 @@ export default function DashboardPage() {
           <DivisionAnalyticsWidget />
         </div>
       </div>
+
+      {/* ════ Client Profitability (Full Width) ════ */}
+      <ProfitabilityWidget />
 
       {/* ════ Activity Log (Full Width) ════ */}
       <ActivityLogWidget />

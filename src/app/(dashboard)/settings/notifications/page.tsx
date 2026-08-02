@@ -15,6 +15,7 @@ export default function NotificationsSettingsPage() {
   const [prefs, setPrefs] = useState<NotificationPrefs>({
     email_task: true,
     email_report: true,
+    email_daily: false,
     email_weekly: false,
     telegram_enabled: false,
     telegram_webhook: null,
@@ -53,11 +54,11 @@ export default function NotificationsSettingsPage() {
   return (
     <div className="space-y-6">
       {/* Info Banner */}
-      <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+      <div className="rounded-lg border border-success/30 bg-success/5 p-4">
         <div className="flex items-start gap-2">
-          <span className="badge bg-success/15 text-success shrink-0 text-[10px]">In-App Active</span>
+          <span className="badge bg-success/15 text-success shrink-0 text-[10px]">Active</span>
           <p className="text-xs text-muted">
-            ✅ <strong>In-app notifications</strong> sudah aktif — klik ikon 🔔 di header untuk melihat update task & assignment. Email & Telegram auto-delivery sedang dalam pengembangan dan akan segera aktif.
+            ✅ <strong>In-app notifications</strong> aktif (🔔 di header) · <strong>Email digest</strong> aktif (Daily 07:00 & Weekly Senin via cron) · Telegram webhook coming soon.
           </p>
         </div>
       </div>
@@ -81,6 +82,14 @@ export default function NotificationsSettingsPage() {
           label="Report Deadlines"
           description="Pengingat H-1 sebelum report weekly deadline"
           icon={Send}
+        />
+        <Toggle
+          showRow
+          checked={prefs.email_daily}
+          onChange={() => setPrefs({ ...prefs, email_daily: !prefs.email_daily })}
+          label="Daily Summary"
+          description="Ringkasan tugas & deadline setiap pagi (07:00 WIB)"
+          icon={Bell}
         />
         <Toggle
           showRow

@@ -7,6 +7,14 @@
     {
       "path": "/api/reports/cron/send-emails",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/digest?type=daily",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/digest?type=weekly",
+      "schedule": "0 23 * * 0"
     }
   ]
 }

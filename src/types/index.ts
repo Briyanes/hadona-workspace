@@ -29,6 +29,7 @@ export type MetricType = "spend" | "cpr" | "results" | "ctr" | "frequency" | "im
 export interface NotificationPrefs {
   email_task: boolean;
   email_report: boolean;
+  email_daily: boolean;
   email_weekly: boolean;
   telegram_enabled: boolean;
   telegram_webhook: string | null;
