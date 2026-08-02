@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { canAccessRoute } from "@/lib/division-permissions";
 
 type CookieOptions = {
   name: string;
@@ -67,27 +68,67 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Onboarding check: if user has no division set, redirect to /onboarding
-  // (skip for /onboarding itself, /settings, and /logout to avoid loops)
+  // Onboarding & Approval check
+  // (skip for auth-related pages to avoid loops)
   if (
     !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/waiting-approval") &&
+    !pathname.startsWith("/rejected") &&
     !pathname.startsWith("/settings") &&
     pathname !== "/logout"
   ) {
     try {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("division")
+        .select("division, role, approval_status")
         .eq("id", user.id)
         .single();
 
-      if (profile && (!profile.division || (Array.isArray(profile.division) && profile.division.length === 0))) {
+      const typedProfile = profile as { 
+        division: string[] | null; 
+        role: string | null;
+        approval_status: string | null;
+      } | null;
+
+      // Check approval status FIRST (before division check)
+      // pending_onboarding: user baru, belum pilih divisi
+      if (typedProfile?.approval_status === "pending_onboarding") {
+        // Kalau belum pilih divisi → ke onboarding
+        if (!typedProfile.division || (Array.isArray(typedProfile.division) && typedProfile.division.length === 0)) {
+          const url = new URL("/onboarding", request.url);
+          return NextResponse.redirect(url);
+        }
+        // Kalau sudah pilih divisi tapi status masih pending_onboarding → ke waiting-approval
+        const url = new URL("/waiting-approval", request.url);
+        return NextResponse.redirect(url);
+      }
+
+      // pending_approval: sudah pilih divisi, nunggu admin approve
+      if (typedProfile?.approval_status === "pending_approval") {
+        const url = new URL("/waiting-approval", request.url);
+        return NextResponse.redirect(url);
+      }
+
+      // rejected: admin menolak, tampilkan halaman rejected
+      if (typedProfile?.approval_status === "rejected") {
+        const url = new URL("/rejected", request.url);
+        return NextResponse.redirect(url);
+      }
+
+      // approved atau null (legacy user): cek division seperti biasa
+      if (typedProfile && (!typedProfile.division || (Array.isArray(typedProfile.division) && typedProfile.division.length === 0))) {
         const url = new URL("/onboarding", request.url);
         return NextResponse.redirect(url);
       }
+
+      // === Division-Based Permission Guard ===
+      if (typedProfile && !canAccessRoute(pathname, typedProfile.division, typedProfile.role)) {
+        const url = new URL("/", request.url);
+        url.searchParams.set("error", "access_denied");
+        url.searchParams.set("from", pathname);
+        return NextResponse.redirect(url);
+      }
     } catch {
-      // If profile doesn't exist yet, the handle_new_user trigger may not have run.
-      // Let the onboarding page handle profile creation.
       const url = new URL("/onboarding", request.url);
       return NextResponse.redirect(url);
     }

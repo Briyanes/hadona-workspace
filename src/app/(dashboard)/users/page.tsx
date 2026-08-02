@@ -62,10 +62,62 @@ export default function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [showInvite, setShowInvite] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectFor, setShowRejectFor] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // === Approve user ===
+  const handleApprove = async (userId: string) => {
+    setApprovingId(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "approve", userId }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed");
+      toast.success("User approved successfully");
+      fetchUsers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to approve");
+    }
+    setApprovingId(null);
+  };
+
+  // === Reject user ===
+  const handleReject = async (userId: string) => {
+    setRejectingId(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "reject", userId, reason: rejectReason }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed");
+      toast.success("User rejected");
+      setShowRejectFor(null);
+      setRejectReason("");
+      fetchUsers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to reject");
+    }
+    setRejectingId(null);
+  };
 
   // Delete user (soft or hard)
   const handleDelete = async (userId: string, mode: "soft" | "hard") => {
@@ -206,6 +258,12 @@ export default function UsersPage() {
   const getRoleLabel = (role: string) => ROLES.find((r) => r.value === role)?.label || role;
   const getRoleColor = (role: string) => ROLES.find((r) => r.value === role)?.color || "text-muted";
 
+  // === Pending approval users ===
+  const pendingUsers = users.filter((u) => {
+    const approvalStatus = (u as Record<string, unknown>).approval_status as string | undefined;
+    return approvalStatus === "pending_approval" || approvalStatus === "pending_onboarding";
+  });
+
   const { sortedData, sortState, toggleSort } = useSortable<Profile>({ data: filtered });
 
   return (
@@ -268,7 +326,7 @@ export default function UsersPage() {
       )}
 
         {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="card p-4">
           <p className="text-xs text-muted">Total User</p>
           <p className="text-2xl font-bold text-gray-900">{users.length}</p>
@@ -289,7 +347,127 @@ export default function UsersPage() {
             {users.filter((u) => !u.division || u.division.length === 0).length}
           </p>
         </div>
+        {/* Pending Approval Count — highlight if > 0 */}
+        <div className={cn("card p-4", pendingUsers.length > 0 && "ring-2 ring-warning/40")}>
+          <p className="text-xs text-muted">Pending Approval</p>
+          <p className={cn(
+            "text-2xl font-bold",
+            pendingUsers.length > 0 ? "text-warning" : "text-muted"
+          )}>
+            {pendingUsers.length}
+          </p>
+        </div>
       </div>
+
+      {/* === APPROVAL QUEUE === */}
+      {pendingUsers.length > 0 && (
+        <div className="rounded-lg border-2 border-warning/30 bg-warning/5 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-warning" />
+            <h2 className="text-sm font-bold text-gray-900">
+              Antrian Persetujuan ({pendingUsers.length})
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {pendingUsers.map((user) => {
+              const typedUser = user as Profile & { approval_status?: string; rejection_reason?: string | null };
+              return (
+                <div
+                  key={user.id}
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  {/* User info */}
+                  <div className="flex items-center gap-3">
+                    {user.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user.full_name}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+                        {user.full_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{user.full_name}</p>
+                      <p className="text-xs text-muted">{user.email}</p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(user.division || []).map((d) => (
+                          <span
+                            key={d}
+                            className={cn(
+                              "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+                              DIVISION_COLORS[d] || "bg-muted/20 text-muted"
+                            )}
+                          >
+                            {d}
+                          </span>
+                        ))}
+                      </div>
+                      {typedUser.approval_status === "pending_onboarding" && (
+                        <span className="mt-0.5 inline-block text-[10px] text-muted">
+                          Belum pilih divisi
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    {showRejectFor === user.id ? (
+                      <>
+                        <input
+                          type="text"
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          placeholder="Alasan penolakan (opsional)"
+                          className="input flex-1 py-1 text-xs sm:w-48"
+                        />
+                        <button
+                          onClick={() => handleReject(user.id)}
+                          disabled={rejectingId === user.id}
+                          className="rounded bg-danger px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+                        >
+                          {rejectingId === user.id ? "..." : "Confirm Reject"}
+                        </button>
+                        <button
+                          onClick={() => { setShowRejectFor(null); setRejectReason(""); }}
+                          className="px-3 py-1 text-xs text-muted hover:text-gray-900"
+                        >
+                          Batal
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleApprove(user.id)}
+                          disabled={approvingId === user.id}
+                          className="inline-flex items-center gap-1 rounded bg-success px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {approvingId === user.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <CheckCircle2 size={12} />
+                          )}
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => setShowRejectFor(user.id)}
+                          className="inline-flex items-center gap-1 rounded bg-danger/15 px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger/25"
+                        >
+                          <XCircle size={12} />
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Division Distribution */}
       <div className="card p-4">

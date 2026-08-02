@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import {
   Clock,
   AlertCircle,
@@ -90,6 +92,20 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  // Show toast if redirected due to access denied
+  useEffect(() => {
+    const accessError = searchParams.get("error");
+    const fromPath = searchParams.get("from");
+    if (accessError === "access_denied" && fromPath) {
+      toast.error(`🔒 Akses ditolak. Halaman "${fromPath}" tidak tersedia untuk divisi Anda.`, {
+        duration: 5000,
+      });
+      // Clean URL (remove query params) without full reload
+      window.history.replaceState({}, "", "/");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let cancelled = false;

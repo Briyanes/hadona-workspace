@@ -17,6 +17,8 @@ export type AdObjective = "CTWA" | "CPAS" | "GSN" | "CT_LP_TO_WA" | "CT_WEBSITE_
 
 export type ReportStatus = "draft" | "submitted" | "reviewed";
 
+export type ApprovalStatus = "pending_onboarding" | "pending_approval" | "approved" | "rejected";
+
 export type CreativeRequestStatus = "requested" | "in_progress" | "review" | "approved" | "rejected";
 export type FunnelStage = "awareness" | "consideration" | "conversion" | "retention";
 
@@ -53,6 +55,10 @@ export interface Profile {
   notification_prefs: NotificationPrefs | null;
   preferences: UserPreferences | null;
   is_active: boolean;
+  approval_status: ApprovalStatus;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string | null;
 }

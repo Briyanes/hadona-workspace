@@ -131,15 +131,16 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Upsert profile with selected divisions (array)
-    // Note: role is omitted — DB trigger already set it to 'advertiser' default
+    // Upsert profile with selected divisions + set status to pending_approval
+    // User remains inactive until admin approves
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       email: user.email || "",
       full_name: user.user_metadata?.full_name || userName,
       division: selectedDivisions,
       avatar_url: user.user_metadata?.avatar_url || null,
-      is_active: true,
+      is_active: false,
+      approval_status: "pending_approval",
     } as never, {
       onConflict: "id",
     });
@@ -150,9 +151,9 @@ export default function OnboardingPage() {
       return;
     }
 
-    toast.success(`Selamat datang! Anda terdaftar di ${selectedDivisions.length} divisi`);
+    toast.success(`Divisi tersimpan! Menunggu persetujuan admin...`);
     setSaving(false);
-    router.push("/");
+    router.push("/waiting-approval");
     router.refresh();
   };
 

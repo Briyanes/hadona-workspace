@@ -95,7 +95,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 // ============================================
-// POST - Resend invitation / invite by email
+// POST - Resend invitation / invite by email / approve / reject
 // ============================================
 export async function POST(request: NextRequest) {
   try {
@@ -107,14 +107,68 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, action } = body;
 
-    if (!email) {
-      return NextResponse.json({ error: "Email required" }, { status: 400 });
-    }
-
     const supabase = getAdminClient();
 
+    // === APPROVE USER ===
+    if (action === "approve") {
+      const { userId } = body;
+      if (!userId) {
+        return NextResponse.json({ error: "userId required for approve" }, { status: 400 });
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          approval_status: "approved",
+          is_active: true,
+          approved_by: adminUser.id,
+          approved_at: new Date().toISOString(),
+          rejection_reason: null,
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      // Kirim notifikasi ke semua admin lain (informasi)
+      // (User yang di-approve akan otomatis redirect dari waiting-approval page via realtime)
+
+      return NextResponse.json({
+        success: true,
+        message: "User approved successfully",
+      });
+    }
+
+    // === REJECT USER ===
+    if (action === "reject") {
+      const { userId, reason } = body;
+      if (!userId) {
+        return NextResponse.json({ error: "userId required for reject" }, { status: 400 });
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          approval_status: "rejected",
+          is_active: false,
+          rejection_reason: reason || "Permintaan akses ditolak oleh admin",
+          approved_by: null,
+          approved_at: null,
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        message: "User rejected",
+      });
+    }
+
+    // === INVITE BY EMAIL ===
     if (action === "invite") {
-      // Generate magic link / invite link
+      if (!email) {
+        return NextResponse.json({ error: "Email required" }, { status: 400 });
+      }
       const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "https://workspace.hadona.id"}/onboarding`,
       });
@@ -123,8 +177,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: `Invitation sent to ${email}`, data });
     }
 
+    // === REACTIVATE ===
     if (action === "reactivate") {
-      // Reactivate a deactivated user
+      if (!email) {
+        return NextResponse.json({ error: "Email required" }, { status: 400 });
+      }
       const { error } = await supabase
         .from("profiles")
         .update({ is_active: true })
@@ -138,6 +195,45 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[/api/admin/users POST] Error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+// ============================================
+// GET - List all users with approval status (for admin queue)
+// ============================================
+export async function GET(request: NextRequest) {
+  try {
+    const adminUser = await verifyAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: "Unauthorized — admin access required" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get("filter") || "all";
+
+    const supabase = getAdminClient();
+    let query = supabase
+      .from("profiles")
+      .select("id, email, full_name, role, division, avatar_url, is_active, approval_status, approved_by, approved_at, rejection_reason, created_at")
+      .order("created_at", { ascending: false });
+
+    if (filter === "pending") {
+      query = query.in("approval_status", ["pending_onboarding", "pending_approval"]);
+    } else if (filter === "approved") {
+      query = query.eq("approval_status", "approved");
+    } else if (filter === "rejected") {
+      query = query.eq("approval_status", "rejected");
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return NextResponse.json({ users: data || [] });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.error("[/api/admin/users GET] Error:", msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

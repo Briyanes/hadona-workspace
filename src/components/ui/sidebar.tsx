@@ -17,16 +17,27 @@ import {
   Clock,
   FileText,
   Settings,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Database } from "@/types/database";
 import { useSidebar } from "@/components/ui/sidebar-context";
+import { checkMenuAccess, MENU_ACCESS } from "@/lib/division-permissions";
+import { toast } from "sonner";
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+interface UserProfile {
+  role: string;
+  division: string[] | null;
+}
 
-const navItems = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+}
+
+const navItems: NavItem[] = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
   { label: "Clients", href: "/clients", icon: UsersIcon },
@@ -37,38 +48,48 @@ const navItems = [
   { label: "Content Plans", href: "/content-plans", icon: Calendar },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
   { label: "Timesheet", href: "/timesheet", icon: Clock },
-];
-
-const managerItems = [
   { label: "Invoices", href: "/invoices", icon: FileText },
   { label: "User Management", href: "/users", icon: UserCog },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [isManager, setIsManager] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const supabase = createClient();
   const { isCollapsed, isMobileOpen, closeMobile } = useSidebar();
 
   useEffect(() => {
-    const checkRole = async () => {
+    const loadProfile = async () => {
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
-        const { data: profile } = await supabase
+        const { data: profileData } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, division")
           .eq("id", userData.user.id)
           .single();
-        const role = (profile as { role: string } | null)?.role;
-        if (role) {
-          setIsManager(role === "super_admin" || role === "project_manager");
+        if (profileData) {
+          setProfile(profileData as unknown as UserProfile);
         }
       }
     };
-    checkRole();
+    loadProfile();
   }, [supabase]);
 
   const iconSize = isCollapsed ? 20 : 18;
+
+  /**
+   * Handle click on locked menu item — show toast notification
+   */
+  function handleLockedClick(label: string, href: string) {
+    const accessConfig = MENU_ACCESS.find((c) => c.href === href);
+    const divisions = accessConfig?.allowedDivisions?.length
+      ? accessConfig.allowedDivisions.join(", ")
+      : "Admin";
+
+    toast.info(`🔒 ${label} untuk divisi: ${divisions}. Hubungi Admin untuk akses.`, {
+      duration: 4000,
+    });
+  }
 
   return (
     <>
@@ -126,6 +147,48 @@ export function Sidebar() {
             const isActive =
               pathname === item.href ||
               (item.href !== "/" && pathname.startsWith(item.href));
+
+            // Check access level
+            const access = profile
+              ? checkMenuAccess(item.href, profile.division, profile.role)
+              : "full"; // Default to full while loading
+
+            // Skip hidden items entirely (Tier 3 — management only)
+            if (access === "hidden") return null;
+
+            const isLocked = access === "locked";
+
+            // Locked menu item
+            if (isLocked) {
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  onClick={() => handleLockedClick(item.label, item.href)}
+                  title={isCollapsed ? `🔒 ${item.label}` : undefined}
+                  className={cn(
+                    "sidebar-link cursor-not-allowed opacity-40 hover:opacity-60",
+                    isCollapsed && "justify-center px-0 py-2.5"
+                  )}
+                >
+                  <div className="relative shrink-0">
+                    <Icon size={iconSize} />
+                    <Lock
+                      size={10}
+                      className="absolute -bottom-1 -right-1 rounded-full bg-white text-muted"
+                    />
+                  </div>
+                  {!isCollapsed && (
+                    <span className="flex items-center gap-1.5">
+                      {item.label}
+                      <Lock size={10} className="text-muted" />
+                    </span>
+                  )}
+                </button>
+              );
+            }
+
+            // Full access menu item
             return (
               <Link
                 key={item.href}
@@ -143,37 +206,6 @@ export function Sidebar() {
               </Link>
             );
           })}
-
-          {isManager && (
-            <>
-              {!isCollapsed && (
-                <div className="mt-3 px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-700">
-                  Management
-                </div>
-              )}
-              {isCollapsed && <div className="my-2 border-t border-border" />}
-              {managerItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={isCollapsed ? item.label : undefined}
-                    onClick={closeMobile}
-                    className={cn(
-                      "sidebar-link",
-                      isActive && "sidebar-link-active",
-                      isCollapsed && "justify-center px-0 py-2.5"
-                    )}
-                  >
-                    <Icon size={iconSize} className="shrink-0" />
-                    {!isCollapsed && item.label}
-                  </Link>
-                );
-              })}
-            </>
-          )}
         </nav>
 
         {/* Zone 3: Settings (fixed at bottom, no absolute) */}
