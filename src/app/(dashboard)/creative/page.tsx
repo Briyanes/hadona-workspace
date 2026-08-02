@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Send } from "lucide-react";
 import { formatDate, cn, extractError } from "@/lib/utils";
 
 interface CreativeRequest {
@@ -36,6 +36,15 @@ interface TeamMember {
   full_name: string | null;
 }
 
+interface Revision {
+  id: string;
+  revision_round: number;
+  feedback: string | null;
+  status: string;
+  created_at: string;
+  created_by: string | null;
+}
+
 const statusColors: Record<string, string> = {
   requested: "bg-primary/20 text-primary",
   in_progress: "bg-warning/20 text-warning",
@@ -59,6 +68,19 @@ const funnelLabels: Record<string, string> = {
   retention: "Retention",
 };
 
+const EMPTY_FORM = {
+  client_id: "",
+  objective_campaign: "",
+  funnel: "awareness",
+  format: "",
+  angle: "",
+  content_url: "",
+  caption: "",
+  prefilled_message: "",
+  assigned_to: "",
+  due_date: "",
+};
+
 export default function CreativePage() {
   const supabase = createClient();
   const [requests, setRequests] = useState<CreativeRequest[]>([]);
@@ -73,18 +95,13 @@ export default function CreativePage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    client_id: "",
-    objective_campaign: "",
-    funnel: "awareness",
-    format: "",
-    angle: "",
-    content_url: "",
-    caption: "",
-    prefilled_message: "",
-    assigned_to: "",
-    due_date: "",
-  });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  // Revisions
+  const [revisions, setRevisions] = useState<Record<string, Revision[]>>({});
+  const [showRevisionPanel, setShowRevisionPanel] = useState<string | null>(null);
+  const [revisionFeedback, setRevisionFeedback] = useState("");
+  const [addingRevision, setAddingRevision] = useState(false);
 
   useEffect(() => {
     loadRequests();
@@ -116,6 +133,63 @@ export default function CreativePage() {
   async function loadTeam() {
     const { data } = await supabase.from("profiles").select("id, full_name").order("full_name");
     setTeam((data as unknown as TeamMember[]) || []);
+  }
+
+  async function loadRevisions(requestId: string) {
+    const { data } = await supabase
+      .from("creative_revisions")
+      .select("*")
+      .eq("creative_request_id", requestId)
+      .order("revision_round", { ascending: true });
+    setRevisions((prev) => ({ ...prev, [requestId]: (data as unknown as Revision[]) || [] }));
+  }
+
+  async function addRevision(requestId: string) {
+    if (!revisionFeedback.trim()) return;
+    setAddingRevision(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { data: existing } = await supabase
+      .from("creative_revisions")
+      .select("revision_round")
+      .eq("creative_request_id", requestId)
+      .order("revision_round", { ascending: false })
+      .limit(1);
+
+    const lastRound = (existing?.[0] as { revision_round?: number } | undefined)?.revision_round;
+    const nextRound = lastRound ? lastRound + 1 : 1;
+
+    const { error } = await supabase.from("creative_revisions").insert({
+      creative_request_id: requestId,
+      revision_round: nextRound,
+      feedback: revisionFeedback.trim(),
+      status: "requested",
+      created_by: userData.user?.id,
+    } as never);
+
+    if (error) {
+      toast.error("Gagal menambah revisi: " + error.message);
+    } else {
+      toast.success(`Revisi round ${nextRound} dikirim!`);
+      setRevisionFeedback("");
+      await loadRevisions(requestId);
+      // Also set creative request status back to in_progress for revision
+      await supabase.from("creative_requests").update({ status: "in_progress" } as never).eq("id", requestId);
+      loadRequests();
+    }
+    setAddingRevision(false);
+  }
+
+  async function resolveRevision(revisionId: string, requestId: string) {
+    const { error } = await supabase
+      .from("creative_revisions")
+      .update({ status: "resolved", updated_at: new Date().toISOString() } as never)
+      .eq("id", revisionId);
+    if (error) {
+      toast.error("Gagal update: " + error.message);
+    } else {
+      toast.success("Revisi diselesaikan");
+      await loadRevisions(requestId);
+    }
   }
 
   function openEdit(r: CreativeRequest) {
@@ -174,18 +248,7 @@ export default function CreativePage() {
         toast.success("Creative request dibuat!");
       }
 
-      setForm({
-        client_id: "",
-        objective_campaign: "",
-        funnel: "awareness",
-        format: "",
-        angle: "",
-        content_url: "",
-        caption: "",
-        prefilled_message: "",
-        assigned_to: "",
-        due_date: "",
-      });
+      setForm({ ...EMPTY_FORM });
       setEditingId(null);
       setShowModal(false);
       loadRequests();
@@ -258,18 +321,7 @@ export default function CreativePage() {
         <button
           onClick={() => {
             setEditingId(null);
-            setForm({
-              client_id: "",
-              objective_campaign: "",
-              funnel: "awareness",
-              format: "",
-              angle: "",
-              content_url: "",
-              caption: "",
-              prefilled_message: "",
-              assigned_to: "",
-              due_date: "",
-            });
+            setForm({ ...EMPTY_FORM });
             setShowModal(true);
           }}
           className="btn-primary"
@@ -435,6 +487,21 @@ export default function CreativePage() {
                 </div>
               )}
 
+              {/* Revision count badge */}
+              {revisions[r.id] && revisions[r.id].length > 0 && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+                    <RotateCcw size={10} />
+                    {revisions[r.id].length} revisi
+                  </span>
+                  {revisions[r.id].filter((rev) => rev.status !== "resolved").length > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-medium text-danger">
+                      {revisions[r.id].filter((rev) => rev.status !== "resolved").length} pending
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
                 <div className="flex gap-2">
                   {r.content_url && (
@@ -463,6 +530,23 @@ export default function CreativePage() {
                       <MessageSquare size={14} />
                     </a>
                   )}
+                  <button
+                    onClick={() => {
+                      if (showRevisionPanel === r.id) {
+                        setShowRevisionPanel(null);
+                      } else {
+                        setShowRevisionPanel(r.id);
+                        loadRevisions(r.id);
+                      }
+                    }}
+                    className={cn(
+                      "rounded p-1.5 hover:bg-background",
+                      showRevisionPanel === r.id ? "text-warning" : "text-muted hover:text-warning"
+                    )}
+                    title="Revisions"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
                 </div>
                 <div className="flex gap-1">
                   <button
@@ -481,6 +565,67 @@ export default function CreativePage() {
                   </button>
                 </div>
               </div>
+
+              {/* Revision Panel (expandable) */}
+              {showRevisionPanel === r.id && (
+                <div className="mt-3 space-y-3 rounded-lg border border-border bg-background p-3">
+                  <p className="text-xs font-semibold text-gray-900">Revision History</p>
+
+                  {/* Existing revisions */}
+                  {revisions[r.id]?.length === 0 && (
+                    <p className="text-xs text-muted">Belum ada revisi.</p>
+                  )}
+                  {revisions[r.id]?.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className={cn(
+                        "rounded-md border p-2",
+                        rev.status === "resolved" ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"
+                      )}
+                    >
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-900">Round {rev.revision_round}</span>
+                        <span
+                          className={cn(
+                            "text-[10px] font-medium",
+                            rev.status === "resolved" ? "text-success" : "text-warning"
+                          )}
+                        >
+                          {rev.status === "resolved" ? "✓ Resolved" : "⏳ Pending"}
+                        </span>
+                      </div>
+                      {rev.feedback && <p className="text-xs text-gray-700">{rev.feedback}</p>}
+                      {rev.status !== "resolved" && (
+                        <button
+                          onClick={() => resolveRevision(rev.id, r.id)}
+                          className="mt-1.5 text-[10px] font-medium text-success hover:underline"
+                        >
+                          Tandai selesai
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add new revision */}
+                  <div className="space-y-2">
+                    <textarea
+                      rows={2}
+                      value={revisionFeedback}
+                      onChange={(e) => setRevisionFeedback(e.target.value)}
+                      placeholder="Tulis feedback revisi..."
+                      className="input resize-none text-xs"
+                    />
+                    <button
+                      onClick={() => addRevision(r.id)}
+                      disabled={addingRevision || !revisionFeedback.trim()}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-md bg-warning/10 py-1.5 text-xs font-medium text-warning transition-colors hover:bg-warning/20 disabled:opacity-50"
+                    >
+                      {addingRevision ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                      Kirim Revisi
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -508,129 +653,128 @@ export default function CreativePage() {
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
-                <select
-                  value={form.client_id}
-                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                  className="input"
-                >
-                  <option value="">— Pilih Client (opsional) —</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Objective/Campaign</label>
-                  <input
-                    type="text"
-                    value={form.objective_campaign}
-                    onChange={(e) => setForm({ ...form, objective_campaign: e.target.value })}
-                    placeholder="Contoh: Lebaran Sale 2025"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Funnel Stage</label>
                   <select
-                    value={form.funnel}
-                    onChange={(e) => setForm({ ...form, funnel: e.target.value })}
+                    value={form.client_id}
+                    onChange={(e) => setForm({ ...form, client_id: e.target.value })}
                     className="input"
                   >
-                    <option value="awareness">Awareness</option>
-                    <option value="consideration">Consideration</option>
-                    <option value="conversion">Conversion</option>
-                    <option value="retention">Retention</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Format</label>
-                  <input
-                    type="text"
-                    value={form.format}
-                    onChange={(e) => setForm({ ...form, format: e.target.value })}
-                    placeholder="Contoh: Video 15s, Carousel"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Angle</label>
-                  <input
-                    type="text"
-                    value={form.angle}
-                    onChange={(e) => setForm({ ...form, angle: e.target.value })}
-                    placeholder="Contoh: Testimonial, FOMO"
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Content URL</label>
-                <input
-                  type="url"
-                  value={form.content_url}
-                  onChange={(e) => setForm({ ...form, content_url: e.target.value })}
-                  placeholder="https://drive.google.com/..."
-                  className="input"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Caption</label>
-                <textarea
-                  rows={2}
-                  value={form.caption}
-                  onChange={(e) => setForm({ ...form, caption: e.target.value })}
-                  placeholder="Caption untuk konten..."
-                  className="input resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Prefilled Message (WA/Link)</label>
-                <textarea
-                  rows={2}
-                  value={form.prefilled_message}
-                  onChange={(e) => setForm({ ...form, prefilled_message: e.target.value })}
-                  placeholder="Pesan WA atau link CTWA..."
-                  className="input resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Assign To</label>
-                  <select
-                    value={form.assigned_to}
-                    onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
-                    className="input"
-                  >
-                    <option value="">— Pilih Designer/Copywriter —</option>
-                    {team.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.full_name || "Unknown"}
+                    <option value="">— Pilih Client (opsional) —</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Objective/Campaign</label>
+                    <input
+                      type="text"
+                      value={form.objective_campaign}
+                      onChange={(e) => setForm({ ...form, objective_campaign: e.target.value })}
+                      placeholder="Contoh: Lebaran Sale 2025"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Funnel Stage</label>
+                    <select
+                      value={form.funnel}
+                      onChange={(e) => setForm({ ...form, funnel: e.target.value })}
+                      className="input"
+                    >
+                      <option value="awareness">Awareness</option>
+                      <option value="consideration">Consideration</option>
+                      <option value="conversion">Conversion</option>
+                      <option value="retention">Retention</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Format</label>
+                    <input
+                      type="text"
+                      value={form.format}
+                      onChange={(e) => setForm({ ...form, format: e.target.value })}
+                      placeholder="Contoh: Video 15s, Carousel"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Angle</label>
+                    <input
+                      type="text"
+                      value={form.angle}
+                      onChange={(e) => setForm({ ...form, angle: e.target.value })}
+                      placeholder="Contoh: Testimonial, FOMO"
+                      className="input"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Content URL</label>
                   <input
-                    type="date"
-                    value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                    type="url"
+                    value={form.content_url}
+                    onChange={(e) => setForm({ ...form, content_url: e.target.value })}
+                    placeholder="https://drive.google.com/..."
                     className="input"
                   />
                 </div>
-              </div>
 
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Caption</label>
+                  <textarea
+                    rows={2}
+                    value={form.caption}
+                    onChange={(e) => setForm({ ...form, caption: e.target.value })}
+                    placeholder="Caption untuk konten..."
+                    className="input resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Prefilled Message (WA/Link)</label>
+                  <textarea
+                    rows={2}
+                    value={form.prefilled_message}
+                    onChange={(e) => setForm({ ...form, prefilled_message: e.target.value })}
+                    placeholder="Pesan WA atau link CTWA..."
+                    className="input resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Assign To</label>
+                    <select
+                      value={form.assigned_to}
+                      onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">— Pilih Designer/Copywriter —</option>
+                      {team.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.full_name || "Unknown"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
+                    <input
+                      type="date"
+                      value={form.due_date}
+                      onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Sticky Footer */}

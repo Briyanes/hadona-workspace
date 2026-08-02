@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User, CheckSquare, Trash2, Layers } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -60,6 +60,12 @@ export default function TasksPage() {
 
   // View mode: board or table
   const [viewMode, setViewMode] = useState<"board" | "table">("board");
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkPriority, setBulkPriority] = useState("");
+  const [showBulkBar, setShowBulkBar] = useState(false);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -140,6 +146,77 @@ export default function TasksPage() {
       toast.error("Gagal update status: " + error.message);
     } else {
       toast.success("Task dipindahkan ke " + newStatus.replace("_", " "));
+      loadTasks();
+    }
+  }
+
+  function toggleSelect(taskId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      setShowBulkBar(next.size > 0);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === sortedTasks.length) {
+      setSelectedIds(new Set());
+      setShowBulkBar(false);
+    } else {
+      setSelectedIds(new Set(sortedTasks.map((t) => t.id)));
+      setShowBulkBar(true);
+    }
+  }
+
+  async function handleBulkStatus() {
+    if (!bulkStatus || selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase
+      .from("tasks")
+      .update({ status: bulkStatus } as never)
+      .in("id", ids);
+    if (error) {
+      toast.error("Bulk update gagal: " + error.message);
+    } else {
+      toast.success(`${ids.length} task diupdate ke ${bulkStatus.replace("_", " ")}`);
+      setSelectedIds(new Set());
+      setShowBulkBar(false);
+      setBulkStatus("");
+      loadTasks();
+    }
+  }
+
+  async function handleBulkPriority() {
+    if (!bulkPriority || selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase
+      .from("tasks")
+      .update({ priority: bulkPriority } as never)
+      .in("id", ids);
+    if (error) {
+      toast.error("Bulk update gagal: " + error.message);
+    } else {
+      toast.success(`${ids.length} task priority diubah ke ${bulkPriority}`);
+      setSelectedIds(new Set());
+      setShowBulkBar(false);
+      setBulkPriority("");
+      loadTasks();
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Hapus ${selectedIds.size} task yang dipilih? Tindakan ini tidak bisa dibatalkan.`)) return;
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("tasks").delete().in("id", ids);
+    if (error) {
+      toast.error("Bulk delete gagal: " + error.message);
+    } else {
+      toast.success(`${ids.length} task dihapus`);
+      setSelectedIds(new Set());
+      setShowBulkBar(false);
       loadTasks();
     }
   }
@@ -487,12 +564,77 @@ export default function TasksPage() {
       </DragDropContext>
       )}
 
+      {/* ==================== BULK ACTION BAR ==================== */}
+      {showBulkBar && viewMode === "table" && (
+        <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckSquare size={16} className="text-primary" />
+            <span className="text-sm font-semibold text-primary">{selectedIds.size} task dipilih</span>
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+              className="input w-auto py-1.5 text-xs"
+            >
+              <option value="">Ubah Status...</option>
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+            {bulkStatus && (
+              <button onClick={handleBulkStatus} className="btn-primary px-3 py-1.5 text-xs">
+                <Layers size={12} /> Apply Status
+              </button>
+            )}
+            <select
+              value={bulkPriority}
+              onChange={(e) => setBulkPriority(e.target.value)}
+              className="input w-auto py-1.5 text-xs"
+            >
+              <option value="">Ubah Prioritas...</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+            {bulkPriority && (
+              <button onClick={handleBulkPriority} className="btn-primary px-3 py-1.5 text-xs">
+                <Layers size={12} /> Apply Priority
+              </button>
+            )}
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/20"
+            >
+              <Trash2 size={12} /> Delete
+            </button>
+            <button
+              onClick={() => { setSelectedIds(new Set()); setShowBulkBar(false); }}
+              className="px-3 py-1.5 text-xs text-muted hover:text-gray-900"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ==================== TABLE VIEW ==================== */}
       {viewMode === "table" && (
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full table-fixed text-sm">
             <thead className="border-b border-border bg-background">
               <tr>
+                <th className="w-[40px] px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === sortedTasks.length && sortedTasks.length > 0}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 cursor-pointer rounded border-border"
+                  />
+                </th>
                 <SortableTh label="Title" sortKey="title" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[300px]" />
                 <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[150px]" />
                 <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[100px]" />
@@ -505,7 +647,7 @@ export default function TasksPage() {
             <tbody>
               {sortedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm text-muted">Tidak ada task yang cocok dengan filter</td>
+                  <td colSpan={8} className="py-8 text-center text-sm text-muted">Tidak ada task yang cocok dengan filter</td>
                 </tr>
               ) : (
                 sortedTasks.map((task) => {
@@ -515,8 +657,19 @@ export default function TasksPage() {
                     <tr
                       key={task.id}
                       onClick={() => setDetailTaskId(task.id)}
-                      className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-primary/5"
+                      className={cn(
+                        "cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-primary/5",
+                        selectedIds.has(task.id) && "bg-primary/5"
+                      )}
                     >
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(task.id)}
+                          onChange={() => toggleSelect(task.id)}
+                          className="h-4 w-4 cursor-pointer rounded border-border"
+                        />
+                      </td>
                       <td className="px-4 py-3" title={task.title}>
                         <div className="flex items-center gap-1.5 overflow-hidden">
                           {isOverdue && <AlertTriangle size={12} className="shrink-0 text-danger" />}

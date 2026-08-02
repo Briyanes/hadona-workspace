@@ -3,9 +3,10 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { LogOut, Search, PanelLeftClose, PanelLeftOpen, Menu, Settings, User, ChevronDown } from "lucide-react";
+import { LogOut, Search, PanelLeftClose, PanelLeftOpen, Menu, Settings, User, ChevronDown, Sun, Moon } from "lucide-react";
 import type { Profile } from "@/types";
 import { useSidebar } from "@/components/ui/sidebar-context";
+import { useTheme } from "@/components/theme-provider";
 import { NotificationBell } from "@/components/ui/notification-bell";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function Header() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const { isCollapsed, toggle, openMobile } = useSidebar();
+  const { isDark, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
@@ -228,6 +230,15 @@ export function Header() {
             </div>
           )}
         </div>
+
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={() => setTheme(isDark ? "light" : "dark")}
+          className="btn-ghost p-2"
+          title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
 
         {/* Notification Bell */}
         <NotificationBell />
