@@ -535,38 +535,35 @@ export default function UsersPage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted" />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full">
-            <thead className="bg-surface">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <table className="w-full min-w-[800px]">
+            <thead className="border-b border-border bg-background">
               <tr className="text-left text-xs text-muted">
-                <SortableTh label="Nama" sortKey="full_name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <th className="hidden px-4 py-3 font-medium sm:table-cell">
-                  <SortableTh label="Email" sortKey="email" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                </th>
-                <SortableTh label="Divisi" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Role" sortKey="role" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <SortableTh label="Status" sortKey="is_active" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} />
-                <th className="px-4 py-3 text-right font-medium">Aksi</th>
+                <SortableTh label="Nama" sortKey="full_name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[220px]" />
+                <SortableTh label="Email" sortKey="email" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[200px]" />
+                <SortableTh label="Divisi" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[200px]" />
+                <SortableTh label="Role" sortKey="role" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[140px]" />
+                <SortableTh label="Status" sortKey="is_active" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[100px]" />
+                <th className="w-[120px] px-4 py-3 text-right text-xs font-medium">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {sortedData.map((user) => (
-                <tr key={user.id} className="text-sm hover:bg-surface/50">
+                <tr key={user.id} className="border-b border-border text-sm transition-colors last:border-0 hover:bg-primary/5">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                         {user.full_name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-medium text-gray-900">{user.full_name}</span>
+                      <span className="truncate font-medium text-gray-900">{user.full_name}</span>
                       {user.id === currentUserId && (
                         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
                           You
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-xs text-muted sm:hidden">{user.email}</p>
                   </td>
-                  <td className="hidden px-4 py-3 text-muted sm:table-cell">{user.email}</td>
+                  <td className="px-4 py-3 text-xs text-muted">{user.email}</td>
 
                   {/* Division */}
                   <td className="px-4 py-3">
