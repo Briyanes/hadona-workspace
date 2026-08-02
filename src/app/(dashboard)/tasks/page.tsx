@@ -579,11 +579,12 @@ export default function TasksPage() {
         />
       )}
 
-      {/* Create Task Modal */}
+      {/* Create Task Modal — 2-Column + Sticky */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            {/* Sticky Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">Buat Task Baru</h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -593,157 +594,168 @@ export default function TasksPage() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateTask} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Judul Task *</label>
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Contoh: Setup Campaign Meta Ads Client X"
-                  className="input"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
-                <textarea
-                  rows={2}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Detail tugas (opsional)"
-                  className="input resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
-                  <select
-                    value={form.client_id}
-                    onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                    className="input"
-                  >
-                    <option value="">— Pilih Client —</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Prioritas</label>
-                  <select
-                    value={form.priority}
-                    onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                    className="input"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status Awal</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="input"
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="review">Review</option>
-                    <option value="blocked">Blocked</option>
-                    <option value="done">Done</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Divisi</label>
-                  <select
-                    value={form.division}
-                    onChange={(e) => setForm({ ...form, division: e.target.value })}
-                    className="input"
-                  >
-                    <option value="">— Pilih Divisi —</option>
-                    <option value="Creative Director">Creative Director</option>
-                    <option value="Content Creator">Content Creator</option>
-                    <option value="Production">Production</option>
-                    <option value="Project Manager">Project Manager</option>
-                    <option value="Advertiser">Advertiser</option>
-                    <option value="Account Executive">Account Executive</option>
-                    <option value="Copywriter">Copywriter</option>
-                    <option value="Developer">Developer</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Start Date</label>
+            {/* Scrollable Body */}
+            <form onSubmit={handleCreateTask} className="flex flex-1 flex-col overflow-hidden">
+              <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
+                {/* Full-width: Title */}
+                <div className="lg:col-span-2">
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Judul Task *</label>
                   <input
-                    type="date"
-                    value={form.start_date}
-                    onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                    type="text"
+                    required
+                    autoFocus
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="Contoh: Setup Campaign Meta Ads Client X"
                     className="input"
                   />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
-                  <input
-                    type="date"
-                    value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                    className="input"
+
+                {/* Full-width: Description */}
+                <div className="lg:col-span-2">
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
+                  <textarea
+                    rows={2}
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Detail tugas (opsional)"
+                    className="input resize-none"
                   />
+                </div>
+
+                {/* LEFT column fields */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
+                    <select
+                      value={form.client_id}
+                      onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">— Pilih Client —</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Status Awal</label>
+                    <select
+                      value={form.status}
+                      onChange={(e) => setForm({ ...form, status: e.target.value })}
+                      className="input"
+                    >
+                      <option value="todo">To Do</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="review">Review</option>
+                      <option value="blocked">Blocked</option>
+                      <option value="done">Done</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Start Date</label>
+                    <input
+                      type="date"
+                      value={form.start_date}
+                      onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>
+                    <input
+                      type="text"
+                      value={form.result}
+                      onChange={(e) => setForm({ ...form, result: e.target.value })}
+                      placeholder="Contoh: Monthly report selesai"
+                      className="input"
+                    />
+                  </div>
+                </div>
+
+                {/* RIGHT column fields */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Prioritas</label>
+                    <select
+                      value={form.priority}
+                      onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                      className="input"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Divisi</label>
+                    <select
+                      value={form.division}
+                      onChange={(e) => setForm({ ...form, division: e.target.value })}
+                      className="input"
+                    >
+                      <option value="">— Pilih Divisi —</option>
+                      <option value="Creative Director">Creative Director</option>
+                      <option value="Content Creator">Content Creator</option>
+                      <option value="Production">Production</option>
+                      <option value="Project Manager">Project Manager</option>
+                      <option value="Advertiser">Advertiser</option>
+                      <option value="Account Executive">Account Executive</option>
+                      <option value="Copywriter">Copywriter</option>
+                      <option value="Developer">Developer</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
+                    <input
+                      type="date"
+                      value={form.due_date}
+                      onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                      Blocker / Kendala
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={form.blocker}
+                      onChange={(e) => setForm({ ...form, blocker: e.target.value })}
+                      placeholder="Isi jika ada kendala..."
+                      className="input resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Full-width: Assignees */}
+                <div className="lg:col-span-2">
+                  <AssigneePicker
+                    selectedIds={formAssignees}
+                    onChange={setFormAssignees}
+                    label="Assignee"
+                    divisionFilter={form.division || null}
+                  />
+                  {form.division && (
+                    <p className="mt-1.5 flex items-start gap-1 text-xs text-muted">
+                      <Lightbulb size={12} className="mt-0.5 shrink-0 text-warning" />
+                      <span>Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong></span>
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Assignees - scoped by division if selected */}
-              <AssigneePicker
-                selectedIds={formAssignees}
-                onChange={setFormAssignees}
-                label="Assignee"
-                divisionFilter={form.division || null}
-              />
-              {form.division && (
-                <p className="-mt-2 flex items-start gap-1 text-xs text-muted">
-                  <Lightbulb size={12} className="mt-0.5 shrink-0 text-warning" />
-                  <span>Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong></span>
-                </p>
-              )}
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>
-                <input
-                  type="text"
-                  value={form.result}
-                  onChange={(e) => setForm({ ...form, result: e.target.value })}
-                  placeholder="Contoh: Monthly report selesai, 10 creative approved"
-                  className="input"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                  Blocker / Kendala
-                </label>
-                <textarea
-                  rows={2}
-                  value={form.blocker}
-                  onChange={(e) => setForm({ ...form, blocker: e.target.value })}
-                  placeholder="Isi jika ada kendala/hambatan..."
-                  className="input resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
+              {/* Sticky Footer */}
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}

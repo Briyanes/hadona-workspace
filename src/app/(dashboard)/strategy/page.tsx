@@ -399,11 +399,12 @@ export default function StrategyPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Modal — Sticky Header/Footer + Scroll */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            {/* Sticky Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit OKR" : "OKR Baru"}
               </h2>
@@ -415,11 +416,13 @@ export default function StrategyPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                  Objective *
-                </label>
+            {/* Scrollable Body */}
+            <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+              <div className="space-y-4 overflow-y-auto px-6 py-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                    Objective *
+                  </label>
                 <input
                   type="text"
                   required
@@ -536,7 +539,10 @@ export default function StrategyPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}

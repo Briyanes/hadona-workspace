@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil } from "lucide-react";
+import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { formatDate, cn, extractError } from "@/lib/utils";
 
 interface CreativeRequest {
@@ -233,6 +233,21 @@ export default function CreativePage() {
     return matchStatus && matchSearch && matchClient;
   });
 
+  // ── Derived stats ──
+  const totalCount = requests.length;
+  const pendingCount = requests.filter((r) => r.status === "requested" || r.status === "in_progress").length;
+  const reviewCount = requests.filter((r) => r.status === "review").length;
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const overdueCount = requests.filter((r) => r.due_date && r.due_date < todayStr && r.status !== "approved" && r.status !== "rejected").length;
+  const statusCounts: Record<string, number> = {
+    all: totalCount,
+    requested: requests.filter((r) => r.status === "requested").length,
+    in_progress: requests.filter((r) => r.status === "in_progress").length,
+    review: requests.filter((r) => r.status === "review").length,
+    approved: requests.filter((r) => r.status === "approved").length,
+    rejected: requests.filter((r) => r.status === "rejected").length,
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -261,6 +276,40 @@ export default function CreativePage() {
         >
           <Plus size={16} /> New Request
         </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="card p-4">
+          <div className="flex items-center gap-2">
+            <Palette className="text-primary" size={16} />
+            <p className="text-xs uppercase text-muted">Total</p>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{totalCount}</p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2">
+            <Clock className="text-warning" size={16} />
+            <p className="text-xs uppercase text-muted">In Progress</p>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{pendingCount}</p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="text-success" size={16} />
+            <p className="text-xs uppercase text-muted">Approved</p>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{approvedCount}</p>
+        </div>
+        <div className={cn("card p-4", overdueCount > 0 && "ring-2 ring-danger/30")}>
+          <div className="flex items-center gap-2">
+            <AlertCircle className={overdueCount > 0 ? "text-danger" : "text-muted"} size={16} />
+            <p className="text-xs uppercase text-muted">Overdue</p>
+          </div>
+          <p className={cn("mt-1 text-2xl font-bold", overdueCount > 0 ? "text-danger" : "text-gray-900")}>
+            {overdueCount}
+          </p>
+        </div>
       </div>
 
       {/* Search + Filter */}
@@ -295,6 +344,16 @@ export default function CreativePage() {
             )}
           >
             {s === "all" ? "Semua" : statusLabels[s] || s}
+            {statusCounts[s] > 0 && (
+              <span
+                className={cn(
+                  "ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                  statusFilter === s ? "bg-white/20" : "bg-primary/10 text-primary"
+                )}
+              >
+                {statusCounts[s]}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -427,11 +486,12 @@ export default function CreativePage() {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Modal — Sticky Header/Footer + Scroll */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            {/* Sticky Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">
                 {editingId ? "Edit Creative Request" : "Creative Request Baru"}
               </h2>
@@ -443,9 +503,11 @@ export default function CreativePage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
+            {/* Scrollable Body */}
+            <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+              <div className="space-y-4 overflow-y-auto px-6 py-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
                 <select
                   value={form.client_id}
                   onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -569,7 +631,10 @@ export default function CreativePage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
