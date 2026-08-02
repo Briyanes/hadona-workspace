@@ -19,6 +19,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn, formatIDR } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface CalendarEvent {
   id: string;
@@ -536,10 +537,11 @@ export default function CalendarPage() {
             <span className="badge bg-surface text-muted">{agendaEvents.length} items</span>
           </div>
           {agendaEvents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CalendarIcon className="mb-2 text-muted" size={32} />
-              <p className="text-sm text-muted">Tidak ada agenda mendatang</p>
-            </div>
+            <EmptyState
+              icon={CalendarIcon}
+              title="Tidak ada agenda mendatang"
+              description="Deadline task, report, invoice, dan contract akan muncul di sini."
+            />
           ) : (
             <div className="space-y-1.5">
               {agendaEvents.map((e) => {

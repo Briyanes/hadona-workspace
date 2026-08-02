@@ -18,7 +18,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }
       >
         <Header />
-        <main className="p-4 sm:p-6">{children}</main>
+        <main className="p-4 sm:p-6 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

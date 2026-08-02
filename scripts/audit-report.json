@@ -1,0 +1,591 @@
+{
+  "timestamp": "2026-08-02T17:05:46.376Z",
+  "baseUrl": "https://workspace.hadona.id",
+  "totalPages": 17,
+  "loginStatus": "SUCCESS",
+  "pages": [
+    {
+      "name": "Dashboard",
+      "path": "/",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 2,
+      "details": [
+        "🟡 loading-stuck",
+        "🟡 1 console error(s)",
+        "🔴 1 network error(s) (4xx/5xx)",
+        "🟡 Shows 'no data' text but missing proper empty state component",
+        "ℹ️ Load time: 8.9s"
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 ()"
+      ],
+      "networkErrors": [
+        {
+          "url": "https://rsxqjjcuixdsmijhgdyl.supabase.co/rest/v1/budget_alerts?select=id%2Cclient_id%2Cad_account_id%2Cthreshold_pct%2Ccurrent_spend%2Cmonthly_budget%2Calert_type%2Cmessage%2Cis_acknowledged%2Ccreated",
+          "status": 404
+        }
+      ],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 8911
+      },
+      "screenshot": "desktop-dashboard.png",
+      "mobile": {
+        "name": "Dashboard",
+        "path": "/",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 2,
+        "details": [
+          "🟡 loading-stuck",
+          "🟡 1 console error(s)",
+          "🔴 1 network error(s) (4xx/5xx)",
+          "🟡 Shows 'no data' text but missing proper empty state component"
+        ],
+        "consoleErrors": [
+          "Failed to load resource: the server responded with a status of 404 ()"
+        ],
+        "networkErrors": [
+          {
+            "url": "https://rsxqjjcuixdsmijhgdyl.supabase.co/rest/v1/budget_alerts?select=id%2Cclient_id%2Cad_account_id%2Cthreshold_pct%2Ccurrent_spend%2Cmonthly_budget%2Calert_type%2Cmessage%2Cis_acknowledged%2Ccreated",
+            "status": 404
+          }
+        ],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 7287
+        },
+        "screenshot": "mobile-dashboard.png"
+      }
+    },
+    {
+      "name": "Tasks",
+      "path": "/tasks",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.5s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6464
+      },
+      "screenshot": "desktop-tasks.png",
+      "mobile": {
+        "name": "Tasks",
+        "path": "/tasks",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 5895
+        },
+        "screenshot": "mobile-tasks.png"
+      }
+    },
+    {
+      "name": "Clients",
+      "path": "/clients",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 9.3s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 9287
+      },
+      "screenshot": "desktop-clients.png",
+      "mobile": {
+        "name": "Clients",
+        "path": "/clients",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6205
+        },
+        "screenshot": "mobile-clients.png"
+      }
+    },
+    {
+      "name": "Ads Spend",
+      "path": "/ads-spend",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 7.8s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 7788
+      },
+      "screenshot": "desktop-ads-spend.png",
+      "mobile": {
+        "name": "Ads Spend",
+        "path": "/ads-spend",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 1,
+        "details": [
+          "🟡 Overflow: {\"type\":\"table-overflow\",\"right\":1260.390625,\"viewport\":390}"
+        ],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [
+          "table-overflow"
+        ],
+        "performance": {
+          "loadTimeMs": 6342
+        },
+        "screenshot": "mobile-ads-spend.png"
+      }
+    },
+    {
+      "name": "Weekly Report",
+      "path": "/reports",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.5s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6491
+      },
+      "screenshot": "desktop-weekly-report.png",
+      "mobile": {
+        "name": "Weekly Report",
+        "path": "/reports",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6239
+        },
+        "screenshot": "mobile-weekly-report.png"
+      }
+    },
+    {
+      "name": "Strategy (OKR)",
+      "path": "/strategy",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.8s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6837
+      },
+      "screenshot": "desktop-strategy-okr.png",
+      "mobile": {
+        "name": "Strategy (OKR)",
+        "path": "/strategy",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6206
+        },
+        "screenshot": "mobile-strategy-okr.png"
+      }
+    },
+    {
+      "name": "Creative Requests",
+      "path": "/creative",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.1s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6069
+      },
+      "screenshot": "desktop-creative-requests.png",
+      "mobile": {
+        "name": "Creative Requests",
+        "path": "/creative",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6042
+        },
+        "screenshot": "mobile-creative-requests.png"
+      }
+    },
+    {
+      "name": "Content Plans",
+      "path": "/content-plans",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.5s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6538
+      },
+      "screenshot": "desktop-content-plans.png",
+      "mobile": {
+        "name": "Content Plans",
+        "path": "/content-plans",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6194
+        },
+        "screenshot": "mobile-content-plans.png"
+      }
+    },
+    {
+      "name": "Calendar",
+      "path": "/calendar",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 1,
+      "details": [
+        "🟡 Shows 'no data' text but missing proper empty state component",
+        "ℹ️ Load time: 5.9s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 5918
+      },
+      "screenshot": "desktop-calendar.png",
+      "mobile": {
+        "name": "Calendar",
+        "path": "/calendar",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 1,
+        "details": [
+          "🟡 Shows 'no data' text but missing proper empty state component"
+        ],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 5730
+        },
+        "screenshot": "mobile-calendar.png"
+      }
+    },
+    {
+      "name": "Timesheet",
+      "path": "/timesheet",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.7s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6676
+      },
+      "screenshot": "desktop-timesheet.png",
+      "mobile": {
+        "name": "Timesheet",
+        "path": "/timesheet",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6301
+        },
+        "screenshot": "mobile-timesheet.png"
+      }
+    },
+    {
+      "name": "Invoices",
+      "path": "/invoices",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.3s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6290
+      },
+      "screenshot": "desktop-invoices.png",
+      "mobile": {
+        "name": "Invoices",
+        "path": "/invoices",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 5887
+        },
+        "screenshot": "mobile-invoices.png"
+      }
+    },
+    {
+      "name": "User Management",
+      "path": "/users",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.2s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6184
+      },
+      "screenshot": "desktop-user-management.png",
+      "mobile": {
+        "name": "User Management",
+        "path": "/users",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 1,
+        "details": [
+          "🟡 Overflow: {\"type\":\"table-overflow\",\"right\":587.640625,\"viewport\":390}"
+        ],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [
+          "table-overflow"
+        ],
+        "performance": {
+          "loadTimeMs": 5876
+        },
+        "screenshot": "mobile-user-management.png"
+      }
+    },
+    {
+      "name": "Settings",
+      "path": "/settings",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 8.2s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 8209
+      },
+      "screenshot": "desktop-settings.png",
+      "mobile": {
+        "name": "Settings",
+        "path": "/settings",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6788
+        },
+        "screenshot": "mobile-settings.png"
+      }
+    },
+    {
+      "name": "Settings - Profile",
+      "path": "/settings/profile",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.1s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6145
+      },
+      "screenshot": "desktop-settings-profile.png",
+      "mobile": {
+        "name": "Settings - Profile",
+        "path": "/settings/profile",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6241
+        },
+        "screenshot": "mobile-settings-profile.png"
+      }
+    },
+    {
+      "name": "Settings - Preferences",
+      "path": "/settings/preferences",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.7s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6683
+      },
+      "screenshot": "desktop-settings-preferences.png",
+      "mobile": {
+        "name": "Settings - Preferences",
+        "path": "/settings/preferences",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6044
+        },
+        "screenshot": "mobile-settings-preferences.png"
+      }
+    },
+    {
+      "name": "Settings - Security",
+      "path": "/settings/security",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.6s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6644
+      },
+      "screenshot": "desktop-settings-security.png",
+      "mobile": {
+        "name": "Settings - Security",
+        "path": "/settings/security",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6021
+        },
+        "screenshot": "mobile-settings-security.png"
+      }
+    },
+    {
+      "name": "Settings - Workspace",
+      "path": "/settings/workspace",
+      "device": "desktop",
+      "criticalIssues": 0,
+      "warnings": 0,
+      "details": [
+        "ℹ️ Load time: 6.8s"
+      ],
+      "consoleErrors": [],
+      "networkErrors": [],
+      "layoutIssues": [],
+      "performance": {
+        "loadTimeMs": 6843
+      },
+      "screenshot": "desktop-settings-workspace.png",
+      "mobile": {
+        "name": "Settings - Workspace",
+        "path": "/settings/workspace",
+        "device": "mobile",
+        "criticalIssues": 0,
+        "warnings": 0,
+        "details": [],
+        "consoleErrors": [],
+        "networkErrors": [],
+        "layoutIssues": [],
+        "performance": {
+          "loadTimeMs": 6255
+        },
+        "screenshot": "mobile-settings-workspace.png"
+      }
+    }
+  ],
+  "summary": {
+    "critical": 0,
+    "warnings": 8,
+    "passed": 15
+  }
+}

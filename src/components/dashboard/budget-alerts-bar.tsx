@@ -47,10 +47,17 @@ export function BudgetAlertsBar() {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (error) throw error;
-      setAlerts((data as unknown as BudgetAlert[]) || []);
-    } catch {
+      if (error) {
+        // Table might not exist yet — silently fail
+        console.warn("[BudgetAlerts] Failed to load:", error.message);
+        setAlerts([]);
+      } else {
+        setAlerts((data as unknown as BudgetAlert[]) || []);
+      }
+    } catch (err) {
       // Silently fail - alerts are non-critical
+      console.warn("[BudgetAlerts] Error:", err);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
