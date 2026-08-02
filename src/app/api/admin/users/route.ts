@@ -28,21 +28,41 @@ async function verifyAdmin(request: NextRequest) {
     token = authHeader.replace("Bearer ", "");
   }
 
-  if (!token) return null;
+  if (!token) {
+    console.error("[verifyAdmin] No token provided");
+    return null;
+  }
 
   const admin = getAdminClient();
   const { data, error } = await admin.auth.getUser(token);
-  if (error || !data.user) return null;
+  if (error || !data.user) {
+    console.error("[verifyAdmin] Token invalid or user not found:", error?.message);
+    return null;
+  }
 
   // Check if user is admin/PM
-  const { data: profile } = await admin
+  const { data: profile, error: profileError } = await admin
     .from("profiles")
-    .select("role, is_active")
+    .select("role, is_active, approval_status")
     .eq("id", data.user.id)
     .single();
 
-  if (!profile?.is_active) return null;
-  if (!["super_admin", "project_manager"].includes(profile.role)) return null;
+  if (profileError || !profile) {
+    console.error("[verifyAdmin] Profile not found for user:", data.user.id, profileError?.message);
+    return null;
+  }
+
+  if (!profile.is_active) {
+    console.error("[verifyAdmin] User not active:", data.user.email);
+    return null;
+  }
+
+  // Allow super_admin, project_manager, and creative_director
+  const allowedRoles = ["super_admin", "project_manager", "creative_director"];
+  if (!allowedRoles.includes(profile.role)) {
+    console.error(`[verifyAdmin] Role "${profile.role}" not allowed for admin actions. User: ${data.user.email}`);
+    return null;
+  }
 
   return data.user;
 }
