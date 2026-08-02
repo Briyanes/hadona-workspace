@@ -180,19 +180,42 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
   async function loadTask() {
     setLoading(true);
-    const { data, error } = await supabase
+
+    // Step 1: Load core task data (resilient — if joins fail, we still have the task)
+    const { data: coreData, error: coreError } = await supabase
       .from("tasks")
-      .select(`id, title, description, result, status, priority, division, due_date, start_date, notes, approval_status, approved_by, approved_at, approval_note, client:clients(name), task_assignees(user_id, user:profiles(full_name))`)
+      .select("id, title, description, result, status, priority, division, due_date, start_date, notes, approval_status, approved_by, approved_at, approval_note, client_id")
       .eq("id", taskId)
       .single();
 
-    if (error) {
-      toast.error("Gagal memuat detail task");
+    if (coreError || !coreData) {
+      console.error("[Task Detail Load Error]", coreError);
+      toast.error("Gagal memuat detail task: " + (coreError?.message || "Task not found"));
       setLoading(false);
       return;
     }
 
-    const taskData = data as unknown as Task;
+    // Cast to Task-shaped object since we selected exactly the right columns
+    const core = coreData as unknown as Task;
+
+    // Step 2: Load client name + assignees in parallel (non-blocking)
+    const [clientResult, assigneesResult] = await Promise.all([
+      (coreData as Record<string, unknown>).client_id
+        ? supabase.from("clients").select("name").eq("id", (coreData as Record<string, unknown>).client_id as string).single()
+        : Promise.resolve({ data: null, error: null }),
+      supabase
+        .from("task_assignees")
+        .select("user_id, user:profiles(full_name)")
+        .eq("task_id", taskId),
+    ]);
+
+    const taskData: Task = {
+      ...core,
+      client: (clientResult.data as { name: string } | null) || undefined,
+      task_assignees:
+        (assigneesResult.data as { user_id: string; user: { full_name: string } }[] | null) || undefined,
+    };
+
     setTask(taskData);
     setEditForm({
       title: taskData.title || "",
@@ -204,7 +227,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       start_date: taskData.start_date || "",
       result: taskData.result || "",
       notes: taskData.notes || "",
-      client_id: "",
+      client_id: (coreData as Record<string, unknown>).client_id as string || "",
     });
     setEditAssignees(taskData.task_assignees?.map((a) => a.user_id) || []);
     setLoading(false);

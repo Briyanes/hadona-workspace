@@ -98,6 +98,10 @@ export interface Database {
           start_date: string | null;
           due_date: string | null;
           notes: string | null;
+          approval_status: string | null;
+          approved_by: string | null;
+          approved_at: string | null;
+          approval_note: string | null;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -113,6 +117,10 @@ export interface Database {
           start_date?: string | null;
           due_date?: string | null;
           notes?: string | null;
+          approval_status?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          approval_note?: string | null;
           created_by: string;
         };
         Update: {
@@ -126,10 +134,80 @@ export interface Database {
           start_date?: string | null;
           due_date?: string | null;
           notes?: string | null;
+          approval_status?: string | null;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          approval_note?: string | null;
         };
         Relationships: [
           { foreignKeyName: "tasks_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
-          { foreignKeyName: "tasks_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+          { foreignKeyName: "tasks_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "tasks_approved_by_fkey"; columns: ["approved_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      subtasks: {
+        Row: {
+          id: string;
+          task_id: string;
+          title: string;
+          is_completed: boolean;
+          created_by: string | null;
+          order_index: number;
+          created_at: string;
+        };
+        Insert: {
+          task_id: string;
+          title: string;
+          is_completed?: boolean;
+          created_by?: string | null;
+          order_index?: number;
+        };
+        Update: {
+          title?: string;
+          is_completed?: boolean;
+          order_index?: number;
+        };
+        Relationships: [
+          { foreignKeyName: "subtasks_task_id_fkey"; columns: ["task_id"]; referencedRelation: "tasks"; referencedColumns: ["id"] },
+          { foreignKeyName: "subtasks_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      timesheets: {
+        Row: {
+          id: string;
+          user_id: string;
+          task_id: string | null;
+          client_id: string | null;
+          date: string;
+          hours: number;
+          activity_type: string | null;
+          description: string | null;
+          billable: boolean;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          task_id?: string | null;
+          client_id?: string | null;
+          date?: string;
+          hours?: number;
+          activity_type?: string | null;
+          description?: string | null;
+          billable?: boolean;
+        };
+        Update: {
+          task_id?: string | null;
+          client_id?: string | null;
+          date?: string;
+          hours?: number;
+          activity_type?: string | null;
+          description?: string | null;
+          billable?: boolean;
+        };
+        Relationships: [
+          { foreignKeyName: "timesheets_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "timesheets_task_id_fkey"; columns: ["task_id"]; referencedRelation: "tasks"; referencedColumns: ["id"] },
+          { foreignKeyName: "timesheets_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] }
         ];
       };
       task_assignees: {
