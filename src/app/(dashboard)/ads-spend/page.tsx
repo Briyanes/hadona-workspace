@@ -1886,8 +1886,8 @@ export default function AdsSpendPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             <form onSubmit={handleSave} className="flex h-full flex-col">
               {/* Sticky Header */}
               <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
@@ -2081,8 +2081,8 @@ export default function AdsSpendPage() {
 
       {/* Manual Token Modal */}
       {showTokenModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
@@ -2170,8 +2170,8 @@ export default function AdsSpendPage() {
 
       {/* Import Sheet Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
@@ -2462,8 +2462,8 @@ export default function AdsSpendPage() {
 
       {/* Spend Log Modal */}
       {showSpendModal && modalAccount && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+          <div className="my-4 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <div>
