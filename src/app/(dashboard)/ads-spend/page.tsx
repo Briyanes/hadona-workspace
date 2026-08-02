@@ -1886,21 +1886,25 @@ export default function AdsSpendPage() {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">
-                {editingId ? "Edit Ad Account" : "Ad Account Baru"}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
-              >
-                <X size={18} />
-              </button>
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            <form onSubmit={handleSave} className="flex h-full flex-col">
+              {/* Sticky Header */}
+              <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {editingId ? "Edit Ad Account" : "Ad Account Baru"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
+              {/* Scrollable Body */}
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
               <div className="space-y-3 rounded-lg bg-background p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Client & Platform</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -2047,8 +2051,10 @@ export default function AdsSpendPage() {
                   className="input resize-none"
                 />
               </div>
+              </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              {/* Sticky Footer */}
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border p-4">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -2075,11 +2081,13 @@ export default function AdsSpendPage() {
 
       {/* Manual Token Modal */}
       {showTokenModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            {/* Sticky Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
               <button
+                type="button"
                 onClick={() => setShowTokenModal(false)}
                 className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
@@ -2087,51 +2095,55 @@ export default function AdsSpendPage() {
               </button>
             </div>
 
-            <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
-              <p className="mb-2 font-semibold">📋 Cara dapatkan Access Token:</p>
-              <ol className="list-decimal space-y-1 pl-4 text-[11px] text-muted">
-                <li>
-                  Buka{" "}
-                  <a
-                    href="https://developers.facebook.com/tools/explorer/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
-                  >
-                    Graph API Explorer <ExternalLink size={10} />
-                  </a>
-                </li>
-                <li>Pilih App Anda dari dropdown</li>
-                <li>
-                  Klik <strong>"Generate Access Token"</strong> → centang:{" "}
-                  <code className="rounded bg-background px-1">ads_read</code>,{" "}
-                  <code className="rounded bg-background px-1">ads_management</code>
-                </li>
-                <li>Copy token yang muncul, paste di bawah</li>
-              </ol>
-            </div>
+            <form onSubmit={handleManualTokenSubmit} className="flex flex-col">
+              {/* Scrollable Body */}
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                <div className="rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
+                  <p className="mb-2 font-semibold">📋 Cara dapatkan Access Token:</p>
+                  <ol className="list-decimal space-y-1 pl-4 text-[11px] text-muted">
+                    <li>
+                      Buka{" "}
+                      <a
+                        href="https://developers.facebook.com/tools/explorer/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
+                      >
+                        Graph API Explorer <ExternalLink size={10} />
+                      </a>
+                    </li>
+                    <li>Pilih App Anda dari dropdown</li>
+                    <li>
+                      Klik <strong>"Generate Access Token"</strong> → centang:{" "}
+                      <code className="rounded bg-background px-1">ads_read</code>,{" "}
+                      <code className="rounded bg-background px-1">ads_management</code>
+                    </li>
+                    <li>Copy token yang muncul, paste di bawah</li>
+                  </ol>
+                </div>
 
-            <form onSubmit={handleManualTokenSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
-                  Access Token *
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={manualToken}
-                  onChange={(e) => setManualToken(e.target.value)}
-                  placeholder="EAAGm0PX4ZCwBO..."
-                  className="input font-mono text-[11px] resize-none"
-                  disabled={savingToken}
-                />
-                <p className="mt-1 text-[10px] text-muted">
-                  💡 Token akan otomatis di-exchange jadi long-lived (60 hari). Short-lived token
-                  hanya berlaku ~1 jam.
-                </p>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">
+                    Access Token *
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={manualToken}
+                    onChange={(e) => setManualToken(e.target.value)}
+                    placeholder="EAAGm0PX4ZCwBO..."
+                    className="input font-mono text-[11px] resize-none"
+                    disabled={savingToken}
+                  />
+                  <p className="mt-1 text-[10px] text-muted">
+                    💡 Token akan otomatis di-exchange jadi long-lived (60 hari). Short-lived token
+                    hanya berlaku ~1 jam.
+                  </p>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              {/* Sticky Footer */}
+              <div className="flex shrink-0 justify-end gap-2 border-t border-border p-4">
                 <button
                   type="button"
                   onClick={() => setShowTokenModal(false)}
@@ -2158,9 +2170,9 @@ export default function AdsSpendPage() {
 
       {/* Import Sheet Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-2xl rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
                 <p className="text-xs text-muted">
@@ -2168,6 +2180,7 @@ export default function AdsSpendPage() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   setShowImportModal(false);
                   setAssignResult(null);
@@ -2177,6 +2190,7 @@ export default function AdsSpendPage() {
                 <X size={18} />
               </button>
             </div>
+            <div className="flex-1 overflow-y-auto p-4">
 
             {/* Mode Toggle */}
             <div className="mb-4 flex gap-2 rounded-lg bg-background p-1">
@@ -2441,15 +2455,17 @@ export default function AdsSpendPage() {
                 </form>
               </>
             )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Spend Log Modal */}
       {showSpendModal && modalAccount && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-8 w-full max-w-lg rounded-lg border border-border bg-surface p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            {/* Sticky Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Log Spend Harian</h2>
                 <p className="text-xs text-muted">
@@ -2458,6 +2474,7 @@ export default function AdsSpendPage() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowSpendModal(false)}
                 className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
               >
@@ -2465,6 +2482,8 @@ export default function AdsSpendPage() {
               </button>
             </div>
 
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4">
             {/* Form */}
             <form onSubmit={handleSaveSpend} className="mb-4 space-y-3 rounded-lg bg-background p-3">
               <div className="grid grid-cols-2 gap-3">
@@ -2620,6 +2639,7 @@ export default function AdsSpendPage() {
             <div className="mt-4 rounded-md bg-primary/5 p-3 text-[10px] text-muted">
               💡 <strong>Auto-update:</strong> Saat spend log disimpan, remaining budget ad account
               akan otomatis berkurang sesuai spend hari ini.
+            </div>
             </div>
           </div>
         </div>
