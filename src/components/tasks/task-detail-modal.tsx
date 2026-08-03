@@ -38,7 +38,7 @@ interface Task {
   approved_at: string | null;
   approval_note: string | null;
   client?: { name: string };
-  task_assignees?: { user_id: string; user: { full_name: string } }[];
+  task_assignees?: { user_id: string; user: { full_name: string; avatar_url: string | null } }[];
 }
 
 interface Client {
@@ -52,7 +52,7 @@ interface Comment {
   user_id: string;
   comment: string;
   created_at: string;
-  user?: { full_name: string };
+  user?: { full_name: string; avatar_url: string | null };
 }
 
 interface Subtask {
@@ -69,7 +69,7 @@ interface TimeLog {
   description: string | null;
   date: string;
   billable: boolean;
-  user?: { full_name: string };
+  user?: { full_name: string; avatar_url: string | null };
 }
 
 const statusOptions = [
@@ -225,7 +225,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         : Promise.resolve({ data: null, error: null }),
       supabase
         .from("task_assignees")
-        .select("user_id, user:profiles(full_name)")
+        .select("user_id, user:profiles(full_name, avatar_url)")
         .eq("task_id", taskId),
     ]);
 
@@ -233,7 +233,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       ...core,
       client: (clientResult.data as { name: string } | null) || undefined,
       task_assignees:
-        (assigneesResult.data as { user_id: string; user: { full_name: string } }[] | null) || undefined,
+        (assigneesResult.data as { user_id: string; user: { full_name: string; avatar_url: string | null } }[] | null) || undefined,
     };
 
     setTask(taskData);
@@ -256,7 +256,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   async function loadComments() {
     const { data } = await supabase
       .from("task_comments")
-      .select("id, task_id, user_id, comment, created_at, user:profiles(full_name)")
+      .select("id, task_id, user_id, comment, created_at, user:profiles(full_name, avatar_url)")
       .eq("task_id", taskId)
       .order("created_at", { ascending: true });
     setComments((data as unknown as Comment[]) || []);
@@ -280,7 +280,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     try {
       const { data, error } = await supabase
         .from("timesheets")
-        .select("id, hours, description, date, billable, user:profiles(full_name)")
+        .select("id, hours, description, date, billable, user:profiles(full_name, avatar_url)")
         .eq("task_id", taskId)
         .order("date", { ascending: false });
       if (error) throw error;
@@ -668,9 +668,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   <div className="flex flex-wrap gap-2">
                     {task.task_assignees.map((a) => (
                       <div key={a.user_id} className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
-                          {getInitials(a.user?.full_name)}
-                        </div>
+                        {a.user?.avatar_url ? (
+                          <img src={a.user.avatar_url} alt={a.user?.full_name || "User"} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                            {getInitials(a.user?.full_name)}
+                          </div>
+                        )}
                         <span className="text-xs text-gray-900">{a.user?.full_name}</span>
                       </div>
                     ))}
@@ -814,9 +818,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     ) : (
                       comments.map((c) => (
                         <div key={c.id} className="flex gap-2">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
-                            {getInitials(c.user?.full_name)}
-                          </div>
+                          {c.user?.avatar_url ? (
+                            <img src={c.user.avatar_url} alt={c.user?.full_name || "User"} className="h-7 w-7 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                              {getInitials(c.user?.full_name)}
+                            </div>
+                          )}
                           <div className="flex-1">
                             <div className="rounded-lg border border-border bg-background p-2.5">
                               <div className="mb-0.5 flex items-center gap-2">

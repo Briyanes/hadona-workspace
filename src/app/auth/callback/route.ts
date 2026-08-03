@@ -59,8 +59,26 @@ export async function GET(request: NextRequest) {
 
     console.log("[Auth Callback] ✅ Session established for user:", data.user.email);
 
-    // Profile auto-created via DB trigger (handle_new_user)
-    // Onboarding check will be handled by middleware (division IS NULL → /onboarding)
+    // Save Google profile data (avatar_url + full_name) to profiles table
+    const avatarUrl = data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || null;
+    const googleName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || null;
+
+    if (avatarUrl || googleName) {
+      const updateData: Record<string, string | null> = {};
+      if (avatarUrl) updateData.avatar_url = avatarUrl;
+      if (googleName) updateData.full_name = googleName;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update(updateData as never)
+        .eq("id", data.user.id);
+
+      if (profileError) {
+        console.error("[Auth Callback] Failed to save Google profile data:", profileError.message);
+      } else {
+        console.log("[Auth Callback] ✅ Google avatar_url + name saved to profiles");
+      }
+    }
 
     return supabaseResponse;
   } catch (err) {

@@ -10,6 +10,7 @@ interface User {
   full_name: string;
   role: string;
   division: string[] | null;
+  avatar_url: string | null;
 }
 
 interface AssigneePickerProps {
@@ -55,7 +56,7 @@ export function AssigneePicker({
   async function loadUsers() {
     let query = supabase
       .from("profiles")
-      .select("id, full_name, role, division")
+      .select("id, full_name, role, division, avatar_url")
       .eq("is_active", true);
 
     // If division filter is set, only load users who belong to that division
@@ -112,9 +113,13 @@ export function AssigneePicker({
             key={u.id}
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface py-0.5 pl-1 pr-2 text-xs"
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
-              {getInitials(u.full_name)}
-            </span>
+            {u.avatar_url ? (
+              <img src={u.avatar_url} alt={u.full_name} className="h-5 w-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
+                {getInitials(u.full_name)}
+              </span>
+            )}
             <span className="text-gray-700">{u.full_name}</span>
             <button
               type="button"
@@ -200,9 +205,13 @@ export function AssigneePicker({
                       isSelected && "bg-primary/5"
                     )}
                   >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
-                      {getInitials(u.full_name)}
-                    </span>
+                    {u.avatar_url ? (
+                      <img src={u.avatar_url} alt={u.full_name} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                        {getInitials(u.full_name)}
+                      </span>
+                    )}
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{u.full_name}</p>
                       <div className="flex items-center gap-1.5">
