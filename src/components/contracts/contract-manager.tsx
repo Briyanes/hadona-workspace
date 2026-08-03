@@ -16,6 +16,9 @@ import {
   Clock,
   AlertCircle,
   CreditCard,
+  Upload,
+  Download,
+  RefreshCw,
 } from "lucide-react";
 import { cn, formatIDR, formatDate } from "@/lib/utils";
 
@@ -32,6 +35,7 @@ interface Contract {
   status: string;
   contract_type: string;
   notes: string | null;
+  signed_url: string | null;
   created_at: string;
 }
 
@@ -182,6 +186,8 @@ export function ContractManager({ clientId }: { clientId: string }) {
     }
     setSaving(true);
     try {
+      // Get current user for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("client_contracts").insert({
         client_id: clientId,
         start_date: contractForm.start_date,
@@ -190,6 +196,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
         contract_type: contractForm.contract_type,
         notes: contractForm.notes || null,
         status: "active",
+        created_by: user?.id || null,
       } as never);
       if (error) throw error;
       toast.success("Kontrak berhasil dibuat!");
@@ -207,6 +214,79 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.error("Gagal membuat kontrak: " + msg);
     } finally {
       setSaving(false);
+    }
+  }
+
+  // ============================================
+  // Contract Renewal & Document Upload
+  // ============================================
+  async function handleRenewContract(contract: Contract) {
+    const startDate = contract.end_date;
+    const defaultEnd = new Date(startDate);
+    defaultEnd.setMonth(defaultEnd.getMonth() + contract.minimum_months);
+    const endDate = defaultEnd.toISOString().slice(0, 10);
+
+    if (!confirm(`Perpanjang kontrak?\nMulai: ${startDate}\nSampai: ${endDate}\n(${contract.minimum_months} bulan)`)) return;
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Create new contract as renewal
+      const { error } = await supabase.from("client_contracts").insert({
+        client_id: contract.client_id,
+        start_date: startDate,
+        end_date: endDate,
+        minimum_months: contract.minimum_months,
+        contract_type: contract.contract_type,
+        notes: `Perpanjangan dari ${contract.contract_number || "kontrak sebelumnya"}`,
+        status: "active",
+        created_by: user?.id || null,
+      } as never);
+
+      if (error) throw error;
+
+      // Mark old contract as renewed
+      await supabase
+        .from("client_contracts")
+        .update({ status: "renewed" } as never)
+        .eq("id", contract.id as never);
+
+      toast.success("Kontrak diperpanjang! Services perlu ditambahkan ke kontrak baru.");
+      loadContracts();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal memperpanjang: " + msg);
+    }
+  }
+
+  async function handleUploadDocument(contractId: string, file: File) {
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `contracts/${contractId}/signed-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("documents")
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from("client_contracts")
+        .update({ signed_url: urlData.publicUrl } as never)
+        .eq("id", contractId as never);
+
+      if (updateError) throw updateError;
+
+      toast.success("Dokumen kontrak diupload!");
+      loadContracts();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal upload: " + msg);
     }
   }
 
@@ -599,16 +679,59 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   )}
                 </div>
 
-                {/* Delete button */}
-                <div className="flex justify-end border-t border-border p-2">
+                {/* Document & Actions */}
+                <div className="flex flex-wrap items-center gap-2 border-t border-border p-2">
+                  {/* Upload Document */}
+                  <label className="flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[10px] text-primary hover:bg-primary/10">
+                    <Upload size={10} />
+                    {contract.signed_url ? "Ganti Dokumen" : "Upload Dokumen"}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadDocument(contract.id, f);
+                      }}
+                    />
+                  </label>
+
+                  {/* Download Document */}
+                  {contract.signed_url && (
+                    <a
+                      href={contract.signed_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-muted hover:bg-surface"
+                    >
+                      <Download size={10} /> Lihat Dokumen
+                    </a>
+                  )}
+
+                  {/* Renew Contract */}
+                  {(contract.status === "active" || contract.status === "expired") && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRenewContract(contract);
+                      }}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-success hover:bg-success/10"
+                    >
+                      <RefreshCw size={10} /> Perpanjang
+                    </button>
+                  )}
+
+                  {/* Delete */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteContract(contract.id);
                     }}
-                    className="flex items-center gap-1 text-[10px] text-danger hover:underline"
+                    className="ml-auto flex items-center gap-1 text-[10px] text-danger hover:underline"
                   >
-                    <Trash2 size={10} /> Hapus Kontrak
+                    <Trash2 size={10} /> Hapus
                   </button>
                 </div>
               </div>
