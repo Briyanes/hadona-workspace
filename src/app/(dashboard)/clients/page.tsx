@@ -294,7 +294,10 @@ export default function ClientsPage() {
     active: clients.filter((c) => c.status === "active").length,
     onboarding: clients.filter((c) => c.status === "onboarding").length,
     hold: clients.filter((c) => c.status === "hold").length,
-    totalMrr: clients.reduce((sum, c) => sum + (c.contract_value || 0), 0),
+    // MRR only counts active + onboarding clients (not hold/inactive/churned)
+    totalMrr: clients
+      .filter((c) => c.status === "active" || c.status === "onboarding")
+      .reduce((sum, c) => sum + (c.contract_value || 0), 0),
   };
 
   const activeFilterCount = (filterStatus !== "all" ? 1 : 0);
