@@ -20,7 +20,7 @@ interface Task {
   division: string | null;
   due_date: string | null;
   client?: { name: string };
-  task_assignees?: { user_id: string; user: { full_name: string } }[];
+  task_assignees?: { user_id: string; user: { full_name: string; avatar_url: string | null } }[];
 }
 
 interface Client {
@@ -113,7 +113,7 @@ export default function TasksPage() {
           `
           id, title, description, status, priority, division, due_date,
           client:clients(name),
-          task_assignees(user_id, user:profiles(full_name))
+          task_assignees(user_id, user:profiles(full_name, avatar_url))
         `
         )
         .order("created_at", { ascending: false });
@@ -527,12 +527,14 @@ export default function TasksPage() {
                                 <div className="flex items-center justify-between">
                                   <div className="flex -space-x-1.5">
                                     {task.task_assignees?.map((a) => (
-                                      <div
-                                        key={a.user_id}
-                                        className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900"
-                                        title={a.user?.full_name}
-                                      >
-                                        {getInitials(a.user?.full_name)}
+                                      <div key={a.user_id} title={a.user?.full_name}>
+                                        {a.user?.avatar_url ? (
+                                          <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 rounded-full border-2 border-background object-cover" referrerPolicy="no-referrer" />
+                                        ) : (
+                                          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900">
+                                            {getInitials(a.user?.full_name)}
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
@@ -694,12 +696,14 @@ export default function TasksPage() {
                       <td className="px-4 py-3">
                         <div className="flex -space-x-1.5">
                           {task.task_assignees?.map((a) => (
-                            <div
-                              key={a.user_id}
-                              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-gray-900"
-                              title={a.user?.full_name}
-                            >
-                              {getInitials(a.user?.full_name)}
+                            <div key={a.user_id} title={a.user?.full_name}>
+                              {a.user?.avatar_url ? (
+                                <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 rounded-full border-2 border-surface object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-gray-900">
+                                  {getInitials(a.user?.full_name)}
+                                </div>
+                              )}
                             </div>
                           ))}
                           {(!task.task_assignees || task.task_assignees.length === 0) && <span className="text-xs text-muted">—</span>}

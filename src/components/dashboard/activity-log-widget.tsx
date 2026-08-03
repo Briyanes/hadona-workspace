@@ -105,9 +105,13 @@ export function ActivityLogWidget() {
               <div key={log.id} className="flex items-start gap-2.5">
                 {/* Avatar */}
                 <div className="relative shrink-0">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
-                    {getInitials(log.user?.full_name)}
-                  </div>
+                  {log.user?.avatar_url ? (
+                    <img src={log.user.avatar_url} alt={log.user?.full_name || ""} className="h-7 w-7 rounded-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                      {getInitials(log.user?.full_name)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}

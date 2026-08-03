@@ -552,9 +552,13 @@ export default function UsersPage() {
                 <tr key={user.id} className="border-b border-border text-sm transition-colors last:border-0 hover:bg-primary/5">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-                        {user.full_name.charAt(0).toUpperCase()}
-                      </div>
+                      {user.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.full_name} className="h-8 w-8 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+                          {user.full_name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <span className="truncate font-medium text-gray-900">{user.full_name}</span>
                       {user.id === currentUserId && (
                         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
