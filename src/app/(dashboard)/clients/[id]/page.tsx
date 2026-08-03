@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
 import { ContractManager } from "@/components/contracts/contract-manager";
+import { toast } from "sonner";
 
 interface ClientDetail {
   id: string;
@@ -120,6 +121,8 @@ export default function ClientDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const clientId = params.id as string;
 
@@ -209,6 +212,22 @@ export default function ClientDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("clients").delete().eq("id", clientId);
+      if (error) throw error;
+      toast.success("Client berhasil dihapus");
+      router.push("/clients");
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal menghapus: " + msg);
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -255,127 +274,108 @@ export default function ClientDetailPage() {
       {/* Header */}
       <div className="card">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {client.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={client.logo_url} alt={client.name} className="h-14 w-14 rounded-xl border border-border object-contain" />
+              <img src={client.logo_url} alt={client.name} className="h-12 w-12 rounded-xl border border-border object-contain" />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface text-lg font-bold text-primary">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface text-base font-bold text-primary">
                 {getInitials(client.name)}
               </div>
             )}
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{client.name}</h1>
+                <h1 className="text-lg font-bold text-gray-900 sm:text-xl">{client.name}</h1>
                 <span className={cn("badge", statusColors[client.status] || statusColors.inactive)}>
                   {client.status}
                 </span>
               </div>
-              <p className="text-sm text-muted">{client.industry || "No industry specified"}</p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                {client.industry && <span className="font-medium">{client.industry}</span>}
+                {client.services.map((s) => (
+                  <span key={s} className="rounded bg-background px-1.5 py-0.5">{s}</span>
+                ))}
+              </div>
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/5"
+            >
+              <Trash size={14} /> Hapus
+            </button>
           </div>
         </div>
 
-        {/* Services */}
-        {client.services.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border pt-4">
-            {client.services.map((s) => (
-              <span key={s} className="badge bg-background text-muted">
-                {s}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Contact Info */}
+        {/* Contact Info — compact bar */}
         {(client.contact_person || client.contact_phone || client.contact_email || client.account_manager) && (
-          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-sm">
             {client.account_manager && (
-              <div className="flex items-center gap-2 text-sm">
-                <User size={14} className="text-muted" />
-                <div>
-                  <p className="text-xs text-muted">Account Manager</p>
-                  <p className="text-gray-900">{client.account_manager.full_name}</p>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <User size={13} className="text-muted" />
+                <span className="text-muted">AM:</span>
+                <span className="font-medium text-gray-900">{client.account_manager.full_name}</span>
               </div>
             )}
             {client.contact_person && (
-              <div className="flex items-center gap-2 text-sm">
-                <User size={14} className="text-muted" />
-                <div>
-                  <p className="text-xs text-muted">Contact Person</p>
-                  <p className="text-gray-900">{client.contact_person}</p>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <User size={13} className="text-muted" />
+                <span className="text-gray-900">{client.contact_person}</span>
               </div>
             )}
             {client.contact_phone && (
-              <div className="flex items-center gap-2 text-sm">
-                <Phone size={14} className="text-muted" />
-                <div>
-                  <p className="text-xs text-muted">Telepon</p>
-                  <p className="text-gray-900">{client.contact_phone}</p>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <Phone size={13} className="text-muted" />
+                <span className="text-gray-900">{client.contact_phone}</span>
               </div>
             )}
             {client.contact_email && (
-              <div className="flex items-center gap-2 text-sm">
-                <Mail size={14} className="text-muted" />
-                <div>
-                  <p className="text-xs text-muted">Email</p>
-                  <p className="text-gray-900">{client.contact_email}</p>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <Mail size={13} className="text-muted" />
+                <span className="text-gray-900">{client.contact_email}</span>
               </div>
             )}
           </div>
         )}
 
-        {/* Contract Info */}
-        {(client.contract_value || client.contract_start || client.contract_end) && (
-          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
-            {client.contract_value != null && client.contract_value > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign size={14} className="text-success" />
-                <div>
-                  <p className="text-xs text-muted">Nilai Kontrak</p>
-                  <p className="font-semibold text-gray-900">{formatIDR(client.contract_value)}/bulan</p>
-                </div>
+        {/* Contract Info — compact bar with real MRR */}
+        {(financial.real_mrr > 0 || client.contract_start || client.contract_end) && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-sm">
+            {financial.real_mrr > 0 && (
+              <div className="flex items-center gap-1.5">
+                <DollarSign size={13} className="text-success" />
+                <span className="font-semibold text-success">{formatIDR(financial.real_mrr)}</span>
+                <span className="text-xs text-muted">/bulan (MRR)</span>
               </div>
             )}
-            {client.contract_start && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar size={14} className="text-muted" />
-                <div>
-                  <p className="text-xs text-muted">Mulai Kontrak</p>
-                  <p className="text-gray-900">{formatDate(client.contract_start, { day: "numeric", month: "long", year: "numeric" })}</p>
-                </div>
-              </div>
-            )}
-            {client.contract_end && (
-              <div className="flex items-center gap-2 text-sm">
-                {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() ? (
-                  <AlertTriangle size={14} className="text-warning" />
-                ) : (
-                  <Calendar size={14} className="text-muted" />
+            {client.contract_start && client.contract_end && (
+              <div className="flex items-center gap-1.5">
+                <Calendar size={13} className="text-muted" />
+                <span className="text-gray-900">
+                  {formatDate(client.contract_start, { day: "numeric", month: "short", year: "numeric" })} — {formatDate(client.contract_end, { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+                {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && (
+                  <span className="inline-flex items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">
+                    <AlertTriangle size={10} /> Akan habis!
+                  </span>
                 )}
-                <div>
-                  <p className="text-xs text-muted">Akhir Kontrak</p>
-                  <p className={cn(
-                    "text-gray-900",
-                    new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && "font-medium text-warning"
-                  )}>
-                    {formatDate(client.contract_end, { day: "numeric", month: "long", year: "numeric" })}
-                    {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && " (Akan habis!)"}
-                  </p>
-                </div>
+                {new Date(client.contract_end) <= new Date() && (
+                  <span className="inline-flex items-center gap-1 rounded bg-danger/15 px-1.5 py-0.5 text-[10px] font-bold text-danger">
+                    Expired
+                  </span>
+                )}
               </div>
             )}
           </div>
         )}
 
         {client.notes && (
-          <div className="mt-4 rounded-md border border-border bg-background p-3">
-            <p className="text-xs text-muted">Catatan</p>
-            <p className="text-sm text-gray-900">{client.notes}</p>
+          <div className="mt-3 rounded-md border border-border bg-background p-2.5">
+            <p className="text-[10px] uppercase tracking-wide text-muted">Catatan</p>
+            <p className="mt-0.5 text-sm text-gray-900">{client.notes}</p>
           </div>
         )}
       </div>
@@ -638,6 +638,49 @@ export default function ClientDetailPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !deleting && setShowDeleteConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger/10">
+                <Trash size={18} className="text-danger" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Hapus Client?</h3>
+                <p className="text-xs text-muted">Tindakan ini tidak dapat dibatalkan</p>
+              </div>
+            </div>
+            <p className="mb-4 text-sm text-muted">
+              Yakin ingin menghapus <strong className="text-gray-900">{client.name}</strong>? Semua data terkait
+              (tasks, reports, strategies) mungkin terpengaruh.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-surface disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
+              >
+                {deleting ? "Menghapus..." : "Hapus"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
