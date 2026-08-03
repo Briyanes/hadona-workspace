@@ -20,6 +20,11 @@ import {
   CheckCircle,
   Clock,
   PauseCircle,
+  DollarSign,
+  Wallet,
+  TrendingUp,
+  AlertTriangle,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { cn, formatIDR, getInitials } from "@/lib/utils";
@@ -45,6 +50,13 @@ interface Client {
   contract_end: string | null;
   account_manager_id: string | null;
   logo_url: string | null;
+  // Financial data from view
+  real_mrr: number;
+  outstanding: number;
+  paid_this_month: number;
+  overdue_count: number;
+  // AM name via join
+  am_name?: string | null;
 }
 
 interface AccountManager {
@@ -63,11 +75,14 @@ const SERVICE_OPTIONS = [
   "Branding",
 ];
 
+const STATUS_OPTIONS = ["active", "onboarding", "hold", "inactive", "churned"];
+
 const statusColors: Record<string, string> = {
   active: "bg-success/20 text-success",
   inactive: "bg-surface text-muted",
   hold: "bg-warning/20 text-warning",
   onboarding: "bg-primary/20 text-primary",
+  churned: "bg-danger/20 text-danger",
 };
 
 const emptyForm = {
@@ -96,6 +111,8 @@ export default function ClientsPage() {
   // View & filter state
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterService, setFilterService] = useState("all");
+  const [filterAM, setFilterAM] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
 
   // Modal state
@@ -111,11 +128,58 @@ export default function ClientsPage() {
     loadAccountManagers();
   }, []);
 
+  // ============================================
+  // Load: Clients + Financial Summary (joined)
+  // ============================================
   async function loadClients() {
     try {
-      const { data, error } = await supabase.from("clients").select("*").order("name");
+      // Load clients with AM join
+      const { data: clientData, error } = await supabase
+        .from("clients")
+        .select("*, am:profiles!account_manager_id(full_name)")
+        .order("name");
+
       if (error) throw error;
-      setClients((data as unknown as Client[]) || []);
+      const clientList = (clientData as unknown as Client[]) || [];
+
+      // Load financial summary from the view
+      let financialMap: Record<string, { real_mrr: number; outstanding: number; paid_this_month: number; overdue_count: number }> = {};
+
+      try {
+        const { data: finData, error: finError } = await supabase
+          .from("client_financial_summary")
+          .select("client_id, real_mrr, outstanding, paid_this_month, overdue_count");
+
+        if (!finError && finData) {
+          for (const row of finData as unknown as { client_id: string; real_mrr: number; outstanding: number; paid_this_month: number; overdue_count: number }[]) {
+            financialMap[row.client_id] = {
+              real_mrr: Number(row.real_mrr) || 0,
+              outstanding: Number(row.outstanding) || 0,
+              paid_this_month: Number(row.paid_this_month) || 0,
+              overdue_count: Number(row.overdue_count) || 0,
+            };
+          }
+        }
+      } catch {
+        // View might not exist yet — fallback to contract_value
+        console.warn("client_financial_summary view not available, using fallback");
+      }
+
+      // Merge financial data into clients
+      const mergedClients = clientList.map((c) => {
+        const fin = financialMap[c.id];
+        const amData = c as unknown as { am?: { full_name: string } | null };
+        return {
+          ...c,
+          real_mrr: fin?.real_mrr ?? (Number(c.contract_value) || 0),
+          outstanding: fin?.outstanding ?? 0,
+          paid_this_month: fin?.paid_this_month ?? 0,
+          overdue_count: fin?.overdue_count ?? 0,
+          am_name: amData.am?.full_name ?? null,
+        };
+      });
+
+      setClients(mergedClients);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       setError("Gagal memuat data client: " + msg);
@@ -173,7 +237,6 @@ export default function ClientsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate: image only, max 2MB
     if (!file.type.startsWith("image/")) {
       toast.error("File harus berupa gambar");
       return;
@@ -276,31 +339,45 @@ export default function ClientsPage() {
     }
   }
 
+  // ============================================
   // Filtered data
+  // ============================================
   const filtered = clients.filter(
     (c) =>
       (!search ||
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.industry?.toLowerCase().includes(search.toLowerCase())) &&
-      (filterStatus === "all" || c.status === filterStatus)
+      (filterStatus === "all" || c.status === filterStatus) &&
+      (filterService === "all" || (c.services && c.services.includes(filterService))) &&
+      (filterAM === "all" || c.account_manager_id === filterAM)
   );
 
-  // Sortable table data
   const { sortedData, sortState, toggleSort } = useSortable<Client>({ data: filtered });
 
-  // Stats
+  // ============================================
+  // Stats: Now using REAL MRR from financial data
+  // ============================================
   const stats = {
     total: clients.length,
     active: clients.filter((c) => c.status === "active").length,
     onboarding: clients.filter((c) => c.status === "onboarding").length,
     hold: clients.filter((c) => c.status === "hold").length,
-    // MRR only counts active + onboarding clients (not hold/inactive/churned)
+    // REAL MRR: sum of all active+onboarding clients' real_mrr
     totalMrr: clients
       .filter((c) => c.status === "active" || c.status === "onboarding")
-      .reduce((sum, c) => sum + (c.contract_value || 0), 0),
+      .reduce((sum, c) => sum + (c.real_mrr || 0), 0),
+    totalOutstanding: clients.reduce((sum, c) => sum + (c.outstanding || 0), 0),
+    totalPaid: clients.reduce((sum, c) => sum + (c.paid_this_month || 0), 0),
+    overdueClients: clients.filter((c) => (c.overdue_count || 0) > 0).length,
   };
 
-  const activeFilterCount = (filterStatus !== "all" ? 1 : 0);
+  const activeFilterCount =
+    (filterStatus !== "all" ? 1 : 0) +
+    (filterService !== "all" ? 1 : 0) +
+    (filterAM !== "all" ? 1 : 0);
+
+  // Unique services from all clients for filter dropdown
+  const allServices = Array.from(new Set(clients.flatMap((c) => c.services || []))).sort();
 
   if (loading) {
     return (
@@ -340,32 +417,57 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+      {/* ==================== Financial Stats Summary ==================== */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {/* Total Clients */}
         <div className="card p-4">
           <Building2 className="mb-2 text-muted" size={18} />
           <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           <p className="text-xs text-muted">Total Client</p>
+          <div className="mt-1 flex gap-2 text-[10px] text-muted">
+            <span className="text-success">{stats.active} active</span>
+            <span className="text-primary">{stats.onboarding} onb</span>
+            <span className="text-warning">{stats.hold} hold</span>
+          </div>
         </div>
+
+        {/* Real MRR */}
+        <div className="card p-4">
+          <TrendingUp className="mb-2 text-success" size={18} />
+          <p className="text-lg font-bold text-success">{formatIDR(stats.totalMrr)}</p>
+          <p className="text-xs text-muted">Total MRR (Real)</p>
+          <p className="mt-1 text-[10px] text-muted">dari contract_services</p>
+        </div>
+
+        {/* Outstanding */}
+        <div className="card p-4">
+          <Wallet className="mb-2 text-warning" size={18} />
+          <p className="text-lg font-bold text-warning">{formatIDR(stats.totalOutstanding)}</p>
+          <p className="text-xs text-muted">Outstanding</p>
+          <p className="mt-1 text-[10px] text-muted">unpaid + overdue</p>
+        </div>
+
+        {/* Paid This Month */}
         <div className="card p-4">
           <CheckCircle className="mb-2 text-success" size={18} />
-          <p className="text-2xl font-bold text-success">{stats.active}</p>
-          <p className="text-xs text-muted">Active</p>
+          <p className="text-lg font-bold text-success">{formatIDR(stats.totalPaid)}</p>
+          <p className="text-xs text-muted">Lunas Bulan Ini</p>
         </div>
+
+        {/* Overdue Alert */}
+        <div className="card p-4">
+          <AlertTriangle className={cn("mb-2", stats.overdueClients > 0 ? "text-danger" : "text-muted")} size={18} />
+          <p className={cn("text-2xl font-bold", stats.overdueClients > 0 ? "text-danger" : "text-muted")}>
+            {stats.overdueClients}
+          </p>
+          <p className="text-xs text-muted">Client Overdue</p>
+        </div>
+
+        {/* Status Breakdown */}
         <div className="card p-4">
           <Clock className="mb-2 text-primary" size={18} />
           <p className="text-2xl font-bold text-primary">{stats.onboarding}</p>
           <p className="text-xs text-muted">Onboarding</p>
-        </div>
-        <div className="card p-4">
-          <PauseCircle className="mb-2 text-warning" size={18} />
-          <p className="text-2xl font-bold text-warning">{stats.hold}</p>
-          <p className="text-xs text-muted">Hold</p>
-        </div>
-        <div className="card p-4">
-          <Building2 className="mb-2 text-success" size={18} />
-          <p className="text-lg font-bold text-success">{formatIDR(stats.totalMrr)}</p>
-          <p className="text-xs text-muted">Total MRR</p>
         </div>
       </div>
 
@@ -426,6 +528,7 @@ export default function ClientsPage() {
       {/* Expanded Filters */}
       {showFilters && (
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
+          {/* Filter by Status */}
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-muted">Status:</label>
             <select
@@ -434,15 +537,51 @@ export default function ClientsPage() {
               className="input py-1.5 text-xs"
             >
               <option value="all">Semua</option>
-              <option value="active">Active</option>
-              <option value="onboarding">Onboarding</option>
-              <option value="hold">Hold</option>
-              <option value="inactive">Inactive</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
+
+          {/* Filter by Service */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted">Service:</label>
+            <select
+              value={filterService}
+              onChange={(e) => setFilterService(e.target.value)}
+              className="input py-1.5 text-xs"
+            >
+              <option value="all">Semua</option>
+              {allServices.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Filter by Account Manager */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted">AM:</label>
+            <select
+              value={filterAM}
+              onChange={(e) => setFilterAM(e.target.value)}
+              className="input py-1.5 text-xs"
+            >
+              <option value="all">Semua</option>
+              {accountManagers.map((am) => (
+                <option key={am.id} value={am.id}>{am.full_name}</option>
+              ))}
+            </select>
+          </div>
+
           {activeFilterCount > 0 && (
             <button
-              onClick={() => setFilterStatus("all")}
+              onClick={() => {
+                setFilterStatus("all");
+                setFilterService("all");
+                setFilterAM("all");
+              }}
               className="text-xs text-danger hover:underline"
             >
               Reset Filter
@@ -457,7 +596,7 @@ export default function ClientsPage() {
           {filtered.length === 0 ? (
             <div className="card flex flex-col items-center justify-center py-12 text-center">
               <Building2 className="mb-3 text-muted" size={32} />
-              <p className="text-muted">{search || filterStatus !== "all" ? "Tidak ada client yang cocok" : "Belum ada client"}</p>
+              <p className="text-muted">{search || activeFilterCount > 0 ? "Tidak ada client yang cocok" : "Belum ada client"}</p>
               <button onClick={openCreate} className="btn-primary mt-4">
                 <Plus size={16} /> Tambah Client Pertama
               </button>
@@ -486,6 +625,27 @@ export default function ClientsPage() {
                     </span>
                   </div>
 
+                  {/* NEW: MRR Badge */}
+                  <div className="mb-3 flex items-center gap-2">
+                    {c.real_mrr > 0 ? (
+                      <span className="flex items-center gap-1 rounded-md bg-success/10 px-2 py-0.5 text-xs font-bold text-success">
+                        <DollarSign size={10} /> {formatIDR(c.real_mrr)}/bln
+                      </span>
+                    ) : (
+                      <span className="rounded-md bg-surface px-2 py-0.5 text-[10px] text-muted">No MRR</span>
+                    )}
+                    {c.outstanding > 0 && (
+                      <span className="flex items-center gap-1 rounded-md bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+                        <AlertTriangle size={9} /> {formatIDR(c.outstanding)} outstanding
+                      </span>
+                    )}
+                    {c.overdue_count > 0 && (
+                      <span className="flex items-center gap-1 rounded-md bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger">
+                        {c.overdue_count}x OVERDUE
+                      </span>
+                    )}
+                  </div>
+
                   {c.services.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-1">
                       {c.services.map((s) => (
@@ -493,6 +653,13 @@ export default function ClientsPage() {
                           {s}
                         </span>
                       ))}
+                    </div>
+                  )}
+
+                  {/* AM name */}
+                  {c.am_name && (
+                    <div className="mb-2 flex items-center gap-1 text-[10px] text-muted">
+                      <User size={10} /> AM: {c.am_name}
                     </div>
                   )}
 
@@ -543,18 +710,20 @@ export default function ClientsPage() {
             <thead className="border-b border-border bg-background">
               <tr>
                 <SortableTh label="Client" sortKey="name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[200px]" />
-                <SortableTh label="Industri" sortKey="industry" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[140px]" />
+                <SortableTh label="Industri" sortKey="industry" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[120px]" />
                 <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[100px]" />
-                <th className="w-[200px] px-4 py-3 text-left text-xs font-medium">Services</th>
-                <th className="w-[150px] px-4 py-3 text-left text-xs font-medium">Contact Person</th>
-                <SortableTh label="Dibuat" sortKey="created_at" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[110px]" />
+                <th className="w-[160px] px-4 py-3 text-left text-xs font-medium">Services</th>
+                <SortableTh label="MRR" sortKey="real_mrr" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[130px]" />
+                <SortableTh label="Outstanding" sortKey="outstanding" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[130px]" />
+                <th className="w-[120px] px-4 py-3 text-left text-xs font-medium">AM</th>
+                <SortableTh label="Dibuat" sortKey="created_at" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[100px]" />
                 <th className="w-[80px] px-4 py-3 text-right text-xs font-medium">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {sortedData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm text-muted">Tidak ada client yang cocok</td>
+                  <td colSpan={9} className="py-8 text-center text-sm text-muted">Tidak ada client yang cocok</td>
                 </tr>
               ) : (
                 sortedData.map((c) => (
@@ -580,17 +749,43 @@ export default function ClientsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {c.services.slice(0, 3).map((s) => (
+                        {c.services.slice(0, 2).map((s) => (
                           <span key={s} className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">{s}</span>
                         ))}
-                        {c.services.length > 3 && (
-                          <span className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">+{c.services.length - 3}</span>
+                        {c.services.length > 2 && (
+                          <span className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">+{c.services.length - 2}</span>
                         )}
                         {c.services.length === 0 && <span className="text-xs text-muted">—</span>}
                       </div>
                     </td>
+                    {/* MRR Column */}
+                    <td className="px-4 py-3">
+                      {c.real_mrr > 0 ? (
+                        <span className="font-semibold text-success">{formatIDR(c.real_mrr)}</span>
+                      ) : (
+                        <span className="text-xs text-muted">—</span>
+                      )}
+                    </td>
+                    {/* Outstanding Column */}
+                    <td className="px-4 py-3">
+                      {c.outstanding > 0 ? (
+                        <div>
+                          <span className={cn("font-medium", c.overdue_count > 0 ? "text-danger" : "text-warning")}>
+                            {formatIDR(c.outstanding)}
+                          </span>
+                          {c.overdue_count > 0 && (
+                            <span className="ml-1 rounded bg-danger/10 px-1 text-[9px] font-bold text-danger">
+                              {c.overdue_count}x OD
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted">—</span>
+                      )}
+                    </td>
+                    {/* AM Column */}
                     <td className="px-4 py-3 text-xs text-muted">
-                      {c.contact_person || "—"}
+                      {c.am_name || "—"}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted">
                       {c.created_at ? new Date(c.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—"}
@@ -693,11 +888,11 @@ export default function ClientsPage() {
                         <div>
                           <label className="mb-1 block text-xs font-medium text-gray-900">Status</label>
                           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input">
-                            <option value="active">Active</option>
-                            <option value="onboarding">Onboarding</option>
-                            <option value="hold">Hold</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="churned">Churned</option>
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s}>
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>

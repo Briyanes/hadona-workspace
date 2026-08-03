@@ -116,6 +116,7 @@ export default function ClientDetailPage() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [adAccounts, setAdAccounts] = useState<AdAccount[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [financial, setFinancial] = useState<{ real_mrr: number; outstanding: number; paid_this_month: number; overdue_count: number }>({ real_mrr: 0, outstanding: 0, paid_this_month: 0, overdue_count: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
@@ -174,6 +175,28 @@ export default function ClientDetailPage() {
       setStrategies((strategiesData as unknown as Strategy[]) || []);
       setAdAccounts((adsData as unknown as AdAccount[]) || []);
       setActivityLogs((activityData as unknown as ActivityLog[]) || []);
+
+      // Load financial summary from view
+      try {
+        const { data: finData } = await supabase
+          .from("client_financial_summary")
+          .select("real_mrr, outstanding, paid_this_month, overdue_count")
+          .eq("client_id", clientId)
+          .single();
+
+        if (finData) {
+          const fin = finData as unknown as { real_mrr: number; outstanding: number; paid_this_month: number; overdue_count: number };
+          setFinancial({
+            real_mrr: Number(fin.real_mrr) || 0,
+            outstanding: Number(fin.outstanding) || 0,
+            paid_this_month: Number(fin.paid_this_month) || 0,
+            overdue_count: Number(fin.overdue_count) || 0,
+          });
+        }
+      } catch {
+        // View might not exist yet — fallback
+        console.warn("client_financial_summary view not available");
+      }
 
       if (tasksErr || reportsErr || strategiesErr || adsErr || activityErr) {
         console.warn("Some sub-queries failed", { tasksErr, reportsErr, strategiesErr, adsErr, activityErr });
@@ -386,28 +409,64 @@ export default function ClientDetailPage() {
 
       {/* Tab Content */}
       {tab === "overview" && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="card">
-            <CheckSquare className="mb-2 text-primary" size={18} />
-            <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
-            <p className="text-xs text-muted">Total Tasks</p>
+        <div className="space-y-4">
+          {/* Financial KPIs */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="card">
+              <TrendingUp className="mb-2 text-success" size={18} />
+              <p className="text-xl font-bold text-success">{formatIDR(financial.real_mrr)}</p>
+              <p className="text-xs text-muted">MRR (Real)</p>
+              <p className="mt-0.5 text-[10px] text-muted">dari contract_services</p>
+            </div>
+            <div className="card">
+              <AlertTriangle className={cn("mb-2", financial.outstanding > 0 ? "text-warning" : "text-muted")} size={18} />
+              <p className={cn("text-xl font-bold", financial.outstanding > 0 ? "text-warning" : "text-muted")}>
+                {formatIDR(financial.outstanding)}
+              </p>
+              <p className="text-xs text-muted">Outstanding</p>
+              {financial.overdue_count > 0 && (
+                <span className="mt-0.5 inline-block rounded bg-danger/10 px-1 text-[9px] font-bold text-danger">
+                  {financial.overdue_count}x OVERDUE
+                </span>
+              )}
+            </div>
+            <div className="card">
+              <CheckCircle className="mb-2 text-success" size={18} />
+              <p className="text-xl font-bold text-success">{formatIDR(financial.paid_this_month)}</p>
+              <p className="text-xs text-muted">Lunas Bulan Ini</p>
+            </div>
+            <div className="card">
+              <Megaphone className="mb-2 text-primary" size={18} />
+              <p className="text-xl font-bold text-gray-900">
+                {formatIDR(adAccounts.reduce((s, a) => s + (a.daily_budget || 0), 0))}
+              </p>
+              <p className="text-xs text-muted">Daily Ad Budget</p>
+            </div>
           </div>
-          <div className="card">
-            <FileText className="mb-2 text-warning" size={18} />
-            <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
-            <p className="text-xs text-muted">Weekly Reports</p>
-          </div>
-          <div className="card">
-            <Target className="mb-2 text-accent" size={18} />
-            <p className="text-2xl font-bold text-gray-900">{strategies.length}</p>
-            <p className="text-xs text-muted">Strategies</p>
-          </div>
-          <div className="card">
-            <Megaphone className="mb-2 text-success" size={18} />
-            <p className="text-2xl font-bold text-gray-900">
-              {formatIDR(adAccounts.reduce((s, a) => s + (a.daily_budget || 0), 0))}
-            </p>
-            <p className="text-xs text-muted">Daily Budget</p>
+
+          {/* Operational KPIs */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="card flex items-center gap-3">
+              <CheckSquare className="text-primary" size={18} />
+              <div>
+                <p className="text-lg font-bold text-gray-900">{tasks.length}</p>
+                <p className="text-xs text-muted">Total Tasks</p>
+              </div>
+            </div>
+            <div className="card flex items-center gap-3">
+              <FileText className="text-warning" size={18} />
+              <div>
+                <p className="text-lg font-bold text-gray-900">{reports.length}</p>
+                <p className="text-xs text-muted">Weekly Reports</p>
+              </div>
+            </div>
+            <div className="card flex items-center gap-3">
+              <Target className="text-accent" size={18} />
+              <div>
+                <p className="text-lg font-bold text-gray-900">{strategies.length}</p>
+                <p className="text-xs text-muted">Strategies</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
