@@ -143,6 +143,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
     bank_account: "BCA",
     discount_percent: 0,
     tax_rate: 11,
+    initialServices: [{ service_name: "", monthly_fee: "" }] as { service_name: string; monthly_fee: string }[],
   });
 
   const [serviceForm, setServiceForm] = useState({
@@ -231,6 +232,13 @@ export function ContractManager({ clientId }: { clientId: string }) {
     try {
       // Get current user for audit trail
       const { data: { user } } = await supabase.auth.getUser();
+
+      // Filter valid services upfront
+      const validServices = contractForm.initialServices.filter(
+        (s) => s.service_name.trim() && parseFloat(s.monthly_fee) > 0
+      );
+
+      // Insert contract
       const { error } = await supabase.from("client_contracts").insert({
         client_id: clientId,
         start_date: contractForm.start_date,
@@ -249,8 +257,43 @@ export function ContractManager({ clientId }: { clientId: string }) {
         discount_percent: contractForm.discount_percent,
         tax_rate: contractForm.tax_rate,
       } as never);
+
       if (error) throw error;
-      toast.success("Kontrak berhasil dibuat!");
+
+      // Fetch the newly created contract ID (latest for this client)
+      let newContractId: string | null = null;
+      if (validServices.length > 0) {
+        const { data: latest } = await supabase
+          .from("client_contracts")
+          .select("id")
+          .eq("client_id", clientId as never)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        newContractId = (latest as unknown as { id: string }[] | null)?.[0]?.id ?? null;
+
+        if (newContractId) {
+          const serviceInserts = validServices.map((s) => ({
+            contract_id: newContractId!,
+            service_name: s.service_name.trim(),
+            monthly_fee: parseFloat(s.monthly_fee),
+            effective_from: contractForm.start_date,
+            status: "active",
+          }));
+          const { error: svcError } = await supabase
+            .from("contract_services")
+            .insert(serviceInserts as never);
+          if (svcError) {
+            console.error("Service insert error:", svcError);
+            toast.warning("Kontrak dibuat, tapi ada error menambah services. Tambah manual.");
+          }
+        }
+      }
+
+      toast.success(validServices.length > 0
+        ? `Kontrak + ${validServices.length} service berhasil dibuat!`
+        : "Kontrak berhasil dibuat!"
+      );
       setShowContractModal(false);
       setContractForm({
         start_date: new Date().toISOString().slice(0, 10),
@@ -266,6 +309,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
         bank_account: "BCA",
         discount_percent: 0,
         tax_rate: 11,
+        initialServices: [{ service_name: "", monthly_fee: "" }],
       });
       loadContracts();
     } catch (err) {
@@ -1133,6 +1177,106 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     className="input"
                   />
                 </div>
+              </div>
+
+              {/* Section: Initial Services & Pricing */}
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    Services & Harga (Opsional)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setContractForm({
+                      ...contractForm,
+                      initialServices: [...contractForm.initialServices, { service_name: "", monthly_fee: "" }],
+                    })}
+                    className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
+                  >
+                    <Plus size={10} /> Tambah baris
+                  </button>
+                </div>
+                {contractForm.initialServices.map((svc, idx) => {
+                  const subtotal = contractForm.initialServices.reduce(
+                    (sum, s) => sum + (parseFloat(s.monthly_fee) || 0), 0
+                  );
+                  const discount = subtotal * (contractForm.discount_percent / 100);
+                  const afterDiscount = subtotal - discount;
+                  const tax = afterDiscount * (contractForm.tax_rate / 100);
+                  const grandTotal = afterDiscount + tax;
+
+                  return (
+                    <div key={idx} className="space-y-1.5">
+                      <div className="flex gap-1.5">
+                        <select
+                          value={svc.service_name}
+                          onChange={(e) => {
+                            const updated = [...contractForm.initialServices];
+                            updated[idx] = { ...updated[idx], service_name: e.target.value };
+                            setContractForm({ ...contractForm, initialServices: updated });
+                          }}
+                          className="input flex-1 text-xs"
+                        >
+                          <option value="">— Pilih service —</option>
+                          {SERVICE_OPTIONS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          placeholder="Harga/bln"
+                          value={svc.monthly_fee}
+                          onChange={(e) => {
+                            const updated = [...contractForm.initialServices];
+                            updated[idx] = { ...updated[idx], monthly_fee: e.target.value };
+                            setContractForm({ ...contractForm, initialServices: updated });
+                          }}
+                          className="input w-28 text-xs"
+                        />
+                        {contractForm.initialServices.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = contractForm.initialServices.filter((_, i) => i !== idx);
+                              setContractForm({ ...contractForm, initialServices: updated });
+                            }}
+                            className="rounded p-1.5 text-danger hover:bg-danger/10"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Live total preview (only on last row) */}
+                      {idx === contractForm.initialServices.length - 1 && subtotal > 0 && (
+                        <div className="mt-2 space-y-0.5 rounded-md bg-background/80 p-2 text-[10px]">
+                          <div className="flex justify-between text-muted">
+                            <span>Subtotal</span>
+                            <span>{formatIDR(subtotal)}</span>
+                          </div>
+                          {contractForm.discount_percent > 0 && (
+                            <div className="flex justify-between text-warning">
+                              <span>Diskon ({contractForm.discount_percent}%)</span>
+                              <span>-{formatIDR(discount)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-muted">
+                            <span>Setelah diskon</span>
+                            <span>{formatIDR(afterDiscount)}</span>
+                          </div>
+                          <div className="flex justify-between text-muted">
+                            <span>PPN ({contractForm.tax_rate}%)</span>
+                            <span>+{formatIDR(tax)}</span>
+                          </div>
+                          <div className="flex justify-between border-t border-border pt-0.5 font-bold text-gray-900">
+                            <span>Total / bulan</span>
+                            <span className="text-success">{formatIDR(grandTotal)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div>
