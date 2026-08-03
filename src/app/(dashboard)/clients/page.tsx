@@ -703,10 +703,18 @@ export default function ClientsPage() {
 
                   {/* Box: Kontrak */}
                   <div className="rounded-lg border border-border bg-background p-4">
-                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Kontrak</p>
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted">Kontrak (Estimasi)</p>
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                        Auto-sync dari Contract Manager
+                      </span>
+                    </div>
+                    <div className="mb-3 rounded-md bg-primary/5 p-2 text-[10px] text-muted">
+                      💡 Estimasi untuk onboarding cepat. Setelah client dibuat, gunakan tab "Kontrak" di detail client untuk kontrak detail & billing per-service. Sistem otomatis update field ini.
+                    </div>
                     <div className="space-y-2">
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">Nilai Kontrak (IDR/bulan)</label>
+                        <label className="mb-1 block text-xs font-medium text-gray-900">Nilai Kontrak (Estimasi IDR/bulan)</label>
                         <input type="number" value={form.contract_value} onChange={(e) => setForm({ ...form, contract_value: e.target.value })} placeholder="Contoh: 5000000" className="input" />
                       </div>
                       <div>
