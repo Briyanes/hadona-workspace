@@ -181,10 +181,10 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   async function loadTask() {
     setLoading(true);
 
-    // Step 1: Load core task data (resilient — if joins fail, we still have the task)
+    // Step 1: Load ONLY core columns that definitely exist (no approval cols)
     const { data: coreData, error: coreError } = await supabase
       .from("tasks")
-      .select("id, title, description, result, status, priority, division, due_date, start_date, notes, approval_status, approved_by, approved_at, approval_note, client_id")
+      .select("id, title, description, result, status, priority, division, due_date, start_date, notes, client_id")
       .eq("id", taskId)
       .single();
 
@@ -195,10 +195,30 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       return;
     }
 
-    // Cast to Task-shaped object since we selected exactly the right columns
-    const core = coreData as unknown as Task;
+    // Step 2: Try to load approval columns separately (may not exist yet)
+    const approvalDefaults = {
+      approval_status: null as string | null,
+      approved_by: null as string | null,
+      approved_at: null as string | null,
+      approval_note: null as string | null,
+    };
+    try {
+      const { data: apData, error: apError } = await supabase
+        .from("tasks")
+        .select("approval_status, approved_by, approved_at, approval_note")
+        .eq("id", taskId)
+        .single();
+      if (!apError && apData) {
+        Object.assign(approvalDefaults, apData);
+      }
+    } catch {
+      // Approval columns don't exist — that's OK, continue without them
+    }
 
-    // Step 2: Load client name + assignees in parallel (non-blocking)
+    // Merge core + approval data
+    const core = Object.assign({}, coreData, approvalDefaults) as unknown as Task;
+
+    // Step 3: Load client name + assignees in parallel (non-blocking)
     const [clientResult, assigneesResult] = await Promise.all([
       (coreData as Record<string, unknown>).client_id
         ? supabase.from("clients").select("name").eq("id", (coreData as Record<string, unknown>).client_id as string).single()
