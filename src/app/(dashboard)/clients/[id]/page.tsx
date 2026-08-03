@@ -27,6 +27,7 @@ import {
   Clock,
 } from "lucide-react";
 import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
+import { ContractManager } from "@/components/contracts/contract-manager";
 
 interface ClientDetail {
   id: string;
@@ -88,7 +89,7 @@ interface ActivityLog {
   user: { full_name: string } | null;
 }
 
-type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "activity";
+type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "contract" | "activity";
 
 const statusColors: Record<string, string> = {
   active: "bg-success/20 text-success",
@@ -213,6 +214,7 @@ export default function ClientDetailPage() {
     { id: "reports", label: "Reports", icon: FileText, count: reports.length },
     { id: "strategy", label: "Strategy", icon: Target, count: strategies.length },
     { id: "ads", label: "Ad Accounts", icon: Megaphone, count: adAccounts.length },
+    { id: "contract", label: "Kontrak", icon: FileText, count: 0 },
     { id: "activity", label: "Activity", icon: ActivityIcon, count: activityLogs.length },
   ];
 
@@ -526,6 +528,10 @@ export default function ClientDetailPage() {
             ))
           )}
         </div>
+      )}
+
+      {tab === "contract" && (
+        <ContractManager clientId={client.id} />
       )}
 
       {tab === "activity" && (

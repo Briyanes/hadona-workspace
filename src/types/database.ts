@@ -546,6 +546,137 @@ export interface Database {
           { foreignKeyName: "budget_alerts_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] }
         ];
       };
+      client_contracts: {
+        Row: {
+          id: string;
+          client_id: string;
+          contract_number: string | null;
+          start_date: string;
+          end_date: string;
+          minimum_months: number;
+          status: string;
+          contract_type: string;
+          notes: string | null;
+          signed_url: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id: string;
+          start_date: string;
+          end_date: string;
+          minimum_months?: number;
+          status?: string;
+          contract_type?: string;
+          notes?: string | null;
+          signed_url?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          start_date?: string;
+          end_date?: string;
+          minimum_months?: number;
+          status?: string;
+          contract_type?: string;
+          notes?: string | null;
+          signed_url?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "client_contracts_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "client_contracts_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      contract_services: {
+        Row: {
+          id: string;
+          contract_id: string;
+          service_name: string;
+          monthly_fee: number;
+          effective_from: string;
+          effective_to: string | null;
+          status: string;
+          added_by: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          contract_id: string;
+          service_name: string;
+          monthly_fee?: number;
+          effective_from?: string;
+          effective_to?: string | null;
+          status?: string;
+          added_by?: string | null;
+          notes?: string | null;
+        };
+        Update: {
+          service_name?: string;
+          monthly_fee?: number;
+          effective_from?: string;
+          effective_to?: string | null;
+          status?: string;
+          notes?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "contract_services_contract_id_fkey"; columns: ["contract_id"]; referencedRelation: "client_contracts"; referencedColumns: ["id"] },
+          { foreignKeyName: "contract_services_added_by_fkey"; columns: ["added_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      contract_billings: {
+        Row: {
+          id: string;
+          contract_id: string;
+          client_id: string;
+          billing_period: string;
+          total_amount: number;
+          tax_amount: number;
+          grand_total: number;
+          status: string;
+          due_date: string | null;
+          paid_at: string | null;
+          payment_method: string | null;
+          payment_ref: string | null;
+          invoice_url: string | null;
+          services_snapshot: Json | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          contract_id: string;
+          client_id: string;
+          billing_period: string;
+          total_amount?: number;
+          tax_amount?: number;
+          grand_total?: number;
+          status?: string;
+          due_date?: string | null;
+          paid_at?: string | null;
+          payment_method?: string | null;
+          payment_ref?: string | null;
+          invoice_url?: string | null;
+          services_snapshot?: Json | null;
+          notes?: string | null;
+        };
+        Update: {
+          total_amount?: number;
+          tax_amount?: number;
+          grand_total?: number;
+          status?: string;
+          due_date?: string | null;
+          paid_at?: string | null;
+          payment_method?: string | null;
+          payment_ref?: string | null;
+          invoice_url?: string | null;
+          services_snapshot?: Json | null;
+          notes?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "contract_billings_contract_id_fkey"; columns: ["contract_id"]; referencedRelation: "client_contracts"; referencedColumns: ["id"] },
+          { foreignKeyName: "contract_billings_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
