@@ -19,6 +19,8 @@ import {
   Upload,
   Download,
   RefreshCw,
+  Wallet,
+  AlertTriangle,
 } from "lucide-react";
 import { cn, formatIDR, formatDate } from "@/lib/utils";
 
@@ -485,6 +487,72 @@ export function ContractManager({ clientId }: { clientId: string }) {
   }
 
   // ============================================
+  // Financial Aggregations
+  // ============================================
+  function calcTotalMRR(): number {
+    return contracts
+      .filter((c) => c.status === "active")
+      .reduce((sum, c) => sum + calculateMonthlyTotal(c.id), 0);
+  }
+
+  function calcOutstanding(): { total: number; count: number } {
+    let total = 0;
+    let count = 0;
+    Object.values(billings).forEach((list) => {
+      list.forEach((b) => {
+        if (b.status === "unpaid" || b.status === "overdue") {
+          total += b.grand_total;
+          count++;
+        }
+      });
+    });
+    return { total, count };
+  }
+
+  function calcPaidThisMonth(): number {
+    const now = new Date();
+    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    let total = 0;
+    Object.values(billings).forEach((list) => {
+      list.forEach((b) => {
+        if (b.status === "paid" && b.paid_at && b.paid_at.startsWith(monthPrefix)) {
+          total += b.grand_total;
+        }
+      });
+    });
+    return total;
+  }
+
+  function calcOverdue(): { total: number; count: number } {
+    let total = 0;
+    let count = 0;
+    Object.values(billings).forEach((list) => {
+      list.forEach((b) => {
+        if (b.status === "overdue" || (b.status === "unpaid" && b.due_date && new Date(b.due_date) < new Date())) {
+          total += b.grand_total;
+          count++;
+        }
+      });
+    });
+    return { total, count };
+  }
+
+  function getNextDueDate(): { date: string | null; daysLeft: number } {
+    const upcoming: { date: string; daysLeft: number }[] = [];
+    Object.values(billings).forEach((list) => {
+      list.forEach((b) => {
+        if ((b.status === "unpaid" || b.status === "overdue") && b.due_date) {
+          const diff = Math.ceil((new Date(b.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          upcoming.push({ date: b.due_date, daysLeft: diff });
+        }
+      });
+    });
+    if (upcoming.length === 0) return { date: null, daysLeft: 0 };
+    upcoming.sort((a, b) => a.daysLeft - b.daysLeft);
+    return upcoming[0];
+  }
+
+  // ============================================
   // Render
   // ============================================
   if (loading) {
@@ -508,6 +576,109 @@ export function ContractManager({ clientId }: { clientId: string }) {
           <Plus size={14} /> Buat Kontrak
         </button>
       </div>
+
+      {/* Financial Summary Widget */}
+      {contracts.length > 0 && (() => {
+        const mrr = calcTotalMRR();
+        const outstanding = calcOutstanding();
+        const paid = calcPaidThisMonth();
+        const overdue = calcOverdue();
+        const nextDue = getNextDueDate();
+
+        return (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* MRR */}
+            <div className="card p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <TrendingUp size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Total MRR</p>
+                  <p className="text-sm font-bold text-gray-900">{formatIDR(mrr)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Outstanding */}
+            <div className="card p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 text-warning">
+                  <Wallet size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Tagihan Outstanding</p>
+                  <p className="text-sm font-bold text-warning">{formatIDR(outstanding.total)}</p>
+                  <p className="text-[9px] text-muted">{outstanding.count} invoice belum bayar</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Paid This Month */}
+            <div className="card p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 text-success">
+                  <CheckCircle size={14} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Lunas Bulan Ini</p>
+                  <p className="text-sm font-bold text-success">{formatIDR(paid)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Overdue */}
+            <div className="card p-3">
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-lg",
+                  overdue.count > 0 ? "bg-danger/10 text-danger" : "bg-surface text-muted"
+                )}>
+                  {overdue.count > 0 ? <AlertTriangle size={14} /> : <Clock size={14} />}
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Overdue</p>
+                  <p className={cn("text-sm font-bold", overdue.count > 0 ? "text-danger" : "text-muted")}>
+                    {formatIDR(overdue.total)}
+                  </p>
+                  <p className="text-[9px] text-muted">{overdue.count} invoice telat</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Due Date Alert */}
+            {nextDue.date && (
+              <div className={cn(
+                "col-span-2 flex items-center gap-2 rounded-lg border p-2.5 sm:col-span-4",
+                nextDue.daysLeft < 0
+                  ? "border-danger/30 bg-danger/5"
+                  : nextDue.daysLeft <= 3
+                  ? "border-warning/30 bg-warning/5"
+                  : "border-border bg-surface"
+              )}>
+                <Clock size={14} className={cn(
+                  nextDue.daysLeft < 0 ? "text-danger" : nextDue.daysLeft <= 3 ? "text-warning" : "text-muted"
+                )} />
+                <p className="text-xs">
+                  {nextDue.daysLeft < 0 ? (
+                    <span className="text-danger font-medium">
+                      ⚠️ Jatuh tempo {formatDate(nextDue.date)} sudah lewat {Math.abs(nextDue.daysLeft)} hari!
+                    </span>
+                  ) : nextDue.daysLeft === 0 ? (
+                    <span className="text-warning font-medium">
+                      ⏰ Jatuh tempo HARI INI ({formatDate(nextDue.date)})
+                    </span>
+                  ) : (
+                    <span className="text-muted">
+                      📅 Jatuh tempo terdekat: {formatDate(nextDue.date)} ({nextDue.daysLeft} hari lagi)
+                    </span>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Empty State */}
       {contracts.length === 0 && (
