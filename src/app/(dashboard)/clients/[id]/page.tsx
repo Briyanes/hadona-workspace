@@ -10,6 +10,7 @@ import {
   Phone,
   Mail,
   User,
+  Briefcase,
   CheckSquare,
   FileText,
   Target,
@@ -278,110 +279,136 @@ export default function ClientDetailPage() {
       </div>
 
       {/* Header */}
-      <div className="card">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            {client.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={client.logo_url} alt={client.name} className="h-10 w-10 shrink-0 rounded-xl border border-border object-contain sm:h-12 sm:w-12" />
-            ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-sm font-bold text-primary sm:h-12 sm:w-12 sm:text-base">
-                {getInitials(client.name)}
-              </div>
+      <div className="card overflow-hidden">
+        {/* Top section: logo + name + actions */}
+        <div className="flex items-start gap-3">
+          {client.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={client.logo_url} alt={client.name} className="h-12 w-12 shrink-0 rounded-xl border border-border object-contain sm:h-14 sm:w-14" />
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface text-base font-bold text-primary sm:h-14 sm:w-14 sm:text-lg">
+              {getInitials(client.name)}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">{client.name}</h1>
+              <span className={cn("badge shrink-0 capitalize", statusColors[client.status] || statusColors.inactive)}>
+                {client.status}
+              </span>
+            </div>
+            {client.industry && (
+              <p className="mt-0.5 text-sm text-muted">{client.industry}</p>
             )}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <h1 className="truncate text-base font-bold text-gray-900 sm:text-lg sm:text-xl">{client.name}</h1>
-                <span className={cn("badge", statusColors[client.status] || statusColors.inactive)}>
-                  {client.status}
-                </span>
-              </div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                {client.industry && <span className="font-medium">{client.industry}</span>}
+            {client.services.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 {client.services.map((s) => (
-                  <span key={s} className="rounded bg-background px-1.5 py-0.5">{s}</span>
+                  <span key={s} className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {s}
+                  </span>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1 rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/5 sm:px-3 sm:gap-1.5"
-            >
-              <Trash size={14} /> <span className="hidden sm:inline">Hapus</span>
-            </button>
+            )}
           </div>
         </div>
 
-        {/* Contact Info — compact bar */}
+        {/* Action Buttons */}
+        <div className="mt-3 flex justify-end gap-2">
+          <button
+            onClick={() => router.push(`/clients?edit=${client.id}`)}
+            className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-gray-900 sm:text-sm"
+          >
+            <PencilLine size={14} /> <span>Edit</span>
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-1 rounded-lg border border-danger/30 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/5 sm:text-sm"
+          >
+            <Trash size={14} /> <span>Hapus</span>
+          </button>
+        </div>
+
+        {/* Section: KONTAK */}
         {(client.contact_person || client.contact_phone || client.contact_email || client.account_manager) && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs sm:text-sm">
-            {client.account_manager && (
-              <div className="flex items-center gap-1.5">
-                <User size={13} className="text-muted" />
-                <span className="text-muted">AM:</span>
-                <span className="font-medium text-gray-900">{client.account_manager.full_name}</span>
-              </div>
-            )}
-            {client.contact_person && (
-              <div className="flex items-center gap-1.5">
-                <User size={13} className="text-muted" />
-                <span className="text-gray-900">{client.contact_person}</span>
-              </div>
-            )}
-            {client.contact_phone && (
-              <div className="flex items-center gap-1.5">
-                <Phone size={13} className="text-muted" />
-                <span className="text-gray-900">{client.contact_phone}</span>
-              </div>
-            )}
-            {client.contact_email && (
-              <div className="flex items-center gap-1.5">
-                <Mail size={13} className="text-muted" />
-                <span className="text-gray-900">{client.contact_email}</span>
-              </div>
-            )}
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">📋 Kontak</p>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+              {client.account_manager && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Briefcase size={14} className="shrink-0 text-muted" />
+                  <span className="text-muted">AM:</span>
+                  <span className="truncate font-medium text-gray-900">{client.account_manager.full_name}</span>
+                </div>
+              )}
+              {client.contact_person && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User size={14} className="shrink-0 text-muted" />
+                  <span className="truncate text-gray-900">{client.contact_person}</span>
+                </div>
+              )}
+              {client.contact_phone && (
+                <a
+                  href={`tel:${client.contact_phone.replace(/\s/g, "")}`}
+                  className="flex items-center gap-2 text-sm text-primary transition-colors hover:underline"
+                >
+                  <Phone size={14} className="shrink-0 text-primary" />
+                  <span className="truncate">{client.contact_phone}</span>
+                </a>
+              )}
+              {client.contact_email && (
+                <a
+                  href={`mailto:${client.contact_email}`}
+                  className="flex items-center gap-2 text-sm text-primary transition-colors hover:underline"
+                >
+                  <Mail size={14} className="shrink-0 text-primary" />
+                  <span className="truncate">{client.contact_email}</span>
+                </a>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Contract Info — compact bar with real MRR */}
+        {/* Section: KONTRAK + MRR */}
         {(financial.real_mrr > 0 || client.contract_start || client.contract_end) && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs sm:text-sm">
-            {financial.real_mrr > 0 && (
-              <div className="flex items-center gap-1.5">
-                <DollarSign size={13} className="text-success" />
-                <span className="font-semibold text-success">{formatIDR(financial.real_mrr)}</span>
-                <span className="text-xs text-muted">/bulan (MRR)</span>
-              </div>
-            )}
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">📅 Kontrak</p>
             {client.contract_start && client.contract_end && (
-              <div className="flex items-center gap-1.5">
-                <Calendar size={13} className="text-muted" />
-                <span className="text-gray-900">
-                  {formatDate(client.contract_start, { day: "numeric", month: "short", year: "numeric" })} — {formatDate(client.contract_end, { day: "numeric", month: "short", year: "numeric" })}
-                </span>
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} className="text-muted" />
+                  <span className="text-gray-900">
+                    {formatDate(client.contract_start, { day: "numeric", month: "short", year: "numeric" })} — {formatDate(client.contract_end, { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                </div>
                 {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && (
-                  <span className="inline-flex items-center gap-1 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-bold text-warning">
-                    <AlertTriangle size={10} /> Akan habis!
+                  <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning">
+                    <AlertTriangle size={10} /> Akan habis dalam {Math.ceil((new Date(client.contract_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} hari
                   </span>
                 )}
                 {new Date(client.contract_end) <= new Date() && (
-                  <span className="inline-flex items-center gap-1 rounded bg-danger/15 px-1.5 py-0.5 text-[10px] font-bold text-danger">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-danger/15 px-2 py-0.5 text-[10px] font-bold text-danger">
                     Expired
                   </span>
                 )}
               </div>
             )}
+            {financial.real_mrr > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-success/5 px-3 py-2">
+                <DollarSign size={16} className="shrink-0 text-success" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-base font-bold text-success sm:text-lg">{formatIDR(financial.real_mrr)}</span>
+                  <span className="text-xs text-muted">/bulan (MRR)</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* Section: CATATAN */}
         {client.notes && (
-          <div className="mt-3 rounded-md border border-border bg-background p-2.5">
-            <p className="text-[10px] uppercase tracking-wide text-muted">Catatan</p>
-            <p className="mt-0.5 text-sm text-gray-900">{client.notes}</p>
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted">📝 Catatan</p>
+            <p className="text-sm text-gray-700">{client.notes}</p>
           </div>
         )}
       </div>
