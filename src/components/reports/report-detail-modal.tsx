@@ -115,8 +115,8 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-lg rounded-lg border border-border bg-surface p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-0 sm:p-4">
+        <div className="w-full max-w-lg rounded-none border-border bg-surface p-4 sm:rounded-lg sm:p-6">
           <div className="skeleton h-8 w-3/4 mb-4" />
           <div className="skeleton h-4 w-full mb-2" />
           <div className="skeleton h-32 w-full" />
@@ -130,10 +130,10 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
   const status = statusConfig[report.status] || statusConfig.draft;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="relative my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-0 sm:p-4">
+      <div className="relative my-0 flex min-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-none border-border bg-surface shadow-xl sm:my-4 sm:min-h-0 sm:max-h-[calc(100dvh-2rem)] sm:rounded-lg sm:border">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-gray-900">{isEditing ? "Edit Report" : "Report Detail"}</h2>
             {!isEditing && (
@@ -165,10 +165,10 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
         </div>
 
         {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
           {isEditing ? (
             <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Mulai</label>
                   <input type="date" value={editForm.period_start} onChange={(e) => setEditForm({ ...editForm, period_start: e.target.value })} className="input" />

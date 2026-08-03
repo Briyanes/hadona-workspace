@@ -280,18 +280,18 @@ export default function ClientDetailPage() {
       {/* Header */}
       <div className="card">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {client.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={client.logo_url} alt={client.name} className="h-12 w-12 rounded-xl border border-border object-contain" />
+              <img src={client.logo_url} alt={client.name} className="h-10 w-10 shrink-0 rounded-xl border border-border object-contain sm:h-12 sm:w-12" />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface text-base font-bold text-primary">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-sm font-bold text-primary sm:h-12 sm:w-12 sm:text-base">
                 {getInitials(client.name)}
               </div>
             )}
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-bold text-gray-900 sm:text-xl">{client.name}</h1>
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h1 className="truncate text-base font-bold text-gray-900 sm:text-lg sm:text-xl">{client.name}</h1>
                 <span className={cn("badge", statusColors[client.status] || statusColors.inactive)}>
                   {client.status}
                 </span>
@@ -309,16 +309,16 @@ export default function ClientDetailPage() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/5"
+              className="flex items-center gap-1 rounded-lg border border-danger/30 px-2 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/5 sm:px-3 sm:gap-1.5"
             >
-              <Trash size={14} /> Hapus
+              <Trash size={14} /> <span className="hidden sm:inline">Hapus</span>
             </button>
           </div>
         </div>
 
         {/* Contact Info — compact bar */}
         {(client.contact_person || client.contact_phone || client.contact_email || client.account_manager) && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-sm">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs sm:text-sm">
             {client.account_manager && (
               <div className="flex items-center gap-1.5">
                 <User size={13} className="text-muted" />
@@ -349,7 +349,7 @@ export default function ClientDetailPage() {
 
         {/* Contract Info — compact bar with real MRR */}
         {(financial.real_mrr > 0 || client.contract_start || client.contract_end) && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3 text-sm">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs sm:text-sm">
             {financial.real_mrr > 0 && (
               <div className="flex items-center gap-1.5">
                 <DollarSign size={13} className="text-success" />
@@ -395,7 +395,7 @@ export default function ClientDetailPage() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                "flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm",
                 tab === t.id
                   ? "border-primary text-gray-900"
                   : "border-transparent text-muted hover:text-gray-900"
@@ -417,16 +417,16 @@ export default function ClientDetailPage() {
       {tab === "overview" && (
         <div className="space-y-4">
           {/* Financial KPIs */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <div className="card">
-              <TrendingUp className="mb-2 text-success" size={18} />
-              <p className="text-xl font-bold text-success">{formatIDR(financial.real_mrr)}</p>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+            <div className="card p-3 sm:p-4">
+              <TrendingUp className="mb-2 text-success" size={16} />
+              <p className="text-base font-bold text-success sm:text-xl">{formatIDR(financial.real_mrr)}</p>
               <p className="text-xs text-muted">MRR (Real)</p>
               <p className="mt-0.5 text-[10px] text-muted">dari contract_services</p>
             </div>
-            <div className="card">
-              <AlertTriangle className={cn("mb-2", financial.outstanding > 0 ? "text-warning" : "text-muted")} size={18} />
-              <p className={cn("text-xl font-bold", financial.outstanding > 0 ? "text-warning" : "text-muted")}>
+            <div className="card p-3 sm:p-4">
+              <AlertTriangle className={cn("mb-2", financial.outstanding > 0 ? "text-warning" : "text-muted")} size={16} />
+              <p className={cn("text-base font-bold sm:text-xl", financial.outstanding > 0 ? "text-warning" : "text-muted")}>
                 {formatIDR(financial.outstanding)}
               </p>
               <p className="text-xs text-muted">Outstanding</p>
@@ -436,14 +436,14 @@ export default function ClientDetailPage() {
                 </span>
               )}
             </div>
-            <div className="card">
-              <CheckCircle className="mb-2 text-success" size={18} />
-              <p className="text-xl font-bold text-success">{formatIDR(financial.paid_this_month)}</p>
+            <div className="card p-3 sm:p-4">
+              <CheckCircle className="mb-2 text-success" size={16} />
+              <p className="text-base font-bold text-success sm:text-xl">{formatIDR(financial.paid_this_month)}</p>
               <p className="text-xs text-muted">Lunas Bulan Ini</p>
             </div>
-            <div className="card">
-              <Megaphone className="mb-2 text-primary" size={18} />
-              <p className="text-xl font-bold text-gray-900">
+            <div className="card p-3 sm:p-4">
+              <Megaphone className="mb-2 text-primary" size={16} />
+              <p className="text-base font-bold text-gray-900 sm:text-xl">
                 {formatIDR(adAccounts.reduce((s, a) => s + (a.daily_budget || 0), 0))}
               </p>
               <p className="text-xs text-muted">Daily Ad Budget</p>
@@ -451,23 +451,23 @@ export default function ClientDetailPage() {
           </div>
 
           {/* Operational KPIs */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="card flex items-center gap-3">
-              <CheckSquare className="text-primary" size={18} />
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="card flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
+              <CheckSquare className="shrink-0 text-primary" size={18} />
               <div>
                 <p className="text-lg font-bold text-gray-900">{tasks.length}</p>
                 <p className="text-xs text-muted">Total Tasks</p>
               </div>
             </div>
-            <div className="card flex items-center gap-3">
-              <FileText className="text-warning" size={18} />
+            <div className="card flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
+              <FileText className="shrink-0 text-warning" size={18} />
               <div>
                 <p className="text-lg font-bold text-gray-900">{reports.length}</p>
                 <p className="text-xs text-muted">Weekly Reports</p>
               </div>
             </div>
-            <div className="card flex items-center gap-3">
-              <Target className="text-accent" size={18} />
+            <div className="card flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
+              <Target className="shrink-0 text-accent" size={18} />
               <div>
                 <p className="text-lg font-bold text-gray-900">{strategies.length}</p>
                 <p className="text-xs text-muted">Strategies</p>

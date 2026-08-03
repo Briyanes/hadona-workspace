@@ -483,8 +483,8 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="w-full max-w-2xl rounded-lg border border-border bg-surface p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-0 sm:p-4">
+        <div className="w-full max-w-2xl rounded-none border-border bg-surface p-4 sm:rounded-lg sm:p-6">
           <div className="skeleton h-8 w-3/4 mb-4" />
           <div className="skeleton h-4 w-full mb-2" />
           <div className="skeleton h-4 w-2/3 mb-2" />
@@ -497,10 +497,10 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="relative my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-0 sm:p-4">
+      <div className="relative my-0 flex min-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-border bg-surface shadow-xl sm:my-4 sm:min-h-0 sm:max-h-[calc(100dvh-2rem)] sm:rounded-lg sm:border">
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-gray-900">{isEditing ? "Edit Task" : "Task Detail"}</h2>
             {!isEditing && (
@@ -537,7 +537,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         </div>
 
         {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
           {isEditing ? (
             /* ==================== EDIT MODE ==================== */
             <form onSubmit={handleSaveEdit} className="space-y-4">
@@ -551,7 +551,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <textarea rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="input resize-none" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
                   <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="input">
@@ -580,7 +580,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-900">Start Date</label>
                   <input type="date" value={editForm.start_date} onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })} className="input" />
@@ -636,7 +636,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
               )}
 
               {/* Meta Info Grid */}
-              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-background p-4 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-background p-3 sm:gap-3 sm:p-4 md:grid-cols-4">
                 <div>
                   <p className="text-xs text-muted">Prioritas</p>
                   <p className={cn("mt-0.5 flex items-center gap-1 text-sm font-medium", priorityOptions.find((p) => p.value === task.priority)?.color)}>
@@ -684,7 +684,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
               {/* Result & Notes */}
               {(task.result || task.notes) && (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3">
                   {task.result && (
                     <div className="rounded-lg border border-success/30 bg-success/5 p-3">
                       <p className="mb-1 text-xs font-semibold text-success">Result / Output</p>
@@ -739,25 +739,25 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                           className="input resize-none text-sm"
                         />
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
                         <button
                           onClick={() => handleApproval("approved")}
                           disabled={approving}
-                          className="flex items-center gap-1.5 rounded-md bg-success px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-success/90 disabled:opacity-50"
+                          className="flex items-center justify-center gap-1.5 rounded-md bg-success px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-success/90 disabled:opacity-50"
                         >
                           <CheckCircle2 size={14} /> Approve
                         </button>
                         <button
                           onClick={() => handleApproval("changes_requested")}
                           disabled={approving}
-                          className="flex items-center gap-1.5 rounded-md bg-warning px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-warning/90 disabled:opacity-50"
+                          className="flex items-center justify-center gap-1.5 rounded-md bg-warning px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-warning/90 disabled:opacity-50"
                         >
                           <AlertTriangle size={14} /> Request Changes
                         </button>
                         <button
                           onClick={() => handleApproval("rejected")}
                           disabled={approving}
-                          className="flex items-center gap-1.5 rounded-md bg-danger px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
+                          className="flex items-center justify-center gap-1.5 rounded-md bg-danger px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
                         >
                           <XCircle size={14} /> Reject
                         </button>
@@ -789,24 +789,24 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
               {/* Tabs: Comments, Subtasks & Time Log */}
               <div>
-                <div className="mb-3 flex gap-1 border-b border-border">
+                <div className="mb-3 flex gap-0.5 overflow-x-auto border-b border-border sm:gap-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <button
                     onClick={() => setActiveTab("comments")}
-                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "comments" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "comments" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
                   >
-                    <MessageCircle size={14} /> Comments ({comments.length})
+                    <MessageCircle size={13} /> <span className="hidden xs:inline sm:inline">Comments</span> ({comments.length})
                   </button>
                   <button
                     onClick={() => setActiveTab("subtasks")}
-                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "subtasks" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "subtasks" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
                   >
-                    <CheckSquare size={14} /> Subtasks ({subtasks.length})
+                    <CheckSquare size={13} /> <span className="hidden xs:inline sm:inline">Subtasks</span> ({subtasks.length})
                   </button>
                   <button
                     onClick={() => setActiveTab("timelog")}
-                    className={cn("flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors", activeTab === "timelog" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "timelog" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
                   >
-                    <Clock size={14} /> Time ({totalLoggedHours.toFixed(1)}h)
+                    <Clock size={13} /> <span className="hidden xs:inline sm:inline">Time</span> ({totalLoggedHours.toFixed(1)}h)
                   </button>
                 </div>
 
@@ -929,26 +929,28 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     {/* Quick Log Form */}
                     <form onSubmit={handleLogTime} className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
                       <p className="text-xs font-semibold text-primary">Quick Log Time</p>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          step="0.25"
-                          min="0.25"
-                          required
-                          value={logTimeForm.hours}
-                          onChange={(e) => setLogTimeForm({ ...logTimeForm, hours: e.target.value })}
-                          placeholder="2.5"
-                          className="input w-24"
-                        />
-                        <input
-                          type="text"
-                          value={logTimeForm.description}
-                          onChange={(e) => setLogTimeForm({ ...logTimeForm, description: e.target.value })}
-                          placeholder="Deskripsi (opsional)..."
-                          className="input flex-1"
-                        />
-                        <button type="submit" disabled={loggingTime} className="btn-primary px-3 whitespace-nowrap">
-                          {loggingTime ? "..." : "Log"}
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            step="0.25"
+                            min="0.25"
+                            required
+                            value={logTimeForm.hours}
+                            onChange={(e) => setLogTimeForm({ ...logTimeForm, hours: e.target.value })}
+                            placeholder="2.5"
+                            className="input w-20 sm:w-24"
+                          />
+                          <input
+                            type="text"
+                            value={logTimeForm.description}
+                            onChange={(e) => setLogTimeForm({ ...logTimeForm, description: e.target.value })}
+                            placeholder="Deskripsi..."
+                            className="input flex-1"
+                          />
+                        </div>
+                        <button type="submit" disabled={loggingTime} className="btn-primary px-3 whitespace-nowrap sm:self-start">
+                          {loggingTime ? "..." : "Log Time"}
                         </button>
                       </div>
                       <p className="text-[10px] text-muted">Jam langsung tercatat di Timesheet & terhubung ke task ini</p>
