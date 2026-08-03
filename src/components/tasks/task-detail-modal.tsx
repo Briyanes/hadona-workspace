@@ -257,14 +257,21 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   }
 
   async function loadTimeLogs() {
-    const { data } = await supabase
-      .from("timesheets")
-      .select("id, hours, description, date, billable, user:profiles(full_name)")
-      .eq("task_id", taskId)
-      .order("date", { ascending: false });
-    const logs = (data as unknown as TimeLog[]) || [];
-    setTimeLogs(logs);
-    setTotalLoggedHours(logs.reduce((sum, l) => sum + l.hours, 0));
+    try {
+      const { data, error } = await supabase
+        .from("timesheets")
+        .select("id, hours, description, date, billable, user:profiles(full_name)")
+        .eq("task_id", taskId)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      const logs = (data as unknown as TimeLog[]) || [];
+      setTimeLogs(logs);
+      setTotalLoggedHours(logs.reduce((sum, l) => sum + l.hours, 0));
+    } catch (err) {
+      console.error("[loadTimeLogs] Error:", err);
+      setTimeLogs([]);
+      setTotalLoggedHours(0);
+    }
   }
 
   async function handleLogTime(e: React.FormEvent) {
