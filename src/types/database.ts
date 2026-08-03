@@ -503,6 +503,49 @@ export interface Database {
           { foreignKeyName: "notifications_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
         ];
       };
+      budget_alerts: {
+        Row: {
+          id: string;
+          client_id: string | null;
+          ad_account_id: string | null;
+          threshold_pct: number;
+          current_spend: number;
+          monthly_budget: number;
+          alert_type: string;
+          message: string | null;
+          is_acknowledged: boolean;
+          acknowledged_by: string | null;
+          acknowledged_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          client_id?: string | null;
+          ad_account_id?: string | null;
+          threshold_pct?: number;
+          current_spend?: number;
+          monthly_budget?: number;
+          alert_type?: string;
+          message?: string | null;
+          is_acknowledged?: boolean;
+          acknowledged_by?: string | null;
+          acknowledged_at?: string | null;
+        };
+        Update: {
+          client_id?: string | null;
+          ad_account_id?: string | null;
+          threshold_pct?: number;
+          current_spend?: number;
+          monthly_budget?: number;
+          alert_type?: string;
+          message?: string | null;
+          is_acknowledged?: boolean;
+          acknowledged_by?: string | null;
+          acknowledged_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "budget_alerts_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
