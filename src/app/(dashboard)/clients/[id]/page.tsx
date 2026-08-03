@@ -28,6 +28,9 @@ import {
 } from "lucide-react";
 import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
 import { ContractManager } from "@/components/contracts/contract-manager";
+import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
+import { ReportDetailModal } from "@/components/reports/report-detail-modal";
+import { StrategyDetailModal } from "@/components/strategy/strategy-detail-modal";
 import { toast } from "sonner";
 
 interface ClientDetail {
@@ -123,6 +126,9 @@ export default function ClientDetailPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
 
   const clientId = params.id as string;
 
@@ -482,10 +488,10 @@ export default function ClientDetailPage() {
             <p className="py-8 text-center text-sm text-muted">Belum ada tugas untuk client ini</p>
           ) : (
             tasks.map((task) => (
-              <Link
+              <button
                 key={task.id}
-                href="/tasks"
-                className="flex items-center justify-between rounded-md border border-border bg-surface p-3 transition-colors hover:border-primary hover:bg-primary/5"
+                onClick={() => setSelectedTaskId(task.id)}
+                className="flex w-full items-center justify-between rounded-md border border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
               >
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{task.title}</p>
@@ -501,7 +507,7 @@ export default function ClientDetailPage() {
                 >
                   {task.status.replace("_", " ")}
                 </span>
-              </Link>
+              </button>
             ))
           )}
         </div>
@@ -518,9 +524,10 @@ export default function ClientDetailPage() {
             <p className="py-8 text-center text-sm text-muted">Belum ada laporan untuk client ini</p>
           ) : (
             reports.map((report) => (
-              <div
+              <button
                 key={report.id}
-                className="rounded-md border border-border bg-surface p-3"
+                onClick={() => setSelectedReportId(report.id)}
+                className="block w-full rounded-md border border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-gray-900">
@@ -532,7 +539,7 @@ export default function ClientDetailPage() {
                 {report.summary && (
                   <p className="mt-1 line-clamp-2 text-sm text-muted">{report.summary}</p>
                 )}
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -549,13 +556,17 @@ export default function ClientDetailPage() {
             <p className="py-8 text-center text-sm text-muted">Belum ada strategi untuk client ini</p>
           ) : (
             strategies.map((strat) => (
-              <div key={strat.id} className="rounded-md border border-border bg-surface p-3">
+              <button
+                key={strat.id}
+                onClick={() => setSelectedStrategyId(strat.id)}
+                className="block w-full rounded-md border border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
+              >
                 <p className="text-sm font-medium text-gray-900">{strat.title}</p>
                 {strat.period && <p className="text-xs text-muted">{strat.period}</p>}
                 {strat.description && (
-                  <p className="mt-1 text-sm text-muted">{strat.description}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted">{strat.description}</p>
                 )}
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -682,6 +693,36 @@ export default function ClientDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Task Detail Modal */}
+      {selectedTaskId && (
+        <TaskDetailModal
+          taskId={selectedTaskId}
+          onClose={() => setSelectedTaskId(null)}
+          onUpdated={loadAll}
+          onDeleted={loadAll}
+        />
+      )}
+
+      {/* Report Detail Modal */}
+      {selectedReportId && (
+        <ReportDetailModal
+          reportId={selectedReportId}
+          onClose={() => setSelectedReportId(null)}
+          onUpdated={loadAll}
+          onDeleted={loadAll}
+        />
+      )}
+
+      {/* Strategy Detail Modal */}
+      {selectedStrategyId && (
+        <StrategyDetailModal
+          strategyId={selectedStrategyId}
+          onClose={() => setSelectedStrategyId(null)}
+          onUpdated={loadAll}
+          onDeleted={loadAll}
+        />
       )}
     </div>
   );
