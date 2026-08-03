@@ -21,16 +21,47 @@ const ALLOWED_FOLDERS = [
 export type UploadFolder = (typeof ALLOWED_FOLDERS)[number];
 
 /**
- * Upload a file to R2 via presigned URL.
- * 1. Request presigned URL from /api/upload
- * 2. PUT file directly to R2 (no server relay → fast)
+ * Upload a file to R2.
+ *
+ * Strategy:
+ * 1. Try presigned URL (fast, direct browser → R2)
+ * 2. If CORS/network error, fallback to server-relay (browser → /api/upload → R2)
+ *
+ * The server-relay fallback works for files up to 4.5MB (Vercel body size limit).
+ * For larger files, the CORS fix on R2 bucket is required.
  */
 export async function uploadFile(
   file: File,
   folder: UploadFolder = "uploads",
   onProgress?: (percent: number) => void
 ): Promise<UploadResult> {
-  // Step 1: Get presigned URL
+  try {
+    // Strategy 1: Presigned URL (preferred — fast, no server relay)
+    return await uploadViaPresignedUrl(file, folder, onProgress);
+  } catch (presignedError) {
+    // If file is small enough, try server-relay fallback
+    if (file.size <= 4 * 1024 * 1024) {
+      console.warn("[Upload] Presigned URL failed, falling back to server-relay:", presignedError);
+      return await uploadViaServerRelay(file, folder);
+    }
+    // File too large for server-relay — rethrow with helpful message
+    const msg = presignedError instanceof Error ? presignedError.message : "Unknown error";
+    throw new Error(
+      `Direct upload failed (${msg}). File is too large for fallback. Please contact admin to fix R2 CORS settings.`
+    );
+  }
+}
+
+/**
+ * Strategy 1: Upload via presigned URL (direct browser → R2).
+ * Requires CORS to be configured on the R2 bucket.
+ */
+async function uploadViaPresignedUrl(
+  file: File,
+  folder: UploadFolder,
+  onProgress?: (percent: number) => void
+): Promise<UploadResult> {
+  // Step 1: Get presigned URL from our API
   const res = await fetch("/api/upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -66,9 +97,37 @@ export async function uploadFile(
       else reject(new Error(`Upload failed: HTTP ${xhr.status}`));
     };
 
-    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.onerror = () => reject(new Error("Network error during upload (likely CORS)"));
+    xhr.ontimeout = () => reject(new Error("Upload timed out"));
     xhr.send(file);
   });
 
+  return { publicUrl, key };
+}
+
+/**
+ * Strategy 2: Server-relay fallback (browser → /api/upload → R2).
+ * Used when presigned URL fails due to CORS.
+ * Works for files ≤ 4.5MB (Vercel body limit).
+ */
+async function uploadViaServerRelay(
+  file: File,
+  folder: UploadFolder
+): Promise<UploadResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", folder);
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Server upload failed" }));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+
+  const { publicUrl, key } = await res.json();
   return { publicUrl, key };
 }
