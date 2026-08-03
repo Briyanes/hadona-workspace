@@ -36,7 +36,22 @@ interface Contract {
   contract_type: string;
   notes: string | null;
   signed_url: string | null;
+  pic_name: string | null;
+  pic_phone: string | null;
+  pic_email: string | null;
+  sales_person_id: string | null;
+  payment_due_day: number;
+  bank_account: string | null;
+  discount_percent: number;
+  tax_rate: number;
   created_at: string;
+}
+
+interface TeamMember {
+  id: string;
+  full_name: string | null;
+  email: string;
+  division: string | null;
 }
 
 interface ContractService {
@@ -110,6 +125,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
   const [showServiceModal, setShowServiceModal] = useState<string | null>(null);
   const [expandedContract, setExpandedContract] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   const [contractForm, setContractForm] = useState({
     start_date: new Date().toISOString().slice(0, 10),
@@ -117,6 +133,14 @@ export function ContractManager({ clientId }: { clientId: string }) {
     minimum_months: 3,
     contract_type: "monthly",
     notes: "",
+    pic_name: "",
+    pic_phone: "",
+    pic_email: "",
+    sales_person_id: "",
+    payment_due_day: 14,
+    bank_account: "BCA",
+    discount_percent: 0,
+    tax_rate: 11,
   });
 
   const [serviceForm, setServiceForm] = useState({
@@ -175,6 +199,23 @@ export function ContractManager({ clientId }: { clientId: string }) {
     loadContracts();
   }, [loadContracts]);
 
+  // Load team members for sales/AM dropdown
+  useEffect(() => {
+    async function loadTeam() {
+      try {
+        const { data, error } = await supabase
+          .from("team_members")
+          .select("id, full_name, email, division")
+          .order("full_name", { ascending: true });
+        if (error) throw error;
+        setTeamMembers((data as unknown as TeamMember[]) || []);
+      } catch {
+        // Silent fail — dropdown just empty
+      }
+    }
+    loadTeam();
+  }, [supabase]);
+
   // ============================================
   // Contract CRUD
   // ============================================
@@ -197,6 +238,14 @@ export function ContractManager({ clientId }: { clientId: string }) {
         notes: contractForm.notes || null,
         status: "active",
         created_by: user?.id || null,
+        pic_name: contractForm.pic_name || null,
+        pic_phone: contractForm.pic_phone || null,
+        pic_email: contractForm.pic_email || null,
+        sales_person_id: contractForm.sales_person_id || null,
+        payment_due_day: contractForm.payment_due_day,
+        bank_account: contractForm.bank_account,
+        discount_percent: contractForm.discount_percent,
+        tax_rate: contractForm.tax_rate,
       } as never);
       if (error) throw error;
       toast.success("Kontrak berhasil dibuat!");
@@ -207,6 +256,14 @@ export function ContractManager({ clientId }: { clientId: string }) {
         minimum_months: 3,
         contract_type: "monthly",
         notes: "",
+        pic_name: "",
+        pic_phone: "",
+        pic_email: "",
+        sales_person_id: "",
+        payment_due_day: 14,
+        bank_account: "BCA",
+        discount_percent: 0,
+        tax_rate: 11,
       });
       loadContracts();
     } catch (err) {
@@ -798,6 +855,115 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </select>
                 </div>
               </div>
+              {/* Section: PIC Client */}
+              <div className="rounded-md border border-border bg-background/50 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-900">Nama PIC</label>
+                    <input
+                      type="text"
+                      value={contractForm.pic_name}
+                      onChange={(e) => setContractForm({ ...contractForm, pic_name: e.target.value })}
+                      placeholder="John Doe"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-900">No. HP / WA</label>
+                    <input
+                      type="tel"
+                      value={contractForm.pic_phone}
+                      onChange={(e) => setContractForm({ ...contractForm, pic_phone: e.target.value })}
+                      placeholder="0812xxxxxxx"
+                      className="input"
+                    />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Email PIC</label>
+                  <input
+                    type="email"
+                    value={contractForm.pic_email}
+                    onChange={(e) => setContractForm({ ...contractForm, pic_email: e.target.value })}
+                    placeholder="john@client.com"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Section: Sales & Payment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Sales / AM</label>
+                  <select
+                    value={contractForm.sales_person_id}
+                    onChange={(e) => setContractForm({ ...contractForm, sales_person_id: e.target.value })}
+                    className="input"
+                  >
+                    <option value="">— Pilih —</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name || m.email} {m.division ? `(${m.division})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Jatuh Tempo (tgl)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={contractForm.payment_due_day}
+                    onChange={(e) => setContractForm({ ...contractForm, payment_due_day: parseInt(e.target.value) || 14 })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Bank</label>
+                  <select
+                    value={contractForm.bank_account}
+                    onChange={(e) => setContractForm({ ...contractForm, bank_account: e.target.value })}
+                    className="input"
+                  >
+                    <option value="BCA">BCA</option>
+                    <option value="Mandiri">Mandiri</option>
+                    <option value="BNI">BNI</option>
+                    <option value="BRI">BRI</option>
+                    <option value="CIMB">CIMB</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Diskon (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.5"
+                    value={contractForm.discount_percent}
+                    onChange={(e) => setContractForm({ ...contractForm, discount_percent: parseFloat(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">PPN (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.5"
+                    value={contractForm.tax_rate}
+                    onChange={(e) => setContractForm({ ...contractForm, tax_rate: parseFloat(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-900">Catatan</label>
                 <textarea
