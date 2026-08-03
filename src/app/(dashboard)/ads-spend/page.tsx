@@ -40,87 +40,24 @@ import { formatIDR, cn, extractError } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { useShiftSelect } from "@/hooks/use-shift-select";
 import { SortableTh } from "@/components/ui/sortable-th";
-
-interface AdAccount {
-  id: string;
-  platform: string;
-  ad_account_id: string;
-  account_name: string | null;
-  objective: string | null;
-  daily_budget: number | null;
-  remaining_budget: number | null;
-  days_left: number | null;
-  status: string;
-  notes: string | null;
-  client_id: string;
-  pic_id: string | null;
-  meta_sync_enabled?: boolean | null;
-  meta_connection_id?: string | null;
-  client?: { name: string };
-  pic?: { full_name: string | null } | null;
-}
-
-interface SpendLog {
-  id: string;
-  ad_account_id: string;
-  log_date: string;
-  spend: number;
-  impressions: number;
-  clicks: number;
-  conversions: number;
-  revenue: number;
-  notes: string | null;
-}
-
-interface Client {
-  id: string;
-  name: string;
-}
-
-interface TeamMember {
-  id: string;
-  full_name: string | null;
-}
-
-interface MetaConnection {
-  id: string;
-  fb_user_name: string | null;
-  is_active: boolean;
-  auto_sync: boolean;
-  last_sync_at: string | null;
-  last_sync_status: string | null;
-  last_sync_error: string | null;
-  token_expires_at: string | null;
-}
-
-interface TrendData {
-  date: string;
-  spend: number;
-  revenue: number;
-}
-
-const emptyForm = {
-  client_id: "",
-  platform: "META",
-  ad_account_id: "",
-  account_name: "",
-  objective: "",
-  daily_budget: "",
-  remaining_budget: "",
-  status: "active",
-  notes: "",
-  pic_id: "",
-};
-
-const emptySpendForm = {
-  log_date: new Date().toISOString().split("T")[0],
-  spend: "",
-  impressions: "",
-  clicks: "",
-  conversions: "",
-  revenue: "",
-  notes: "",
-};
+import {
+  type AdAccount,
+  type SpendLog,
+  type ClientOption as Client,
+  type TeamMember,
+  type MetaConnection,
+  type TrendData,
+  type AdAccountForm,
+  type SpendForm,
+  type AssignResult,
+  emptyAdAccountForm as emptyForm,
+  emptySpendForm,
+  calcDaysLeft,
+} from "@/components/ads-spend/types";
+import { AdAccountModal } from "@/components/ads-spend/ad-account-modal";
+import { ManualTokenModal } from "@/components/ads-spend/manual-token-modal";
+import { ImportSheetModal } from "@/components/ads-spend/import-sheet-modal";
+import { SpendLogModal } from "@/components/ads-spend/spend-log-modal";
 
 export default function AdsSpendPage() {
   const supabase = createClient();
@@ -199,15 +136,7 @@ export default function AdsSpendPage() {
   const [importing, setImporting] = useState(false);
 
   // Auto-assign results
-  const [assignResult, setAssignResult] = useState<{
-    matched: number;
-    clients_created: number;
-    already_assigned: number;
-    duplicates: number;
-    no_match: number;
-    matched_details: Array<{ client: string; nomorAkun: string; accountName: string | null; action: string }>;
-    no_match_details: Array<{ client: string; nomorAkun: string }>;
-  } | null>(null);
+  const [assignResult, setAssignResult] = useState<AssignResult | null>(null);
 
   useEffect(() => {
     loadAccounts();
@@ -608,12 +537,6 @@ export default function AdsSpendPage() {
     setSpendAccountId(accountId);
     setSpendForm(emptySpendForm);
     setShowSpendModal(true);
-  }
-
-  // Auto-calc days_left from remaining / daily
-  function calcDaysLeft(remaining: number | null, daily: number | null): number | null {
-    if (!remaining || !daily || daily <= 0) return null;
-    return Math.floor(remaining / daily);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -1885,765 +1808,60 @@ export default function AdsSpendPage() {
       )}
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
-              {/* Sticky Header */}
-              <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-                <h2 className="text-lg font-bold text-gray-900">
-                  {editingId ? "Edit Ad Account" : "Ad Account Baru"}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Scrollable Body */}
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-              <div className="space-y-3 rounded-lg bg-background p-3">
-                <p className="text-xs font-semibold uppercase text-muted">Client & Platform</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Client *
-                    </label>
-                    <select
-                      required
-                      value={form.client_id}
-                      onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                      className="input"
-                    >
-                      <option value="">— Pilih —</option>
-                      {clients.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Platform *
-                    </label>
-                    <select
-                      value={form.platform}
-                      onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                      className="input"
-                    >
-                      <option value="META">META (FB/IG)</option>
-                      <option value="Google">Google Ads</option>
-                      <option value="TikTok">TikTok Ads</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Ad Account ID *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={form.ad_account_id}
-                      onChange={(e) => setForm({ ...form, ad_account_id: e.target.value })}
-                      placeholder="1234567890"
-                      className="input"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Account Name
-                    </label>
-                    <input
-                      type="text"
-                      value={form.account_name}
-                      onChange={(e) => setForm({ ...form, account_name: e.target.value })}
-                      placeholder="Nickname"
-                      className="input"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 rounded-lg bg-background p-3">
-                <p className="text-xs font-semibold uppercase text-muted">Budget & Status</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Daily Budget (Rp)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.daily_budget}
-                      onChange={(e) => setForm({ ...form, daily_budget: e.target.value })}
-                      placeholder="0"
-                      className="input"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Remaining (Rp)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.remaining_budget}
-                      onChange={(e) => setForm({ ...form, remaining_budget: e.target.value })}
-                      placeholder="0"
-                      className="input"
-                    />
-                  </div>
-                </div>
-                {form.daily_budget && form.remaining_budget && (
-                  <p className="text-[10px] text-muted">
-                    <TrendingDown size={10} className="mr-1 inline" />
-                    Days left terhitung otomatis:{" "}
-                    <strong>
-                      {calcDaysLeft(
-                        parseFloat(form.remaining_budget),
-                        parseFloat(form.daily_budget)
-                      )}{" "}
-                      hari
-                    </strong>
-                  </p>
-                )}
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="input"
-                >
-                  <option value="active">Active</option>
-                  <option value="hold">Hold</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className="space-y-3 rounded-lg bg-background p-3">
-                <p className="text-xs font-semibold uppercase text-muted">PIC & Catatan</p>
-                <select
-                  value={form.pic_id}
-                  onChange={(e) => setForm({ ...form, pic_id: e.target.value })}
-                  className="input"
-                >
-                  <option value="">— Tanpa PIC —</option>
-                  {team.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.full_name || "Unknown"}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={form.objective}
-                  onChange={(e) => setForm({ ...form, objective: e.target.value })}
-                  placeholder="Objective: Conversions, Traffic, Awareness..."
-                  className="input"
-                />
-                <textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Catatan tambahan..."
-                  className="input resize-none"
-                />
-              </div>
-              </div>
-
-              {/* Sticky Footer */}
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border p-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
-                >
-                  Batal
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
-                    </>
-                  ) : editingId ? (
-                    "Update Ad Account"
-                  ) : (
-                    "Simpan Ad Account"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AdAccountModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        form={form}
+        setForm={setForm}
+        onSubmit={handleSave}
+        saving={saving}
+        editingId={editingId}
+        clients={clients}
+        team={team}
+      />
 
       {/* Manual Token Modal */}
-      {showTokenModal && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            {/* Sticky Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-              <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
-              <button
-                type="button"
-                onClick={() => setShowTokenModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleManualTokenSubmit} className="flex min-h-0 flex-1 flex-col">
-              {/* Scrollable Body */}
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-                <div className="rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
-                  <p className="mb-2 font-semibold">📋 Cara dapatkan Access Token:</p>
-                  <ol className="list-decimal space-y-1 pl-4 text-[11px] text-muted">
-                    <li>
-                      Buka{" "}
-                      <a
-                        href="https://developers.facebook.com/tools/explorer/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
-                      >
-                        Graph API Explorer <ExternalLink size={10} />
-                      </a>
-                    </li>
-                    <li>Pilih App Anda dari dropdown</li>
-                    <li>
-                      Klik <strong>"Generate Access Token"</strong> → centang:{" "}
-                      <code className="rounded bg-background px-1">ads_read</code>,{" "}
-                      <code className="rounded bg-background px-1">ads_management</code>
-                    </li>
-                    <li>Copy token yang muncul, paste di bawah</li>
-                  </ol>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
-                    Access Token *
-                  </label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={manualToken}
-                    onChange={(e) => setManualToken(e.target.value)}
-                    placeholder="EAAGm0PX4ZCwBO..."
-                    className="input font-mono text-[11px] resize-none"
-                    disabled={savingToken}
-                  />
-                  <p className="mt-1 text-[10px] text-muted">
-                    💡 Token akan otomatis di-exchange jadi long-lived (60 hari). Short-lived token
-                    hanya berlaku ~1 jam.
-                  </p>
-                </div>
-              </div>
-
-              {/* Sticky Footer */}
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border p-4">
-                <button
-                  type="button"
-                  onClick={() => setShowTokenModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
-                >
-                  Batal
-                </button>
-                <button type="submit" disabled={savingToken} className="btn-primary">
-                  {savingToken ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Menghubungkan...
-                    </>
-                  ) : (
-                    <>
-                      <KeyRound size={14} /> Hubungkan
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ManualTokenModal
+        open={showTokenModal}
+        onClose={() => setShowTokenModal(false)}
+        manualToken={manualToken}
+        setManualToken={setManualToken}
+        onSubmit={handleManualTokenSubmit}
+        savingToken={savingToken}
+      />
 
       {/* Import Sheet Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Import dari Google Sheet</h2>
-                <p className="text-xs text-muted">
-                  Auto-assign client ke ad account berdasarkan mapping di sheet
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowImportModal(false);
-                  setAssignResult(null);
-                }}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
-
-            {/* Mode Toggle */}
-            <div className="mb-4 flex gap-2 rounded-lg bg-background p-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setImportMode("assign");
-                  setAssignResult(null);
-                }}
-                className={cn(
-                  "flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
-                  importMode === "assign"
-                    ? "bg-primary text-white"
-                    : "text-muted hover:text-gray-900"
-                )}
-              >
-                🤖 Auto-Assign Client (Rekomendasi)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setImportMode("import");
-                  setAssignResult(null);
-                }}
-                className={cn(
-                  "flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
-                  importMode === "import"
-                    ? "bg-primary text-white"
-                    : "text-muted hover:text-gray-900"
-                )}
-              >
-                📥 Import Account Baru
-              </button>
-            </div>
-
-            {importMode === "assign" ? (
-              <>
-                {/* Auto-Assign Mode Info */}
-                <div className="mb-4 rounded-lg bg-success/5 p-3 text-xs text-gray-700">
-                  <p className="mb-1 font-semibold text-success">🤖 Cara kerja Auto-Assign:</p>
-                  <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
-                    <li>Baca kolom <strong>Client</strong> (B) & <strong>Nomor Akun</strong> (F)</li>
-                    <li>Auto-create client baru jika belum ada di database</li>
-                    <li>Match <code className="rounded bg-background px-1">account_name</code> di DB dengan Nomor Akun (fuzzy + FB ID)</li>
-                    <li>Bulk update <code className="rounded bg-background px-1">client_id</code> untuk semua match</li>
-                    <li>Skipped values: "BM LAMA", "BM MILIK CLIENT", "TOTAL"</li>
-                  </ol>
-                </div>
-
-                <form onSubmit={handleImportSheet} className="space-y-4">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      URL Published Google Sheet *
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={sheetUrl}
-                      onChange={(e) => setSheetUrl(e.target.value)}
-                      placeholder="https://docs.google.com/spreadsheets/d/e/..."
-                      className="input text-[11px]"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-700">
-                        Kolom Nama Client
-                      </label>
-                      <select
-                        value={clientColumn}
-                        onChange={(e) => setClientColumn(e.target.value)}
-                        className="input"
-                      >
-                        <option value="A">A</option>
-                        <option value="B">B (default)</option>
-                        <option value="C">C</option>
-                        <option value="D">D</option>
-                        <option value="E">E</option>
-                        <option value="F">F</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-700">
-                        Kolom Nomor Akun
-                      </label>
-                      <select
-                        value={accountColumn}
-                        onChange={(e) => setAccountColumn(e.target.value)}
-                        className="input"
-                      >
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="D">D</option>
-                        <option value="E">E</option>
-                        <option value="F">F (default)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Results Report */}
-                  {assignResult && (
-                    <div className="space-y-3 rounded-lg border border-border bg-background p-4">
-                      <p className="text-sm font-bold text-gray-900">📊 Hasil Auto-Assign:</p>
-
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <div className="rounded-lg bg-success/10 p-2 text-center">
-                          <p className="text-lg font-bold text-success">{assignResult.matched}</p>
-                          <p className="text-[10px] text-muted">Di-assign</p>
-                        </div>
-                        <div className="rounded-lg bg-primary/10 p-2 text-center">
-                          <p className="text-lg font-bold text-primary">{assignResult.clients_created}</p>
-                          <p className="text-[10px] text-muted">Client Baru</p>
-                        </div>
-                        <div className="rounded-lg bg-warning/10 p-2 text-center">
-                          <p className="text-lg font-bold text-warning">{assignResult.already_assigned}</p>
-                          <p className="text-[10px] text-muted">Sudah Sesuai</p>
-                        </div>
-                        <div className="rounded-lg bg-danger/10 p-2 text-center">
-                          <p className="text-lg font-bold text-danger">{assignResult.no_match}</p>
-                          <p className="text-[10px] text-muted">Tidak Match</p>
-                        </div>
-                      </div>
-
-                      {/* Matched Details */}
-                      {assignResult.matched_details.length > 0 && (
-                        <div>
-                          <p className="mb-1 text-[11px] font-semibold text-success">
-                            ✅ Berhasil ({assignResult.matched_details.length}):
-                          </p>
-                          <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2">
-                            {assignResult.matched_details.map((d, i) => (
-                              <div key={i} className="flex items-center justify-between border-b border-border/50 py-1 text-[10px] last:border-0">
-                                <span className="font-medium text-gray-900">{d.client}</span>
-                                <span className="text-muted">
-                                  ← {d.nomorAkun.slice(0, 30)}{d.nomorAkun.length > 30 ? "..." : ""}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* No-Match Details */}
-                      {assignResult.no_match_details.length > 0 && (
-                        <div>
-                          <p className="mb-1 text-[11px] font-semibold text-danger">
-                            ⚠️ Tidak ditemukan match ({assignResult.no_match_details.length}):
-                          </p>
-                          <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2">
-                            {assignResult.no_match_details.map((d, i) => (
-                              <div key={i} className="flex items-center justify-between border-b border-border/50 py-1 text-[10px] last:border-0">
-                                <span className="font-medium text-gray-900">{d.client}</span>
-                                <span className="text-muted">→ {d.nomorAkun.slice(0, 30)}{d.nomorAkun.length > 30 ? "..." : ""}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <p className="mt-1 text-[10px] text-muted">
-                            💡 Akun-akun ini mungkin sudah tidak aktif atau nama di sheet berbeda dengan di database.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowImportModal(false);
-                        setAssignResult(null);
-                      }}
-                      className="px-4 py-2 text-sm text-muted hover:text-gray-900"
-                    >
-                      Tutup
-                    </button>
-                    <button type="submit" disabled={importing} className="btn-primary">
-                      {importing ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" /> Processing...
-                        </>
-                      ) : assignResult ? (
-                        <>🔄 Run Again</>
-                      ) : (
-                        <>
-                          <Download size={14} className="rotate-180" /> Auto-Assign Now
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </>
-            ) : (
-              <>
-                {/* Import Mode Info */}
-                <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
-                  <p className="mb-1 font-semibold">📋 Cara kerja Import:</p>
-                  <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
-                    <li>Pilih kolom yang berisi nama ad account (default: E)</li>
-                    <li>Sistem akan parse dan import semua nama ke database</li>
-                    <li>Setelah import, klik "Sync Now" untuk match dengan Meta API</li>
-                  </ol>
-                </div>
-
-                <form onSubmit={handleImportSheet} className="space-y-4">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      URL Published Google Sheet *
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={sheetUrl}
-                      onChange={(e) => setSheetUrl(e.target.value)}
-                      placeholder="https://docs.google.com/spreadsheets/d/e/..."
-                      className="input text-[11px]"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">
-                      Kolom Ad Account Name
-                    </label>
-                    <select
-                      value={sheetColumn}
-                      onChange={(e) => setSheetColumn(e.target.value)}
-                      className="input"
-                    >
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="D">D</option>
-                      <option value="E">E (default)</option>
-                      <option value="F">F</option>
-                      <option value="G">G</option>
-                    </select>
-                    <p className="mt-1 text-[10px] text-muted">
-                      Kolom mana yang berisi nama ad account di sheet Anda?
-                    </p>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowImportModal(false)}
-                      className="px-4 py-2 text-sm text-muted hover:text-gray-900"
-                    >
-                      Batal
-                    </button>
-                    <button type="submit" disabled={importing} className="btn-primary">
-                      {importing ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" /> Importing...
-                        </>
-                      ) : (
-                        <>
-                          <Download size={14} className="rotate-180" /> Import Now
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ImportSheetModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        importMode={importMode}
+        setImportMode={setImportMode}
+        sheetUrl={sheetUrl}
+        setSheetUrl={setSheetUrl}
+        clientColumn={clientColumn}
+        setClientColumn={setClientColumn}
+        accountColumn={accountColumn}
+        setAccountColumn={setAccountColumn}
+        sheetColumn={sheetColumn}
+        setSheetColumn={setSheetColumn}
+        assignResult={assignResult}
+        setAssignResult={setAssignResult}
+        onSubmit={handleImportSheet}
+        importing={importing}
+      />
 
       {/* Spend Log Modal */}
-      {showSpendModal && modalAccount && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            {/* Sticky Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Log Spend Harian</h2>
-                <p className="text-xs text-muted">
-                  {modalAccount.client?.name} • {modalAccount.platform} •{" "}
-                  <span className="font-mono">{modalAccount.ad_account_id}</span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSpendModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            {/* Form */}
-            <form onSubmit={handleSaveSpend} className="mb-4 space-y-3 rounded-lg bg-background p-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">Tanggal</label>
-                  <input
-                    type="date"
-                    required
-                    value={spendForm.log_date}
-                    onChange={(e) => setSpendForm({ ...spendForm, log_date: e.target.value })}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
-                    Spend (Rp) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={spendForm.spend}
-                    onChange={(e) => setSpendForm({ ...spendForm, spend: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
-                    Impressions
-                  </label>
-                  <input
-                    type="number"
-                    value={spendForm.impressions}
-                    onChange={(e) => setSpendForm({ ...spendForm, impressions: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">Clicks</label>
-                  <input
-                    type="number"
-                    value={spendForm.clicks}
-                    onChange={(e) => setSpendForm({ ...spendForm, clicks: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">
-                    Conversions
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={spendForm.conversions}
-                    onChange={(e) =>
-                      setSpendForm({ ...spendForm, conversions: e.target.value })
-                    }
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
-                  Revenue / Value (Rp)
-                </label>
-                <input
-                  type="number"
-                  value={spendForm.revenue}
-                  onChange={(e) => setSpendForm({ ...spendForm, revenue: e.target.value })}
-                  placeholder="0"
-                  className="input"
-                />
-                {spendForm.spend && spendForm.revenue && (
-                  <p className="mt-1 text-[10px] text-muted">
-                    ROAS:{" "}
-                    <strong className={cn(parseFloat(spendForm.revenue) / parseFloat(spendForm.spend) >= 1 ? "text-success" : "text-danger")}>
-                      {(parseFloat(spendForm.revenue) / parseFloat(spendForm.spend)).toFixed(2)}x
-                    </strong>
-                  </p>
-                )}
-              </div>
-              <input
-                type="text"
-                value={spendForm.notes}
-                onChange={(e) => setSpendForm({ ...spendForm, notes: e.target.value })}
-                placeholder="Catatan (opsional)"
-                className="input"
-              />
-              <div className="flex justify-end">
-                <button type="submit" disabled={savingSpend} className="btn-primary">
-                  {savingSpend ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
-                    </>
-                  ) : (
-                    "Simpan Log"
-                  )}
-                </button>
-              </div>
-            </form>
-
-            {/* History */}
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase text-muted">Riwayat (14 hari)</p>
-              {modalSpendLogs.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted">Belum ada log spend</p>
-              ) : (
-                <div className="max-h-48 space-y-1 overflow-y-auto">
-                  {modalSpendLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-xs"
-                    >
-                      <div>
-                        <span className="font-medium text-gray-900">
-                          {new Date(log.log_date).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </span>
-                        <span className="ml-2 text-muted">
-                          {log.impressions > 0 && `${log.impressions.toLocaleString()} imp • `}
-                          {log.clicks > 0 && `${log.clicks.toLocaleString()} click • `}
-                          {log.revenue > 0 &&
-                            `Rev: ${formatIDR(log.revenue)} • `}
-                          {log.spend > 0 &&
-                            log.revenue > 0 &&
-                            `ROAS: ${(log.revenue / log.spend).toFixed(2)}x`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-warning">
-                          {formatIDR(log.spend)}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteSpendLog(log.id)}
-                          className="text-muted hover:text-danger"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 rounded-md bg-primary/5 p-3 text-[10px] text-muted">
-              💡 <strong>Auto-update:</strong> Saat spend log disimpan, remaining budget ad account
-              akan otomatis berkurang sesuai spend hari ini.
-            </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <SpendLogModal
+        open={showSpendModal}
+        onClose={() => setShowSpendModal(false)}
+        modalAccount={modalAccount || null}
+        spendForm={spendForm}
+        setSpendForm={setSpendForm}
+        onSubmit={handleSaveSpend}
+        savingSpend={savingSpend}
+        modalSpendLogs={modalSpendLogs}
+        onDeleteLog={handleDeleteSpendLog}
+      />
     </div>
   );
 }
