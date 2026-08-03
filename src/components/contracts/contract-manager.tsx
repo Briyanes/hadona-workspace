@@ -613,11 +613,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900">Kontrak & Billing</h3>
-          <p className="text-xs text-muted">Kelola kontrak, service, dan tagihan bulanan</p>
+          <h3 className="text-sm font-semibold text-gray-900 sm:text-base">Kontrak & Billing</h3>
+          <p className="hidden text-xs text-muted sm:block">Kelola kontrak, service, dan tagihan bulanan</p>
         </div>
         <button onClick={() => setShowContractModal(true)} className="btn-primary text-xs">
-          <Plus size={14} /> Buat Kontrak
+          <Plus size={14} /> <span className="hidden sm:inline">Buat Kontrak</span><span className="sm:hidden">Kontrak</span>
         </button>
       </div>
 
@@ -630,64 +630,47 @@ export function ContractManager({ clientId }: { clientId: string }) {
         const nextDue = getNextDueDate();
 
         return (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
             {/* MRR */}
-            <div className="card p-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <TrendingUp size={14} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Total MRR</p>
-                  <p className="text-sm font-bold text-gray-900">{formatIDR(mrr)}</p>
-                </div>
-              </div>
+            <div className="card p-3 sm:p-4">
+              <TrendingUp className="mb-2 text-primary" size={16} />
+              <p className="text-base font-bold text-gray-900 sm:text-lg">{formatIDR(mrr)}</p>
+              <p className="text-xs text-muted">Total MRR</p>
             </div>
 
             {/* Outstanding */}
-            <div className="card p-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                  <Wallet size={14} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Tagihan Outstanding</p>
-                  <p className="text-sm font-bold text-warning">{formatIDR(outstanding.total)}</p>
-                  <p className="text-[9px] text-muted">{outstanding.count} invoice belum bayar</p>
-                </div>
-              </div>
+            <div className="card p-3 sm:p-4">
+              <Wallet className="mb-2 text-warning" size={16} />
+              <p className={cn("text-base font-bold sm:text-lg", outstanding.count > 0 ? "text-warning" : "text-muted")}>
+                {formatIDR(outstanding.total)}
+              </p>
+              <p className="text-xs text-muted">Outstanding</p>
+              {outstanding.count > 0 && (
+                <p className="text-[10px] text-warning">{outstanding.count} invoice</p>
+              )}
             </div>
 
             {/* Paid This Month */}
-            <div className="card p-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 text-success">
-                  <CheckCircle size={14} />
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Lunas Bulan Ini</p>
-                  <p className="text-sm font-bold text-success">{formatIDR(paid)}</p>
-                </div>
-              </div>
+            <div className="card p-3 sm:p-4">
+              <CheckCircle className="mb-2 text-success" size={16} />
+              <p className="text-base font-bold text-success sm:text-lg">{formatIDR(paid)}</p>
+              <p className="text-xs text-muted">Lunas Bulan Ini</p>
             </div>
 
             {/* Overdue */}
-            <div className="card p-3">
-              <div className="flex items-center gap-2">
-                <div className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg",
-                  overdue.count > 0 ? "bg-danger/10 text-danger" : "bg-surface text-muted"
-                )}>
-                  {overdue.count > 0 ? <AlertTriangle size={14} /> : <Clock size={14} />}
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Overdue</p>
-                  <p className={cn("text-sm font-bold", overdue.count > 0 ? "text-danger" : "text-muted")}>
-                    {formatIDR(overdue.total)}
-                  </p>
-                  <p className="text-[9px] text-muted">{overdue.count} invoice telat</p>
-                </div>
-              </div>
+            <div className="card p-3 sm:p-4">
+              {overdue.count > 0 ? (
+                <AlertTriangle className="mb-2 text-danger" size={16} />
+              ) : (
+                <Clock className="mb-2 text-muted" size={16} />
+              )}
+              <p className={cn("text-base font-bold sm:text-lg", overdue.count > 0 ? "text-danger" : "text-muted")}>
+                {formatIDR(overdue.total)}
+              </p>
+              <p className="text-xs text-muted">Overdue</p>
+              {overdue.count > 0 && (
+                <p className="text-[10px] text-danger">{overdue.count} invoice telat</p>
+              )}
             </div>
 
             {/* Next Due Date Alert */}
@@ -746,30 +729,31 @@ export function ContractManager({ clientId }: { clientId: string }) {
           <div key={contract.id} className="card overflow-hidden">
             {/* Contract Header */}
             <div
-              className="flex cursor-pointer items-center justify-between p-4 hover:bg-surface"
+              className="flex cursor-pointer items-start justify-between gap-3 p-3 sm:p-4 hover:bg-surface"
               onClick={() => setExpandedContract(isExpanded ? null : contract.id)}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <FileText size={18} />
+              <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-10 sm:w-10">
+                  <FileText size={16} />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="truncate text-sm font-semibold text-gray-900 sm:text-base">
                       {contract.contract_number || "Kontrak"}
                     </p>
-                    <span className={cn("badge text-[10px]", contractStatusColors[contract.status] || contractStatusColors.draft)}>
+                    <span className={cn("badge text-[10px] capitalize", contractStatusColors[contract.status] || contractStatusColors.draft)}>
                       {contract.status}
                     </span>
                   </div>
-                  <p className="text-xs text-muted">
-                    {formatDate(contract.start_date)} → {formatDate(contract.end_date)} • Min {contract.minimum_months} bulan
+                  <p className="mt-0.5 text-xs text-muted">
+                    {formatDate(contract.start_date, { day: "numeric", month: "short", year: "numeric" })} → {formatDate(contract.end_date, { day: "numeric", month: "short", year: "numeric" })}
                   </p>
+                  <p className="text-[10px] text-muted">Min {contract.minimum_months} bulan • {contract.contract_type}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-success">{formatIDR(monthlyTotal)}</p>
-                <p className="text-[10px] text-muted">MRR (bulan ini)</p>
+              <div className="shrink-0 text-right">
+                <p className="text-base font-bold text-success sm:text-lg">{formatIDR(monthlyTotal)}</p>
+                <p className="text-[10px] text-muted">/bulan</p>
               </div>
             </div>
 
