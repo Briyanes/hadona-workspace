@@ -452,26 +452,20 @@ export default function ClientDetailPage() {
 
           {/* Operational KPIs */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="card flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
-              <CheckSquare className="shrink-0 text-primary" size={18} />
-              <div>
-                <p className="text-lg font-bold text-gray-900">{tasks.length}</p>
-                <p className="text-xs text-muted">Total Tasks</p>
-              </div>
+            <div className="card p-3 sm:p-4">
+              <CheckSquare className="mb-2 text-primary" size={16} />
+              <p className="text-base font-bold text-gray-900 sm:text-xl">{tasks.length}</p>
+              <p className="text-xs text-muted">Total Tasks</p>
             </div>
-            <div className="card flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
-              <FileText className="shrink-0 text-warning" size={18} />
-              <div>
-                <p className="text-lg font-bold text-gray-900">{reports.length}</p>
-                <p className="text-xs text-muted">Weekly Reports</p>
-              </div>
+            <div className="card p-3 sm:p-4">
+              <FileText className="mb-2 text-warning" size={16} />
+              <p className="text-base font-bold text-gray-900 sm:text-xl">{reports.length}</p>
+              <p className="text-xs text-muted">Weekly Reports</p>
             </div>
-            <div className="card flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
-              <Target className="shrink-0 text-accent" size={18} />
-              <div>
-                <p className="text-lg font-bold text-gray-900">{strategies.length}</p>
-                <p className="text-xs text-muted">Strategies</p>
-              </div>
+            <div className="card p-3 sm:p-4">
+              <Target className="mb-2 text-accent" size={16} />
+              <p className="text-base font-bold text-gray-900 sm:text-xl">{strategies.length}</p>
+              <p className="text-xs text-muted">Strategies</p>
             </div>
           </div>
         </div>
