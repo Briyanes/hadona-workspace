@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-08-04T16:14:02.623Z",
+  "currentUrl": "https://workspace.hadona.id/ads-spend",
+  "syncButtonInfo": "{\n  \"text\": \" Sync Now\",\n  \"disabled\": true,\n  \"class\": \"flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background disabled:opacity-50\",\n  \"title\": \"Token invalid — reconnect dulu\"\n}",
+  "reconnectButton": 1,
+  "connectButton": 2,
+  "tokenStatus": {
+    "hasTokenInvalid": true,
+    "hasReconnect": true,
+    "hasConnected": false,
+    "hasNoConnection": false,
+    "hasAlertCircle": false,
+    "hasCheckCircle": false,
+    "hasLoadingSpinner": true,
+    "hasSpendData": true,
+    "hasNoData": false
+  },
+  "metaConnectionInfo": {
+    "statusBanner": "Advertiser",
+    "adAccountMention": "24 account"
+  },
+  "connectionSection": "Meta Ads Terhubung: Gilberth Smith⚠️ TOKEN INVALID✅ Auto-sync aktif • Sync terakhir: 4 Agu, 22.56 • Token exp: 3 Okt 2026 Reconnect dengan Token Sync Now Disconnect",
+  "kpiValues": [
+    "Meta Ads Terhubung: Gilberth Smith⚠️ TOKEN INVALID✅ Auto-sync aktif • Sync terakhir: 4 Agu, 22.56 • ",
+    "Total Daily BudgetRp 08 active accounts",
+    "Total RemainingRp 0active budgets",
+    "Today's SpendRp 0Revenue: Rp 0",
+    "Low Budget Alert0ROAS today: 0.00x",
+    "BUDGET BREAKDOWN PER PLATFORM (Active)META0%Google0%TikTok0%",
+    "SPEND & REVENUE TRENDTotal 24 accounts • 7 hari terakhir7D30D29 Jul30 Jul31 Jul1 Agu2 Agu3 Agu4 Agu0"
+  ],
+  "zeroValues": [
+    {
+      "tag": "P",
+      "class": "mt-0.5 text-lg font-bold text-gray-900",
+      "text": "0"
+    }
+  ],
+  "consoleLogs": [],
+  "apiResponses": [
+    {
+      "url": "https://rsxqjjcuixdsmijhgdyl.supabase.co/rest/v1/ad_accounts?select=*%2Cclient%3Aclients%28name%29%2Cpic%3Aprofiles%21pi",
+      "status": 200,
+      "body": "[{\"id\":\"8bdf4cd0-4be0-4182-bd53-e729c31c7ecf\",\"client_id\":\"a6aabd55-79f0-4e54-a0ba-46f2e17586c9\",\"platform\":\"META\",\"ad_account_id\":\"2029405424327069\",\"account_name\":\"Meta Hadona 0010\",\"objective\":\"CTWA\",\"daily_budget\":null,\"remaining_budget\":null,\"days_left\":null,\"status\":\"active\",\"notes\":null,\"updated_at\":\"2026-08-04T15:56:09.649644+00:00\",\"created_at\":\"2026-07-30T19:42:48.707192+00:00\",\"pic_id\":null,\"meta_sync_enabled\":true,\"meta_connection_id\":\"1345e154-8bb3-45c3-806e-fefb1eef8675\",\"currency\""
+    },
+    {
+      "url": "https://rsxqjjcuixdsmijhgdyl.supabase.co/rest/v1/ad_spend_logs?select=*&log_date=gte.2026-07-05&order=log_date.asc",
+      "status": 200,
+      "body": "[{\"id\":\"aafe680a-9704-468e-b0bc-624daca9a1c8\",\"ad_account_id\":\"7b20a5b2-8212-49c2-8c26-d25d7a73b413\",\"log_date\":\"2026-07-29\",\"spend\":90499.00,\"impressions\":19011,\"clicks\":277,\"conversions\":0.00,\"revenue\":0.00,\"notes\":\"Auto-synced from Meta API\",\"created_at\":\"2026-07-30T19:42:50.457323+00:00\",\"updated_at\":\"2026-07-30T19:42:50.457323+00:00\"}, \n {\"id\":\"34cab129-393f-45d7-8523-cd6b21b4df1e\",\"ad_account_id\":\"5ab3adaf-1d84-4ab9-9b8c-55737d7fd1b2\",\"log_date\":\"2026-07-29\",\"spend\":264125.00,\"impressions\""
+    },
+    {
+      "url": "https://rsxqjjcuixdsmijhgdyl.supabase.co/rest/v1/meta_connections?select=*&is_active=eq.true&order=created_at.desc&limit",
+      "status": 200,
+      "body": "[{\"id\":\"1345e154-8bb3-45c3-806e-fefb1eef8675\",\"user_id\":\"1b075abf-3479-48ac-89af-3b062a455755\",\"client_id\":null,\"fb_user_id\":\"1220573939523154\",\"fb_user_name\":\"Gilberth Smith\",\"access_token\":\"EAATJELNinJwBSMz88KGmtIu8Y7IGdKy6fJrkJNFYmZCZAcOLUvexklRFtZBGohZB2i3mt1PLSlpAkr2yuhnZAw4mZC0XWVoPUMPUj3xt7TwoVBSNMobPMs6hrGDflJA9dpZBe6GCHz1ScCzqAMwx70ksyp9YR7eEHvu1hfAlPmX8mwM0ZBexVmEOjZACGsec5WxJHbUQ4Ie0ZD\",\"token_expires_at\":\"2026-10-03T09:18:04.091+00:00\",\"ad_accounts_cache\":[{\"id\": \"act_120305318808325"
+    }
+  ]
+}

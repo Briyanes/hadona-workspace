@@ -223,11 +223,35 @@ export async function POST(request: NextRequest) {
             .update({
               last_sync_status: "error",
               last_sync_error: "Token expired. Please reconnect Meta account.",
+              token_status: "invalid",
             } as never)
             .eq("id", conn.id);
 
           results.push({ connection_id: conn.id, status: "error", error: "token_expired" });
           continue;
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // FIX: Reset stale error status from previous failed syncs.
+        // If the token hasn't expired, clear "invalid"/"token_invalid"
+        // status so the UI doesn't permanently disable Sync Now.
+        // ──────────────────────────────────────────────────────────────
+        if (conn.token_expires_at && new Date(conn.token_expires_at) > new Date()) {
+          // Token is still valid — clear any stale error flags
+          const connAny = conn as unknown as Record<string, unknown>;
+          const staleStatus = connAny.token_status === "invalid" ||
+            connAny.last_sync_status === "token_invalid";
+          if (staleStatus) {
+            console.log(`[Sync] 🧹 Clearing stale token_invalid status for ${conn.id} (token valid until ${conn.token_expires_at})`);
+            await supabase
+              .from("meta_connections")
+              .update({
+                token_status: "active",
+                last_sync_status: "syncing",
+                last_sync_error: null,
+              } as never)
+              .eq("id", conn.id);
+          }
         }
 
         // ──────────────────────────────────────────────────────────────

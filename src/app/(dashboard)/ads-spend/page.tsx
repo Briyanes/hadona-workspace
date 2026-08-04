@@ -1150,10 +1150,20 @@ export default function AdsSpendPage() {
       {metaConnection ? (
         (() => {
           // FIX B4: Determine token status for UI display
-          const isTokenInvalid = metaConnection.token_status === "invalid" || 
-            metaConnection.last_sync_status === "token_invalid";
-          const isTokenExpiring = metaConnection.token_status === "expiring_soon" ||
-            (metaConnection.token_expires_at && 
+          // SMART CHECK: Only disable sync if token has ACTUALLY expired.
+          // If token_expires_at is in the future, allow retry even if previous sync failed.
+          const tokenActuallyExpired = metaConnection.token_expires_at &&
+            new Date(metaConnection.token_expires_at) <= new Date();
+          // For System User tokens (no expiry), never mark as permanently invalid
+          const isSystemUserToken = !metaConnection.token_expires_at;
+          // Only truly invalid if: token expired OR System User with explicit invalid status
+          const isTokenInvalid = tokenActuallyExpired ||
+            (isSystemUserToken && metaConnection.token_status === "invalid");
+          // Show warning (but still allow sync) if previous sync failed but token hasn't expired
+          const hasSyncError = !isTokenInvalid &&
+            (metaConnection.token_status === "invalid" || metaConnection.last_sync_status === "token_invalid");
+          const isTokenExpiring =
+            (metaConnection.token_expires_at &&
              new Date(metaConnection.token_expires_at) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) &&
              new Date(metaConnection.token_expires_at) > new Date());
           
