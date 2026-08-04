@@ -291,7 +291,37 @@ export default function ReportsPage() {
         cache: "no-store",
         body: JSON.stringify({}), // pakai default URL dari env
       });
-      const data = await res.json();
+
+      // ─── Robust response handling ───
+      // Cek content-type sebelum parse JSON. Beberapa kasus response bukan JSON:
+      //  - Vercel build masih running (static placeholder)
+      //  - Middleware redirect (HTML)
+      //  - Function timeout (Vercel error page)
+      //  - Session expired → login page HTML
+      const contentType = res.headers.get("content-type") || "";
+      const rawText = await res.text();
+
+      if (!contentType.includes("application/json") || rawText.trim().startsWith("<")) {
+        // Response HTML — bukan dari API route kita
+        if (rawText.includes("Sign in") || rawText.includes("login")) {
+          throw new Error("Session expired. Silakan refresh halaman & login ulang.");
+        }
+        if (res.status === 404) {
+          throw new Error("Endpoint tidak ditemukan (404). Vercel mungkin masih build commit terbaru. Tunggu 2-3 menit lalu coba lagi.");
+        }
+        if (res.status >= 500) {
+          throw new Error(`Server error ${res.status}. Vercel Function mungkin timeout atau crash. Coba lagi dalam 1 menit.`);
+        }
+        throw new Error(`Response tidak valid (HTTP ${res.status}, ${contentType || "no content-type"}). Kemungkinan Vercel masih build. Tunggu 2-3 menit lalu hard refresh (Cmd+Shift+R).`);
+      }
+
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Gagal parse JSON response. Raw: ${rawText.slice(0, 200)}`);
+      }
+
       if (!res.ok) {
         // Pesan error sekarang include role user (lihat /api/reports/sync route)
         // sehingga lebih informatif untuk debugging
