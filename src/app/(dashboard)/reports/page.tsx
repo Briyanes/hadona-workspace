@@ -275,16 +275,31 @@ export default function ReportsPage() {
     setSyncing(true);
     try {
       const { data: session } = await supabase.auth.getSession();
-      const res = await fetch("/api/reports/sync", {
+      // Cache-busting: tambahkan timestamp untuk hindari cache di CDN/proxy/browser.
+      // POST seharusnya tidak di-cache, tapi praktik defensif penting karena
+      // kami mendapati pesan error lama muncul setelah deploy baru.
+      const syncUrl = `/api/reports/sync?_t=${Date.now()}`;
+      const res = await fetch(syncUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.session?.access_token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
+        cache: "no-store",
         body: JSON.stringify({}), // pakai default URL dari env
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Gagal sync");
+      if (!res.ok) {
+        // Pesan error sekarang include role user (lihat /api/reports/sync route)
+        // sehingga lebih informatif untuk debugging
+        const roleInfo = data.debug?.userRole
+          ? ` (role Anda: "${data.debug.userRole}")`
+          : "";
+        throw new Error((data.error || "Gagal sync") + roleInfo);
+      }
 
       setSyncResult({
         summary: data.summary,
