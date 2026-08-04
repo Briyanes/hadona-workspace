@@ -91,13 +91,13 @@ export async function syncReportsFromSheet(
 
   // ── 3. Load DB: clients, profiles, existing reports (PARALLEL) ─────────
   const tLoadStart = Date.now();
+  // ⚠️ LOAD ALL REPORTS (no URL filter) — defense in depth:
+  // Kalau ada reports yang di-insert dengan sheet URL beda / NULL sebelumnya,
+  // tetap ke-detect sebagai existing (idempotent upsert, bukan insert baru).
   const [{ data: dbClients }, { data: dbProfiles }, { data: dbExistingReports }] = await Promise.all([
     supabase.from("clients").select("id, name"),
     supabase.from("profiles").select("id, full_name"),
-    supabase
-      .from("weekly_reports")
-      .select("id, client_id, period_start, period_end")
-      .or(`source_sheet_url.eq.${sheetUrl}`),
+    supabase.from("weekly_reports").select("id, client_id, period_start, period_end"),
   ]);
   console.log(
     `[sync-v2] Loaded ${dbClients?.length || 0} clients, ${dbProfiles?.length || 0} profiles, ${dbExistingReports?.length || 0} existing reports in ${Date.now() - tLoadStart}ms`
