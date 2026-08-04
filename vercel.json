@@ -24,5 +24,19 @@
       "path": "/api/cron/auto-billing",
       "schedule": "0 0 1 * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/reports/sync/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/reports/cron/sync/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/reports/import-sheet/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/meta/sync/route.ts": {
+      "maxDuration": 60
+    }
+  }
 }
