@@ -6,13 +6,12 @@
 const META_API_VERSION = "v22.0";
 const META_GRAPH_BASE = `https://graph.facebook.com/${META_API_VERSION}`;
 
-// Note: Only request scopes that are available in Development Mode without App Review.
-// "business_management" and "read_insights" cause "Invalid Scopes" error.
-// FIX A1: Removed "ads_management" — we only READ data, never modify ads.
-// This reduces App Review friction and improves security posture.
-const SCOPES = [
-  "ads_read",          // Read ad account insights (sufficient for sync)
-].join(",");
+// FIX: Meta rejects "ads_read" as "Invalid Scopes" in the Login Dialog for many app configs.
+// Solution: Request NO custom scopes. OAuth will return a basic user token.
+// The token may still have ad account access if the user is a BM admin.
+// If ad account access fails, the user is guided to use System User Token instead.
+// See: https://developers.facebook.com/docs/facebook-login/permissions
+const SCOPES = ""; // Empty = default permissions (public_profile, email)
 
 /**
  * Generate Facebook OAuth URL for user to authorize

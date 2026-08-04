@@ -87,9 +87,20 @@ export async function GET(request: NextRequest) {
     console.log("[Meta Callback] Step 3 ✅ User:", metaUser.name, "(" + metaUser.id + ")");
 
     // Step 4: Get ad accounts cache
+    // NOTE: Without ads_read scope, this may fail. We handle gracefully.
     console.log("[Meta Callback] Step 4: Getting ad accounts...");
-    const adAccounts = await getAdAccounts(longLivedToken);
-    console.log("[Meta Callback] Step 4 ✅ Found", adAccounts.length, "ad accounts");
+    let adAccounts: Awaited<ReturnType<typeof getAdAccounts>> = [];
+    let tokenNeedsUpgrade = false;
+    try {
+      adAccounts = await getAdAccounts(longLivedToken);
+      console.log("[Meta Callback] Step 4 ✅ Found", adAccounts.length, "ad accounts");
+    } catch (adsErr) {
+      const adsMsg = adsErr instanceof Error ? adsErr.message : String(adsErr);
+      console.warn("[Meta Callback] Step 4 ⚠️ Ad accounts fetch failed:", adsMsg);
+      console.warn("[Meta Callback] Token connected but has no ad account permissions.");
+      console.warn("[Meta Callback] User should use System User Token for full ad sync.");
+      tokenNeedsUpgrade = true;
+    }
 
     // Calculate expiry date
     const expiresAt = new Date();
@@ -162,6 +173,9 @@ export async function GET(request: NextRequest) {
     successUrl.searchParams.set("meta_connected", "true");
     if (linkedCount > 0) {
       successUrl.searchParams.set("meta_linked", linkedCount.toString());
+    }
+    if (tokenNeedsUpgrade) {
+      successUrl.searchParams.set("token_needs_upgrade", "true");
     }
     return NextResponse.redirect(successUrl);
   } catch (err) {

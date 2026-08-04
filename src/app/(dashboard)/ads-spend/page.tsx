@@ -160,10 +160,19 @@ export default function AdsSpendPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("meta_connected")) {
       const linked = params.get("meta_linked");
-      const msg = linked
-        ? `Meta terhubung! ${linked} ad account otomatis di-link & auto-sync diaktifkan.`
-        : "Meta account berhasil terhubung!";
-      toast.success(msg);
+      const needsUpgrade = params.get("token_needs_upgrade");
+
+      if (needsUpgrade) {
+        toast.warning(
+          "Meta terhubung, tetapi token TIDAK memiliki akses ad account (scope ads_read). Gunakan 'Connect dengan Token' → System User Token untuk auto-sync spend.",
+          { duration: 10000 }
+        );
+      } else {
+        const msg = linked
+          ? `Meta terhubung! ${linked} ad account otomatis di-link & auto-sync diaktifkan.`
+          : "Meta account berhasil terhubung!";
+        toast.success(msg);
+      }
       window.history.replaceState({}, "", "/ads-spend");
     }
     const metaError = params.get("meta_error");
