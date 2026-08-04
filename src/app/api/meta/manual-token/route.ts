@@ -3,6 +3,8 @@ import {
   getLongLivedToken,
   getMetaUser,
   getAdAccounts,
+  isSystemUserToken,
+  getTokenInfo,
 } from "@/lib/meta";
 import { createClient } from "@/lib/supabase/server";
 
@@ -43,48 +45,76 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[Meta Manual] Step 1: Getting user profile with provided token...");
-    let metaUser;
-    try {
-      metaUser = await getMetaUser(token.trim());
-      console.log("[Meta Manual] ✅ User:", metaUser.name, "(" + metaUser.id + ")");
-    } catch {
-      return NextResponse.json(
-        {
-          error:
-            "Token tidak valid atau sudah kedaluwarsa. Generate ulang di Graph API Explorer.",
-        },
-        { status: 400 }
-      );
-    }
+    // Step 1: Check if this is a System User token (permanent, no expiry, no App Review needed)
+    console.log("[Meta Manual] Step 1: Checking token type...");
+    const isSystemToken = await isSystemUserToken(token.trim());
+    console.log("[Meta Manual] System User Token:", isSystemToken ? "YES ✅ (permanent)" : "NO (will exchange to long-lived)");
 
-    // Step 2: Exchange for long-lived token
-    // FIX B1: Long-lived exchange is MANDATORY. Short-lived tokens expire in 1-2 hours
-    // and cause Error [190] on sync. No silent fallback!
-    console.log("[Meta Manual] Step 2: Exchanging for long-lived token (mandatory)...");
     let longLivedToken: string;
-    let expiresInSeconds: number;
+    let expiresAt: Date | null;
+    let metaUser: { id: string; name: string };
 
-    try {
-      const longLived = await getLongLivedToken(token.trim());
-      longLivedToken = longLived.access_token;
-      expiresInSeconds = longLived.expires_in || 5184000; // 60 days
+    if (isSystemToken) {
+      // System User token — already permanent, no exchange needed
+      longLivedToken = token.trim();
+      expiresAt = null; // Never expires
 
-      // Sanity check
-      if (expiresInSeconds < 3600) {
-        throw new Error(`Long-lived exchange returned suspiciously short expiry: ${expiresInSeconds}s.`);
+      // Get token info for debugging
+      const tokenInfo = await getTokenInfo(longLivedToken);
+      console.log("[Meta Manual] ✅ System User token — scopes:", tokenInfo.scopes.join(", "));
+
+      // System User tokens may not return /me — use the token debug data for identity
+      try {
+        metaUser = await getMetaUser(longLivedToken);
+        console.log("[Meta Manual] ✅ User:", metaUser.name, "(" + metaUser.id + ")");
+      } catch {
+        // Fallback for System User tokens that can't call /me
+        metaUser = {
+          id: `sys_${Date.now()}`,
+          name: "System User (Business Manager)",
+        };
+        console.log("[Meta Manual] ✅ Using System User fallback identity");
+      }
+    } else {
+      // Regular user token — must exchange to long-lived
+      console.log("[Meta Manual] Step 1b: Getting user profile...");
+      try {
+        metaUser = await getMetaUser(token.trim());
+        console.log("[Meta Manual] ✅ User:", metaUser.name, "(" + metaUser.id + ")");
+      } catch {
+        return NextResponse.json(
+          {
+            error:
+              "Token tidak valid atau sudah kedaluwarsa. Jika menggunakan token dari Graph API Explorer, pastikan token masih fresh. Untuk solusi permanent, gunakan System User Token dari Meta Business Settings (lihat panduan di modal).",
+          },
+          { status: 400 }
+        );
       }
 
-      console.log("[Meta Manual] ✅ Long-lived token received (expires in", expiresInSeconds, "s)");
-    } catch (e) {
-      const errMsg = e instanceof Error ? e.message : String(e);
-      console.error("[Meta Manual] ❌ Long-lived exchange FAILED:", errMsg);
-      return NextResponse.json(
-        {
-          error: "Gagal exchange ke long-lived token. Token mungkin sudah expired atau App dalam Development Mode. Error: " + errMsg,
-        },
-        { status: 400 }
-      );
+      // Step 2: Exchange for long-lived token (mandatory for regular tokens)
+      console.log("[Meta Manual] Step 2: Exchanging for long-lived token...");
+      try {
+        const longLived = await getLongLivedToken(token.trim());
+        longLivedToken = longLived.access_token;
+        const expiresInSeconds = longLived.expires_in || 5184000; // 60 days
+
+        if (expiresInSeconds < 3600) {
+          throw new Error(`Long-lived exchange returned suspiciously short expiry: ${expiresInSeconds}s.`);
+        }
+
+        expiresAt = new Date();
+        expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
+        console.log("[Meta Manual] ✅ Long-lived token (expires in", expiresInSeconds, "s)");
+      } catch (e) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        console.error("[Meta Manual] ❌ Long-lived exchange FAILED:", errMsg);
+        return NextResponse.json(
+          {
+            error: "Gagal exchange ke long-lived token. Untuk solusi permanent tanpa App Review, gunakan System User Token dari Meta Business Settings → Users → System Users → Add → Generate Token. Lihat panduan lengkap di modal.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Step 3: Get ad accounts
@@ -100,9 +130,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
-
     // Step 4: Save to DB
     console.log("[Meta Manual] Step 4: Saving to database...");
     const { data: connectionDataRaw, error: dbError } = await supabase
@@ -112,7 +139,7 @@ export async function POST(request: NextRequest) {
         fb_user_id: metaUser.id,
         fb_user_name: metaUser.name,
         access_token: longLivedToken,
-        token_expires_at: expiresAt.toISOString(),
+        token_expires_at: expiresAt ? expiresAt.toISOString() : null,
         ad_accounts_cache: adAccounts,
         auto_sync: true,
         is_active: true,
@@ -169,7 +196,7 @@ export async function POST(request: NextRequest) {
       user: metaUser.name,
       ad_accounts_found: adAccounts.length,
       ad_accounts_linked: linkedCount,
-      expires_at: expiresAt.toISOString(),
+      expires_at: expiresAt ? expiresAt.toISOString() : null,
     });
   } catch (err) {
     console.error("[Meta Manual] Error:", err);

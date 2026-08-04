@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Loader2, KeyRound, ExternalLink } from "lucide-react";
+import { X, Loader2, KeyRound, ExternalLink, Shield, Zap } from "lucide-react";
 
 interface ManualTokenModalProps {
   open: boolean;
@@ -26,7 +26,10 @@ export function ManualTokenModal({
       <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
         {/* Sticky Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-          <h2 className="text-lg font-bold text-gray-900">Manual Token Connection</h2>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Connect Meta Ads</h2>
+            <p className="mt-0.5 text-xs text-muted">Gunakan System User Token untuk koneksi permanent</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -39,9 +42,49 @@ export function ManualTokenModal({
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
           {/* Scrollable Body */}
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-            <div className="rounded-lg bg-primary/5 p-3 text-xs text-gray-700">
-              <p className="mb-2 font-semibold">📋 Cara dapatkan Access Token:</p>
-              <ol className="list-decimal space-y-1 pl-4 text-[11px] text-muted">
+            {/* RECOMMENDED: System User Token */}
+            <div className="rounded-lg border-2 border-green-300 bg-green-50 p-3 dark:border-green-700 dark:bg-green-950/40">
+              <div className="mb-2 flex items-center gap-1.5">
+                <Shield className="text-green-600" size={14} />
+                <span className="text-sm font-bold text-green-800 dark:text-green-400">
+                  ⭐ REKOMENDASI: System User Token (Permanent)
+                </span>
+              </div>
+              <p className="mb-2 text-[11px] text-gray-700 dark:text-gray-300">
+                Token yang tidak pernah expired dan <strong>tidak butuh App Review</strong>. Cocok untuk agency.
+              </p>
+              <ol className="list-decimal space-y-1.5 pl-4 text-[11px] text-muted">
+                <li>
+                  Buka{" "}
+                  <a
+                    href="https://business.facebook.com/settings/security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 font-medium text-green-700 hover:underline dark:text-green-400"
+                  >
+                    Meta Business Settings <ExternalLink size={10} />
+                  </a>
+                </li>
+                <li>Klik <strong>Users → System Users</strong> (kiri bawah)</li>
+                <li>Klik <strong>Add → Create System User</strong> → isi nama (mis: "Hadona API")</li>
+                <li>Klik user tersebut → <strong>Assign Assets</strong> → pilih <strong>Ad Accounts</strong></li>
+                <li>Pilih ad account yang ingin di-sync → centang <strong>Manage campaigns</strong></li>
+                <li>Klik <strong>Generate New Token</strong> → pilih App Anda</li>
+                <li>Pilih permission: <code className="rounded bg-white px-1 dark:bg-gray-800">ads_read</code> (atau <code className="rounded bg-white px-1 dark:bg-gray-800">ads_management</code>)</li>
+                <li><strong>Copy token</strong> yang muncul, paste di bawah</li>
+              </ol>
+              <div className="mt-2 flex items-center gap-1.5 rounded bg-green-100 p-1.5 text-[10px] text-green-700 dark:bg-green-900/50 dark:text-green-400">
+                <Zap size={10} />
+                <span>Tidak expired • Tidak perlu App Review • Tidak perlu re-connect tiap 60 hari</span>
+              </div>
+            </div>
+
+            {/* ALTERNATIVE: Graph API Explorer */}
+            <details className="rounded-lg bg-background p-3">
+              <summary className="cursor-pointer text-xs font-medium text-muted">
+                Alternatif: Graph API Explorer Token (expired 60 hari)
+              </summary>
+              <ol className="list-decimal space-y-1 pl-4 pt-2 text-[11px] text-muted">
                 <li>
                   Buka{" "}
                   <a
@@ -54,15 +97,15 @@ export function ManualTokenModal({
                   </a>
                 </li>
                 <li>Pilih App Anda dari dropdown</li>
-                <li>
-                  Klik <strong>"Generate Access Token"</strong> → centang:{" "}
-                  <code className="rounded bg-background px-1">ads_read</code>,{" "}
-                  <code className="rounded bg-background px-1">ads_management</code>
-                </li>
-                <li>Copy token yang muncul, paste di bawah</li>
+                <li>Klik <strong>"Generate Access Token"</strong> → centang <code className="rounded bg-white px-1 dark:bg-gray-800">ads_read</code></li>
+                <li>Copy token, paste di bawah</li>
               </ol>
-            </div>
+              <p className="mt-2 text-[10px] text-muted">
+                ⚠️ Token ini akan di-exchange jadi long-lived (60 hari). Setelah expired, harus diulang.
+              </p>
+            </details>
 
+            {/* Token Input */}
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-700">
                 Access Token *
@@ -73,12 +116,11 @@ export function ManualTokenModal({
                 value={manualToken}
                 onChange={(e) => setManualToken(e.target.value)}
                 placeholder="EAAGm0PX4ZCwBO..."
-                className="input font-mono text-[11px] resize-none"
+                className="input resize-none font-mono text-[11px]"
                 disabled={savingToken}
               />
               <p className="mt-1 text-[10px] text-muted">
-                💡 Token akan otomatis di-exchange jadi long-lived (60 hari). Short-lived token
-                hanya berlaku ~1 jam.
+                💡 Paste token di sini. Sistem akan otomatis deteksi apakah token permanent (System User) atau perlu di-exchange.
               </p>
             </div>
           </div>

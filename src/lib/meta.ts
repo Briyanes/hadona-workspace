@@ -470,6 +470,22 @@ export function shouldRefreshToken(expiresAt: string | null): boolean {
 }
 
 /**
+ * Check if a token is a System User token (permanent, no expiry).
+ * System User tokens bypass App Review requirements and never expire.
+ *
+ * @returns true if the token is a valid System User token
+ */
+export async function isSystemUserToken(accessToken: string): Promise<boolean> {
+  try {
+    const debugData = await debugToken(accessToken);
+    // System User tokens have type "SYSTEM_USER" and expires_at = 0 (never expires)
+    return debugData.data.type === "SYSTEM_USER" || debugData.data.expires_at === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Debug/inspect a token to get its expiry, scopes, and validity.
  * Uses the App Access Token to call the debug_token endpoint.
  */

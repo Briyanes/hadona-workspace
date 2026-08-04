@@ -169,14 +169,23 @@ export default function AdsSpendPage() {
     const metaError = params.get("meta_error");
     if (metaError) {
       const errorMessages: Record<string, string> = {
-        not_configured: "Meta App belum dikonfigurasi. Hubungi admin untuk set META_APP_ID & META_APP_SECRET di Vercel/ENV.",
-        auth_failed: "Gagal connect ke Facebook. Coba lagi atau hubungi admin.",
-        permission_denied: "Anda menolak izin akses Meta.",
+        not_configured: "Meta App belum dikonfigurasi. Hubungi admin untuk set META_APP_ID & META_APP_SECRET.",
+        auth_failed: "OAuth gagal (kemungkinan App masih Development Mode). Gunakan 'Connect dengan Token' — lihat panduan System User Token di modal.",
+        permission_denied: "Anda menolak izin akses Meta. Atau gunakan 'Connect dengan Token' untuk bypass App Review.",
         missing_params: "Parameter tidak lengkap. Coba connect ulang.",
         state_mismatch: "Sesi tidak valid. Coba connect ulang.",
         db_error: "Gagal menyimpan koneksi ke database.",
       };
-      toast.error(errorMessages[metaError] || `Meta Error: ${metaError.replace(/_/g, " ")}`);
+      const msg = errorMessages[metaError] || `Meta Error: ${metaError.replace(/_/g, " ")}`;
+      // Guide users to System User Token for any OAuth-related error
+      if (metaError.includes("scope") || metaError.includes("Invalid") || metaError.includes("auth")) {
+        toast.error(msg, {
+          duration: 8000,
+          description: "💡 Solusi: Gunakan tombol 'Connect dengan Token ⭐' dan pilih System User Token",
+        });
+      } else {
+        toast.error(msg);
+      }
       window.history.replaceState({}, "", "/ads-spend");
     }
   }
@@ -1208,12 +1217,12 @@ export default function AdsSpendPage() {
               </div>
               <div className="flex gap-2">
                 {isTokenInvalid && (
-                  <a
-                    href="/api/meta/auth"
+                  <button
+                    onClick={() => setShowTokenModal(true)}
                     className="flex items-center gap-1.5 rounded-md bg-danger px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-danger/90"
                   >
-                    <Link2 size={14} /> Reconnect Meta
-                  </a>
+                    <KeyRound size={14} /> Reconnect dengan Token
+                  </button>
                 )}
                 <button
                   onClick={handleSyncNow}
@@ -1255,16 +1264,16 @@ export default function AdsSpendPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
+            <a href="/api/meta/auth" className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background" title="Login dengan Facebook — butuh App Review jika app masih Development Mode">
+              <Link2 size={14} /> OAuth (butuh App Review)
+            </a>
             <button
               onClick={() => setShowTokenModal(true)}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
-              title="Connect pakai token dari Graph API Explorer"
+              className="btn-primary"
+              title="Connect pakai System User Token — permanent, tanpa App Review"
             >
-              <KeyRound size={14} /> Manual Token
+              <KeyRound size={14} /> Connect dengan Token ⭐
             </button>
-            <a href="/api/meta/auth" className="btn-primary text-center">
-              <Link2 size={14} /> Connect Meta (OAuth)
-            </a>
           </div>
         </div>
       )}
