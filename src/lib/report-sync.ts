@@ -13,10 +13,7 @@
  * ============================================================================
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnySupabase = any;
-
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   fetchAndParseAllSheets,
   matchClientFuzzy,
@@ -79,8 +76,8 @@ export async function syncReportsFromSheet(
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY env");
   }
 
-  // Cast ke any supaya bebas insert/update tanpa strict typing
-  const supabase: AnySupabase = createClient(supabaseUrl, serviceKey, {
+  // Gunakan SupabaseClient type (Database schema optional - service role bypass)
+  const supabase: SupabaseClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },
   });
 
@@ -211,7 +208,7 @@ interface ProcessRowContext {
 }
 
 async function processRow(
-  supabase: AnySupabase,
+  supabase: SupabaseClient,
   row: ParsedRow,
   ctx: ProcessRowContext
 ): Promise<RowResult> {

@@ -2,70 +2,79 @@
   "passed": [
     "Page navigation",
     "Unauthenticated redirect",
-    "Login successful",
-    "Reports page loaded",
-    "Heading 'Weekly Reports'",
-    "Stats cards",
-    "Search input",
-    "Filter dropdowns",
-    "Tab navigation buttons",
-    "📥 Import dari Sheet button",
-    "➕ New Report button",
-    "📥 Export button",
-    "☑️ Bulk Action button",
-    "Report cards",
-    "Detail modal opens on card click",
-    "Metrics grid",
-    "Edit button in detail",
-    "Share button in detail",
-    "PDF button in detail",
-    "Search reset",
-    "No console errors",
-    "No uncaught exceptions",
     "Mobile page load",
     "Mobile: no horizontal overflow",
+    "Mobile: tap target sizes OK",
     "Error state handled gracefully",
     "Slow network load"
   ],
-  "failed": [
+  "failed": [],
+  "warnings": [
+    {
+      "test": "Login skipped",
+      "detail": "TEST_LOGIN_EMAIL/PASSWORD not set — fitur admin tidak akan di-test mendalam"
+    },
+    {
+      "test": "Not authenticated",
+      "detail": "Layout-only audit"
+    },
+    {
+      "test": "Heading",
+      "detail": "404"
+    },
+    {
+      "test": "Stats cards",
+      "detail": "0 cards (expected ≥4)"
+    },
+    {
+      "test": "Search input",
+      "detail": "Not found"
+    },
+    {
+      "test": "Filter dropdowns",
+      "detail": "0 selects (expected ≥2)"
+    },
+    {
+      "test": "Tab navigation",
+      "detail": "0 tabs found (expected 3)"
+    },
     {
       "test": "🔄 Sync Now button",
       "detail": "Tidak ditemukan (mungkin butuh role admin)"
     },
     {
-      "test": "Create modal interaction",
-      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"relative\">…</div> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m  13 × retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"relative\">…</div> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"relative\">…</div> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"relative\">…</div> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n"
+      "test": "📥 Import dari Sheet button",
+      "detail": "Not found"
+    },
+    {
+      "test": "➕ New Report button",
+      "detail": "Not found"
+    },
+    {
+      "test": "📥 Export button",
+      "detail": "Not found"
+    },
+    {
+      "test": "☑️ Bulk Action button",
+      "detail": "Not found (mungkin muncul hanya jika ada data)"
+    },
+    {
+      "test": "Report cards",
+      "detail": "No cards visible (mungkin belum ada data atau redirect ke login)"
     }
   ],
-  "warnings": [
+  "bugs": [
     {
-      "test": "Trend chart in detail modal",
-      "detail": "Not rendered (mungkin data <2 minggu)"
+      "test": "Console errors",
+      "detail": "3 errors"
     },
     {
-      "test": "Card click interaction",
-      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    58 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
-    },
-    {
-      "test": "Tab switching",
-      "detail": "elementHandle.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <span class=\"whitespace-nowrap rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight border-primary/30 text-primary\">Copywriter</span> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m  13 × retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <span class=\"whitespace-nowrap rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight border-primary/30 text-primary\">Copywriter</span> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m       - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <span class=\"whitespace-nowrap rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight border-primary/30 text-primary\">Copywriter</span> from <header class=\"sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur\">…</header> subtree intercepts pointer events\u001b[22m\n\u001b[2m  2 × retrying click action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n\u001b[2m      - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <div class=\"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4\">…</div> intercepts pointer events\u001b[22m\n\u001b[2m  - retrying click action\u001b[22m\n\u001b[2m    - waiting 500ms\u001b[22m\n"
-    },
-    {
-      "test": "Empty state",
-      "detail": "Tidak terdeteksi (mungkin masih ada card)"
-    },
-    {
-      "test": "Network failures",
-      "detail": "9 failed requests"
-    },
-    {
-      "test": "Mobile: small tap targets",
-      "detail": "1 buttons <36px (WCAG recommends ≥44px)"
+      "test": "Uncaught exceptions",
+      "detail": "1 errors"
     }
   ],
-  "bugs": [],
   "metrics": {
-    "initialLoadMs": 749,
-    "slowNetworkLoadMs": 1246
+    "initialLoadMs": 3758,
+    "slowNetworkLoadMs": 1058
   }
 }
