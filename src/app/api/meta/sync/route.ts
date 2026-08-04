@@ -363,8 +363,10 @@ export async function POST(request: NextRequest) {
 
           // 1c. Process each Meta account from BM
           for (const metaAcc of metaAdAccounts) {
-            // Skip if account_status is not active (1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED)
-            if (metaAcc.account_status !== 1) continue;
+            // FIX: Do NOT skip inactive accounts!
+            // Status 1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED
+            // We want to sync ALL accounts (including off/paused clients)
+            // Meta API still returns historical insights for inactive accounts.
 
             const realId = metaAcc.account_id;
 

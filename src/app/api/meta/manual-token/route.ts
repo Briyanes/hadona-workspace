@@ -3,9 +3,13 @@ import {
   getLongLivedToken,
   getMetaUser,
   getAdAccounts,
+  getBusinessAdAccounts,
   isSystemUserToken,
   getTokenInfo,
 } from "@/lib/meta";
+
+// Hadona's Business Portfolio ID
+const HADONA_BM_ID = process.env.META_BUSINESS_ID || "1380114199447586";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -117,17 +121,41 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 3: Get ad accounts
-    console.log("[Meta Manual] Step 3: Getting ad accounts...");
+    // Step 3: Get ad accounts from BOTH Business Manager AND personal
+    console.log("[Meta Manual] Step 3: Getting ad accounts (BM + personal)...");
     let adAccounts: Array<{ account_id: string; name: string }> = [];
+
+    // 3a. Try Business Manager accounts first (critical for System User tokens)
     try {
-      adAccounts = await getAdAccounts(longLivedToken);
-      console.log("[Meta Manual] ✅ Found", adAccounts.length, "ad accounts");
+      const bmAccounts = await getBusinessAdAccounts(HADONA_BM_ID, longLivedToken);
+      adAccounts = bmAccounts;
+      console.log("[Meta Manual] ✅ Found", bmAccounts.length, "BM ad accounts");
     } catch (e) {
       console.warn(
-        "[Meta Manual] ⚠️ Could not fetch ad accounts:",
+        "[Meta Manual] ⚠️ Could not fetch BM ad accounts:",
         e instanceof Error ? e.message : e
       );
+    }
+
+    // 3b. Also fetch personal accounts and merge (dedup by account_id)
+    try {
+      const personalAccounts = await getAdAccounts(longLivedToken);
+      const existingIds = new Set(adAccounts.map((a) => a.account_id));
+      for (const pa of personalAccounts) {
+        if (!existingIds.has(pa.account_id)) {
+          adAccounts.push(pa);
+        }
+      }
+      console.log("[Meta Manual] ✅ Total unique ad accounts (BM + personal):", adAccounts.length);
+    } catch (e) {
+      console.warn(
+        "[Meta Manual] ⚠️ Could not fetch personal ad accounts:",
+        e instanceof Error ? e.message : e
+      );
+    }
+
+    if (adAccounts.length === 0) {
+      console.warn("[Meta Manual] ⚠️ No ad accounts found! Token may lack permissions.");
     }
 
     // Step 4: Save to DB

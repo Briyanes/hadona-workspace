@@ -4,8 +4,12 @@ import {
   getLongLivedToken,
   getMetaUser,
   getAdAccounts,
+  getBusinessAdAccounts,
 } from "@/lib/meta";
 import { createClient } from "@/lib/supabase/server";
+
+// Hadona's Business Portfolio ID
+const HADONA_BM_ID = process.env.META_BUSINESS_ID || "1380114199447586";
 
 /**
  * GET /api/meta/callback?code=xxx&state=xxx
@@ -86,19 +90,42 @@ export async function GET(request: NextRequest) {
     const metaUser = await getMetaUser(longLivedToken);
     console.log("[Meta Callback] Step 3 ✅ User:", metaUser.name, "(" + metaUser.id + ")");
 
-    // Step 4: Get ad accounts cache
-    // NOTE: Without ads_read scope, this may fail. We handle gracefully.
-    console.log("[Meta Callback] Step 4: Getting ad accounts...");
+    // Step 4: Get ad accounts from BOTH Business Manager AND personal
+    // NOTE: Without ads_read scope, personal may fail. BM might still work.
+    console.log("[Meta Callback] Step 4: Getting ad accounts (BM + personal)...");
     let adAccounts: Awaited<ReturnType<typeof getAdAccounts>> = [];
     let tokenNeedsUpgrade = false;
+
+    // 4a. Try Business Manager accounts first
     try {
-      adAccounts = await getAdAccounts(longLivedToken);
-      console.log("[Meta Callback] Step 4 ✅ Found", adAccounts.length, "ad accounts");
+      const bmAccounts = await getBusinessAdAccounts(HADONA_BM_ID, longLivedToken);
+      adAccounts = bmAccounts;
+      console.log("[Meta Callback] Step 4 ✅ Found", bmAccounts.length, "BM ad accounts");
+    } catch (bmErr) {
+      const bmMsg = bmErr instanceof Error ? bmErr.message : String(bmErr);
+      console.warn("[Meta Callback] Step 4 ⚠️ BM ad accounts fetch failed:", bmMsg);
+    }
+
+    // 4b. Also fetch personal accounts and merge (dedup)
+    try {
+      const personalAccounts = await getAdAccounts(longLivedToken);
+      const existingIds = new Set(adAccounts.map((a) => a.account_id));
+      for (const pa of personalAccounts) {
+        if (!existingIds.has(pa.account_id)) {
+          adAccounts.push(pa);
+        }
+      }
+      console.log("[Meta Callback] Step 4 ✅ Total unique ad accounts:", adAccounts.length);
     } catch (adsErr) {
       const adsMsg = adsErr instanceof Error ? adsErr.message : String(adsErr);
-      console.warn("[Meta Callback] Step 4 ⚠️ Ad accounts fetch failed:", adsMsg);
-      console.warn("[Meta Callback] Token connected but has no ad account permissions.");
-      console.warn("[Meta Callback] User should use System User Token for full ad sync.");
+      console.warn("[Meta Callback] Step 4 ⚠️ Personal ad accounts fetch failed:", adsMsg);
+      if (adAccounts.length === 0) {
+        tokenNeedsUpgrade = true;
+      }
+    }
+
+    if (adAccounts.length === 0) {
+      console.warn("[Meta Callback] Step 4 ⚠️ No ad accounts found. User should use System User Token.");
       tokenNeedsUpgrade = true;
     }
 
