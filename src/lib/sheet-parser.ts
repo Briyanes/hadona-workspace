@@ -997,6 +997,11 @@ export function matchClientFuzzy(
   const targetAcronym = computeAcronym(target);
   const targetUpper = target.replace(/\s/g, ""); // "ybd" tanpa spasi
 
+  // Detect if target IS itself an acronym (single short word like "YBD", "NC", "BNI")
+  const targetWords = target.split(" ");
+  const targetIsAcronym =
+    targetWords.length === 1 && target.length >= 2 && target.length <= 6;
+
   let best: { id: string; name: string; confidence: number } | null = null;
 
   for (const c of dbClients) {
@@ -1011,22 +1016,46 @@ export function matchClientFuzzy(
     // Acronym match (YBD <-> Your Best Deal, NOUBAN CPAS <-> NC, dll)
     const candidateAcronym = computeAcronym(candidate);
     const candidateUpper = candidate.replace(/\s/g, "");
-    if (targetAcronym && candidateAcronym) {
-      if (targetAcronym === candidateUpper || targetUpper === candidateAcronym) {
-        const conf = 0.92; // high confidence for acronym match
-        if (!best || conf > best.confidence) {
-          best = { id: c.id, name: c.name, confidence: conf };
-        }
-        continue;
+    const candidateWords = candidate.split(" ");
+    const candidateIsAcronym =
+      candidateWords.length === 1 && candidate.length >= 2 && candidate.length <= 6;
+
+    // Case 1: target IS acronym (single token) -> match against candidate's computed acronym
+    // Contoh: "ybd" (sheet) === computeAcronym("your best deal") = "ybd" ✅
+    if (targetIsAcronym && candidateAcronym && target === candidateAcronym) {
+      return { id: c.id, name: c.name, confidence: 0.95 };
+    }
+    // Case 2: candidate IS acronym -> match against target's computed acronym
+    if (candidateIsAcronym && targetAcronym && candidate === targetAcronym) {
+      return { id: c.id, name: c.name, confidence: 0.95 };
+    }
+
+    // Case 3: multi-word vs multi-word (acronym-to-acronym)
+    // Contoh: "nouban cpas" (acronym "nc") <-> "NC Corp" (acronym "nc")
+    if (targetAcronym && candidateAcronym && targetAcronym === candidateAcronym && targetAcronym.length >= 2) {
+      const conf = 0.9;
+      if (!best || conf > best.confidence) {
+        best = { id: c.id, name: c.name, confidence: conf };
       }
-      // Acronym-to-acronym (NC <-> NC)
-      if (targetAcronym === candidateAcronym && targetAcronym.length >= 2) {
-        const conf = 0.9;
-        if (!best || conf > best.confidence) {
-          best = { id: c.id, name: c.name, confidence: conf };
-        }
-        continue;
+      continue;
+    }
+
+    // Case 4: target acronym equals candidate full text (no spaces)
+    // Contoh: target "Your Best Deal" (acronym "ybd") <-> candidate "ybd"
+    if (targetAcronym && targetAcronym === candidateUpper && targetAcronym.length >= 2) {
+      const conf = 0.92;
+      if (!best || conf > best.confidence) {
+        best = { id: c.id, name: c.name, confidence: conf };
       }
+      continue;
+    }
+    // Case 5: candidate acronym equals target full text (no spaces)
+    if (candidateAcronym && candidateAcronym === targetUpper && candidateAcronym.length >= 2) {
+      const conf = 0.92;
+      if (!best || conf > best.confidence) {
+        best = { id: c.id, name: c.name, confidence: conf };
+      }
+      continue;
     }
 
     // Substring match
