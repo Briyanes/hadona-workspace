@@ -145,6 +145,55 @@ const METRIC_DEFS: Array<{
 ];
 
 // ============================================
+// METRIC ALIASES — bridge sheet parser keys ↔ UI keys
+// ============================================
+// Sheet parser (src/lib/sheet-parser.ts) menyimpan metric_type dengan key
+// standard Meta API: "amount_spent", "cost_per_result", "messaging_conversations_started", dll.
+// Tapi UI frontend pakai key pendek: "spend", "cpr", "conversions", dll.
+// Tanpa alias resolver, semua card di reports page akan tampil "-".
+// Alias ini di-lookup berurutan (prioritas pertama → terakhir).
+const METRIC_ALIASES: Record<string, string[]> = {
+  spend: ["spend", "amount_spent"],
+  impressions: ["impressions"],
+  clicks: ["clicks", "link_clicks"],
+  ctr: ["ctr", "ctr_all"],
+  cpc: ["cpc", "cpc_all", "cpc_link", "cost_per_click"],
+  cpm: ["cpm", "cost_per_1k_reached"],
+  conversions: ["conversions", "purchases", "messaging_conversations_started"],
+  cpr: ["cpr", "cost_per_result", "cost_per_purchase", "cost_per_message"],
+  revenue: ["revenue", "purchase_value"],
+  roas: ["roas", "purchase_roas"],
+  frequency: ["frequency", "freq"],
+  wa_leads: ["wa_leads", "messaging_conversations_started"],
+  link_clicks: ["link_clicks"],
+  instagram_follows: ["instagram_follows", "ig_follows", "new_followers"],
+};
+
+/**
+ * Cari nilai metric di array dengan multiple alias.
+ * Return value pertama yang ketemu (non-null & valid).
+ * Contoh: getMetricByAliases(metrics, "spend", "amount_spent") → 1093910
+ */
+function getMetricByAliases(metrics: ReportMetric[], ...aliases: string[]): number {
+  for (const alias of aliases) {
+    const m = metrics.find((x) => x.metric_type === alias);
+    if (m && m.value !== null && m.value !== undefined && !isNaN(m.value as number)) {
+      return m.value as number;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Versi helper yang ambil alias dari METRIC_ALIASES map (lebih ringkas).
+ * Contoh: getMetric(metrics, "spend") → otomatis cek "spend" + "amount_spent"
+ */
+function getMetric(metrics: ReportMetric[], key: string): number {
+  const aliases = METRIC_ALIASES[key] || [key];
+  return getMetricByAliases(metrics, ...aliases);
+}
+
+// ============================================
 // HELPERS
 // ============================================
 
@@ -755,20 +804,29 @@ export default function ReportsPage() {
 
     const data = clientReports.map((r) => {
       const metrics = r.report_metrics || [];
+      // 🆕 Pakai alias resolver (sheet parser pakai "amount_spent", bukan "spend")
+      const spendAliases = METRIC_ALIASES.spend;
       const spend = metrics
-        .filter((m) => m.metric_type === "spend")
+        .filter((m) => spendAliases.includes(m.metric_type))
         .reduce((s, m) => s + (m.value || 0), 0);
-      const conversions = metrics
-        .filter((m) => m.metric_type === "conversions")
-        .reduce((s, m) => s + (m.value || 0), 0);
+      const conversionsAliases = METRIC_ALIASES.conversions;
+      // Hindari double-count: ambil alias pertama yang ada value
+      const convVal = (() => {
+        for (const alias of conversionsAliases) {
+          const total = metrics.filter((m) => m.metric_type === alias).reduce((s, m) => s + (m.value || 0), 0);
+          if (total > 0) return total;
+        }
+        return 0;
+      })();
+      const revenueAliases = METRIC_ALIASES.revenue;
       const revenue = metrics
-        .filter((m) => m.metric_type === "revenue")
+        .filter((m) => revenueAliases.includes(m.metric_type))
         .reduce((s, m) => s + (m.value || 0), 0);
 
       return {
         period: `${formatDate(r.period_start, { day: "numeric", month: "short" })}`,
         spend,
-        conversions,
+        conversions: convVal,
         revenue,
       };
     });
@@ -842,19 +900,25 @@ export default function ReportsPage() {
   const submittedCount = reports.filter((r) => r.status === "submitted").length;
   const reviewedCount = reports.filter((r) => r.status === "reviewed").length;
 
-  // Total spend dari semua report yang punya metrics
+  // Total spend dari semua report yang punya metrics (pakai alias resolver)
   const totalSpend = reports.reduce((sum, r) => {
-    const spend = (r.report_metrics || [])
-      .filter((m) => m.metric_type === "spend")
+    const ms = r.report_metrics || [];
+    // Sum semua alias spend + amount_spent (hindari double-count)
+    const spendAliases = METRIC_ALIASES.spend;
+    const spendVal = ms
+      .filter((m) => spendAliases.includes(m.metric_type))
       .reduce((s, m) => s + (m.value || 0), 0);
-    return sum + spend;
+    return sum + spendVal;
   }, 0);
 
   const totalConversions = reports.reduce((sum, r) => {
-    const conv = (r.report_metrics || [])
-      .filter((m) => m.metric_type === "conversions")
-      .reduce((s, m) => s + (m.value || 0), 0);
-    return sum + conv;
+    const ms = r.report_metrics || [];
+    // Ambil purchases atau messaging (jangan keduanya — avoids double-count)
+    const purchases = ms.filter((m) => m.metric_type === "purchases").reduce((s, m) => s + (m.value || 0), 0);
+    const messaging = ms.filter((m) => m.metric_type === "messaging_conversations_started").reduce((s, m) => s + (m.value || 0), 0);
+    const conversions = ms.filter((m) => m.metric_type === "conversions").reduce((s, m) => s + (m.value || 0), 0);
+    // Prioritas: conversions > purchases > messaging
+    return sum + (conversions || purchases || messaging);
   }, 0);
 
   const statCards = [
@@ -906,9 +970,20 @@ export default function ReportsPage() {
 
     const rows = filtered.map((r) => {
       const metrics = r.report_metrics || [];
+      // 🆕 CSV: pakai alias resolver supaya "spend" tetap ketemu walau DB pakai "amount_spent"
       const getMetric = (type: string) => {
-        const m = metrics.find((x) => x.metric_type === type);
-        return m?.value || 0;
+        const aliases = METRIC_ALIASES[type] || [type];
+        // Sum semua alias yang ada (tapi untuk conversions hindari double-count)
+        if (type === "conversions") {
+          for (const alias of aliases) {
+            const total = metrics.filter((x) => x.metric_type === alias).reduce((s, x) => s + (x.value || 0), 0);
+            if (total > 0) return total;
+          }
+          return 0;
+        }
+        return metrics
+          .filter((x) => aliases.includes(x.metric_type))
+          .reduce((s, x) => s + (x.value || 0), 0);
       };
 
       // Strings: quote them; Numbers: leave raw so Excel detects as numbers
@@ -1363,10 +1438,24 @@ export default function ReportsPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {filtered.map((r) => {
             const metrics = r.report_metrics || [];
-            const spend = metrics.find((m) => m.metric_type === "spend")?.value || null;
-            const conversions = metrics.find((m) => m.metric_type === "conversions")?.value || null;
-            const roas = metrics.find((m) => m.metric_type === "roas")?.value || null;
-            const ctr = metrics.find((m) => m.metric_type === "ctr")?.value || null;
+            // 🆕 Card render: pakai alias resolver
+            const spendVal = getMetric(metrics, "spend");
+            const spend = spendVal > 0 ? spendVal : null;
+            // Hindari double-count conversions: ambil alias pertama yang ada
+            const conversionsVal = (() => {
+              for (const alias of METRIC_ALIASES.conversions) {
+                const v = metrics
+                  .filter((m) => m.metric_type === alias)
+                  .reduce((s, m) => s + (m.value || 0), 0);
+                if (v > 0) return v;
+              }
+              return 0;
+            })();
+            const conversions = conversionsVal > 0 ? conversionsVal : null;
+            const roasVal = getMetric(metrics, "roas");
+            const roas = roasVal > 0 ? roasVal : null;
+            const ctrVal = getMetric(metrics, "ctr");
+            const ctr = ctrVal > 0 ? ctrVal : null;
             const hasMetrics = metrics.length > 0;
             const isSelected = selectedIds.has(r.id);
 
