@@ -45,6 +45,25 @@ export interface SyncResult {
   startedAt: Date;
   finishedAt: Date;
   durationMs: number;
+  /**
+   * 🆕 v2.3: Granular skip breakdown.
+   * Memberi insight kenapa row di-skip — apakah narrative, dedup, format issue, dll.
+   * Berguna untuk debugging & memberi user transparency.
+   */
+  skippedBreakdown?: {
+    noMetrics: number;       // Baris narrative/header tanpa metric (KESIMPULAN, ACTION, dll)
+    noClient: number;        // Baris kosong / separator
+    noPeriod: number;        // Format period tidak ter-detect
+    dedup: number;           // Weekly report duplicate (muncul di multiple sheet tabs)
+    unmatchedClient: number; // Nama client tidak match dengan DB
+    samples: {
+      noMetrics: string[];     // 3 contoh row
+      noClient: string[];      // 3 contoh row
+      noPeriod: string[];      // 3 contoh row
+      dedup: string[];         // 3 contoh row
+      unmatchedClient: string[]; // 3 contoh row
+    };
+  };
 }
 
 // ============================================================================
@@ -66,6 +85,28 @@ export async function syncReportsFromSheet(
   let updated = 0;
   let skipped = 0;
   let errors = 0;
+
+  // 🆕 v2.3: Granular skip counters
+  let skipNoMetrics = 0;
+  let skipNoClient = 0;
+  let skipNoPeriod = 0;
+  let skipDedup = 0;
+  let skipUnmatchedClient = 0;
+  const skipSamples = {
+    noMetrics: [] as string[],
+    noClient: [] as string[],
+    noPeriod: [] as string[],
+    dedup: [] as string[],
+    unmatchedClient: [] as string[],
+  };
+  const MAX_SAMPLES = 3;
+  const addSample = (bucket: keyof typeof skipSamples, value: string) => {
+    if (skipSamples[bucket].length < MAX_SAMPLES) {
+      skipSamples[bucket].push(value);
+    }
+  };
+  const summarize = (text: string, maxLen = 80) =>
+    text.replace(/\s+/g, " ").trim().slice(0, maxLen);
 
   // ── 1. Init Supabase Admin ──────────────────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -136,13 +177,23 @@ export async function syncReportsFromSheet(
     for (const row of sheet.parsed.rows) {
       totalRows++;
       try {
-        // ── Skip invalid rows ──
+        // ── Skip invalid rows (with granular tracking) ──
         if (row.metrics.length === 0) {
           skipped++;
+          skipNoMetrics++;
+          addSample(
+            "noMetrics",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: "${summarize(row.rawPerformanceText)}"`
+          );
           continue;
         }
         if (!row.clientName) {
           skipped++;
+          skipNoClient++;
+          addSample(
+            "noClient",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: performance="${summarize(row.rawPerformanceText)}"`
+          );
           continue;
         }
 
@@ -178,6 +229,13 @@ export async function syncReportsFromSheet(
 
         if (!clientId) {
           unmatchedClients.add(row.clientName);
+          // 🆕 v2.3: track unmatched as skip + sample
+          skipped++;
+          skipUnmatchedClient++;
+          addSample(
+            "unmatchedClient",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}"`
+          );
           continue;
         }
 
@@ -208,6 +266,11 @@ export async function syncReportsFromSheet(
 
         if (!periodStart) {
           skipped++;
+          skipNoPeriod++;
+          addSample(
+            "noPeriod",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}" performance="${summarize(row.rawPerformanceText)}"`
+          );
           continue;
         }
 
@@ -241,7 +304,12 @@ export async function syncReportsFromSheet(
         // (terjadi kalau row muncul di multiple sheet tabs atau duplicate di sheet)
         if (processedReportKeys.has(reportKey)) {
           dedupSkipped++;
+          skipDedup++;
           skipped++;
+          addSample(
+            "dedup",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}" period=${periodStart}`
+          );
           continue;
         }
         processedReportKeys.add(reportKey);
@@ -405,8 +473,17 @@ export async function syncReportsFromSheet(
   const finishedAt = new Date();
   const durationMs = finishedAt.getTime() - startedAt.getTime();
 
+  // 🆕 v2.3: Sanity check — total skip harus sama dengan sum of granular counters
+  const granularSum =
+    skipNoMetrics + skipNoClient + skipNoPeriod + skipDedup + skipUnmatchedClient;
+  if (granularSum !== skipped) {
+    console.warn(
+      `[sync-v2] ⚠️ Skip breakdown mismatch: total=${skipped}, granular sum=${granularSum} (diff=${skipped - granularSum})`
+    );
+  }
+
   console.log(
-    `[sync-v2] ✅ Done: ${imported} imported, ${updated} updated, ${skipped} skipped (${dedupSkipped} dedup), ${errors} errors in ${durationMs}ms`
+    `[sync-v2] ✅ Done: ${imported} imported, ${updated} updated, ${skipped} skipped [noMetrics=${skipNoMetrics}, noClient=${skipNoClient}, noPeriod=${skipNoPeriod}, dedup=${skipDedup}, unmatchedClient=${skipUnmatchedClient}], ${errors} errors in ${durationMs}ms`
   );
 
   return {
@@ -423,6 +500,15 @@ export async function syncReportsFromSheet(
     startedAt,
     finishedAt,
     durationMs,
+    // 🆕 v2.3: Granular skip breakdown untuk transparency & debugging
+    skippedBreakdown: {
+      noMetrics: skipNoMetrics,
+      noClient: skipNoClient,
+      noPeriod: skipNoPeriod,
+      dedup: skipDedup,
+      unmatchedClient: skipUnmatchedClient,
+      samples: skipSamples,
+    },
   };
 }
 

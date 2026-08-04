@@ -257,6 +257,19 @@ export default function ReportsPage() {
       errors: number;
       durationSec: number;
       sheets?: Array<{ name: string; gid: string; raw: number; parsed: number; imported: number }>;
+      skippedBreakdown?: {
+        noMetrics: number;
+        noClient: number;
+        noPeriod: number;
+        dedup: number;
+        unmatchedClient: number;
+        examples?: {
+          noMetrics: string[];
+          noClient: string[];
+          noPeriod: string[];
+          dedup: string[];
+        };
+      };
     };
     unmatchedClients: string[];
     unmatchedPics: string[];
@@ -1048,6 +1061,72 @@ export default function ReportsPage() {
                   <p className="text-xl font-bold text-danger">{syncResult.summary.errors}</p>
                 </div>
               </div>
+
+              {/* 🆕 Skipped Breakdown — transparency kenapa row di-skip */}
+              {syncResult.summary.skippedBreakdown && syncResult.summary.skipped > 0 && (
+                <div className="rounded-md border border-info/30 bg-info/5 p-3">
+                  <p className="mb-1.5 text-xs font-semibold text-info">
+                    ℹ️ Mengapa {syncResult.summary.skipped} row di-skip?
+                  </p>
+                  <p className="mb-2 text-[10px] text-muted">
+                    Breakdown alasan skip — bukan error, melainkan baris yang sengaja tidak diproses.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+                    <div className="rounded bg-background p-2">
+                      <p className="text-[9px] uppercase text-muted">No Metrics</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {syncResult.summary.skippedBreakdown.noMetrics}
+                      </p>
+                      <p className="text-[8px] text-muted">Baris naratif (KESIMPULAN, ACTION, dll)</p>
+                    </div>
+                    <div className="rounded bg-background p-2">
+                      <p className="text-[9px] uppercase text-muted">No Client</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {syncResult.summary.skippedBreakdown.noClient}
+                      </p>
+                      <p className="text-[8px] text-muted">Baris kosong / separator</p>
+                    </div>
+                    <div className="rounded bg-background p-2">
+                      <p className="text-[9px] uppercase text-muted">No Period</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {syncResult.summary.skippedBreakdown.noPeriod}
+                      </p>
+                      <p className="text-[8px] text-muted">Format tanggal tidak terdeteksi</p>
+                    </div>
+                    <div className="rounded bg-background p-2">
+                      <p className="text-[9px] uppercase text-muted">Dedup</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {syncResult.summary.skippedBreakdown.dedup}
+                      </p>
+                      <p className="text-[8px] text-muted">Duplikat (sudah ada di sheet sebelumnya)</p>
+                    </div>
+                    <div className="rounded bg-warning/10 p-2">
+                      <p className="text-[9px] uppercase text-warning">Unmatched</p>
+                      <p className="text-sm font-bold text-warning">
+                        {syncResult.summary.skippedBreakdown.unmatchedClient}
+                      </p>
+                      <p className="text-[8px] text-muted">Client tidak dikenali di DB</p>
+                    </div>
+                  </div>
+
+                  {/* Examples (collapsible-like, selalu tampil jika ada) */}
+                  {syncResult.summary.skippedBreakdown.examples &&
+                    syncResult.summary.skippedBreakdown.examples.dedup.length > 0 && (
+                      <div className="mt-2 rounded bg-background p-2">
+                        <p className="mb-1 text-[9px] font-semibold uppercase text-muted">
+                          Contoh row dedup (yang sudah ada di DB)
+                        </p>
+                        <ul className="space-y-0.5 text-[9px] text-muted">
+                          {syncResult.summary.skippedBreakdown.examples.dedup.slice(0, 3).map((ex, i) => (
+                            <li key={i} className="font-mono">
+                              {ex}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </div>
+              )}
 
               {/* Per-sheet breakdown */}
               {syncResult.summary.sheets && syncResult.summary.sheets.length > 0 && (
