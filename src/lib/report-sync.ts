@@ -117,6 +117,12 @@ export async function syncReportsFromSheet(
   const clientCache = new Map<string, { id: string; confidence: number }>();
   const picCache = new Map<string, { id: string; confidence: number }>();
 
+  // 🆕 v2.1: In-memory dedup untuk mencegah duplicate rows saat sync berjalan
+  // beberapa kali atau row yang sama muncul di multiple sheet tabs (mis.
+  // weekly report akhir Juni bisa muncul di tab "June '26" DAN "Juli '26").
+  const processedReportKeys = new Set<string>();
+  let dedupSkipped = 0;
+
   // ── 5. PRE-PROCESS ALL ROWS (in-memory, no DB calls) ───────────────────
   // Build arrays of payloads ready for batch insert/upsert
   const tPreprocessStart = Date.now();
@@ -231,6 +237,16 @@ export async function syncReportsFromSheet(
         };
 
         const reportKey = `${clientId}|${periodStart}`;
+
+        // 🆕 v2.1: Skip jika reportKey SUDAH diproses dalam run ini
+        // (terjadi kalau row muncul di multiple sheet tabs atau duplicate di sheet)
+        if (processedReportKeys.has(reportKey)) {
+          dedupSkipped++;
+          skipped++;
+          continue;
+        }
+        processedReportKeys.add(reportKey);
+
         const existingId = existingReportsMap.get(reportKey);
 
         if (existingId) {
@@ -368,7 +384,7 @@ export async function syncReportsFromSheet(
   const durationMs = finishedAt.getTime() - startedAt.getTime();
 
   console.log(
-    `[sync-v2] ✅ Done: ${imported} imported, ${updated} updated, ${skipped} skipped, ${errors} errors in ${durationMs}ms`
+    `[sync-v2] ✅ Done: ${imported} imported, ${updated} updated, ${skipped} skipped (${dedupSkipped} dedup), ${errors} errors in ${durationMs}ms`
   );
 
   return {
