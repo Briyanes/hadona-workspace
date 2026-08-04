@@ -42,8 +42,10 @@ import { EmailScheduleManager } from "@/components/reports/email-schedule-manage
 import { CreativePerformanceTracker } from "@/components/reports/creative-performance-tracker";
 import { ObjectiveSelector } from "@/components/reports/objective-selector";
 import { ObjectiveKPIBar } from "@/components/reports/kpi-bar";
+import { ImportSheetModal } from "@/components/reports/import-sheet-modal";
 import { OBJECTIVE_MAP, type ObjectiveKey } from "@/lib/ad-objectives";
 import { generateReportText } from "@/lib/report-generator";
+import { FileSpreadsheet } from "lucide-react";
 
 // ============================================
 // TYPES
@@ -237,6 +239,11 @@ export default function ReportsPage() {
   // Bulk Actions state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
+
+  // Import Sheet Modal state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const DEFAULT_SHEET_URL =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbWYiTnXtz9ukLg-CprfY-fNCl3L-PbW-dWl-C8oMQAp-P6vJIN76zPhhk67FfBZi1TsRivogdpIp6/pub?output=csv";
 
   const loadReports = useCallback(async () => {
     try {
@@ -836,11 +843,29 @@ export default function ReportsPage() {
           >
             <Download size={14} /> Export
           </button>
-          <button onClick={openCreate} className="btn-primary">
-            <Plus size={16} /> New Report
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+              title="Import semua client dari Google Sheet publish-to-web"
+            >
+              <FileSpreadsheet size={14} /> Import dari Sheet
+            </button>
+            <button onClick={openCreate} className="btn-primary">
+              <Plus size={16} /> New Report
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Import Sheet Modal */}
+      <ImportSheetModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        clients={clients}
+        defaultSheetUrl={DEFAULT_SHEET_URL}
+        onImported={() => loadReports()}
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
