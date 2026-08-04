@@ -1,0 +1,17 @@
+{
+  "passed": [
+    "Login success",
+    "Desktop ads-spend loaded",
+    "Content: Meta Ads Terhubung banner",
+    "Content: Auto-sync aktif",
+    "Content: Sync Now button",
+    "Content: Ads Spend table",
+    "Content: Total Spend text",
+    "No console errors",
+    "Mobile ads-spend loaded",
+    "Mobile: Page title visible",
+    "Mobile: Meta banner visible"
+  ],
+  "failed": [],
+  "warnings": []
+}

@@ -387,10 +387,14 @@ export default function AdsSpendPage() {
     if (!confirm("Putuskan koneksi Meta? Anda perlu connect ulang untuk sync otomatis.")) return;
 
     try {
-      await supabase
+      // BUG FIX: Supabase update() doesn't throw on RLS failure — must check { error }
+      const { error } = await supabase
         .from("meta_connections")
         .update({ is_active: false, auto_sync: false } as never)
         .eq("id", metaConnection.id);
+
+      if (error) throw new Error(error.message);
+
       toast.success("Koneksi Meta diputus");
       setMetaConnection(null);
     } catch (err) {
@@ -791,7 +795,15 @@ export default function AdsSpendPage() {
       "Status",
       "PIC",
       "Today Spend",
+      "Today Revenue",
       "ROAS",
+      "Impressions",
+      "Clicks",
+      "CTR (%)",
+      "CPC",
+      "CPM",
+      "Conversions",
+      "Pacing (%)",
       "Notes",
     ];
     const today = new Date().toISOString().split("T")[0];
@@ -801,7 +813,18 @@ export default function AdsSpendPage() {
       );
       const todaySpend = todayLog.reduce((s, l) => s + (l.spend || 0), 0);
       const revenue = todayLog.reduce((s, l) => s + (l.revenue || 0), 0);
+      const impressions = todayLog.reduce((s, l) => s + (l.impressions || 0), 0);
+      const clicks = todayLog.reduce((s, l) => s + (l.clicks || 0), 0);
+      const conversions = todayLog.reduce((s, l) => s + (l.conversions || 0), 0);
       const roas = todaySpend > 0 ? (revenue / todaySpend).toFixed(2) : "0";
+      const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : "0";
+      const cpc = clicks > 0 ? (todaySpend / clicks).toFixed(0) : "0";
+      const cpm = impressions > 0 ? ((todaySpend / impressions) * 1000).toFixed(0) : "0";
+      const last30Spend = spendLogs
+        .filter((l) => l.ad_account_id === a.id)
+        .reduce((s, l) => s + (l.spend || 0), 0);
+      const monthlyBudget = (a.daily_budget || 0) * 30;
+      const pacing = monthlyBudget > 0 ? ((last30Spend / monthlyBudget) * 100).toFixed(0) : "0";
       return [
         a.client?.name || "",
         a.platform,
@@ -814,7 +837,15 @@ export default function AdsSpendPage() {
         a.status,
         a.pic?.full_name || "",
         todaySpend,
+        revenue,
         roas,
+        impressions,
+        clicks,
+        ctr,
+        cpc,
+        cpm,
+        conversions,
+        pacing,
         (a.notes || "").replace(/"/g, '""'),
       ];
     });

@@ -227,9 +227,47 @@ export async function POST(request: NextRequest) {
       // ─── DELETE SPEND LOG ───
       case "delete-spend": {
         const { logId } = body as { logId: string };
+
+        // BUG FIX: Fetch log details BEFORE deleting to restore remaining_budget
+        const { data: logEntry, error: fetchErr } = await supabase
+          .from("ad_spend_logs")
+          .select("ad_account_id, spend, log_date")
+          .eq("id", logId)
+          .single();
+
+        if (fetchErr) throw fetchErr;
+
+        // Delete the log
         const { error } = await supabase.from("ad_spend_logs").delete().eq("id", logId);
         if (error) throw error;
-        return NextResponse.json({ success: true });
+
+        // Restore remaining_budget (add back the deleted spend amount)
+        if (logEntry?.ad_account_id && logEntry.spend > 0) {
+          const { data: account } = await supabase
+            .from("ad_accounts")
+            .select("remaining_budget, daily_budget")
+            .eq("id", logEntry.ad_account_id)
+            .single();
+
+          if (account) {
+            const restoredBudget = (account.remaining_budget || 0) + logEntry.spend;
+            await supabase
+              .from("ad_accounts")
+              .update({
+                remaining_budget: restoredBudget,
+                days_left: calcDaysLeft(restoredBudget, account.daily_budget),
+              })
+              .eq("id", logEntry.ad_account_id);
+          }
+        }
+
+        return NextResponse.json({
+          success: true,
+          budget_restored: logEntry?.spend || 0,
+          message: logEntry?.spend
+            ? `Log dihapus. Budget dikembalikan +${logEntry.spend}`
+            : "Log dihapus",
+        });
       }
 
       default:
