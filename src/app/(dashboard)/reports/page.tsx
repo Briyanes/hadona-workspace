@@ -245,6 +245,69 @@ export default function ReportsPage() {
   const DEFAULT_SHEET_URL =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbWYiTnXtz9ukLg-CprfY-fNCl3L-PbW-dWl-C8oMQAp-P6vJIN76zPhhk67FfBZi1TsRivogdpIp6/pub?output=csv";
 
+  // Sync Now state (auto-sync multi-tab dari published Google Sheet)
+  const [syncing, setSyncing] = useState(false);
+  const [showSyncResult, setShowSyncResult] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    summary: {
+      totalRows: number;
+      imported: number;
+      updated: number;
+      skipped: number;
+      errors: number;
+      durationSec: number;
+      sheets?: Array<{ name: string; gid: string; raw: number; parsed: number; imported: number }>;
+    };
+    unmatchedClients: string[];
+    unmatchedPics: string[];
+    errors_detail: string[];
+  } | null>(null);
+
+  // ─── Sync Now: jalankan auto-sync dari published Google Sheet (multi-tab) ───
+  async function handleSyncNow() {
+    if (!confirm(
+      "Sync semua weekly reports dari Google Sheet?\n\n" +
+      "Sumber: 7 sheet tabs (Januari '26 – Juli '26, ~285 rows)\n" +
+      "Mode: Idempotent (tidak duplikasi, update kalau sudah ada)\n\n" +
+      "Proses butuh ~10-30 detik. Lanjutkan?"
+    )) return;
+
+    setSyncing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({}), // pakai default URL dari env
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal sync");
+
+      setSyncResult({
+        summary: data.summary,
+        unmatchedClients: data.unmatchedClients || [],
+        unmatchedPics: data.unmatchedPics || [],
+        errors_detail: data.errors_detail || [],
+      });
+      setShowSyncResult(true);
+
+      toast.success(
+        `✅ Sync selesai: ${data.summary.imported} baru, ${data.summary.updated} update, ${data.summary.skipped} skip dalam ${data.summary.durationSec}s`,
+        { duration: 6000 }
+      );
+
+      // Reload reports
+      loadReports();
+    } catch (err) {
+      toast.error("Gagal sync: " + extractError(err));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const loadReports = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -845,6 +908,22 @@ export default function ReportsPage() {
           </button>
           <div className="flex gap-2">
             <button
+              onClick={handleSyncNow}
+              disabled={syncing}
+              className="flex items-center gap-1.5 rounded-md bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+              title="Auto-sync semua sheet tab (Januari-Juli '26) dari published Google Sheet"
+            >
+              {syncing ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={14} /> Sync Now
+                </>
+              )}
+            </button>
+            <button
               onClick={() => setShowImportModal(true)}
               className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
               title="Import semua client dari Google Sheet publish-to-web"
@@ -857,6 +936,125 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* Sync Result Modal — tampilkan detail hasil sinkronisasi */}
+      {showSyncResult && syncResult && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-4 w-full max-w-2xl rounded-lg border border-border bg-surface shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">🔄 Hasil Sinkronisasi</h2>
+                <p className="text-xs text-muted">
+                  Selesai dalam {syncResult.summary.durationSec}s • {syncResult.summary.totalRows} rows diproses
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSyncResult(false)}
+                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-6 py-4">
+              {/* Stats grid */}
+              <div className="grid grid-cols-4 gap-2">
+                <div className="rounded-md bg-success/10 p-3 text-center">
+                  <p className="text-[10px] uppercase text-muted">Imported</p>
+                  <p className="text-xl font-bold text-success">{syncResult.summary.imported}</p>
+                </div>
+                <div className="rounded-md bg-primary/10 p-3 text-center">
+                  <p className="text-[10px] uppercase text-muted">Updated</p>
+                  <p className="text-xl font-bold text-primary">{syncResult.summary.updated}</p>
+                </div>
+                <div className="rounded-md bg-surface p-3 text-center">
+                  <p className="text-[10px] uppercase text-muted">Skipped</p>
+                  <p className="text-xl font-bold text-muted">{syncResult.summary.skipped}</p>
+                </div>
+                <div className="rounded-md bg-danger/10 p-3 text-center">
+                  <p className="text-[10px] uppercase text-muted">Errors</p>
+                  <p className="text-xl font-bold text-danger">{syncResult.summary.errors}</p>
+                </div>
+              </div>
+
+              {/* Per-sheet breakdown */}
+              {syncResult.summary.sheets && syncResult.summary.sheets.length > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase text-muted">📑 Breakdown per Sheet Tab</p>
+                  <div className="space-y-1.5">
+                    {syncResult.summary.sheets.map((s) => (
+                      <div
+                        key={s.gid}
+                        className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-xs"
+                      >
+                        <span className="font-medium text-gray-900">{s.name}</span>
+                        <div className="flex gap-3 text-muted">
+                          <span>{s.raw} rows</span>
+                          <span>•</span>
+                          <span>{s.parsed} parsed</span>
+                          <span>•</span>
+                          <span className="font-semibold text-success">{s.imported} imported</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Unmatched clients */}
+              {syncResult.unmatchedClients.length > 0 && (
+                <div className="rounded-md border border-warning/30 bg-warning/5 p-3">
+                  <p className="mb-1.5 text-xs font-semibold text-warning">
+                    ⚠️ Client tidak dikenali ({syncResult.unmatchedClients.length})
+                  </p>
+                  <p className="mb-2 text-[10px] text-muted">
+                    Nama di sheet tidak match dengan DB. Tambahkan ke Clients atau ubah nama di sheet.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {syncResult.unmatchedClients.map((c) => (
+                      <span
+                        key={c}
+                        className="rounded bg-warning/10 px-2 py-0.5 text-[10px] text-warning"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Errors detail */}
+              {syncResult.errors_detail.length > 0 && (
+                <div className="rounded-md border border-danger/30 bg-danger/5 p-3">
+                  <p className="mb-1.5 text-xs font-semibold text-danger">
+                    ❌ Detail Error ({syncResult.errors_detail.length})
+                  </p>
+                  <ul className="space-y-1 text-[10px] text-muted">
+                    {syncResult.errors_detail.slice(0, 10).map((e, i) => (
+                      <li key={i} className="font-mono">{e}</li>
+                    ))}
+                    {syncResult.errors_detail.length > 10 && (
+                      <li className="text-muted italic">
+                        ...dan {syncResult.errors_detail.length - 10} error lainnya
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="flex justify-end gap-2 border-t border-border pt-3">
+                <button
+                  onClick={() => setShowSyncResult(false)}
+                  className="btn-primary"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Import Sheet Modal */}
       <ImportSheetModal

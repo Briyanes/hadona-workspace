@@ -482,6 +482,151 @@ export function mapMetricLabel(rawLabel: string): { key: string; unit: "currency
 // MAIN PARSER
 // ============================================================================
 
+// ============================================================================
+// MULTI-SHEET DISCOVERY (untuk spreadsheet dengan multiple tabs bulanan)
+// ============================================================================
+
+export interface SheetTab {
+  gid: string;
+  name: string;
+}
+
+/**
+ * Discover semua sheet tabs dari sebuah published Google Spreadsheet.
+ * Cara kerja: fetch `pubhtml`, lalu parse daftar tabs dari JS embed.
+ *
+ * Return: array of { gid, name } untuk semua sheet tabs.
+ */
+export async function discoverSheets(publishedUrl: string): Promise<SheetTab[]> {
+  // Normalize URL ke pubhtml endpoint
+  // Contoh input:
+  //   https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv
+  //   https://docs.google.com/spreadsheets/d/e/2PACX-.../pub
+  // Target:
+  //   https://docs.google.com/spreadsheets/d/e/2PACX-.../pubhtml
+  let pubhtmlUrl = publishedUrl.replace(/[?&]output=[^&]+/g, "").replace(/\?$/, "");
+  if (!pubhtmlUrl.endsWith("/pubhtml")) {
+    pubhtmlUrl = pubhtmlUrl.replace(/\/pub$/, "/pubhtml");
+    if (!pubhtmlUrl.endsWith("/pubhtml")) {
+      pubhtmlUrl = `${pubhtmlUrl}${pubhtmlUrl.endsWith("/") ? "" : "/"}pubhtml`;
+    }
+  }
+
+  const res = await fetch(pubhtmlUrl, {
+    redirect: "follow",
+    headers: { Accept: "text/html, */*" },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Gagal fetch pubhtml: HTTP ${res.status}`);
+  }
+  const html = await res.text();
+
+  // Parse pattern: items.push({name: "Janury \x2726", gid: "0"})
+  const tabs: SheetTab[] = [];
+  const re = /items\.push\(\{[^}]*name:\s*"([^"]+)"[^}]*gid:\s*"([^"]+)"/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(html)) !== null) {
+    // Decode escape sequences: \x27 → ', \n → space, dll
+    const rawName = match[1];
+    const name = rawName
+      .replace(/\\x27/g, "'")
+      .replace(/\\n/g, " ")
+      .replace(/\\t/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const gid = match[2];
+    tabs.push({ gid, name });
+  }
+
+  // Fallback: jika tidak ada yang match, return single tab (gid=0)
+  if (tabs.length === 0) {
+    tabs.push({ gid: "0", name: "Sheet1" });
+  }
+
+  return tabs;
+}
+
+/**
+ * Build URL CSV untuk gid tertentu dari URL published utama.
+ */
+export function buildSheetCsvUrl(publishedUrl: string, gid: string): string {
+  // Strip existing params, rebuild
+  const baseUrl = publishedUrl.split("?")[0];
+  return `${baseUrl}?output=csv&gid=${gid}`;
+}
+
+export interface MultiSheetResult {
+  sheets: Array<{
+    gid: string;
+    name: string;
+    rows: string[][];
+    parsed: ParseResult;
+    fetchedAt: Date;
+  }>;
+  totalRows: number;
+  totalParsed: number;
+  errors: string[];
+}
+
+/**
+ * Fetch & parse SEMUA sheet tabs dari published Google Spreadsheet.
+ *
+ * Berguna untuk spreadsheet multi-bulan (mis. "Janury '26", "Februari '26", ...)
+ * yang masing-masing berisi weekly reports untuk bulan tersebut.
+ */
+export async function fetchAndParseAllSheets(publishedUrl: string): Promise<MultiSheetResult> {
+  const errors: string[] = [];
+  const sheets: MultiSheetResult["sheets"] = [];
+  let totalRows = 0;
+  let totalParsed = 0;
+
+  // Step 1: discover semua tabs
+  let tabs: SheetTab[] = [];
+  try {
+    tabs = await discoverSheets(publishedUrl);
+  } catch (err) {
+    errors.push(`discoverSheets: ${err instanceof Error ? err.message : String(err)}`);
+    // Fallback: anggap single sheet
+    tabs = [{ gid: "0", name: "Sheet1" }];
+  }
+
+  // Step 2: fetch & parse per-tab (parallel dengan limit)
+  const CONCURRENCY = 3;
+  for (let i = 0; i < tabs.length; i += CONCURRENCY) {
+    const batch = tabs.slice(i, i + CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map(async (tab) => {
+        const csvUrl = buildSheetCsvUrl(publishedUrl, tab.gid);
+        const rows = await fetchSheetCSV(csvUrl);
+        const parsed = parseAllRows(rows);
+        return {
+          gid: tab.gid,
+          name: tab.name,
+          rows,
+          parsed,
+          fetchedAt: new Date(),
+        };
+      })
+    );
+
+    for (let j = 0; j < results.length; j++) {
+      const r = results[j];
+      const tab = batch[j];
+      if (r.status === "fulfilled") {
+        sheets.push(r.value);
+        totalRows += r.value.rows.length;
+        totalParsed += r.value.parsed.totalRows;
+      } else {
+        const reason = r.reason instanceof Error ? r.reason.message : String(r.reason);
+        errors.push(`Sheet "${tab.name}" (gid=${tab.gid}): ${reason}`);
+      }
+    }
+  }
+
+  return { sheets, totalRows, totalParsed, errors };
+}
+
 /**
  * Fetch CSV dari URL Google Sheet dan parse ke array of rows.
  */
@@ -515,14 +660,118 @@ export async function fetchSheetCSV(url: string): Promise<string[][]> {
 }
 
 /**
- * Parse satu row sheet ke struktur ParsedRow.
+ * Schema/Column index map.
+ *
+ * Default schema (sheet Januari–April '26):
+ *   { no: 0, date: 1, client: 2, pic: 3, division: 4, performance: 5, analysis: 6, status: 7 }
+ *
+ * Schema varian (sheet Mei+ '26, tidak ada kolom "No"):
+ *   { date: 0, client: 1, pic: 2, division: 3, performance: 4, analysis: 5, status: 7 }
+ *   (status bisa di index 6 atau 7 tergantung ada kolom KESIMPULAN/ACTION atau tidak)
  */
-export function parseRow(cells: string[], rowIndex: number): ParsedRow {
+export interface SheetSchema {
+  no?: number;
+  date: number;
+  client: number;
+  pic: number;
+  division: number;
+  performance: number;
+  analysis: number;
+  status: number;
+}
+
+const DEFAULT_SCHEMA: SheetSchema = {
+  no: 0,
+  date: 1,
+  client: 2,
+  pic: 3,
+  division: 4,
+  performance: 5,
+  analysis: 6,
+  status: 7,
+};
+
+/**
+ * Detect schema dari header row.
+ *
+ * Header sample (Jan-Apr): "No,Input Date,Client,PIC,Divisi,Maintain Performance,Result Performance,Status"
+ * Header sample (Mei):     "Input Date,Client,PIC,Divisi,Maintain Performance,Result Performance,ACTION,Status"
+ * Header sample (Jun-Jul): "Input Date,Client,PIC,Divisi,Maintain Performance,Result Performance,KESIMPULAN,ACTION,Status"
+ */
+export function detectSchema(headerCells: string[]): SheetSchema {
+  const lower = headerCells.map((c) => (c || "").toLowerCase().trim());
+  const findIdx = (patterns: RegExp[]): number => {
+    for (let i = 0; i < lower.length; i++) {
+      const cell = lower[i];
+      if (patterns.some((p) => p.test(cell))) return i;
+    }
+    return -1;
+  };
+
+  const noIdx = findIdx([/^(no|no\.|number|urut)$/]);
+  const dateIdx = findIdx([/input\s*date/, /^date$/, /^tanggal$/]);
+  const clientIdx = findIdx([/^client$/, /^name$/, /^nama$/]);
+  const picIdx = findIdx([/^pic$/, /^person\s*in\s*charge$/, /^am$/]);
+  const divisionIdx = findIdx([/^divisi$/, /^division$/, /^team$/]);
+  // Performance: "Maintain Performance" atau "Result Performance" atau "Performance"
+  let perfIdx = findIdx([/maintain\s*performance/, /^performance$/]);
+  if (perfIdx === -1) {
+    // Fallback: cari "Result Performance" sebagai kolom metric
+    const resultIdx = findIdx([/result\s*performance/, /^result$/]);
+    if (resultIdx !== -1) perfIdx = resultIdx;
+  }
+  // Analysis: "Result Performance" (di schema Jan-Apr, kolom ini isinya analisa text)
+  // atau "KESIMPULAN" / "ANALISA"
+  const analysisIdx = findIdx([
+    /result\s*performance/,
+    /^kesimpulan$/,
+    /^analisa$/,
+    /^analisis$/,
+    /^conclusion$/,
+    /^note$/,
+    /^catatan$/,
+  ]);
+  // Status: cari "Status" atau default kolom terakhir
+  const statusIdx = findIdx([/^status$/, /^state$/]);
+
+  // Kalau ada kolom "No" → pakai DEFAULT_SCHEMA (col 0 = No)
+  if (noIdx !== -1) {
+    return {
+      no: noIdx,
+      date: dateIdx !== -1 ? dateIdx : DEFAULT_SCHEMA.date,
+      client: clientIdx !== -1 ? clientIdx : DEFAULT_SCHEMA.client,
+      pic: picIdx !== -1 ? picIdx : DEFAULT_SCHEMA.pic,
+      division: divisionIdx !== -1 ? divisionIdx : DEFAULT_SCHEMA.division,
+      performance: perfIdx !== -1 ? perfIdx : DEFAULT_SCHEMA.performance,
+      analysis: analysisIdx !== -1 ? analysisIdx : DEFAULT_SCHEMA.analysis,
+      status: statusIdx !== -1 ? statusIdx : DEFAULT_SCHEMA.status,
+    };
+  }
+
+  // Schema tanpa "No" (Mei+)
+  return {
+    no: undefined,
+    date: dateIdx !== -1 ? dateIdx : 0,
+    client: clientIdx !== -1 ? clientIdx : 1,
+    pic: picIdx !== -1 ? picIdx : 2,
+    division: divisionIdx !== -1 ? divisionIdx : 3,
+    performance: perfIdx !== -1 ? perfIdx : 4,
+    analysis: analysisIdx !== -1 ? analysisIdx : 5,
+    status: statusIdx !== -1 ? statusIdx : 7,
+  };
+}
+
+/**
+ * Parse satu row sheet ke struktur ParsedRow.
+ *
+ * `schema` opsional: jika tidak diberikan, pakai DEFAULT_SCHEMA.
+ */
+export function parseRow(cells: string[], rowIndex: number, schema: SheetSchema = DEFAULT_SCHEMA): ParsedRow {
   const warnings: string[] = [];
 
   // Header row detected (No | Input Date | Client | PIC | Divisi ...)
   const first = (cells[0] || "").toString().toLowerCase().trim();
-  if (first === "no" || first === "no." || first === "number") {
+  if (first === "no" || first === "no." || first === "number" || first === "input date" || first === "date" || first === "tanggal") {
     return {
       rowIndex,
       date: null,
@@ -542,24 +791,13 @@ export function parseRow(cells: string[], rowIndex: number): ParsedRow {
     };
   }
 
-  // Asumsi struktur kolom:
-  // 0: No
-  // 1: Input Date
-  // 2: Client
-  // 3: PIC
-  // 4: Divisi
-  // 5: Maintain Performance / Metrics (multi-line)
-  // 6: Result Performance / Analisa
-  // 7: Status (Send / Draft / Reviewed)
-  // 8+: kolom tambahan (jarang dipakai)
-
-  const dateRaw = cells[1] || "";
-  const clientName = (cells[2] || "").trim();
-  const picName = (cells[3] || "").trim();
-  const division = (cells[4] || "").trim();
-  const performanceText = cells[5] || "";
-  const analysisText = cells[6] || "";
-  const statusRaw = (cells[7] || "").trim();
+  const dateRaw = cells[schema.date] || "";
+  const clientName = (cells[schema.client] || "").trim();
+  const picName = (cells[schema.pic] || "").trim();
+  const division = (cells[schema.division] || "").trim();
+  const performanceText = cells[schema.performance] || "";
+  const analysisText = cells[schema.analysis] || "";
+  const statusRaw = (cells[schema.status] || "").trim();
 
   const date = parseDate(dateRaw);
 
@@ -688,15 +926,32 @@ export function parseRow(cells: string[], rowIndex: number): ParsedRow {
 
 /**
  * Parse semua rows dari CSV string[][]
+ *
+ * Auto-detect schema dari header row pertama.
  */
 export function parseAllRows(rows: string[][]): ParseResult {
   const parsed: ParsedRow[] = [];
   const errors: string[] = [];
   let skippedHeader = false;
 
+  // Detect schema dari header row (rows[0])
+  let schema: SheetSchema = DEFAULT_SCHEMA;
+  if (rows.length > 0) {
+    const headerRow = rows[0];
+    // Heuristik: kalau ada "input date" / "date" / "no" → ini header
+    const headerLower = headerRow.map((c) => (c || "").toLowerCase().trim());
+    const isHeader = headerLower.some(
+      (c) => c === "no" || c === "no." || c === "input date" || c === "date" || c === "tanggal"
+    );
+    if (isHeader) {
+      schema = detectSchema(headerRow);
+      skippedHeader = true;
+    }
+  }
+
   rows.forEach((cells, idx) => {
     try {
-      const row = parseRow(cells, idx);
+      const row = parseRow(cells, idx, schema);
       // Skip header & empty rows
       if (row.parseWarnings.includes("header-row")) {
         skippedHeader = true;

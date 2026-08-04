@@ -9,6 +9,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/reports/cron/sync",
+      "schedule": "0 2 * * *"
+    },
+    {
       "path": "/api/cron/digest?type=daily",
       "schedule": "0 0 * * *"
     },
