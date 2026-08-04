@@ -2,7 +2,7 @@
 -- Migration v52: Insert "Your Best Deal" (untuk YBD acronym matching)
 -- ============================================================================
 -- Hasil v51 step 3 menunjukkan "Your Best Deal" BELUM ada di DB.
-— Client "YBD" di sheet harus di-match ke "Your Best Deal" via acronym matching.
+-- Client "YBD" di sheet harus di-match ke "Your Best Deal" via acronym matching.
 --
 -- Run di: Supabase Dashboard > SQL Editor > Paste semua isi > RUN
 -- ============================================================================
