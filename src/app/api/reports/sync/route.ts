@@ -113,6 +113,8 @@ export async function POST(req: NextRequest) {
         durationMs: result.durationMs,
         durationSec: parseFloat(durationSec),
         sheets: result.sheets,
+        // 🆕 v2.2: Forward skipped breakdown ke frontend untuk transparency
+        skippedBreakdown: result.skippedBreakdown,
       },
       unmatchedClients: result.unmatchedClients,
       unmatchedPics: result.unmatchedPics,

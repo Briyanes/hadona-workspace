@@ -263,11 +263,12 @@ export default function ReportsPage() {
         noPeriod: number;
         dedup: number;
         unmatchedClient: number;
-        examples?: {
+        samples?: {
           noMetrics: string[];
           noClient: string[];
           noPeriod: string[];
           dedup: string[];
+          unmatchedClient: string[];
         };
       };
     };
@@ -1109,22 +1110,32 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  {/* Examples (collapsible-like, selalu tampil jika ada) */}
-                  {syncResult.summary.skippedBreakdown.examples &&
-                    syncResult.summary.skippedBreakdown.examples.dedup.length > 0 && (
-                      <div className="mt-2 rounded bg-background p-2">
-                        <p className="mb-1 text-[9px] font-semibold uppercase text-muted">
-                          Contoh row dedup (yang sudah ada di DB)
-                        </p>
-                        <ul className="space-y-0.5 text-[9px] text-muted">
-                          {syncResult.summary.skippedBreakdown.examples.dedup.slice(0, 3).map((ex, i) => (
-                            <li key={i} className="font-mono">
-                              {ex}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  {/* Samples — tampilkan contoh per kategori untuk debugging */}
+                  {syncResult.summary.skippedBreakdown.samples && (
+                    <div className="mt-2 space-y-2">
+                      {([
+                        ["unmatchedClient", "⚠️ Client tidak dikenali"],
+                        ["dedup", "🔁 Row dedup (sudah ada)"],
+                        ["noMetrics", "📝 Baris naratif"],
+                        ["noPeriod", "📅 Format tanggal tidak terdeteksi"],
+                      ] as const).map(([key, label]) => {
+                        const items = syncResult.summary.skippedBreakdown!.samples?.[key] || [];
+                        if (items.length === 0) return null;
+                        return (
+                          <div key={key} className="rounded bg-background p-2">
+                            <p className="mb-1 text-[9px] font-semibold uppercase text-muted">{label}</p>
+                            <ul className="space-y-0.5 text-[9px] text-muted">
+                              {items.map((ex: string, i: number) => (
+                                <li key={i} className="font-mono">
+                                  {ex}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
