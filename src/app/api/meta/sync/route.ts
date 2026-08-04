@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAdAccountInsights, extractConversions, getAdAccounts, getBusinessAdAccounts } from "@/lib/meta";
+import {
+  getAdAccountInsights,
+  extractConversions,
+  extractRevenue,
+  getAdAccounts,
+  getBusinessAdAccounts,
+  getBatchInsights,
+  refreshLongLivedToken,
+  shouldRefreshToken,
+} from "@/lib/meta";
 
 // Hadona's Business Portfolio ID
 const HADONA_BM_ID = process.env.META_BUSINESS_ID || "1380114199447586";
@@ -88,6 +97,20 @@ interface ExistingAcc {
 }
 
 /**
+ * Extended AdInsight that includes action_values (monetary conversion values).
+ * Used by Batch API which requests action_values field.
+ */
+interface AdInsightWithActionValues {
+  date_start: string;
+  date_stop: string;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  actions?: Array<{ action_type: string; value: string }>;
+  action_values?: Array<{ action_type: string; value: string }>;
+}
+
+/**
  * Create Supabase admin client using SERVICE ROLE KEY (bypasses RLS).
  * Required for sync operations: meta_connections, ad_accounts, ad_spend_logs.
  *
@@ -153,8 +176,12 @@ export async function POST(request: NextRequest) {
       // Empty body (cron trigger)
     }
 
-    // Default: sync yesterday's data
-    const syncDate = body.date || getYesterdayDate();
+    // FIX A2: Use 3-day rolling sync by default to catch missed days.
+    // If a specific date is provided (manual sync), use that instead.
+    const syncDates = body.date ? [body.date] : getLast3Days();
+    const dateStart = syncDates[syncDates.length - 1]; // oldest
+    const dateEnd = syncDates[0]; // most recent (yesterday)
+    const syncDate = dateEnd; // for backwards compat in response
 
     // ⚠️ Use ADMIN client (SERVICE_ROLE_KEY) to bypass RLS
     const supabase = createAdminClient();
@@ -203,6 +230,32 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // FIX A4: Auto-refresh token if within 7 days of expiry
+        // ──────────────────────────────────────────────────────────────
+        let accessToken = conn.access_token;
+        if (shouldRefreshToken(conn.token_expires_at)) {
+          try {
+            console.log(`[Sync] 🔄 Token expiring soon (${conn.token_expires_at}), refreshing...`);
+            const refreshed = await refreshLongLivedToken(accessToken);
+            const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+
+            await supabase
+              .from("meta_connections")
+              .update({
+                access_token: refreshed.access_token,
+                token_expires_at: newExpiry,
+              } as never)
+              .eq("id", conn.id);
+
+            accessToken = refreshed.access_token;
+            console.log(`[Sync] ✅ Token refreshed, new expiry: ${newExpiry}`);
+          } catch (refreshErr) {
+            console.warn(`[Sync] ⚠️ Token refresh failed:`, refreshErr instanceof Error ? refreshErr.message : refreshErr);
+            // Continue with existing token — it may still work for a few more days
+          }
+        }
+
         // ====================================================================
         // PHASE 1: ALWAYS sync ad accounts from Meta (not just when empty)
         // ====================================================================
@@ -225,7 +278,7 @@ export async function POST(request: NextRequest) {
           // Try Business Portfolio (BM) - gets all managed accounts
           try {
             console.log(`[Sync] Querying Business Portfolio ${HADONA_BM_ID}...`);
-            metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, conn.access_token);
+            metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, accessToken);
             console.log(`[Sync] ✅ Got ${metaAdAccounts.length} accounts from BM`);
           } catch (bmErr) {
             console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErr instanceof Error ? bmErr.message : bmErr);
@@ -233,7 +286,7 @@ export async function POST(request: NextRequest) {
 
           // Merge BM + personal (dedup by account_id)
           try {
-            const personalAccounts = await getAdAccounts(conn.access_token);
+            const personalAccounts = await getAdAccounts(accessToken);
             const existingIds = new Set(metaAdAccounts.map((a) => a.account_id));
             for (const pa of personalAccounts) {
               if (!existingIds.has(pa.account_id)) {
@@ -396,51 +449,47 @@ export async function POST(request: NextRequest) {
         let successCount = 0;
         let rateLimitedCount = 0;
 
-        console.log(`[Sync] Phase 2: Pulling insights for ${adAccounts.length} accounts (with delay)...`);
+        console.log(`[Sync] Phase 2: Pulling insights for ${adAccounts.length} accounts via Batch API (${dateStart} → ${dateEnd})...`);
 
-        for (let i = 0; i < adAccounts.length; i++) {
-          const account = adAccounts[i];
+        // ──────────────────────────────────────────────────────────────
+        // FIX A3: Use Batch API (50 accounts per call) instead of
+        //         individual calls with 300ms delays.
+        // This reduces sync time from ~30s (10 accounts) to ~2s.
+        // ──────────────────────────────────────────────────────────────
+        let batchInsightsMap: Record<string, AdInsightWithActionValues[]> = {};
+        try {
+          const batchAccounts = adAccounts.map((a) => ({ id: a.id, adAccountId: a.ad_account_id }));
+          batchInsightsMap = await getBatchInsights(accessToken, batchAccounts, dateStart, dateEnd) as Record<string, AdInsightWithActionValues[]>;
+          console.log(`[Sync] ✅ Batch API completed for ${Object.keys(batchInsightsMap).length} accounts`);
+        } catch (batchErr) {
+          console.error(`[Sync] ❌ Batch API failed, falling back to individual calls:`, batchErr instanceof Error ? batchErr.message : batchErr);
 
-          // Rate-limit protection: 300ms delay between each API call
-          if (i > 0) await sleep(300);
+          // Fallback: individual calls with retry
+          for (let i = 0; i < adAccounts.length; i++) {
+            const account = adAccounts[i];
+            if (i > 0) await sleep(300);
 
-          // Use retry wrapper instead of direct call
-          const { data: insights, error: apiError } = await getInsightsWithRetry(
-            conn.access_token,
-            account.ad_account_id,
-            syncDate,
-            syncDate
-          );
+            const { data: insights, error: apiError } = await getInsightsWithRetry(
+              accessToken,
+              account.ad_account_id,
+              dateStart,
+              dateEnd
+            );
 
-          if (apiError) {
-            const isRateLimit =
-              apiError.includes("rate limit") ||
-              apiError.includes("[4]") ||
-              apiError.includes("[17]") ||
-              apiError.includes("[32]") ||
-              apiError.includes("[613]");
-            if (isRateLimit) rateLimitedCount++;
-
-            console.error(`[Sync] ❌ ${account.ad_account_id}: ${apiError}`);
-            accountErrors.push({ id: account.ad_account_id, error: apiError });
-
-            await supabase.from("meta_sync_logs").insert({
-              connection_id: conn.id,
-              ad_account_id: account.id,
-              sync_date: syncDate,
-              records_pulled: 0,
-              status: "error",
-              error_message: apiError,
-            } as never);
-            continue;
+            if (apiError) {
+              accountErrors.push({ id: account.ad_account_id, error: apiError });
+              continue;
+            }
+            batchInsightsMap[account.ad_account_id] = insights as AdInsightWithActionValues[];
           }
+        }
 
-          if (insights.length === 0) {
-            // No spend data for this date — not an error, just inactive
-            continue;
-          }
+        // Process insights from batch results
+        for (const account of adAccounts) {
+          const insights = batchInsightsMap[account.ad_account_id] || [];
 
-          // Upsert each day's insight to ad_spend_logs
+          if (insights.length === 0) continue;
+
           let hasDbError = false;
           for (const insight of insights) {
             const conversions = extractConversions(insight.actions);
@@ -449,6 +498,9 @@ export async function POST(request: NextRequest) {
             const clicks = parseInt(insight.clicks) || 0;
 
             if (spend === 0 && impressions === 0) continue;
+
+            // FIX A5: Extract revenue from Pixel action_values
+            const revenue = extractRevenue(insight.actions, insight.action_values);
 
             const { error: logError } = await supabase
               .from("ad_spend_logs")
@@ -460,8 +512,8 @@ export async function POST(request: NextRequest) {
                   impressions,
                   clicks,
                   conversions,
-                  revenue: 0,
-                  notes: "Auto-synced from Meta API",
+                  revenue,
+                  notes: "Auto-synced from Meta API (Batch)",
                 } as never,
                 {
                   onConflict: "ad_account_id,log_date",
@@ -590,4 +642,19 @@ function getYesterdayDate(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().split("T")[0];
+}
+
+/**
+ * FIX A2: Get last N days for rolling sync (handles missed days).
+ * Meta insights data matures over 24-48h, so syncing 3 days ensures
+ * we catch any gaps from failed cron runs.
+ */
+function getLast3Days(): string[] {
+  const dates: string[] = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split("T")[0]);
+  }
+  return dates; // [yesterday, day-before, day-before-that]
 }

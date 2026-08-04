@@ -8,9 +8,10 @@ const META_GRAPH_BASE = `https://graph.facebook.com/${META_API_VERSION}`;
 
 // Note: Only request scopes that are available in Development Mode without App Review.
 // "business_management" and "read_insights" cause "Invalid Scopes" error.
+// FIX A1: Removed "ads_management" — we only READ data, never modify ads.
+// This reduces App Review friction and improves security posture.
 const SCOPES = [
-  "ads_read",          // Read ad account insights
-  "ads_management",    // Manage ads
+  "ads_read",          // Read ad account insights (sufficient for sync)
 ].join(",");
 
 /**
@@ -270,6 +271,50 @@ export async function getAdAccountInsights(
 }
 
 /**
+ * FIX A5: Extract purchase revenue from Meta Pixel actions array.
+ * Meta stores purchase value in action_values, not actions.
+ *
+ * @param actions - The actions array from insights
+ * @param actionValues - The action_values array (contains monetary values)
+ * @returns Revenue amount in account currency
+ */
+export function extractRevenue(
+  actions?: Array<{ action_type: string; value: string }>,
+  actionValues?: Array<{ action_type: string; value: string }>
+): number {
+  // Primary: action_values contains the monetary value of conversions
+  if (actionValues && actionValues.length > 0) {
+    const revenueTypes = [
+      "offsite_conversion.fb_pixel_purchase",
+      "offsite_conversion.fb_pixel_add_to_cart",
+      "offsite_conversion.fb_pixel_initiate_checkout",
+      "omni_purchase",
+      "omni_add_to_cart",
+    ];
+    let total = 0;
+    for (const av of actionValues) {
+      if (revenueTypes.includes(av.action_type)) {
+        total += parseFloat(av.value) || 0;
+      }
+    }
+    if (total > 0) return total;
+  }
+
+  // Fallback: If we have purchase count but no value, estimate from actions
+  if (actions && actions.length > 0) {
+    const purchaseAction = actions.find(
+      (a) => a.action_type === "offsite_conversion.fb_pixel_purchase" || a.action_type === "purchase"
+    );
+    if (purchaseAction) {
+      // Can't extract actual revenue without action_values — return 0 to avoid inaccurate data
+      return 0;
+    }
+  }
+
+  return 0;
+}
+
+/**
  * Helper: Extract conversion count from actions array
  */
 export function extractConversions(actions?: Array<{ action_type: string; value: string }>): number {
@@ -292,6 +337,136 @@ export function extractConversions(actions?: Array<{ action_type: string; value:
     }
   }
   return total;
+}
+
+/**
+ * FIX A3: Batch API — Fetch insights for multiple ad accounts in a single HTTP call.
+ * Meta's Batch API supports up to 50 requests per batch.
+ *
+ * @param accessToken - User access token
+ * @param accounts - Array of { id, adAccountId }
+ * @param dateStart - "YYYY-MM-DD"
+ * @param dateEnd - "YYYY-MM-DD"
+ * @returns Map of adAccountId → AdInsight[]
+ */
+export async function getBatchInsights(
+  accessToken: string,
+  accounts: Array<{ id: string; adAccountId: string }>,
+  dateStart: string,
+  dateEnd: string
+): Promise<Record<string, AdInsight[]>> {
+  const results: Record<string, AdInsight[]> = {};
+  const BATCH_SIZE = 50; // Meta allows max 50 per batch
+
+  // Process in chunks of 50
+  for (let i = 0; i < accounts.length; i += BATCH_SIZE) {
+    const batch = accounts.slice(i, i + BATCH_SIZE);
+
+    // Build batch payload
+    const batchPayload = batch.map((acc) => {
+      const actId = acc.adAccountId.startsWith("act_")
+        ? acc.adAccountId
+        : `act_${acc.adAccountId}`;
+
+      const params = new URLSearchParams({
+        fields: "spend,impressions,clicks,actions,action_values",
+        time_range: JSON.stringify({ since: dateStart, until: dateEnd }),
+        level: "account",
+        time_increment: "1",
+      });
+
+      return {
+        method: "GET",
+        relative_url: `${actId}/insights?${params.toString()}`,
+      };
+    });
+
+    const url = `${META_GRAPH_BASE}/?batch=${JSON.stringify(batchPayload)}&access_token=${accessToken}`;
+
+    console.log(`[Meta] Batch API: Fetching insights for ${batch.length} accounts (chunk ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(accounts.length / BATCH_SIZE)})`);
+
+    const res = await fetch(url, { method: "POST" });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      const errMsg = data.error?.message || `HTTP ${res.status}`;
+      console.error(`[Meta] Batch API error: ${errMsg}`);
+      continue;
+    }
+
+    // Process batch responses
+    for (let j = 0; j < batch.length; j++) {
+      const acc = batch[j];
+      const batchResponse = data[j];
+
+      if (!batchResponse || batchResponse.code !== 200) {
+        const errMsg = batchResponse?.body ? JSON.parse(batchResponse.body).error?.message : "No response";
+        console.warn(`[Meta] Batch item failed for ${acc.adAccountId}: ${errMsg}`);
+        results[acc.adAccountId] = [];
+        continue;
+      }
+
+      const body = JSON.parse(batchResponse.body);
+      results[acc.adAccountId] = body.data || [];
+    }
+
+    // 500ms delay between batch chunks to stay within rate limits
+    if (i + BATCH_SIZE < accounts.length) {
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+
+  return results;
+}
+
+/**
+ * FIX A4: Refresh a long-lived user token.
+ * Meta long-lived tokens expire after 60 days. This endpoint extends them.
+ *
+ * Note: Meta only allows refreshing tokens that have > 24h remaining.
+ * If the token is already expired, user must re-authenticate via OAuth.
+ *
+ * @param accessToken - The current long-lived access token
+ * @returns New token + expiry date
+ */
+export async function refreshLongLivedToken(accessToken: string): Promise<{
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}> {
+  const appId = process.env.META_APP_ID;
+  const appSecret = process.env.META_APP_SECRET;
+  if (!appId || !appSecret) throw new Error("META_APP_ID or META_APP_SECRET not set");
+
+  const url = `${META_GRAPH_BASE}/oauth/access_token?${new URLSearchParams({
+    grant_type: "fb_exchange_token",
+    client_id: appId,
+    client_secret: appSecret,
+    fb_exchange_token: accessToken,
+  })}`;
+
+  const res = await fetch(url, { method: "GET" });
+  const data = await res.json();
+
+  if (data.error) {
+    throw new Error(`Meta Token Refresh Error: ${data.error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * FIX A4: Check if token needs refresh (within 7 days of expiry).
+ */
+export function shouldRefreshToken(expiresAt: string | null): boolean {
+  if (!expiresAt) return false;
+
+  const expiry = new Date(expiresAt);
+  const now = new Date();
+  const daysToExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+  // Refresh if within 7 days of expiry (and not already expired)
+  return daysToExpiry > 0 && daysToExpiry <= 7;
 }
 
 /**
