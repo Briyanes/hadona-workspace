@@ -56,17 +56,29 @@ export async function GET(request: NextRequest) {
     console.log("[Meta Callback] Step 1 ✅ Token received (expires in:", tokenData.expires_in, "s)");
 
     // Step 2: Exchange for long-lived token (60 days)
-    console.log("[Meta Callback] Step 2: Getting long-lived token...");
-    let longLivedToken = tokenData.access_token;
-    let expiresInSeconds = tokenData.expires_in || 5184000; // default 60 days
+    // FIX B1: Long-lived exchange is MANDATORY. Short-lived tokens expire in 1-2 hours
+    // and cause Error [190] on sync. No silent fallback!
+    console.log("[Meta Callback] Step 2: Getting long-lived token (mandatory)...");
+    let longLivedToken: string;
+    let expiresInSeconds: number;
 
     try {
       const longLived = await getLongLivedToken(tokenData.access_token);
       longLivedToken = longLived.access_token;
-      expiresInSeconds = longLived.expires_in || expiresInSeconds;
-      console.log("[Meta Callback] Step 2 ✅ Long-lived token received");
+      expiresInSeconds = longLived.expires_in || 5184000; // 60 days
+
+      // Sanity check: long-lived tokens should have expires_in >= 86400 (1 day)
+      if (expiresInSeconds < 3600) {
+        throw new Error(`Long-lived exchange returned suspiciously short expiry: ${expiresInSeconds}s. App may be in Development Mode without proper config.`);
+      }
+
+      console.log("[Meta Callback] Step 2 ✅ Long-lived token received (expires in", expiresInSeconds, "s)");
     } catch (e) {
-      console.warn("[Meta Callback] Step 2 ⚠️ Could not get long-lived token:", e instanceof Error ? e.message : e);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error("[Meta Callback] Step 2 ❌ Long-lived exchange FAILED:", errMsg);
+      return NextResponse.redirect(
+        new URL(`/ads-spend?meta_error=${encodeURIComponent("Failed to get long-lived token: " + errMsg)}`, origin)
+      );
     }
 
     // Step 3: Get Meta user profile

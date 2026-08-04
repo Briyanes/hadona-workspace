@@ -275,13 +275,21 @@ export async function POST(request: NextRequest) {
             timezone_name: string;
           }> = [];
 
+          // FIX B2: Track [190] errors — if ALL API calls fail with [190],
+          // the token is invalid and we should mark it immediately.
+          let tokenInvalidError: string | null = null;
+
           // Try Business Portfolio (BM) - gets all managed accounts
           try {
             console.log(`[Sync] Querying Business Portfolio ${HADONA_BM_ID}...`);
             metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, accessToken);
             console.log(`[Sync] ✅ Got ${metaAdAccounts.length} accounts from BM`);
           } catch (bmErr) {
-            console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErr instanceof Error ? bmErr.message : bmErr);
+            const bmErrMsg = bmErr instanceof Error ? bmErr.message : String(bmErr);
+            console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErrMsg);
+            if (bmErrMsg.includes("[190]") || bmErrMsg.includes("190")) {
+              tokenInvalidError = bmErrMsg;
+            }
           }
 
           // Merge BM + personal (dedup by account_id)
@@ -294,8 +302,33 @@ export async function POST(request: NextRequest) {
               }
             }
             console.log(`[Sync] Total unique accounts after merge: ${metaAdAccounts.length}`);
-          } catch {
-            // Personal accounts fetch is optional
+          } catch (personalErr) {
+            const personalErrMsg = personalErr instanceof Error ? personalErr.message : String(personalErr);
+            console.warn(`[Sync] ⚠️ Personal accounts fetch failed:`, personalErrMsg);
+            if (personalErrMsg.includes("[190]") || personalErrMsg.includes("190")) {
+              tokenInvalidError = personalErrMsg;
+            }
+          }
+
+          // FIX B2: If token is invalid [190], skip everything and mark connection
+          if (tokenInvalidError && metaAdAccounts.length === 0) {
+            console.error(`[Sync] 🔴 Token INVALID [190] for connection ${conn.id}. Marking as token_invalid.`);
+            await supabase
+              .from("meta_connections")
+              .update({
+                last_sync_status: "token_invalid",
+                last_sync_error: "Token invalid atau expired (Error 190). Klik 'Reconnect Meta' untuk menyambungkan ulang.",
+                token_status: "invalid",
+              } as never)
+              .eq("id", conn.id);
+
+            results.push({
+              connection_id: conn.id,
+              fb_user: conn.fb_user_name,
+              status: "token_invalid",
+              error: "Token invalid [190] — reconnect required",
+            });
+            continue; // Skip to next connection
           }
 
           // 1b. Fetch ALL existing META accounts from DB (ONE query)
@@ -462,7 +495,29 @@ export async function POST(request: NextRequest) {
           batchInsightsMap = await getBatchInsights(accessToken, batchAccounts, dateStart, dateEnd) as Record<string, AdInsightWithActionValues[]>;
           console.log(`[Sync] ✅ Batch API completed for ${Object.keys(batchInsightsMap).length} accounts`);
         } catch (batchErr) {
-          console.error(`[Sync] ❌ Batch API failed, falling back to individual calls:`, batchErr instanceof Error ? batchErr.message : batchErr);
+          const batchErrMsg = batchErr instanceof Error ? batchErr.message : String(batchErr);
+          console.error(`[Sync] ❌ Batch API failed, falling back to individual calls:`, batchErrMsg);
+
+          // FIX B2: If batch fails with [190], token is invalid — mark and skip
+          if (batchErrMsg.includes("[190]") || batchErrMsg.includes("190")) {
+            console.error(`[Sync] 🔴 Batch API Error [190] — Token invalid for connection ${conn.id}`);
+            await supabase
+              .from("meta_connections")
+              .update({
+                last_sync_status: "token_invalid",
+                last_sync_error: "Token invalid atau expired (Error 190). Klik 'Reconnect Meta' untuk menyambungkan ulang.",
+                token_status: "invalid",
+              } as never)
+              .eq("id", conn.id);
+
+            results.push({
+              connection_id: conn.id,
+              fb_user: conn.fb_user_name,
+              status: "token_invalid",
+              error: "Token invalid [190] — reconnect required",
+            });
+            continue;
+          }
 
           // Fallback: individual calls with retry
           for (let i = 0; i < adAccounts.length; i++) {

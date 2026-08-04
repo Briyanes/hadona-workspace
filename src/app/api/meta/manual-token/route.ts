@@ -59,21 +59,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Exchange for long-lived token
-    console.log("[Meta Manual] Step 2: Exchanging for long-lived token...");
-    let longLivedToken = token.trim();
-    let expiresInSeconds = 5184000; // 60 days default
+    // FIX B1: Long-lived exchange is MANDATORY. Short-lived tokens expire in 1-2 hours
+    // and cause Error [190] on sync. No silent fallback!
+    console.log("[Meta Manual] Step 2: Exchanging for long-lived token (mandatory)...");
+    let longLivedToken: string;
+    let expiresInSeconds: number;
 
     try {
       const longLived = await getLongLivedToken(token.trim());
       longLivedToken = longLived.access_token;
-      expiresInSeconds = longLived.expires_in || expiresInSeconds;
+      expiresInSeconds = longLived.expires_in || 5184000; // 60 days
+
+      // Sanity check
+      if (expiresInSeconds < 3600) {
+        throw new Error(`Long-lived exchange returned suspiciously short expiry: ${expiresInSeconds}s.`);
+      }
+
       console.log("[Meta Manual] ✅ Long-lived token received (expires in", expiresInSeconds, "s)");
     } catch (e) {
-      console.warn(
-        "[Meta Manual] ⚠️ Could not exchange for long-lived token:",
-        e instanceof Error ? e.message : e
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error("[Meta Manual] ❌ Long-lived exchange FAILED:", errMsg);
+      return NextResponse.json(
+        {
+          error: "Gagal exchange ke long-lived token. Token mungkin sudah expired atau App dalam Development Mode. Error: " + errMsg,
+        },
+        { status: 400 }
       );
-      // Continue with the short-lived token — still works for ~1-2 hours
     }
 
     // Step 3: Get ad accounts

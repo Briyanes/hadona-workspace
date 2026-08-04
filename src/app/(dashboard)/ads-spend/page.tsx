@@ -1107,62 +1107,109 @@ export default function AdsSpendPage() {
 
       {/* Meta Connection Banner */}
       {metaConnection ? (
-        <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <CheckCircle2 className="text-primary" size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900">
-                Meta Ads Terhubung: {metaConnection.fb_user_name || "Facebook User"}
-              </p>
-              <p className="text-[11px] text-muted">
-                {metaConnection.auto_sync ? "✅ Auto-sync aktif" : "⏸️ Auto-sync off"}
-                {metaConnection.last_sync_at && (
-                  <>
-                    {" • "}
-                    Sync terakhir:{" "}
-                    {new Date(metaConnection.last_sync_at).toLocaleString("id-ID", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </>
+        (() => {
+          // FIX B4: Determine token status for UI display
+          const isTokenInvalid = metaConnection.token_status === "invalid" || 
+            metaConnection.last_sync_status === "token_invalid";
+          const isTokenExpiring = metaConnection.token_status === "expiring_soon" ||
+            (metaConnection.token_expires_at && 
+             new Date(metaConnection.token_expires_at) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) &&
+             new Date(metaConnection.token_expires_at) > new Date());
+          
+          const statusIcon = isTokenInvalid ? AlertCircle : isTokenExpiring ? AlertTriangle : CheckCircle2;
+          const StatusIcon = statusIcon;
+          const iconColor = isTokenInvalid ? "text-danger" : isTokenExpiring ? "text-warning" : "text-primary";
+          const iconBg = isTokenInvalid ? "bg-danger/10" : isTokenExpiring ? "bg-warning/10" : "bg-primary/10";
+
+          return (
+            <div className={cn(
+              "card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between",
+              isTokenInvalid && "border-danger/30 bg-danger/5"
+            )}>
+              <div className="flex items-center gap-3">
+                <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", iconBg)}>
+                  <StatusIcon className={iconColor} size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Meta Ads Terhubung: {metaConnection.fb_user_name || "Facebook User"}
+                    {isTokenInvalid && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
+                        ⚠️ TOKEN INVALID
+                      </span>
+                    )}
+                    {isTokenExpiring && !isTokenInvalid && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                        ⏰ EXPIRING SOON
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[11px] text-muted">
+                    {metaConnection.auto_sync ? "✅ Auto-sync aktif" : "⏸️ Auto-sync off"}
+                    {metaConnection.last_sync_at && (
+                      <>
+                        {" • "}
+                        Sync terakhir:{" "}
+                        {new Date(metaConnection.last_sync_at).toLocaleString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </>
+                    )}
+                    {metaConnection.token_expires_at && (
+                      <>
+                        {" • "}
+                        Token exp:{" "}
+                        <span className={isTokenInvalid ? "text-danger font-medium" : isTokenExpiring ? "text-warning font-medium" : ""}>
+                          {new Date(metaConnection.token_expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      </>
+                    )}
+                    {(metaConnection.last_sync_status === "error" || metaConnection.last_sync_status === "token_invalid") && metaConnection.last_sync_error && (
+                      <span className="text-danger block mt-0.5">
+                        ❌ {metaConnection.last_sync_error}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {isTokenInvalid && (
+                  <a
+                    href="/api/meta/auth"
+                    className="flex items-center gap-1.5 rounded-md bg-danger px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-danger/90"
+                  >
+                    <Link2 size={14} /> Reconnect Meta
+                  </a>
                 )}
-                {metaConnection.last_sync_status === "error" && (
-                  <span className="text-danger">
-                    {" • "}
-                    Error: {metaConnection.last_sync_error}
-                  </span>
-                )}
-              </p>
+                <button
+                  onClick={handleSyncNow}
+                  disabled={syncing || isTokenInvalid}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background disabled:opacity-50"
+                  title={isTokenInvalid ? "Token invalid — reconnect dulu" : undefined}
+                >
+                  {syncing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={14} /> Sync Now
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDisconnectMeta}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-danger transition-colors hover:bg-danger/5"
+                >
+                  <Unlink size={14} /> Disconnect
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSyncNow}
-              disabled={syncing}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background disabled:opacity-50"
-            >
-              {syncing ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" /> Syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={14} /> Sync Now
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleDisconnectMeta}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-danger transition-colors hover:bg-danger/5"
-            >
-              <Unlink size={14} /> Disconnect
-            </button>
-          </div>
-        </div>
+          );
+        })()
       ) : (
         <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">

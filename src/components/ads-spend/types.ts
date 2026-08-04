@@ -52,6 +52,7 @@ export interface MetaConnection {
   last_sync_status: string | null;
   last_sync_error: string | null;
   token_expires_at: string | null;
+  token_status?: string | null; // valid | expiring_soon | invalid | unknown
 }
 
 export interface TrendData {
