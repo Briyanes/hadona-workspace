@@ -206,6 +206,10 @@ export async function syncReportsFromSheet(
         }
 
         // ── Build payload ──
+        // NOTE: Kolom last_synced_at / sheet_source / sheet_gidBELUM ada di
+        // production DB (migration v47 belum dijalankan user). Sync tetap work
+        // tanpa metadata ini — hanya tracking info. Setelah user run migration
+        // via Supabase Dashboard, kita re-enable.
         const objective = row.detectedObjective || "META_CTWA";
         const status = ["draft", "submitted", "reviewed"].includes(row.status)
           ? row.status
@@ -222,9 +226,8 @@ export async function syncReportsFromSheet(
           objective,
           platform: row.platform,
           source_sheet_url: sheetUrl,
-          last_synced_at: new Date().toISOString(),
-          sheet_source: sheet.name,
-          sheet_gid: sheet.gid,
+          // 🔥 DISABLED sampai migration v47 dijalankan di production:
+          // last_synced_at, sheet_source, sheet_gid
         };
 
         const reportKey = `${clientId}|${periodStart}`;
