@@ -495,6 +495,25 @@ export default function ReportsPage() {
     setPreviousMetrics({});
   }
 
+  // ─── Escape key + body scroll lock untuk modal ───
+  useEffect(() => {
+    if (!showModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeModal();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showModal]);
+
   async function handleDelete(id: string) {
     if (!confirm("Hapus laporan ini? Tindakan tidak dapat dibatalkan.")) return;
     try {
@@ -939,8 +958,16 @@ export default function ReportsPage() {
 
       {/* Sync Result Modal — tampilkan detail hasil sinkronisasi */}
       {showSyncResult && syncResult && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 w-full max-w-2xl rounded-lg border border-border bg-surface shadow-xl">
+        <div
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSyncResult(false);
+          }}
+        >
+          <div
+            className="my-4 w-full max-w-2xl rounded-lg border border-border bg-surface shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">🔄 Hasil Sinkronisasi</h2>
@@ -1315,8 +1342,16 @@ export default function ReportsPage() {
       {/* CREATE/EDIT MODAL                              */}
       {/* ════════════════════════════════════════════ */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+        >
+          <div
+            className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
@@ -1772,8 +1807,16 @@ export default function ReportsPage() {
       {/* DETAIL VIEW MODAL                              */}
       {/* ════════════════════════════════════════════ */}
       {detailReport && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="print-area my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+        <div
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDetailReport(null);
+          }}
+        >
+          <div
+            className="print-area my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Print-only header */}
             <div className="print-header">
               <h1 className="text-xl font-bold">Hadona Workspace — Weekly Report</h1>
