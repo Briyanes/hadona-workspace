@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    let body: { connection_id?: string; date?: string } = {};
+    let body: { connection_id?: string; date?: string; days_back?: number } = {};
     try {
       body = await request.json();
     } catch {
@@ -178,7 +178,9 @@ export async function POST(request: NextRequest) {
 
     // FIX A2: Use 3-day rolling sync by default to catch missed days.
     // If a specific date is provided (manual sync), use that instead.
-    const syncDates = body.date ? [body.date] : getLast3Days();
+    // FIX: Support days_back param for historical backfill (max 30 days).
+    const daysBack = Math.min(body.days_back || 3, 30);
+    const syncDates = body.date ? [body.date] : getLastNDays(daysBack);
     const dateStart = syncDates[syncDates.length - 1]; // oldest
     const dateEnd = syncDates[0]; // most recent (yesterday)
     const syncDate = dateEnd; // for backwards compat in response
@@ -730,12 +732,17 @@ function getYesterdayDate(): string {
  * Meta insights data matures over 24-48h, so syncing 3 days ensures
  * we catch any gaps from failed cron runs.
  */
-function getLast3Days(): string[] {
+function getLastNDays(n: number): string[] {
   const dates: string[] = [];
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= n; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dates.push(d.toISOString().split("T")[0]);
   }
-  return dates; // [yesterday, day-before, day-before-that]
+  return dates; // [yesterday, day-before, ..., n-days-ago]
+}
+
+/** Backwards compat wrapper */
+function getLast3Days(): string[] {
+  return getLastNDays(3);
 }

@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-08-04T16:33:59.412Z",
+  "syncButtonEnabled": true,
+  "syncApiStatus": 200,
+  "syncResponse": {
+    "sync_method": "admin_client",
+    "success": true,
+    "date": "2026-08-03",
+    "connections_synced": 1,
+    "successful": 1,
+    "errors": 0,
+    "total_records": 0,
+    "accounts_imported": 54,
+    "accounts_matched": 1,
+    "details": [
+      {
+        "connection_id": "1345e154-8bb3-45c3-806e-fefb1eef8675",
+        "fb_user": "Gilberth Smith",
+        "status": "success",
+        "records_synced": 0,
+        "accounts_auto_imported": 54,
+        "accounts_name_matched": 1,
+        "total_ad_accounts": 78,
+        "errors": []
+      }
+    ]
+  },
+  "kpiAfterSync": [
+    "Total Daily BudgetRp 062 active accounts",
+    "Total RemainingRp 0active budgets",
+    "Today's SpendRp 0Revenue: Rp 0",
+    "Low Budget Alert0ROAS today: 0.00x"
+  ],
+  "toasts": [],
+  "consoleErrors": []
+}

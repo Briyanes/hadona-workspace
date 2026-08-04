@@ -380,11 +380,17 @@ export async function getBatchInsights(
       };
     });
 
-    const url = `${META_GRAPH_BASE}/?batch=${JSON.stringify(batchPayload)}&access_token=${accessToken}`;
-
     console.log(`[Meta] Batch API: Fetching insights for ${batch.length} accounts (chunk ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(accounts.length / BATCH_SIZE)})`);
 
-    const res = await fetch(url, { method: "POST" });
+    // FIX: Send batch payload in POST body, NOT in URL query string.
+    // With 50 accounts, the URL would be 15,000+ chars and silently fail.
+    const res = await fetch(`${META_GRAPH_BASE}/?access_token=${accessToken}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        batch: JSON.stringify(batchPayload),
+      }),
+    });
     const data = await res.json();
 
     if (!res.ok || data.error) {
