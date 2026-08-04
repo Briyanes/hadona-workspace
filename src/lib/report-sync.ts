@@ -135,10 +135,11 @@ export async function syncReportsFromSheet(
   // ⚠️ LOAD ALL REPORTS (no URL filter) — defense in depth:
   // Kalau ada reports yang di-insert dengan sheet URL beda / NULL sebelumnya,
   // tetap ke-detect sebagai existing (idempotent upsert, bukan insert baru).
+  // 🆕 v3 (Bug Fix): SELECT juga platform untuk composite key baru.
   const [{ data: dbClients }, { data: dbProfiles }, { data: dbExistingReports }] = await Promise.all([
     supabase.from("clients").select("id, name"),
     supabase.from("profiles").select("id, full_name"),
-    supabase.from("weekly_reports").select("id, client_id, period_start, period_end"),
+    supabase.from("weekly_reports").select("id, client_id, period_start, period_end, platform"),
   ]);
   console.log(
     `[sync-v2] Loaded ${dbClients?.length || 0} clients, ${dbProfiles?.length || 0} profiles, ${dbExistingReports?.length || 0} existing reports in ${Date.now() - tLoadStart}ms`
@@ -147,11 +148,17 @@ export async function syncReportsFromSheet(
   const clients: Array<{ id: string; name: string }> = dbClients || [];
   const profiles: Array<{ id: string; full_name: string }> = dbProfiles || [];
 
-  // Map existing reports: key = "client_id|period_start" → id
+  // 🆕 v3 (Bug Fix): Map existing reports dengan composite key baru
+  // yang include platform. Query di atas sudah select platform, jadi kita
+  // bangun key: "client_id|period_start|platform" untuk match dengan reportKey baru.
+  //
+  // Backward-compat: juga set key tanpa platform (untuk report lama yang
+  // platform-nya NULL — dianggap UNKNOWN supaya tetap konsisten).
   const existingReportsMap = new Map<string, string>();
   for (const r of dbExistingReports || []) {
-    const key = `${r.client_id}|${r.period_start}`;
-    existingReportsMap.set(key, r.id);
+    const platform = (r as { platform?: string | null }).platform || "UNKNOWN";
+    const keyNew = `${r.client_id}|${r.period_start}|${platform}`;
+    existingReportsMap.set(keyNew, r.id);
   }
 
   // ── 4. Cache untuk performa fuzzy match ─────────────────────────────────
@@ -318,7 +325,13 @@ export async function syncReportsFromSheet(
           sheet_gid: sheet.gid,
         };
 
-        const reportKey = `${clientId}|${periodStart}`;
+        // 🆕 v3 (Bug Fix): Include platform in dedup key.
+        // BUG SEBELUMNYA: reportKey = `${clientId}|${periodStart}` tidak include platform,
+        // sehingga Meta ADS & Google ADS untuk client+period yang sama dianggap duplikat
+        // (164 row di-skip pada sheet Janury-Juli '26).
+        // FIX: Tambahkan platform ke key → setiap platform = entry terpisah.
+        const platformKey = row.platform || "UNKNOWN";
+        const reportKey = `${clientId}|${periodStart}|${platformKey}`;
 
         // 🆕 v2.1: Skip jika reportKey SUDAH diproses dalam run ini
         // (terjadi kalau row muncul di multiple sheet tabs atau duplicate di sheet)
@@ -330,7 +343,7 @@ export async function syncReportsFromSheet(
           const firstSeen = dedupFirstOccurrence.get(reportKey) || "unknown";
           addSample(
             "dedup",
-            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}" period=${periodStart} (duplikat dari: ${firstSeen})`
+            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}" period=${periodStart} platform=${platformKey} (duplikat dari: ${firstSeen})`
           );
           continue;
         }
@@ -341,6 +354,7 @@ export async function syncReportsFromSheet(
           `Sheet "${sheet.name}" row ${row.rowIndex}`
         );
 
+        // 🆕 v3 (Bug Fix): Lookup existing dengan composite key baru (include platform).
         const existingId = existingReportsMap.get(reportKey);
 
         if (existingId) {
@@ -418,13 +432,30 @@ export async function syncReportsFromSheet(
             );
           } else if (single) {
             insertedReportIds.push(single);
-            existingReportsMap.set(`${single.client_id}|${single.period_start}`, single.id);
+            // 🆕 v3: gunakan composite key (include platform) supaya match
+            // dengan reportKey yang dipakai di allMetricsByReportKey.
+            const p = (payload.platform as string | null) || "UNKNOWN";
+            existingReportsMap.set(
+              `${single.client_id}|${single.period_start}|${p}`,
+              single.id
+            );
           }
         }
       } else if (inserted) {
         insertedReportIds.push(...inserted);
         for (const r of inserted) {
-          existingReportsMap.set(`${r.client_id}|${r.period_start}`, r.id);
+          // 🆕 v3: composite key baru — lookup platform dari payload yang di-insert.
+          // Karena SELECT insert di atas tidak return platform, kita reverse-lookup
+          // dari reportsToInsert berdasarkan (client_id, period_start) yang harus unik
+          // dalam chunk ini. Worst case: tidak ketemu → fallback ke "UNKNOWN".
+          const matchedPayload = reportsToInsert.find(
+            (p) => p.client_id === r.client_id && p.period_start === r.period_start
+          );
+          const p = (matchedPayload?.platform as string | null) || "UNKNOWN";
+          existingReportsMap.set(
+            `${r.client_id}|${r.period_start}|${p}`,
+            r.id
+          );
         }
       }
     }
