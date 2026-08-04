@@ -162,6 +162,10 @@ export async function syncReportsFromSheet(
   // beberapa kali atau row yang sama muncul di multiple sheet tabs (mis.
   // weekly report akhir Juni bisa muncul di tab "June '26" DAN "Juli '26").
   const processedReportKeys = new Set<string>();
+  // 🆕 v2.5: Track lokasi first-occurrence untuk transparansi dedup.
+  // Key: reportKey → Value: "Sheet X row Y" (sumber asli).
+  // Dipakai untuk sample dedup yang lebih informatif (menunjukkan duplikat vs aslinya).
+  const dedupFirstOccurrence = new Map<string, string>();
   let dedupSkipped = 0;
 
   // ── 5. PRE-PROCESS ALL ROWS (in-memory, no DB calls) ───────────────────
@@ -256,8 +260,24 @@ export async function syncReportsFromSheet(
         }
 
         // ── Resolve period ──
-        const periodStart = toDateString(row.periodStart);
+        // Strategy:
+        //   1. Utama: extractPeriod() dari performance text (mis. "Meta ADS - 19 s/d 25/1/26")
+        //   2. Fallback 1: pakai kolom Input Date dari sheet (untuk organic reports
+        //      yang tidak punya pattern "X s/d Y" — mereka langsung sebut Reach, Content uploaded, dll)
+        //   3. Fallback 2: derive dari sheet name (mis. "Janury '26" → 2026-01-01) — tidak diimplementasi
+        //      karena Input Date sudah cukup untuk semua kasus observed.
+        let periodStart = toDateString(row.periodStart);
         let periodEnd = toDateString(row.periodEnd);
+
+        // 🆕 v2.4: Fallback untuk organic reports (5 rows di Januari '26 selalu ter-skip
+        // karena performance text tidak mengandung "X s/d Y" pattern).
+        // Mereka punya Input Date column valid → pakai itu sebagai period start,
+        // period_end = period_start + 6 hari.
+        if (!periodStart && row.date) {
+          periodStart = toDateString(row.date);
+          // Bug fix: jangan auto-set periodEnd di sini, biar logic di bawah yang handle
+        }
+
         if (periodStart && !periodEnd) {
           const d = new Date(periodStart);
           d.setDate(d.getDate() + 6);
@@ -306,13 +326,20 @@ export async function syncReportsFromSheet(
           dedupSkipped++;
           skipDedup++;
           skipped++;
+          // 🆕 v2.5: Sample yang lebih informatif — tunjukkan first occurrence juga
+          const firstSeen = dedupFirstOccurrence.get(reportKey) || "unknown";
           addSample(
             "dedup",
-            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}" period=${periodStart}`
+            `Sheet "${sheet.name}" row ${row.rowIndex}: client="${row.clientName}" period=${periodStart} (duplikat dari: ${firstSeen})`
           );
           continue;
         }
         processedReportKeys.add(reportKey);
+        // 🆕 v2.5: Catat first-occurrence untuk transparency dedup
+        dedupFirstOccurrence.set(
+          reportKey,
+          `Sheet "${sheet.name}" row ${row.rowIndex}`
+        );
 
         const existingId = existingReportsMap.get(reportKey);
 
