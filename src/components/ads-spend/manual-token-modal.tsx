@@ -27,8 +27,8 @@ export function ManualTokenModal({
         {/* Sticky Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Connect Meta Ads</h2>
-            <p className="mt-0.5 text-xs text-muted">Gunakan System User Token untuk koneksi permanent</p>
+            <h2 className="text-lg font-bold text-gray-900">Connect dengan Token</h2>
+            <p className="mt-0.5 text-xs text-muted">Alternatif jika OAuth tidak memungkinkan</p>
           </div>
           <button
             type="button"

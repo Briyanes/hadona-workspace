@@ -170,22 +170,14 @@ export default function AdsSpendPage() {
     if (metaError) {
       const errorMessages: Record<string, string> = {
         not_configured: "Meta App belum dikonfigurasi. Hubungi admin untuk set META_APP_ID & META_APP_SECRET.",
-        auth_failed: "OAuth gagal (kemungkinan App masih Development Mode). Gunakan 'Connect dengan Token' — lihat panduan System User Token di modal.",
-        permission_denied: "Anda menolak izin akses Meta. Atau gunakan 'Connect dengan Token' untuk bypass App Review.",
+        auth_failed: "OAuth gagal. Pastikan App sudah dalam Live Mode di Meta Dashboard.",
+        permission_denied: "Anda menolak izin akses Meta. Coba connect ulang.",
         missing_params: "Parameter tidak lengkap. Coba connect ulang.",
         state_mismatch: "Sesi tidak valid. Coba connect ulang.",
         db_error: "Gagal menyimpan koneksi ke database.",
       };
       const msg = errorMessages[metaError] || `Meta Error: ${metaError.replace(/_/g, " ")}`;
-      // Guide users to System User Token for any OAuth-related error
-      if (metaError.includes("scope") || metaError.includes("Invalid") || metaError.includes("auth")) {
-        toast.error(msg, {
-          duration: 8000,
-          description: "💡 Solusi: Gunakan tombol 'Connect dengan Token ⭐' dan pilih System User Token",
-        });
-      } else {
-        toast.error(msg);
-      }
+      toast.error(msg);
       window.history.replaceState({}, "", "/ads-spend");
     }
   }
@@ -1264,15 +1256,15 @@ export default function AdsSpendPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <a href="/api/meta/auth" className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background" title="Login dengan Facebook — butuh App Review jika app masih Development Mode">
-              <Link2 size={14} /> OAuth (butuh App Review)
+            <a href="/api/meta/auth" className="btn-primary" title="Login dengan Facebook — otomatis sinkron ad accounts Anda">
+              <Link2 size={14} /> Connect dengan Facebook ⭐
             </a>
             <button
               onClick={() => setShowTokenModal(true)}
-              className="btn-primary"
-              title="Connect pakai System User Token — permanent, tanpa App Review"
+              className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+              title="Connect pakai System User Token — permanent, alternatif jika OAuth tidak memungkinkan"
             >
-              <KeyRound size={14} /> Connect dengan Token ⭐
+              <KeyRound size={14} /> Connect dengan Token
             </button>
           </div>
         </div>
