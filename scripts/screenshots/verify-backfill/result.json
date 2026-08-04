@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-08-04T16:53:09.052Z",
+  "syncApiStatus": 200,
+  "syncResponse": {
+    "sync_method": "admin_client",
+    "success": true,
+    "date": "2026-08-03",
+    "connections_synced": 1,
+    "successful": 1,
+    "errors": 0,
+    "total_records": 156,
+    "accounts_imported": 0,
+    "accounts_matched": 0,
+    "details": [
+      {
+        "connection_id": "1345e154-8bb3-45c3-806e-fefb1eef8675",
+        "fb_user": "Gilberth Smith",
+        "status": "success",
+        "records_synced": 156,
+        "accounts_auto_imported": 0,
+        "accounts_name_matched": 0,
+        "total_ad_accounts": 83,
+        "errors": []
+      }
+    ]
+  },
+  "kpiBefore": [
+    "Total Daily BudgetRp 067 active accounts",
+    "Total RemainingRp 0active budgets",
+    "Today's SpendRp 0Revenue: Rp 0",
+    "Low Budget Alert0ROAS today: 0.00x",
+    "SPEND & REVENUE TRENDTotal 83 accounts • 7 hari terakhir7D30D29 Jul30 Jul31 Jul1 Agu2 Agu3 Agu4 Agu0k25000k50000k75000k100000k29 Jul Spend Revenue"
+  ],
+  "kpiAfter": [
+    "Total Daily BudgetRp 067 active accounts",
+    "Total RemainingRp 0active budgets",
+    "Today's SpendRp 0Revenue: Rp 0",
+    "Low Budget Alert0ROAS today: 0.00x",
+    "SPEND & REVENUE TRENDTotal 83 accounts • 7 hari terakhir7D30D29 Jul30 Jul31 Jul1 Agu2 Agu3 Agu4 Agu0k25000k50000k75000k100000k29 Jul Spend Revenue"
+  ],
+  "debugData": {},
+  "consoleErrors": []
+}
