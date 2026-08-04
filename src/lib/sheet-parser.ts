@@ -992,6 +992,11 @@ export function matchClientFuzzy(
   const target = normalize(sheetName);
   if (!target) return null;
 
+  // Compute acronym dari target (untuk matching "YBD" <-> "Your Best Deal")
+  // Acronym = huruf pertama dari setiap kata, panjang >= 2 (skip kata kecil)
+  const targetAcronym = computeAcronym(target);
+  const targetUpper = target.replace(/\s/g, ""); // "ybd" tanpa spasi
+
   let best: { id: string; name: string; confidence: number } | null = null;
 
   for (const c of dbClients) {
@@ -1001,6 +1006,27 @@ export function matchClientFuzzy(
     // Exact match (after normalize)
     if (candidate === target) {
       return { id: c.id, name: c.name, confidence: 1 };
+    }
+
+    // Acronym match (YBD <-> Your Best Deal, NOUBAN CPAS <-> NC, dll)
+    const candidateAcronym = computeAcronym(candidate);
+    const candidateUpper = candidate.replace(/\s/g, "");
+    if (targetAcronym && candidateAcronym) {
+      if (targetAcronym === candidateUpper || targetUpper === candidateAcronym) {
+        const conf = 0.92; // high confidence for acronym match
+        if (!best || conf > best.confidence) {
+          best = { id: c.id, name: c.name, confidence: conf };
+        }
+        continue;
+      }
+      // Acronym-to-acronym (NC <-> NC)
+      if (targetAcronym === candidateAcronym && targetAcronym.length >= 2) {
+        const conf = 0.9;
+        if (!best || conf > best.confidence) {
+          best = { id: c.id, name: c.name, confidence: conf };
+        }
+        continue;
+      }
     }
 
     // Substring match
@@ -1028,6 +1054,23 @@ export function matchClientFuzzy(
   }
 
   return best;
+}
+
+/**
+ * Compute acronym dari sebuah nama.
+ * Contoh:
+ *   "Your Best Deal"        -> "ybd"
+ *   "NOUBAN CPAS"           -> "nc"
+ *   "Haena Kontruksi"       -> "hk"
+ *   "OCEAN Travel"          -> "ot"
+ *
+ * Skip kata kecil (stopwords): "of", "the", "and", "di", "dan", "atau"
+ */
+function computeAcronym(normalizedName: string): string {
+  const STOPWORDS = new Set(["of", "the", "and", "or", "di", "dan", "atau", "untuk", "for", "to", "in", "on"]);
+  const words = normalizedName.split(" ").filter((w) => w.length > 0 && !STOPWORDS.has(w));
+  if (words.length < 2) return ""; // Butuh minimal 2 kata untuk acronym
+  return words.map((w) => w[0]).join("");
 }
 
 /**
