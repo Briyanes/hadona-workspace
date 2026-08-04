@@ -8,7 +8,7 @@
  *   { sheetUrl: "https://..." }            → sync pakai URL custom
  *   { autoCreateClient: true }             → auto-create client baru
  *
- * Auth: wajib login (admin/superadmin saja — lihat permission check).
+ * Auth: wajib login (super_admin/project_manager/creative_director — lihat permission check).
  *
  * Returns: SyncResult (sama dengan cron).
  * ============================================================================
@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Cek role — hanya admin/superadmin yang boleh trigger sync
+    // Cek role — hanya super_admin/project_manager/creative_director yang boleh trigger sync.
+    // (Sesuai enum user_role di supabase/schema.sql & konsisten dengan admin/users/route.ts)
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -42,9 +43,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     const role = (profile as { role: string } | null)?.role;
-    if (!["admin", "superadmin"].includes(role || "")) {
+    const allowedSyncRoles = ["super_admin", "project_manager", "creative_director"];
+    if (!allowedSyncRoles.includes(role || "")) {
       return NextResponse.json(
-        { error: "Forbidden: hanya admin/superadmin yang boleh trigger sync" },
+        { error: "Forbidden: hanya super_admin/project_manager/creative_director yang boleh trigger sync" },
         { status: 403 }
       );
     }
