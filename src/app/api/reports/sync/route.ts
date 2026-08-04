@@ -45,8 +45,13 @@ export async function POST(req: NextRequest) {
     const role = (profile as { role: string } | null)?.role;
     const allowedSyncRoles = ["super_admin", "project_manager", "creative_director"];
     if (!allowedSyncRoles.includes(role || "")) {
+      // Include role in error for debugging (helps users understand why they're blocked)
+      const roleDisplay = role || "(kosong/belum diset)";
       return NextResponse.json(
-        { error: "Forbidden: hanya super_admin/project_manager/creative_director yang boleh trigger sync" },
+        {
+          error: `Forbidden: role Anda "${roleDisplay}" tidak diizinkan sync. Yang diizinkan: ${allowedSyncRoles.join(", ")}`,
+          debug: { userRole: role, allowedSyncRoles },
+        },
         { status: 403 }
       );
     }
