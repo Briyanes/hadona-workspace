@@ -289,25 +289,48 @@ export async function syncReportsFromSheet(
     `[sync-v2] Pre-process done: ${reportsToInsert.length} insert, ${reportsToUpdate.length} update, ${allMetricsByReportKey.length} metric groups in ${Date.now() - tPreprocessStart}ms`
   );
 
-  // ── 6. BATCH UPSERT weekly_reports (1 query for inserts) ───────────────
+  // ── 6. CHUNKED BATCH INSERT weekly_reports (resilient) ─────────────────
+  // v2.2: Insert dalam chunk 50 rows. Kalau ada row bermasalah (mis. NOT NULL
+  // violation), hanya chunk itu yang gagal — bukan seluruh batch. Chunk yang
+  // gagal di-retry per-row untuk identifikasi row spesifik.
   const tInsertStart = Date.now();
   let insertedReportIds: Array<{ id: string; client_id: string; period_start: string }> = [];
 
   if (reportsToInsert.length > 0) {
-    const { data: inserted, error: insertErr } = await supabase
-      .from("weekly_reports")
-      .insert(reportsToInsert)
-      .select("id, client_id, period_start");
+    const INSERT_CHUNK_SIZE = 50;
+    for (let i = 0; i < reportsToInsert.length; i += INSERT_CHUNK_SIZE) {
+      const chunk = reportsToInsert.slice(i, i + INSERT_CHUNK_SIZE);
+      const { data: inserted, error: insertErr } = await supabase
+        .from("weekly_reports")
+        .insert(chunk)
+        .select("id, client_id, period_start");
 
-    if (insertErr) {
-      console.error("[sync-v2] Batch insert error:", insertErr.message);
-      errors += reportsToInsert.length;
-      errors_detail.push(`Batch insert failed: ${insertErr.message}`);
-    } else {
-      insertedReportIds = inserted || [];
-      // Update existingReportsMap with new IDs
-      for (const r of insertedReportIds) {
-        existingReportsMap.set(`${r.client_id}|${r.period_start}`, r.id);
+      if (insertErr) {
+        console.warn(
+          `[sync-v2] Chunk ${i / INSERT_CHUNK_SIZE + 1} insert failed (${chunk.length} rows): ${insertErr.message}. Retrying per-row...`
+        );
+        // Retry per-row untuk identifikasi row spesifik yang bermasalah
+        for (const payload of chunk) {
+          const { data: single, error: singleErr } = await supabase
+            .from("weekly_reports")
+            .insert(payload)
+            .select("id, client_id, period_start")
+            .maybeSingle();
+          if (singleErr) {
+            errors++;
+            errors_detail.push(
+              `Row insert failed (${payload.client_id}, ${payload.period_start}): ${singleErr.message}`
+            );
+          } else if (single) {
+            insertedReportIds.push(single);
+            existingReportsMap.set(`${single.client_id}|${single.period_start}`, single.id);
+          }
+        }
+      } else if (inserted) {
+        insertedReportIds.push(...inserted);
+        for (const r of inserted) {
+          existingReportsMap.set(`${r.client_id}|${r.period_start}`, r.id);
+        }
       }
     }
   }
