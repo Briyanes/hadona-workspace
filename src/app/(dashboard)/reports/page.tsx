@@ -24,6 +24,7 @@ import {
   BarChart3,
   Copy,
   Mail,
+  Eye,
 } from "lucide-react";
 import {
   AreaChart,
@@ -1541,28 +1542,47 @@ export default function ReportsPage() {
 
                 <div className="flex items-center justify-between border-t border-border pt-3">
                   <span className="text-xs text-muted">PIC: {r.pic?.full_name || "-"}</span>
-                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1">
+                    {/* 👁️ Tombol "Lihat Detail" eksplisit — selalu visible sebagai fallback
+                        kalau klik card gagal (mis. hydration issue, event bubling, dst.) */}
                     <button
-                      onClick={() => openEdit(r)}
-                      className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                      title="Edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('[reports] open detail via eye button', r.id);
+                        setDetailReport(r);
+                      }}
+                      className="flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[10px] font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+                      title="Lihat detail"
+                      data-testid={`report-detail-btn-${r.id}`}
                     >
-                      <Pencil size={14} />
+                      <Eye size={12} /> Detail
                     </button>
-                    <button
-                      onClick={() => handleClone(r)}
-                      className="rounded p-1.5 text-muted hover:bg-background hover:text-accent"
-                      title="Clone untuk minggu depan"
+                    <div
+                      className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Copy size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(r.id)}
-                      className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                      title="Hapus"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                      <button
+                        onClick={() => openEdit(r)}
+                        className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleClone(r)}
+                        className="rounded p-1.5 text-muted hover:bg-background hover:text-accent"
+                        title="Clone untuk minggu depan"
+                      >
+                        <Copy size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                        title="Hapus"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
