@@ -43,6 +43,7 @@ import { CreativePerformanceTracker } from "@/components/reports/creative-perfor
 import { ObjectiveSelector } from "@/components/reports/objective-selector";
 import { ObjectiveKPIBar } from "@/components/reports/kpi-bar";
 import { ImportSheetModal } from "@/components/reports/import-sheet-modal";
+import { SheetPreviewModal } from "@/components/reports/sheet-preview-modal";
 import { OBJECTIVE_MAP, type ObjectiveKey } from "@/lib/ad-objectives";
 import { generateReportText } from "@/lib/report-generator";
 import { FileSpreadsheet } from "lucide-react";
@@ -291,6 +292,9 @@ export default function ReportsPage() {
 
   // Import Sheet Modal state
   const [showImportModal, setShowImportModal] = useState(false);
+
+  // Sheet Preview Modal state (lihat semua sheet tabs — read-only)
+  const [showSheetPreview, setShowSheetPreview] = useState(false);
   const DEFAULT_SHEET_URL =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbWYiTnXtz9ukLg-CprfY-fNCl3L-PbW-dWl-C8oMQAp-P6vJIN76zPhhk67FfBZi1TsRivogdpIp6/pub?output=csv";
 
@@ -1300,6 +1304,13 @@ export default function ReportsPage() {
         clients={clients}
         defaultSheetUrl={DEFAULT_SHEET_URL}
         onImported={() => loadReports()}
+      />
+
+      {/* Sheet Preview Modal — lihat semua sheet tabs (read-only) */}
+      <SheetPreviewModal
+        open={showSheetPreview}
+        onClose={() => setShowSheetPreview(false)}
+        defaultUrl={DEFAULT_SHEET_URL}
       />
 
       {/* Stats Cards */}
