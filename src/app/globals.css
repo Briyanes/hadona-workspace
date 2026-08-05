@@ -384,9 +384,14 @@
   display: none;
 }
 
-/* Print Area — hidden on screen, shown only during print */
+/* Print Area — marks the printable zone inside a modal.
+   IMPORTANT: do NOT set display:none here.
+   The class is used by detail modals (reports, invoices) as the print boundary.
+   Hiding it on screen would make those modals invisible (BUG: previously display:none).
+   Visibility is controlled by parent modal (display is set by React conditional render).
+   During print, the @media print block below promotes it to fullscreen. */
 .print-area {
-  display: none;
+  /* intentionally empty — inherit display from parent */
 }
 @media print {
   .print-header {
