@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser, applyRateLimit } from "@/lib/auth-api";
 
 /**
  * POST /api/import/sheet
@@ -22,6 +23,13 @@ interface SheetAdAccount {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 imports/min per IP — heavy network operation (CSV fetch + DB writes)
+    const rateLimited = applyRateLimit(request, "import-sheet", 5);
+    if (rateLimited) return rateLimited;
+
+    const auth = await getAuthenticatedUser(request);
+    if (!auth.user || auth.error) return auth.error!;
+
     const body = await request.json();
     const sheetUrl: string = body.sheetUrl;
     const columnLetter: string = (body.column || "E").toUpperCase();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { applyRateLimit } from "@/lib/auth-api";
 import {
   getAdAccountInsights,
   extractConversions,
@@ -145,6 +146,10 @@ export async function POST(request: NextRequest) {
   // If not cron, verify user session
   let userId: string | null = null;
   if (!isCron) {
+    // Rate limit: 3 manual syncs/hour per IP — sangat berat (Meta API + Batch insights)
+    const rateLimited = applyRateLimit(request, "meta-sync", 3, 60 * 60 * 1000);
+    if (rateLimited) return rateLimited;
+
     // Verify user is logged in via Supabase Auth
     const { createServerClient } = await import("@supabase/ssr");
     const { cookies } = await import("next/headers");

@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { applyRateLimit } from "@/lib/auth-api";
 import {
   fetchSheetCSV,
   parseAllRows,
@@ -85,6 +86,11 @@ async function getCurrentUser() {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: 5 requests/min per IP — preview/import operation berat
+    // (CSV fetch + DB writes)
+    const rateLimited = applyRateLimit(req, "reports-import-sheet", 5);
+    if (rateLimited) return rateLimited;
+
     const { supabase, user } = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

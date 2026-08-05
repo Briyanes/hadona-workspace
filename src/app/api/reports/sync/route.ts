@@ -17,12 +17,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncReportsFromSheet, getDefaultSheetUrl } from "@/lib/report-sync";
 import { createClient } from "@/lib/supabase/server";
+import { applyRateLimit } from "@/lib/auth-api";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
+
+  // Rate limit: 3 syncs/hour per IP — operasi sangat berat (60s maxDuration)
+  const rateLimited = applyRateLimit(req, "reports-sync", 3, 60 * 60 * 1000);
+  if (rateLimited) return rateLimited;
   console.log("[reports/sync] Manual sync triggered at", new Date().toISOString());
 
   try {
