@@ -230,14 +230,19 @@ export function ImportSheetModal({
     }
   }
 
-  async function handleImport() {
-    if (selectedRowIndexes.size === 0) {
+  // 🆕 Sprint 4.9 P2: handleImport accept optional rowIndexes untuk re-import subset
+  // (dipanggil dari ResultStep saat user resolve unmatched client).
+  // Jika tidak ada parameter, gunakan selectedRowIndexes (behavior lama).
+  async function handleImport(rowIndexes?: number[]) {
+    const targetIndexes = rowIndexes ?? Array.from(selectedRowIndexes);
+    if (targetIndexes.length === 0) {
       toast.error("Pilih minimal 1 baris untuk diimport");
       return;
     }
 
+    const targetSet = new Set(targetIndexes);
     const rowsToImport = previewRows
-      .filter((r) => selectedRowIndexes.has(r.rowIndex))
+      .filter((r) => targetSet.has(r.rowIndex))
       .map((r) => ({
         rowIndex: r.rowIndex,
         clientName: r.clientName,
@@ -464,7 +469,17 @@ export function ImportSheetModal({
           )}
 
           {step === "result" && importResult && (
-            <ResultStep result={importResult} />
+            <ResultStep
+              result={importResult}
+              previewRows={previewRows}
+              clients={clients}
+              clientOverrides={clientOverrides}
+              reimporting={importing}
+              onOverrideChange={(rowIndex, clientId) =>
+                setClientOverrides((prev) => ({ ...prev, [rowIndex]: clientId }))
+              }
+              onReimport={(rowIndexes) => handleImport(rowIndexes)}
+            />
           )}
         </div>
 
@@ -482,7 +497,7 @@ export function ImportSheetModal({
                 Kembali
               </button>
               <button
-                onClick={handleImport}
+                onClick={() => handleImport()}
                 disabled={importing || selectedRowIndexes.size === 0}
                 className="btn-primary"
               >
@@ -948,7 +963,140 @@ function deriveSkipBreakdown(results: ImportResult["results"]) {
   return breakdown;
 }
 
-function ResultStep({ result }: { result: ImportResult }) {
+// ============================================================================
+// HELPER: Smart client suggestions (Sprint 4.9 P2)
+// ============================================================================
+
+/**
+ * Cari client yang mirip dengan nama dari sheet berdasarkan:
+ * 1. Substring match (prioritas tinggi)
+ * 2. Token overlap (kata-kata yang sama)
+ * 3. Levenshtein distance (typo tolerance)
+ *
+ * Return top-3 suggestion diurutkan by score desc.
+ */
+function findClientSuggestions(
+  unmatchedName: string,
+  clients: Client[],
+  limit = 3
+): Array<{ client: Client; score: number; reason: string }> {
+  const target = normalizeName(unmatchedName);
+  if (!target || target.length < 2) return [];
+
+  const targetTokens = new Set(target.split(/\s+/).filter((t) => t.length >= 3));
+  const scored: Array<{ client: Client; score: number; reason: string }> = [];
+
+  for (const client of clients) {
+    const candidate = normalizeName(client.name);
+    if (!candidate) continue;
+
+    let score = 0;
+    let reason = "";
+
+    // 1. Exact match (boleh beda case/whitespace)
+    if (target === candidate) {
+      score = 100;
+      reason = "exact";
+    }
+    // 2. Substring match (target adalah bagian candidate atau sebaliknya)
+    else if (target.length >= 4 && candidate.includes(target)) {
+      score = 90;
+      reason = "substring";
+    } else if (candidate.length >= 4 && target.includes(candidate)) {
+      score = 85;
+      reason = "substring-rev";
+    }
+    // 3. Token overlap (kata-kata yang sama, minimal 1 token ≥3 char)
+    else {
+      const candidateTokens = new Set(candidate.split(/\s+/).filter((t) => t.length >= 3));
+      let overlap = 0;
+      // Iterate via Array.from untuk kompatibilitas target TS (no downlevelIteration)
+      for (const t of Array.from(targetTokens)) {
+        if (candidateTokens.has(t)) overlap++;
+      }
+      if (overlap > 0) {
+        score = 50 + overlap * 10;
+        reason = `overlap:${overlap}`;
+      }
+    }
+
+    // 4. Levenshtein fallback untuk typo tolerance (1-2 char diff)
+    if (score === 0) {
+      const dist = levenshtein(target, candidate);
+      const maxLen = Math.max(target.length, candidate.length);
+      const similarity = maxLen > 0 ? 1 - dist / maxLen : 0;
+      if (similarity >= 0.75 && dist <= 3) {
+        score = Math.round(similarity * 60);
+        reason = `typo:${dist}`;
+      }
+    }
+
+    if (score > 0) {
+      scored.push({ client, score, reason });
+    }
+  }
+
+  return scored.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+function normalizeName(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Levenshtein distance — iterative DP, O(m*n).
+ * Untuk performa, dibatasi max length 30 (nama client jarang >30 char).
+ */
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length > 30 || b.length > 30) return 99;
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+// ============================================================================
+// RESULT STEP — dengan Skip Breakdown (Sprint 4.6 P1)
+// + Auto-suggest client resolver (Sprint 4.9 P2)
+// ============================================================================
+
+interface ResultStepProps {
+  result: ImportResult;
+  // 🆕 Sprint 4.9 P2: props untuk resolver
+  previewRows: PreviewRow[];
+  clients: Client[];
+  clientOverrides: Record<number, string>;
+  reimporting: boolean;
+  onOverrideChange: (rowIndex: number, clientId: string) => void;
+  onReimport: (rowIndexes: number[]) => void;
+}
+
+function ResultStep({
+  result,
+  previewRows,
+  clients,
+  clientOverrides,
+  reimporting,
+  onOverrideChange,
+  onReimport,
+}: ResultStepProps) {
   const { summary, results } = result;
   const success = summary.imported > 0;
   const [showSkipDetail, setShowSkipDetail] = useState(false);
@@ -956,6 +1104,23 @@ function ResultStep({ result }: { result: ImportResult }) {
   // 🆕 Sprint 4.6 P1: derive breakdown dari results array
   const breakdown = summary.skippedBreakdown || (summary.skipped > 0 ? deriveSkipBreakdown(results) : null);
   const hasActionableSkip = !!breakdown && (breakdown.unmatchedClient > 0 || breakdown.noPeriod > 0);
+
+  // 🆕 Sprint 4.9 P2: derive unmatched rows yang masih bisa di-resolve
+  // Ambil row yang skipped dengan reason "unmatchedClient" DAN masih ada di previewRows
+  // DAN belum punya override (karena kalau sudah di-override & re-import, tidak perlu tampil lagi).
+  const unmatchedRows = results.filter((r) => {
+    if (r.status !== "skipped") return false;
+    const reason = r.skipReason || r.error || "";
+    const isUnmatched =
+      /tidak dikenali|unmatched|no match|client tidak/i.test(reason);
+    if (!isUnmatched) return false;
+    // Cek apakah row ini masih ada di previewRows (belum di-resolve)
+    const previewRow = previewRows.find((p) => p.rowIndex === r.rowIndex);
+    if (!previewRow) return false;
+    // Skip kalau sudah ada override (sudah ditangani)
+    const hasOverride = !!clientOverrides[r.rowIndex];
+    return !hasOverride;
+  });
 
   return (
     <div className="space-y-4">
@@ -988,6 +1153,19 @@ function ResultStep({ result }: { result: ImportResult }) {
           </div>
         </div>
       </div>
+
+      {/* 🆕 Sprint 4.9 P2: Unmatched Client Resolver Card */}
+      {unmatchedRows.length > 0 && (
+        <UnmatchedResolverCard
+          unmatchedRows={unmatchedRows}
+          previewRows={previewRows}
+          clients={clients}
+          clientOverrides={clientOverrides}
+          reimporting={reimporting}
+          onOverrideChange={onOverrideChange}
+          onReimport={onReimport}
+        />
+      )}
 
       {/* 🆕 Sprint 4.6 P1: Skip Breakdown Card (collapsible) */}
       {breakdown && summary.skipped > 0 && (
@@ -1140,6 +1318,196 @@ function ResultStep({ result }: { result: ImportResult }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// UNMATCHED CLIENT RESOLVER CARD (Sprint 4.9 P2)
+// ============================================================================
+
+/**
+ * Card untuk resolve unmatched client setelah import selesai.
+ *
+ * Fitur:
+ * - Auto-suggest top-3 client paling mirip (substring/overlap/levenshtein)
+ * - Manual search dropdown (kalau suggestion tidak cocok)
+ * - Bulk re-import setelah semua row di-resolve
+ *
+ * UX decisions:
+ * - Card hanya muncul kalau ada unmatched row (tidak noise)
+ * - Tiap row collapsible untuk hemat space
+ * - Tombol "Re-import N row" hanya aktif kalau semua row sudah di-assign
+ * - Tombol kecil "Skip" untuk dismiss row yang memang tidak perlu
+ */
+interface UnmatchedResolverCardProps {
+  unmatchedRows: ImportResult["results"];
+  previewRows: PreviewRow[];
+  clients: Client[];
+  clientOverrides: Record<number, string>;
+  reimporting: boolean;
+  onOverrideChange: (rowIndex: number, clientId: string) => void;
+  onReimport: (rowIndexes: number[]) => void;
+}
+
+function UnmatchedResolverCard({
+  unmatchedRows,
+  previewRows,
+  clients,
+  clientOverrides,
+  reimporting,
+  onOverrideChange,
+  onReimport,
+}: UnmatchedResolverCardProps) {
+  const [collapsedRows, setCollapsedRows] = useState<Set<number>>(
+    () => new Set(unmatchedRows.map((r) => r.rowIndex))
+  );
+
+  // Rows yang sudah di-assign override → siap re-import
+  const resolvedRows = unmatchedRows.filter((r) => clientOverrides[r.rowIndex]);
+  const allResolved = resolvedRows.length === unmatchedRows.length;
+  const resolvedRowIndexes = resolvedRows.map((r) => r.rowIndex);
+
+  function toggleCollapse(rowIndex: number) {
+    const next = new Set(collapsedRows);
+    if (next.has(rowIndex)) next.delete(rowIndex);
+    else next.add(rowIndex);
+    setCollapsedRows(next);
+  }
+
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+      {/* Header */}
+      <div className="mb-2 flex items-start gap-2">
+        <Sparkles className="mt-0.5 shrink-0 text-primary" size={14} />
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-primary">
+            Auto-Suggest: {unmatchedRows.length} client tidak dikenali
+          </p>
+          <p className="mt-0.5 text-[10px] text-muted">
+            Kami mencocokkan nama dengan client DB. Pilih suggestion yang benar untuk re-import,
+            atau cari manual lewat dropdown.
+          </p>
+        </div>
+      </div>
+
+      {/* Per-row resolver */}
+      <div className="space-y-1.5">
+        {unmatchedRows.map((r) => {
+          const previewRow = previewRows.find((p) => p.rowIndex === r.rowIndex);
+          const sheetName = r.clientName || previewRow?.clientName || "(unknown)";
+          const suggestions = findClientSuggestions(sheetName, clients, 3);
+          const collapsed = collapsedRows.has(r.rowIndex);
+          const currentOverride = clientOverrides[r.rowIndex];
+
+          return (
+            <div key={r.rowIndex} className="rounded bg-background p-2">
+              {/* Header per row */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleCollapse(r.rowIndex)}
+                  className="shrink-0 text-muted hover:text-gray-900"
+                  aria-label="Toggle detail"
+                >
+                  {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                </button>
+                <span className="font-mono text-[10px] text-muted">#{r.rowIndex}</span>
+                <span className="truncate text-xs font-semibold text-gray-900">"{sheetName}"</span>
+                {currentOverride && (
+                  <span className="ml-auto inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[9px] font-medium text-success">
+                    <CheckCircle2 size={10} /> Resolved
+                  </span>
+                )}
+              </div>
+
+              {/* Body per row */}
+              {!collapsed && (
+                <div className="mt-2 space-y-2">
+                  {/* Suggestion chips */}
+                  {suggestions.length > 0 ? (
+                    <div>
+                      <p className="mb-1 text-[10px] text-muted">💡 Saran client:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {suggestions.map(({ client, score, reason }) => (
+                          <button
+                            key={client.id}
+                            type="button"
+                            onClick={() => onOverrideChange(r.rowIndex, client.id)}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded border px-2 py-1 text-[10px] transition-colors",
+                              currentOverride === client.id
+                                ? "border-success bg-success/10 text-success"
+                                : "border-border bg-surface hover:border-primary hover:bg-primary/5"
+                            )}
+                            title={`Match reason: ${reason} (score: ${score})`}
+                          >
+                            {client.name}
+                            <span className="text-[9px] opacity-70">({score})</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-warning">
+                      ⚠️ Tidak ada suggestion yang cocok. Cari manual di bawah.
+                    </p>
+                  )}
+
+                  {/* Manual search dropdown */}
+                  <div>
+                    <label className="mb-1 block text-[10px] text-muted">
+                      Atau pilih manual:
+                    </label>
+                    <select
+                      value={currentOverride || ""}
+                      onChange={(e) => onOverrideChange(r.rowIndex, e.target.value)}
+                      className="input py-1 text-xs"
+                    >
+                      <option value="">— Pilih client —</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer: Re-import button */}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2">
+        <p className="text-[10px] text-muted">
+          {resolvedRows.length}/{unmatchedRows.length} row resolved
+        </p>
+        <button
+          type="button"
+          onClick={() => onReimport(resolvedRowIndexes)}
+          disabled={reimporting || resolvedRows.length === 0}
+          className="btn-primary py-1 text-xs"
+        >
+          {reimporting ? (
+            <>
+              <Loader2 className="animate-spin" size={12} /> Re-importing...
+            </>
+          ) : (
+            <>
+              <Download size={12} /> Re-import {resolvedRows.length} row
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Hint */}
+      {allResolved && !reimporting && (
+        <p className="mt-1.5 text-[10px] text-success">
+          ✅ Semua row sudah di-assign. Klik "Re-import" untuk memproses ulang.
+        </p>
+      )}
     </div>
   );
 }
