@@ -148,16 +148,21 @@ export async function syncReportsFromSheet(
   const clients: Array<{ id: string; name: string }> = dbClients || [];
   const profiles: Array<{ id: string; full_name: string }> = dbProfiles || [];
 
-  // 🆕 v3 (Bug Fix): Map existing reports dengan composite key baru
-  // yang include platform. Query di atas sudah select platform, jadi kita
-  // bangun key: "client_id|period_start|platform" untuk match dengan reportKey baru.
+  // 🆕 v4 (P2 Smart Dedup): Composite key sekarang include period_end JUGA.
   //
-  // Backward-compat: juga set key tanpa platform (untuk report lama yang
-  // platform-nya NULL — dianggap UNKNOWN supaya tetap konsisten).
+  // v3 (sebelumnya): "client_id|period_start|platform"
+  //   BUG: report dengan periode "19-25/1" dan "19-28/1" (revisi period_end)
+  //   dianggap duplikat padahal berbeda → user kehilangan data revisi.
+  //
+  // v4 (sekarang): "client_id|period_start|period_end|platform"
+  //   - Lebih akurat: hanya duplikat kalau SEMUA key match
+  //   - Backward-compat untuk lama (period_end NULL → "")
+  //   - Dipakai konsisten di: existingReportsMap, processedReportKeys, post-insert lookup
   const existingReportsMap = new Map<string, string>();
   for (const r of dbExistingReports || []) {
     const platform = (r as { platform?: string | null }).platform || "UNKNOWN";
-    const keyNew = `${r.client_id}|${r.period_start}|${platform}`;
+    const periodEnd = r.period_end || "";
+    const keyNew = `${r.client_id}|${r.period_start}|${periodEnd}|${platform}`;
     existingReportsMap.set(keyNew, r.id);
   }
 
@@ -189,12 +194,15 @@ export async function syncReportsFromSheet(
       totalRows++;
       try {
         // ── Skip invalid rows (with granular tracking) ──
-        if (row.metrics.length === 0) {
+        // 🆕 v3 (P3 Null-Metric Handler): Jangan skip row no-metric seluruhnya.
+        // Kalau ada client name & period valid → tetap insert dengan data_status='no_metrics'.
+        // Hanya skip kalau client name juga kosong (row benar-benar kosong/separator).
+        if (!row.clientName && row.metrics.length === 0) {
           skipped++;
-          skipNoMetrics++;
+          skipNoClient++;
           addSample(
-            "noMetrics",
-            `Sheet "${sheet.name}" row ${row.rowIndex}: "${summarize(row.rawPerformanceText)}"`
+            "noClient",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: performance="${summarize(row.rawPerformanceText)}"`
           );
           continue;
         }
@@ -206,6 +214,14 @@ export async function syncReportsFromSheet(
             `Sheet "${sheet.name}" row ${row.rowIndex}: performance="${summarize(row.rawPerformanceText)}"`
           );
           continue;
+        }
+        const hasNoMetrics = row.metrics.length === 0;
+        if (hasNoMetrics) {
+          // Tetap catat sebagai sample tapi JANGAN skip — lanjut ke insert dengan flag.
+          addSample(
+            "noMetrics",
+            `Sheet "${sheet.name}" row ${row.rowIndex}: "${summarize(row.rawPerformanceText)}" (dii-mport sebagai no_metrics)`
+          );
         }
 
         // ── Resolve client_id ──
@@ -308,6 +324,19 @@ export async function syncReportsFromSheet(
           ? row.status
           : "submitted";
 
+        // 🆕 v3 (P3): Tentukan data_status berdasarkan kelengkapan metric.
+        //   - 'ok'         → report normal dengan metrics lengkap
+        //   - 'no_metrics' → ada narrative text tapi tidak ada angka ter-parse
+        //   - 'partial'    → ada metrics tapi < 3 (data tidak lengkap)
+        const DATA_STATUS_OK = "ok";
+        const DATA_STATUS_NO_METRICS = "no_metrics";
+        const DATA_STATUS_PARTIAL = "partial";
+        const dataStatus = hasNoMetrics
+          ? DATA_STATUS_NO_METRICS
+          : row.metrics.length < 3
+            ? DATA_STATUS_PARTIAL
+            : DATA_STATUS_OK;
+
         const reportPayload = {
           client_id: clientId,
           pic_id: picId || null,
@@ -323,15 +352,21 @@ export async function syncReportsFromSheet(
           last_synced_at: new Date().toISOString(),
           sheet_source: sheet.name,
           sheet_gid: sheet.gid,
+          // 🆕 v3 (P3): flag kelengkapan data untuk filter & UI
+          data_status: dataStatus,
+          data_source_kind: "sheet_auto", // di-set auto-sync engine (vs 'manual_entry')
         };
 
-        // 🆕 v3 (Bug Fix): Include platform in dedup key.
-        // BUG SEBELUMNYA: reportKey = `${clientId}|${periodStart}` tidak include platform,
-        // sehingga Meta ADS & Google ADS untuk client+period yang sama dianggap duplikat
-        // (164 row di-skip pada sheet Janury-Juli '26).
-        // FIX: Tambahkan platform ke key → setiap platform = entry terpisah.
+        // 🆕 v4 (P2 Smart Dedup): Composite key sekarang include period_end juga.
+        //
+        // v3 (sebelumnya): "client_id|period_start|platform"
+        //   BUG: report dengan periode "19-25/1" dan "19-28/1" (revisi period_end)
+        //   dianggap duplikat padahal berbeda → user kehilangan data revisi.
+        //
+        // v4 (sekarang): "client_id|period_start|period_end|platform"
+        //   Konsisten dengan existingReportsMap (sudah di-update di atas).
         const platformKey = row.platform || "UNKNOWN";
-        const reportKey = `${clientId}|${periodStart}|${platformKey}`;
+        const reportKey = `${clientId}|${periodStart}|${periodEnd}|${platformKey}`;
 
         // 🆕 v2.1: Skip jika reportKey SUDAH diproses dalam run ini
         // (terjadi kalau row muncul di multiple sheet tabs atau duplicate di sheet)
@@ -432,11 +467,11 @@ export async function syncReportsFromSheet(
             );
           } else if (single) {
             insertedReportIds.push(single);
-            // 🆕 v3: gunakan composite key (include platform) supaya match
-            // dengan reportKey yang dipakai di allMetricsByReportKey.
+            // 🆕 v4: composite key dengan period_end (period_end dari payload)
             const p = (payload.platform as string | null) || "UNKNOWN";
+            const pe = (payload.period_end as string | null) || "";
             existingReportsMap.set(
-              `${single.client_id}|${single.period_start}|${p}`,
+              `${single.client_id}|${single.period_start}|${pe}|${p}`,
               single.id
             );
           }
@@ -444,16 +479,16 @@ export async function syncReportsFromSheet(
       } else if (inserted) {
         insertedReportIds.push(...inserted);
         for (const r of inserted) {
-          // 🆕 v3: composite key baru — lookup platform dari payload yang di-insert.
-          // Karena SELECT insert di atas tidak return platform, kita reverse-lookup
-          // dari reportsToInsert berdasarkan (client_id, period_start) yang harus unik
-          // dalam chunk ini. Worst case: tidak ketemu → fallback ke "UNKNOWN".
+          // 🆕 v4: composite key dengan period_end. SELECT insert tidak return
+          // platform & period_end, jadi reverse-lookup dari reportsToInsert
+          // berdasarkan (client_id, period_start) yang harus unik dalam chunk.
           const matchedPayload = reportsToInsert.find(
             (p) => p.client_id === r.client_id && p.period_start === r.period_start
           );
           const p = (matchedPayload?.platform as string | null) || "UNKNOWN";
+          const pe = (matchedPayload?.period_end as string | null) || "";
           existingReportsMap.set(
-            `${r.client_id}|${r.period_start}|${p}`,
+            `${r.client_id}|${r.period_start}|${pe}|${p}`,
             r.id
           );
         }

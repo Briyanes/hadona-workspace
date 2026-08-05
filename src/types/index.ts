@@ -132,6 +132,19 @@ export interface AdAccount {
   updated_at: string;
 }
 
+// 🆕 P4: Data status flag untuk transparansi kelengkapan data.
+//   - 'ok'           → metrics lengkap
+//   - 'no_metrics'   → narrative only (ada text, tanpa angka)
+//   - 'partial'      → metric < 3 (data tidak lengkap)
+//   - 'synced_error' → sync gagal parse, data mungkin unreliable
+export type ReportDataStatus = "ok" | "no_metrics" | "partial" | "synced_error";
+
+// 🆕 P4: Sumber data report.
+//   - 'sheet_auto'   → di-import otomatis oleh sync engine (cron/manual sync)
+//   - 'sheet_manual' → di-import satu kali via tombol "Import Sheet"
+//   - 'manual_entry' → diinput manual user via form
+export type ReportDataSourceKind = "sheet_auto" | "sheet_manual" | "manual_entry";
+
 export interface WeeklyReport {
   id: string;
   client_id: string;
@@ -146,6 +159,13 @@ export interface WeeklyReport {
   action: string | null;
   status: ReportStatus;
   created_at: string;
+  // 🆕 P4: Sheet source & data provenance tracking
+  source_sheet_url?: string | null;
+  sheet_source?: string | null;
+  sheet_gid?: string | null;
+  last_synced_at?: string | null;
+  data_status?: ReportDataStatus;
+  data_source_kind?: ReportDataSourceKind;
 }
 
 export interface ReportMetric {

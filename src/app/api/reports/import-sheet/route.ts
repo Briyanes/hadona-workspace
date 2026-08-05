@@ -396,6 +396,14 @@ async function handleImport(
         ? row.status
         : "submitted";
 
+      // 🆕 P4: Compute data_status based on metric completeness
+      //   - 'ok'           → 3+ metrics (complete)
+      //   - 'partial'      → 1-2 metrics (incomplete)
+      //   - 'no_metrics'   → 0 metrics (narrative only)
+      const metricCount = row.metrics?.length || 0;
+      const dataStatus =
+        metricCount === 0 ? "no_metrics" : metricCount < 3 ? "partial" : "ok";
+
       const { data: newReport, error: reportErr } = await supabase
         .from("weekly_reports")
         .insert({
@@ -409,6 +417,10 @@ async function handleImport(
           objective,
           platform: row.platform,
           source_sheet_url: null,
+          // 🆕 P4: Sheet source & data provenance tracking
+          data_source_kind: "sheet_manual",
+          data_status: dataStatus,
+          last_synced_at: new Date().toISOString(),
         } as never)
         .select("id")
         .single();

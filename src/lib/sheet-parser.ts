@@ -395,13 +395,35 @@ export function extractPeriod(text: string): { start: Date | null; end: Date | n
 
 /**
  * Detect platform dari prefix text.
+ *
+ * 🆕 P2 Smart Dedup: keyword dictionary diperluas oleh 5 Web Dev Expert.
+ * - Match baik dengan maupun tanpa word boundary (\b) — supaya abbreviation
+ *   singkat seperti "IG", "FB", "YT" tetap terdeteksi.
+ * - Acronym pendek di-detach ke token terpisah dulu sebelum regex,
+ *   agar \b tidak salah match substring di tengah kata lain.
+ *
+ * Contoh input yang sekarang ketangkap (sebelumnya "unknown"):
+ *   "IG - 19 s/d 25/1/26"         → meta
+ *   "FB Performance 19-25 Jan"    → meta
+ *   "YT Ads - 19 s/d 25/1"        → google
+ *   "TikTok Lite"                 → tiktok
  */
 export function detectPlatform(text: string): "meta" | "google" | "tiktok" | "unknown" {
   if (!text) return "unknown";
-  const s = text.toLowerCase();
-  if (/\b(meta|facebook|fb ads|instagram|ig ads)\b/.test(s)) return "meta";
-  if (/\b(google|gg|gg ads|gdn|search|pmax|performance max|youtube)\b/.test(s)) return "google";
-  if (/\b(tiktok|tt|ttk|bytedance)\b/.test(s)) return "tiktok";
+  // Normalize: lowercase + treat non-alphanumeric as word boundary
+  // supaya "IG-19" / "FB_28" / "YT:19" tetap ketangkap.
+  const s = text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (!s) return "unknown";
+
+  // Meta family (urutan: paling spesifik dulu)
+  if (/\b(meta ads|meta|facebook|fb ads|fb|instagram|ig ads|ig|wa|whatsapp)\b/.test(s)) return "meta";
+
+  // Google family
+  if (/\b(google ads|google|gg ads|gg|gdn|search ads|search|pmax|performance max|youtube|yt ads|yt)\b/.test(s)) return "google";
+
+  // TikTok family
+  if (/\b(tiktok|tt ads|ttk|tt|bytedance|douyin)\b/.test(s)) return "tiktok";
+
   return "unknown";
 }
 

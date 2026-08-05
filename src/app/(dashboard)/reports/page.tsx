@@ -1227,6 +1227,52 @@ export default function ReportsPage() {
             </div>
 
             <div className="space-y-4 px-6 py-4">
+              {/* 🆕 P1: UX Messaging — interpretasi hasil sync supaya user tidak bingung */}
+              {(() => {
+                const { imported, updated, skipped, errors } = syncResult.summary;
+                let icon = "✅";
+                let title = "Data berhasil disinkronisasi";
+                let desc = "";
+                let bgClass = "border-success/30 bg-success/5";
+                let titleClass = "text-success";
+
+                if (errors > 0) {
+                  icon = "⚠️";
+                  title = `${errors} error terjadi saat sync`;
+                  desc = "Beberapa baris gagal diproses. Lihat detail error di bawah.";
+                  bgClass = "border-danger/30 bg-danger/5";
+                  titleClass = "text-danger";
+                } else if (imported === 0 && updated > 0 && skipped > 0) {
+                  icon = "✅";
+                  title = "Data sudah up-to-date";
+                  desc = `Tidak ada data baru untuk diimpor. ${updated} report di-update dengan data terbaru dari sheet.`;
+                  bgClass = "border-success/30 bg-success/5";
+                  titleClass = "text-success";
+                } else if (imported === 0 && updated === 0 && skipped > 0) {
+                  icon = "ℹ️";
+                  title = "Tidak ada perubahan";
+                  desc = `Semua ${skipped} baris sudah ada di database. Sync bersifat idempotent — aman dijalankan berulang.`;
+                  bgClass = "border-info/30 bg-info/5";
+                  titleClass = "text-info";
+                } else if (imported > 0) {
+                  icon = "🎉";
+                  title = "Data baru berhasil diimpor";
+                  desc = `${imported} report baru ditambahkan${updated > 0 ? `, ${updated} report di-update` : ""}.`;
+                }
+
+                return (
+                  <div className={`rounded-md border p-3 ${bgClass}`}>
+                    <div className="flex items-start gap-2">
+                      <span className="text-base leading-none">{icon}</span>
+                      <div className="flex-1">
+                        <p className={`text-sm font-semibold ${titleClass}`}>{title}</p>
+                        {desc && <p className="mt-0.5 text-xs text-muted">{desc}</p>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Stats grid */}
               <div className="grid grid-cols-4 gap-2">
                 <div className="rounded-md bg-success/10 p-3 text-center">

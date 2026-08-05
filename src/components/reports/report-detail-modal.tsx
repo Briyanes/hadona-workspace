@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { X, FileText, Calendar, Edit3, Trash2, CheckCircle, AlertCircle } from "lucide-react";
+import { X, FileText, Calendar, Edit3, Trash2, CheckCircle, AlertCircle, ExternalLink, Database, Clock, AlertTriangle } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 
 interface ReportDetail {
@@ -14,6 +14,13 @@ interface ReportDetail {
   summary: string | null;
   client_id: string | null;
   created_at: string;
+  // 🆕 P4: Sheet source tracking fields
+  source_sheet_url?: string | null;
+  sheet_source?: string | null;
+  sheet_gid?: string | null;
+  last_synced_at?: string | null;
+  data_status?: string | null;
+  data_source_kind?: string | null;
 }
 
 interface ReportDetailModalProps {
@@ -52,7 +59,8 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
     setLoading(true);
     const { data, error } = await supabase
       .from("weekly_reports")
-      .select("id, period_start, period_end, status, summary, client_id, created_at")
+      // 🆕 P4: Include sheet source tracking fields
+      .select("id, period_start, period_end, status, summary, client_id, created_at, source_sheet_url, sheet_source, sheet_gid, last_synced_at, data_status, data_source_kind")
       .eq("id", reportId)
       .single();
 
@@ -241,6 +249,68 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
               <div className="pt-2 text-xs text-muted">
                 Dibuat: {formatDate(report.created_at, { day: "numeric", month: "short", year: "numeric" })}
               </div>
+
+              {/* 🆕 P4: Sheet Source & Data Status Section */}
+              {(report.sheet_source || report.data_status || report.last_synced_at) && (
+                <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+                    <Database size={12} /> Sumber Data
+                  </p>
+
+                  {/* Data status badge */}
+                  {report.data_status && report.data_status !== "ok" && (
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 rounded-md p-2 text-xs font-medium",
+                        report.data_status === "no_metrics" && "bg-warning/10 text-warning",
+                        report.data_status === "partial" && "bg-warning/10 text-warning",
+                        report.data_status === "synced_error" && "bg-danger/10 text-danger"
+                      )}
+                    >
+                      <AlertTriangle size={12} />
+                      <span>
+                        {report.data_status === "no_metrics" && "Tidak ada angka metric — narrative only"}
+                        {report.data_status === "partial" && "Data tidak lengkap — metric kurang dari 3"}
+                        {report.data_status === "synced_error" && "Error saat sync — data mungkin unreliable"}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1 text-xs text-muted">
+                    {report.sheet_source && (
+                      <p>
+                        <span className="font-medium text-gray-700">Sheet Tab:</span> {report.sheet_source}
+                        {report.sheet_gid && <span className="ml-1 font-mono text-muted/70">(gid: {report.sheet_gid})</span>}
+                      </p>
+                    )}
+                    {report.data_source_kind && (
+                      <p>
+                        <span className="font-medium text-gray-700">Metode Import:</span>{" "}
+                        {report.data_source_kind === "sheet_auto" && "Auto-sync dari Google Sheet"}
+                        {report.data_source_kind === "sheet_manual" && "Manual import via tombol Import Sheet"}
+                        {report.data_source_kind === "manual_entry" && "Input manual user"}
+                      </p>
+                    )}
+                    {report.last_synced_at && (
+                      <p className="flex items-center gap-1">
+                        <Clock size={11} />
+                        <span>Last sync: {formatDate(report.last_synced_at, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      </p>
+                    )}
+                    {report.source_sheet_url && (
+                      <a
+                        href={report.source_sheet_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        <ExternalLink size={11} />
+                        <span>Lihat Google Sheet asal</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
