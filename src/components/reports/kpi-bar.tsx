@@ -62,10 +62,26 @@ function WoWIndicator({ current, previous }: { current: number | null; previous?
   );
 }
 
+// 🆕 Sprint 4.8: Hint text untuk metric derived yang kosong (butuh input base metric)
+// Memberi tahu advertiser kolom apa yang harus diisi di sheet supaya metric terhitung.
+const DERIVED_METRIC_HINTS: Partial<Record<MetricKey, string>> = {
+  oc_to_wa_ratio: "💡 Isi kolom Outbound Clicks atau Link Clicks di sheet",
+  oc_to_lpv_ratio: "💡 Isi kolom Outbound Clicks di sheet",
+  lc_to_cv_ratio: "💡 Isi kolom Link Clicks di sheet",
+  cv_to_atc_ratio: "💡 Isi kolom Content Views di sheet",
+  atc_to_purchase_ratio: "💡 Isi kolom Adds to Cart di sheet",
+  purchase_rate_per_lc: "💡 Isi kolom Link Clicks di sheet",
+  lc_to_lpv_ratio: "💡 Isi kolom Link Clicks di sheet",
+  lpv_to_ic_ratio: "💡 Isi kolom Landing Page Views di sheet",
+  purchase_roas: "💡 Isi kolom Purchase Value di sheet",
+};
+
 export function KPICard({ metric, value, previousValue, objectiveId, size = "compact" }: KPICardProps) {
   const label = METRIC_LABELS[metric] || metric;
   const health = getMetricHealth(objectiveId, metric, value);
   const isHero = size === "hero";
+  const isEmpty = value === null || value === undefined;
+  const hint = isEmpty ? DERIVED_METRIC_HINTS[metric] : undefined;
 
   return (
     <div
@@ -74,6 +90,7 @@ export function KPICard({ metric, value, previousValue, objectiveId, size = "com
         HEALTH_COLORS[health],
         isHero ? "min-w-[140px]" : "min-w-[110px]"
       )}
+      title={hint}
     >
       <div className="mb-0.5 flex items-center justify-between gap-1">
         <p className="truncate text-[9px] font-medium uppercase tracking-wide text-muted">
@@ -84,9 +101,17 @@ export function KPICard({ metric, value, previousValue, objectiveId, size = "com
       <p className={cn("font-bold text-gray-900", isHero ? "text-lg" : "text-sm")}>
         {formatMetricValue(metric, value)}
       </p>
-      <div className="mt-0.5">
-        <WoWIndicator current={value ?? null} previous={previousValue} />
-      </div>
+      {/* 🆕 Sprint 4.8: Tampilkan hint kecil di bawah value kalau metric derived kosong */}
+      {hint && (
+        <p className="mt-0.5 text-[8px] italic text-amber-600 line-clamp-2" title={hint}>
+          {hint}
+        </p>
+      )}
+      {!hint && (
+        <div className="mt-0.5">
+          <WoWIndicator current={value ?? null} previous={previousValue} />
+        </div>
+      )}
     </div>
   );
 }

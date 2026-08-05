@@ -84,7 +84,17 @@ export function calculateAllMetrics(base: Partial<BaseMetrics>): CalculatedMetri
     // === CTWA CORE ===
     messaging_conversations_started: msgStarted,
     cost_per_message: msgStarted > 0 ? spend / msgStarted : null,
-    oc_to_wa_ratio: outboundClicks > 0 ? (msgStarted / outboundClicks) * 100 : null,
+    // 🆕 Sprint 4.8: Fallback proxy chain — kalau outbound_clicks kosong,
+    // pakai link_clicks → clicks_all supaya OC→WA tetap terhitung.
+    // (Real sheet Hadona sering tidak isi Outbound Clicks eksplisit)
+    oc_to_wa_ratio: (() => {
+      const effectiveOC =
+        outboundClicks > 0 ? outboundClicks
+        : linkClicks > 0 ? linkClicks
+        : clicks > 0 ? clicks
+        : 0;
+      return effectiveOC > 0 ? (msgStarted / effectiveOC) * 100 : null;
+    })(),
 
     // === CPAS SALES FUNNEL ===
     content_views: contentViews,

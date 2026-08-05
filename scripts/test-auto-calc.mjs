@@ -129,6 +129,58 @@ ROAS : -`,
   }
 );
 
+// 🆕 Sprint 4.8: Test CTWA OC→WA fallback proxy
+// Skenario: sheet only has Spend + MSGS, no Outbound Clicks
+// Expected: oc_to_wa_ratio tidak bisa dihitung (karena butuh OC atau Link Clicks)
+allPass &= testCase(
+  "CTWA OC→WA — Tanpa Outbound Clicks (Real Sheet Hadona)",
+  `Meta ADS - 12 s/d 18/7/26
+Spend : Rp 1.000.000
+MSGS : 50
+Cost/Msg : -`,
+  {
+    amount_spent: 1000000,
+    messaging_conversations_started: 50,
+    cost_per_message: 20000, // 1000000 / 50
+    // oc_to_wa_ratio: tidak di-test di sini karena tidak ada OC / Link Clicks
+  }
+);
+
+// 🆕 Sprint 4.8: Test CTWA OC→WA dengan alias "OC"
+// Skenario: sheet pakai alias "OC" untuk Outbound Clicks
+allPass &= testCase(
+  "CTWA OC→WA — dengan alias 'OC' (auto-calc ratio)",
+  `Meta ADS - 12 s/d 18/7/26
+Spend : Rp 1.000.000
+MSGS : 30
+OC : 200
+Cost/Msg : -`,
+  {
+    amount_spent: 1000000,
+    messaging_conversations_started: 30,
+    outbound_clicks: 200,
+    oc_to_wa_ratio: 15, // (30 / 200) * 100 = 15%
+    cost_per_message: 33333.33, // 1000000 / 30
+  }
+);
+
+// 🆕 Sprint 4.8: Test CTWA OC→WA dengan Link Clicks sebagai fallback
+// Skenario: sheet tidak ada Outbound Clicks, tapi ada Link Clicks
+allPass &= testCase(
+  "CTWA OC→WA — fallback ke Link Clicks",
+  `Meta ADS - 12 s/d 18/7/26
+Spend : Rp 500.000
+Result WA : 25
+Link Clicks : 100`,
+  {
+    amount_spent: 500000,
+    messaging_conversations_started: 25,
+    link_clicks: 100,
+    oc_to_wa_ratio: 25, // (25 / 100) * 100 = 25% (memakai link_clicks sebagai proxy)
+    cost_per_message: 20000, // 500000 / 25
+  }
+);
+
 console.log("\n" + "=".repeat(70));
 if (allPass) {
   console.log("  ✅ ALL TESTS PASSED");
