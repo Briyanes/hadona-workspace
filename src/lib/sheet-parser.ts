@@ -17,6 +17,7 @@
  */
 
 import { parse } from "csv-parse/sync";
+import { calculateAllMetrics, type BaseMetrics } from "./metric-formulas";
 
 // ============================================================================
 // TYPES
@@ -31,6 +32,12 @@ export interface ParsedMetric {
   value: number;
   /** Unit inferensi: currency / number / percent / ratio */
   unit: "currency" | "number" | "percent" | "ratio";
+  /**
+   * 🆕 Sprint 4.7: Marker kalau metric ini dihitung otomatis (bukan dari sheet asli).
+   * Dipakai oleh UI untuk tampilkan badge "🤖 auto-calc" supaya user tahu
+   * bahwa value tersebut derived dari base metrics (mis. COS/MSG = Spend/MSGS).
+   */
+  isAutoCalc?: boolean;
 }
 
 export interface ParsedRow {
@@ -118,6 +125,18 @@ const METRIC_ALIASES: Record<string, { key: string; unit: "currency" | "number" 
   "wa leads": { key: "messaging_conversations_started", unit: "number" },
   "wa lead": { key: "messaging_conversations_started", unit: "number" },
   "messaging conversations started": { key: "messaging_conversations_started", unit: "number" },
+  // 🆕 Sprint 4.7: Tambah alias MSGS yang sering dipakai di real sheet Hadona
+  // (sebelumnya hanya "result wa" dll yang ter-mapping, sedangkan sheet real
+  // pakai "MSGS", "Msgs", "Messages" → fallback jadi key "msgs" yang tidak dikenali)
+  "msgs": { key: "messaging_conversations_started", unit: "number" },
+  "msg": { key: "messaging_conversations_started", unit: "number" },
+  "messages": { key: "messaging_conversations_started", unit: "number" },
+  "message": { key: "messaging_conversations_started", unit: "number" },
+  "msg started": { key: "messaging_conversations_started", unit: "number" },
+  "messages started": { key: "messaging_conversations_started", unit: "number" },
+  "wa msg": { key: "messaging_conversations_started", unit: "number" },
+  "wa msgs": { key: "messaging_conversations_started", unit: "number" },
+  "wa messages": { key: "messaging_conversations_started", unit: "number" },
   "conversions": { key: "conversions", unit: "number" },
   "conversion": { key: "conversions", unit: "number" },
   "leads": { key: "results", unit: "number" },
@@ -498,6 +517,224 @@ export function mapMetricLabel(rawLabel: string): { key: string; unit: "currency
   if (METRIC_ALIASES[stripped]) return METRIC_ALIASES[stripped];
 
   return null;
+}
+
+// ============================================================================
+// 🆕 SPRINT 4.7: AUTO-CALCULATE DERIVED METRICS
+// ============================================================================
+// Konsensus Tim Expert (3 Advertiser + 5 Web Dev + 2 UI/UX):
+//   Advertiser sering kosongin metric derivatif (COS/MSG, COS/PUR, ROAS) di
+//   sheet karena males hitung manual. Aplikasi harus hitung otomatis dari
+//   base metric (Spend, MSGS, Purchases, dll) supaya dashboard tidak kosong.
+//
+//   Strategi:
+//     1. Extract base metrics dari ParsedMetric[] (yang sudah ada di sheet)
+//     2. Panggil calculateAllMetrics() untuk compute 25+ derived metrics
+//     3. Merge hasil calc ke metric list (prioritas: nilai asli sheet > calc)
+//     4. Tandai metric hasil calc dengan isAutoCalc=true untuk UI badge
+
+/**
+ * Mapping ParsedMetric.key → BaseMetrics field.
+ * Dipakai untuk convert array ParsedMetric ke object BaseMetrics yang
+ * dibutuhkan oleh calculateAllMetrics().
+ */
+const METRIC_KEY_TO_BASE: Record<string, keyof BaseMetrics> = {
+  amount_spent: "spend",
+  impressions: "impressions",
+  clicks_all: "clicks",
+  reach: "reach",
+  link_clicks: "link_clicks",
+  outbound_clicks: "outbound_clicks",
+  messaging_conversations_started: "messaging_conversations_started",
+  content_views: "content_views",
+  adds_to_cart: "adds_to_cart",
+  purchases: "purchases",
+  purchase_value: "purchase_value",
+  landing_page_views: "landing_page_views",
+  checkouts_initiated: "checkouts_initiated",
+  instagram_follows: "instagram_follows",
+  instagram_profile_visits: "instagram_profile_visits",
+  conversions: "conversions",
+  results: "results",
+  revenue: "revenue",
+  video_views: "video_views",
+  avg_watch_time: "avg_watch_time",
+};
+
+/**
+ * Convert array ParsedMetric ke object BaseMetrics untuk feeding ke formula engine.
+ * Metric dengan value null/NaN di-skip (supaya tidak mengganggu perhitungan).
+ */
+function extractBaseMetrics(metrics: ParsedMetric[]): Partial<BaseMetrics> {
+  const base: Partial<BaseMetrics> = {};
+  for (const m of metrics) {
+    const baseKey = METRIC_KEY_TO_BASE[m.key];
+    if (!baseKey) continue;
+    if (m.value === null || m.value === undefined || isNaN(m.value)) continue;
+    (base as Record<string, unknown>)[baseKey] = m.value;
+  }
+  return base;
+}
+
+/**
+ * Unit inferensi untuk derived metric (untuk display & UI badge).
+ */
+const DERIVED_METRIC_UNITS: Record<string, "currency" | "number" | "percent" | "ratio"> = {
+  amount_spent: "currency",
+  cost_per_result: "currency",
+  cost_per_message: "currency",
+  cost_per_purchase: "currency",
+  cost_per_cv: "currency",
+  cost_per_lpv: "currency",
+  cost_per_atc: "currency",
+  cost_per_checkout: "currency",
+  cost_per_follow: "currency",
+  cost_per_1k_reached: "currency",
+  cpm: "currency",
+  cpc_all: "currency",
+  cpc_link: "currency",
+  cpv: "currency",
+  vcpm: "currency",
+  aov: "currency",
+  purchase_value: "currency",
+  add_to_cart_value: "currency",
+  ctr_all: "percent",
+  ctr_link: "percent",
+  vtr: "percent",
+  oc_to_wa_ratio: "percent",
+  lc_to_cv_ratio: "percent",
+  cv_to_atc_ratio: "percent",
+  atc_to_purchase_ratio: "percent",
+  purchase_rate_per_lc: "percent",
+  oc_to_lpv_ratio: "percent",
+  lc_to_lpv_ratio: "percent",
+  lpv_to_ic_ratio: "percent",
+  engagement_rate: "percent",
+  impression_share: "percent",
+  frequency: "ratio",
+  purchase_roas: "ratio",
+  quality_score: "ratio",
+  impressions: "number",
+  reach: "number",
+  clicks_all: "number",
+  link_clicks: "number",
+  outbound_clicks: "number",
+  messaging_conversations_started: "number",
+  content_views: "number",
+  adds_to_cart: "number",
+  purchases: "number",
+  landing_page_views: "number",
+  checkouts_initiated: "number",
+  instagram_follows: "number",
+  instagram_profile_visits: "number",
+  results: "number",
+  conversions: "number",
+  video_views: "number",
+  app_installs: "number",
+  profile_visits_tt: "number",
+  avg_watch_time: "number",
+};
+
+/**
+ * Set metric yang merupakan PASSTHROUGH dari base (bukan derived).
+ *
+ * Metric ini di-return `calculateAllMetrics` sebagai `0` ketika base kosong,
+ * sehingga kalau di-push akan menimbulkan "0 🤖 pollution" di dashboard.
+ *
+ * Strategi: untuk metric passthrough, JANGAN di-append sebagai auto-calc
+ * (karena kalau datang dari sheet, sudah ada di array; kalau tidak ada
+ * di sheet, berarti emang tidak relevan untuk objective tersebut).
+ */
+const PASSTHROUGH_METRIC_KEYS = new Set([
+  "amount_spent",
+  "impressions",
+  "results",
+  "reach",
+  "clicks_all",
+  "link_clicks",
+  "outbound_clicks",
+  "messaging_conversations_started",
+  "content_views",
+  "adds_to_cart",
+  "purchases",
+  "purchase_value",
+  "landing_page_views",
+  "checkouts_initiated",
+  "instagram_profile_visits",
+  "instagram_follows",
+  "video_views",
+  "avg_watch_time",
+  "conversions",
+  "revenue",
+]);
+
+/**
+ * Enrich ParsedMetric[] dengan derived metrics yang dihitung otomatis.
+ *
+ * Strategi merge (rev Sprint 4.7 P5 — fix 0-pollution):
+ *   - Jika metric SUDAH ADA di sheet dengan value valid → keep (prioritas sheet)
+ *   - Jika metric ADA di sheet tapi value null/NaN/0 kosong → override dengan calc
+ *     (hanya jika calc value non-null & non-zero)
+ *   - Jika metric TIDAK ADA di sheet:
+ *     - Jika metric DERIVED (cpm, ctr, cost_per_*, roas, ratio_*, dll)
+ *       → append dengan isAutoCalc=true (hanya jika value non-null & non-zero)
+ *     - Jika metric PASSTHROUGH (impressions, clicks_all, dll) → SKIP
+ *       (jangan append 0 meaningless yang bikin dashboard penuh "0 🤖")
+ *
+ * Mutasi array in-place untuk efisiensi.
+ */
+function enrichMetricsWithAutoCalc(metrics: ParsedMetric[]): void {
+  if (metrics.length === 0) return;
+
+  // Step 1: Extract base metrics
+  const base = extractBaseMetrics(metrics);
+
+  // Step 2: Hitung semua derived metrics
+  const derived = calculateAllMetrics(base);
+
+  // Step 3: Build lookup map untuk cek existing
+  const existingMap = new Map<string, ParsedMetric>();
+  for (const m of metrics) {
+    existingMap.set(m.key, m);
+  }
+
+  // Step 4: Merge derived metrics
+  for (const [key, value] of Object.entries(derived)) {
+    // Skip null/NaN/undefined
+    if (value === null || value === undefined || isNaN(value as number)) continue;
+
+    const existing = existingMap.get(key);
+    if (existing) {
+      // Override hanya kalau existing value null/NaN/0 kosong DAN calc non-zero
+      // (kasus sheet tulis "Cost/Msg : -" → di-parse jadi null → di-skip parseRow,
+      //  jadi existing di sini biasanya valid value. Tapi kalau ada 0 + calc non-0,
+      //  kita prefer calc supaya dashboard tidak misleading 0.)
+      if (value !== 0 && (existing.value === 0 || existing.value === null || isNaN(existing.value))) {
+        existing.value = value;
+        existing.isAutoCalc = true;
+      }
+    } else {
+      // Tidak ada di sheet → hanya append jika BUKAN passthrough metric
+      // (passthrough metric dengan value 0 = noise, bukan info berguna)
+      if (PASSTHROUGH_METRIC_KEYS.has(key)) continue;
+
+      // Skip derived metric dengan value 0 (hindari 0 🤖 pollution)
+      // Contoh: cost_per_message saat msgStarted=0 → null (sudah di-skip di atas)
+      // Tapi cpc_all saat clicks=0 → null (skip). Jadi sebagian besar 0 derived
+      // sudah di-filter di level calculateAllMetrics (return null).
+      // Untuk pengamanan tambahan, skip value=0 di append:
+      if (value === 0) continue;
+
+      const unit = DERIVED_METRIC_UNITS[key] ?? "number";
+      metrics.push({
+        key,
+        rawLabel: `(auto-calc) ${key.replace(/_/g, " ")}`,
+        value,
+        unit,
+        isAutoCalc: true,
+      });
+    }
+  }
 }
 
 // ============================================================================
@@ -906,7 +1143,13 @@ export function parseRow(cells: string[], rowIndex: number, schema: SheetSchema 
     }
   }
 
-  // Detect objective dari metric set
+  // 🆕 Sprint 4.7: Auto-calculate derived metrics (COS/MSG, COS/PUR, ROAS, CPC, dll)
+  // Berguna ketika sheet hanya menulis base metric (Spend, MSGS, Purchases) tetapi
+  // tidak mengisi metric derivatif (Cost/Msg, Cost/Purchase, ROAS).
+  // Setelah semua metric ter-parse dari sheet, enrich dengan hasil calculateAllMetrics().
+  // Prioritas: nilai asli sheet > calc result (jangan override yang sudah ada).
+  enrichMetricsWithAutoCalc(metrics);
+  // Detect objective dari metric set (setelah enrich supaya ROAS/Purchase detection akurat)
   const detectedObjective = metrics.length > 0 ? detectObjective(metrics, platform) : "";
 
   // Normalize status — map value dari sheet ke enum DB
