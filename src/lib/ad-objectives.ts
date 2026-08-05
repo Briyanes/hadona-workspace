@@ -618,3 +618,112 @@ export const OBJECTIVE_GROUPS: Array<{
     objectives: TIKTOK_OBJECTIVES.map((o) => o.id),
   },
 ];
+
+// ============================================================================
+// 🎯 HERO METRIC CARDS — Dynamic per Objective
+// ============================================================================
+// Dipakai oleh /reports page untuk render 4 KPI card utama.
+// Return metric yang RELEVAN per objective — bukan generic hardcoded.
+// Ref: Sprint 4 — bug fix RMODA CTWA yang ROAS-nya selalu "-".
+
+const HERO_CARD_FALLBACK: MetricKey[] = ["amount_spent", "results", "cost_per_result", "ctr_all"];
+
+/**
+ * Return 4 metric card utama yang harus ditampilkan di hero card /reports page,
+ * disesuaikan dengan objective. Selalu prioritaskan primaryMetrics, lalu isi
+ * dari secondaryMetrics kalau primary < 4. Spend selalu di posisi pertama.
+ *
+ * @example getHeroCards("META_CTWA")
+ * // → ["amount_spent", "messaging_conversations_started", "cost_per_message", "oc_to_wa_ratio"]
+ */
+export function getHeroCards(objectiveId: string): MetricKey[] {
+  const obj = OBJECTIVE_MAP[objectiveId];
+  if (!obj) return HERO_CARD_FALLBACK;
+
+  // Spend selalu di posisi pertama (business critical metric).
+  // "spend" di-cast ke MetricKey karena bukan key canonical Meta API,
+  // tapi tetap valid sebagai alias UI (di-resolve via getMetricByAlias).
+  const spendKey: MetricKey = obj.secondaryMetrics.includes("amount_spent")
+    ? "amount_spent"
+    : ("spend" as MetricKey);
+
+  // Mulai dari primary metrics (kecuali kalau itu amount_spent, jangan duplikat)
+  const primaryFiltered = obj.primaryMetrics.filter((m) => m !== spendKey && m !== "amount_spent");
+
+  // Gabungkan: spend + primary + secondary (untuk capai 4 card)
+  const candidates: MetricKey[] = [spendKey, ...primaryFiltered];
+
+  // Kalau kurang dari 4, isi dari secondary (skip yang sudah masuk & hidden)
+  if (candidates.length < 4) {
+    for (const m of obj.secondaryMetrics) {
+      if (candidates.length >= 4) break;
+      if (!candidates.includes(m) && m !== "amount_spent" && !obj.hiddenMetrics.includes(m)) {
+        candidates.push(m);
+      }
+    }
+  }
+
+  // Trim ke 4 card (atau kalau kurang, biarkan)
+  return candidates.slice(0, 4);
+}
+
+// ============================================================================
+// 🔄 METRIC ALIAS RESOLVER
+// ============================================================================
+// Solve inkonsistensi key: "spend" vs "amount_spent", "roas" vs "purchase_roas",
+// "conversions" vs "purchases" vs "messaging_conversations_started".
+
+/**
+ * Map alias key (UI/shorthand) → canonical key (ad-objectives / Meta API).
+ * NOTE: Value diset ke `string[]` (bukan `MetricKey[]`) karena nilai alias
+ * bisa berupa key non-canonical (mis. "spend", "ctr", "roas") yang valid secara
+ * runtime tapi tidak masuk union `MetricKey` yang strict.
+ */
+export const METRIC_ALIASES: Record<string, string[]> = {
+  spend: ["amount_spent", "spend"],
+  impressions: ["impressions"],
+  reach: ["reach"],
+  clicks: ["clicks_all", "link_clicks", "outbound_clicks"],
+  ctr: ["ctr_all", "ctr_link", "ctr"],
+  cpc: ["cpc_all", "cpc_link", "cpc"],
+  cpm: ["cpm"],
+  frequency: ["frequency"],
+  // Hasil / konversi
+  conversions: ["purchases", "messaging_conversations_started", "results", "conversions"],
+  purchases: ["purchases", "conversions"],
+  messages: ["messaging_conversations_started"],
+  cpr: ["cost_per_result", "cost_per_purchase", "cost_per_message", "cpr"],
+  // Revenue / ROAS
+  revenue: ["purchase_value", "revenue"],
+  roas: ["purchase_roas", "roas"],
+  aov: ["aov"],
+};
+
+/**
+ * Resolve metric value dari Record<string, number> dengan alias fallback.
+ *
+ * @example getMetricByAlias(metrics, "spend") → 1093910 (akan cek "amount_spent" lalu "spend")
+ */
+export function getMetricByAlias(
+  metrics: Record<string, number | null | undefined> | undefined | null,
+  alias: string
+): number | null {
+  if (!metrics) return null;
+
+  // Cek exact key dulu
+  if (metrics[alias] !== undefined && metrics[alias] !== null) {
+    return Number(metrics[alias]) || null;
+  }
+
+  // Cek alias map
+  const aliases = METRIC_ALIASES[alias];
+  if (aliases) {
+    for (const key of aliases) {
+      if (metrics[key] !== undefined && metrics[key] !== null) {
+        return Number(metrics[key]) || null;
+      }
+    }
+  }
+
+  return null;
+}

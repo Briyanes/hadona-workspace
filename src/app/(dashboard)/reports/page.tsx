@@ -196,6 +196,110 @@ function getMetric(metrics: ReportMetric[], key: string): number {
 }
 
 // ============================================
+// OBJECTIVE-AWARE CARD METRICS
+// ============================================
+// Solve bug "ROAS selalu -" untuk client CTWA: kalau objective CTWA,
+// jangan paksa tampilkan ROAS (memang tidak relevan). Tampilkan metric
+// yang relevan: Messaging Started, Cost/Msg, OC→WA ratio.
+//
+// Logic:
+// 1. Lookup OBJECTIVE_MAP[objective] → dapat primaryMetrics.
+// 2. Spend selalu di slot pertama.
+// 3. Ambil 3 primary metric lain (atau fallback kalau kosong).
+// 4. Format value sesuai unit (currency / percent / ratio / number).
+
+type CardMetric = {
+  label: string;
+  value: string;
+  color?: string;
+};
+
+const METRIC_CARD_LABEL: Record<string, string> = {
+  amount_spent: "SPEND",
+  spend: "SPEND",
+  purchase_roas: "ROAS",
+  roas: "ROAS",
+  purchases: "PURCHASES",
+  conversions: "CONV",
+  cost_per_purchase: "COST/PUR",
+  cost_per_result: "CPR",
+  cpr: "CPR",
+  aov: "AOV",
+  purchase_value: "REVENUE",
+  revenue: "REVENUE",
+  messaging_conversations_started: "MSGS",
+  cost_per_message: "COST/MSG",
+  oc_to_wa_ratio: "OC→WA",
+  ctr_all: "CTR",
+  ctr: "CTR",
+  ctr_link: "CTR",
+  cpc_all: "CPC",
+  cpc_link: "CPC",
+  cpc: "CPC",
+  cpm: "CPM",
+  impressions: "IMPR",
+  reach: "REACH",
+  clicks_all: "CLICKS",
+  link_clicks: "LINKS",
+  frequency: "FREQ",
+  landing_page_views: "LPV",
+  cost_per_lpv: "COST/LPV",
+  instagram_follows: "FOLLOWS",
+  video_views: "VIDS",
+  vtr: "VTR",
+};
+
+function getObjectiveCardMetrics(
+  objective: string | null | undefined,
+  metrics: ReportMetric[]
+): CardMetric[] {
+  const obj = objective ? OBJECTIVE_MAP[objective] : undefined;
+  const FALLBACK_KEYS = ["spend", "conversions", "ctr", "roas"];
+
+  let selectedKeys: string[];
+  if (obj) {
+    const primary = obj.primaryMetrics.filter((m) => m !== "amount_spent");
+    selectedKeys = ["amount_spent", ...primary].slice(0, 4);
+    if (selectedKeys.length < 4) {
+      for (const m of obj.secondaryMetrics) {
+        if (selectedKeys.length >= 4) break;
+        if (!selectedKeys.includes(m)) selectedKeys.push(m);
+      }
+    }
+  } else {
+    selectedKeys = FALLBACK_KEYS;
+  }
+
+  return selectedKeys.slice(0, 4).map((key) => {
+    const value = getMetric(metrics, key);
+    const label = METRIC_CARD_LABEL[key] || key.toUpperCase().slice(0, 8);
+
+    let formatted = "-";
+    let color: string | undefined;
+
+    if (value > 0) {
+      if (key === "amount_spent" || key === "spend" || key.includes("cost_per_") ||
+          key === "aov" || key === "cpc" || key === "cpm" || key === "cpr" ||
+          key === "purchase_value" || key === "revenue" || key === "cpv" || key === "cpi") {
+        formatted = formatIDR(value);
+      } else if (key.includes("ctr") || key.includes("ratio") || key.includes("rate") ||
+                 key === "vtr" || key === "engagement_rate" || key === "impression_share") {
+        formatted = `${value.toFixed(2)}%`;
+      } else if (key === "purchase_roas" || key === "roas") {
+        formatted = `${value.toFixed(2)}x`;
+        color = value >= 3 ? "text-success" : value >= 1 ? "text-warning" : "text-danger";
+      } else if (key === "frequency" || key === "quality_score") {
+        formatted = value.toFixed(2);
+      } else {
+        formatted = formatCompact(value);
+      }
+    }
+
+    return { label, value: formatted, color };
+  });
+}
+
+// ============================================
 // HELPERS
 // ============================================
 
@@ -1514,27 +1618,23 @@ export default function ReportsPage() {
                   <span className={`badge ${statusColors[r.status] || statusColors.draft}`}>{r.status}</span>
                 </div>
 
-                {/* Key Metrics Bar — auto dari report_metrics */}
+                {/* 🎯 Key Metrics Bar — OBJECTIVE-AWARE
+                    Card yang ditampilkan menyesuaikan objective report:
+                    - CTWA    → SPEND, MSGS, COST/MSG, OC→WA
+                    - Sales   → SPEND, ROAS, PURCHASES, AOV
+                    - CPAS    → SPEND, ROAS, REVENUE, AOV
+                    - Traffic → SPEND, LINKS, CTR, CPC
+                    Fallback (no objective) → SPEND, CONV, CTR, ROAS */}
                 {hasMetrics ? (
                   <div className="mb-3 grid grid-cols-4 gap-2 rounded-md border border-border bg-background p-2">
-                    <div className="text-center">
-                      <p className="text-[9px] text-muted">SPEND</p>
-                      <p className="text-xs font-bold text-gray-900">{spend ? formatIDR(spend) : "-"}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] text-muted">CONV</p>
-                      <p className="text-xs font-bold text-gray-900">{conversions || "-"}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] text-muted">CTR</p>
-                      <p className="text-xs font-bold text-gray-900">{ctr ? `${ctr}%` : "-"}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] text-muted">ROAS</p>
-                      <p className={cn("text-xs font-bold", (roas ?? 0) >= 3 ? "text-success" : (roas ?? 0) >= 1 ? "text-warning" : "text-danger")}>
-                        {roas ? `${roas}x` : "-"}
-                      </p>
-                    </div>
+                    {getObjectiveCardMetrics(r.objective, metrics).map((card, idx) => (
+                      <div key={idx} className="text-center">
+                        <p className="text-[9px] text-muted">{card.label}</p>
+                        <p className={cn("text-xs font-bold", card.color || "text-gray-900")}>
+                          {card.value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
 
