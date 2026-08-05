@@ -269,6 +269,9 @@ async function handleImport(
     reportId?: string;
     clientId?: string;
     error?: string;
+    // 🆕 v2.3 (Sprint 4.6 P1): tambahan untuk skip breakdown di frontend
+    clientName?: string;
+    skipReason?: string;
   }> = [];
 
   for (const row of rows) {
@@ -319,11 +322,14 @@ async function handleImport(
         clientCache.set(row.clientName.toLowerCase(), clientId);
       }
 
+      // 🆕 v2.3: ubah ke "skipped" — bukan system error, tapi row tidak bisa diproses
+      // karena client tidak dikenali di DB. Lebih akurat secara semantik.
       if (!clientId) {
         results.push({
           rowIndex: row.rowIndex,
-          status: "error",
-          error: `Client tidak ditemukan: "${row.clientName}"`,
+          status: "skipped",
+          clientName: row.clientName,
+          skipReason: `Client tidak dikenali: ${row.clientName}`,
         });
         continue;
       }
@@ -361,11 +367,14 @@ async function handleImport(
         periodEnd = toDateString(d);
       }
 
+      // 🆕 v2.3: ubah ke "skipped" — bukan system error, tapi format tanggal
+      // di sheet tidak dikenali parser.
       if (!periodStart) {
         results.push({
           rowIndex: row.rowIndex,
-          status: "error",
-          error: "Period start tidak ter-detect",
+          status: "skipped",
+          clientName: row.clientName,
+          skipReason: "Period tidak terdetect (format tanggal tidak dikenali)",
         });
         continue;
       }
@@ -385,6 +394,8 @@ async function handleImport(
             status: "skipped",
             reportId: (existing as { id: string }).id,
             clientId,
+            clientName: row.clientName,
+            skipReason: "Duplicate (client + period sudah ada di DB)",
           });
           continue;
         }

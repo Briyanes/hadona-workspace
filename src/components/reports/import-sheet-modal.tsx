@@ -85,6 +85,25 @@ interface ImportResult {
     imported: number;
     skipped: number;
     errors: number;
+    // 🆕 v2.3 (Sprint 4.6 P1): derived breakdown for transparency
+    // Computed client-side dari results array (tidak perlu ubah backend).
+    // Bucket sesuai skipReason di result.error / result.skipReason.
+    skippedBreakdown?: {
+      dedup: number;
+      unmatchedClient: number;
+      noPeriod: number;
+      noMetric: number;
+      noClient: number;
+      other: number;
+      samples: {
+        dedup: string[];
+        unmatchedClient: string[];
+        noPeriod: string[];
+        noMetric: string[];
+        noClient: string[];
+        other: string[];
+      };
+    };
   };
   results: Array<{
     rowIndex: number;
@@ -92,6 +111,9 @@ interface ImportResult {
     reportId?: string;
     clientId?: string;
     error?: string;
+    // 🆕 v2.3: optional clientName & skipReason dari backend untuk breakdown
+    clientName?: string;
+    skipReason?: string;
   }>;
 }
 
@@ -862,12 +884,78 @@ function formatMetric(value: number, unit: string): string {
 }
 
 // ============================================================================
-// RESULT STEP
+// RESULT STEP — dengan Skip Breakdown (Sprint 4.6 P1)
 // ============================================================================
+
+/**
+ * Klasifikasikan skip reason ke salah satu bucket.
+ * Pattern matching pada error/skipReason message dari backend.
+ *
+ * Backend (`/api/reports/import-sheet/route.ts` line 385) memberi reason seperti:
+ *   - "Duplicate (client + period sudah ada)" → dedup
+ *   - "Client tidak dikenali: Rmoda"          → unmatchedClient
+ *   - "Period tidak valid"                     → noPeriod
+ *   - "Tidak ada metric"                       → noMetric
+ *   - "Client kosong"                          → noClient
+ */
+type SkipBucket = "dedup" | "unmatchedClient" | "noPeriod" | "noMetric" | "noClient" | "other";
+
+function classifySkipReason(reason: string | undefined): SkipBucket {
+  const r = (reason || "").toLowerCase();
+  if (!r) return "other";
+  if (r.includes("duplikat") || r.includes("duplicate") || r.includes("sudah ada") || r.includes("dedup")) return "dedup";
+  if (r.includes("tidak dikenali") || r.includes("unmatched") || r.includes("no match") || r.includes("client tidak")) return "unmatchedClient";
+  if (r.includes("period") || r.includes("tanggal") || r.includes("periode")) return "noPeriod";
+  if (r.includes("metric") || r.includes("metrik")) return "noMetric";
+  if (r.includes("client kosong") || r.includes("no client") || r.includes("nama client")) return "noClient";
+  return "other";
+}
+
+/**
+ * Derive breakdown dari results array (client-side).
+ * Backend tidak perlu ubah — kita compute di frontend.
+ */
+function deriveSkipBreakdown(results: ImportResult["results"]) {
+  const breakdown = {
+    dedup: 0,
+    unmatchedClient: 0,
+    noPeriod: 0,
+    noMetric: 0,
+    noClient: 0,
+    other: 0,
+    samples: {
+      dedup: [] as string[],
+      unmatchedClient: [] as string[],
+      noPeriod: [] as string[],
+      noMetric: [] as string[],
+      noClient: [] as string[],
+      other: [] as string[],
+    },
+  };
+
+  for (const r of results) {
+    if (r.status !== "skipped") continue;
+    const reason = r.skipReason || r.error;
+    const bucket = classifySkipReason(reason);
+    breakdown[bucket] += 1;
+    if (breakdown.samples[bucket].length < 3) {
+      const label = r.clientName ? `#${r.rowIndex} "${r.clientName}"` : `#${r.rowIndex}`;
+      const detail = reason ? ` — ${reason.slice(0, 60)}` : "";
+      breakdown.samples[bucket].push(`${label}${detail}`);
+    }
+  }
+
+  return breakdown;
+}
 
 function ResultStep({ result }: { result: ImportResult }) {
   const { summary, results } = result;
   const success = summary.imported > 0;
+  const [showSkipDetail, setShowSkipDetail] = useState(false);
+
+  // 🆕 Sprint 4.6 P1: derive breakdown dari results array
+  const breakdown = summary.skippedBreakdown || (summary.skipped > 0 ? deriveSkipBreakdown(results) : null);
+  const hasActionableSkip = !!breakdown && (breakdown.unmatchedClient > 0 || breakdown.noPeriod > 0);
 
   return (
     <div className="space-y-4">
@@ -901,6 +989,131 @@ function ResultStep({ result }: { result: ImportResult }) {
         </div>
       </div>
 
+      {/* 🆕 Sprint 4.6 P1: Skip Breakdown Card (collapsible) */}
+      {breakdown && summary.skipped > 0 && (
+        <div
+          className={cn(
+            "rounded-md border p-3",
+            hasActionableSkip
+              ? "border-warning/30 bg-warning/5"
+              : "border-info/30 bg-info/5"
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => setShowSkipDetail((v) => !v)}
+            className="flex w-full items-center justify-between text-left"
+            aria-expanded={showSkipDetail}
+          >
+            <div className="flex items-center gap-2">
+              {hasActionableSkip ? (
+                <AlertTriangle className="text-warning" size={14} />
+              ) : (
+                <CheckCircle2 className="text-info" size={14} />
+              )}
+              <p className={cn("text-xs font-semibold", hasActionableSkip ? "text-warning" : "text-info")}>
+                Mengapa {summary.skipped} row di-skip?
+              </p>
+            </div>
+            <span className="text-xs text-muted">
+              {showSkipDetail ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </span>
+          </button>
+
+          {!showSkipDetail && (
+            <p className="mt-1.5 text-[10px] text-muted">
+              {hasActionableSkip
+                ? "⚠️ Ada baris yang mungkin perlu review (client tidak dikenali / format tanggal)."
+                : "✅ Semua skip aman — baris naratif atau duplikat yang sudah ada di DB."}
+              {" "}
+              <span className="font-medium text-info">Klik untuk detail →</span>
+            </p>
+          )}
+
+          {showSkipDetail && (
+            <div className="mt-3 space-y-3">
+              <p className="text-[10px] text-muted">
+                Breakdown alasan skip — bukan error, melainkan baris yang sengaja tidak diproses.
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+                <BreakdownTile
+                  label="Dedup"
+                  value={breakdown.dedup}
+                  description="Duplikat (sudah ada di DB)"
+                  tone="neutral"
+                />
+                <BreakdownTile
+                  label="Unmatched"
+                  value={breakdown.unmatchedClient}
+                  description="Client tidak dikenali di DB"
+                  tone="warning"
+                />
+                <BreakdownTile
+                  label="No Period"
+                  value={breakdown.noPeriod}
+                  description="Format tanggal tidak terdeteksi"
+                  tone="warning"
+                />
+                <BreakdownTile
+                  label="No Metric"
+                  value={breakdown.noMetric}
+                  description="Baris naratif (KESIMPULAN, ACTION)"
+                  tone="neutral"
+                />
+                <BreakdownTile
+                  label="No Client"
+                  value={breakdown.noClient}
+                  description="Baris kosong / separator"
+                  tone="neutral"
+                />
+                {breakdown.other > 0 && (
+                  <BreakdownTile
+                    label="Lainnya"
+                    value={breakdown.other}
+                    description="Alasan skip lain"
+                    tone="neutral"
+                  />
+                )}
+              </div>
+
+              {/* Samples — tampilkan contoh per kategori untuk debugging */}
+              <div className="space-y-2">
+                {([
+                  ["unmatchedClient", "⚠️ Client tidak dikenali"],
+                  ["dedup", "🔁 Row dedup (sudah ada)"],
+                  ["noPeriod", "📅 Format tanggal tidak terdeteksi"],
+                  ["noMetric", "📝 Baris naratif"],
+                  ["noClient", "️ Client kosong"],
+                  ["other", "❓ Lainnya"],
+                ] as const).map(([key, label]) => {
+                  const items = breakdown.samples[key] || [];
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={key} className="rounded bg-background p-2">
+                      <p className="mb-1 text-[9px] font-semibold uppercase text-muted">{label}</p>
+                      <ul className="space-y-0.5 text-[9px] text-muted">
+                        {items.map((ex, i) => (
+                          <li key={i} className="font-mono">{ex}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Action hint */}
+              {hasActionableSkip && (
+                <div className="rounded bg-warning/10 p-2 text-[10px] text-warning">
+                  💡 <strong>Tip:</strong> Untuk unmatched client, cek spelling nama client di master DB.
+                  Untuk no-period, pastikan format tanggal di cell performance:{" "}
+                  <code className="rounded bg-surface px-1">19 s/d 25/1/26</code>.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Per-row results */}
       <div className="space-y-2">
         <p className="text-sm font-medium text-gray-900">Detail per baris:</p>
@@ -916,6 +1129,9 @@ function ResultStep({ result }: { result: ImportResult }) {
               <span className={config.color}>{config.icon}</span>
               <span className="font-mono text-muted">#{r.rowIndex}</span>
               <span className={cn("font-semibold", config.color)}>{config.label}</span>
+              {r.clientName && (
+                <span className="truncate text-muted">"{r.clientName}"</span>
+              )}
               {r.reportId && (
                 <span className="text-muted">→ ID: {r.reportId.slice(0, 8)}...</span>
               )}
@@ -924,6 +1140,39 @@ function ResultStep({ result }: { result: ImportResult }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// BREAKDOWN TILE (sub-component)
+// ============================================================================
+
+function BreakdownTile({
+  label,
+  value,
+  description,
+  tone,
+}: {
+  label: string;
+  value: number;
+  description: string;
+  tone: "neutral" | "warning";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded bg-background p-2",
+        tone === "warning" && value > 0 && "ring-1 ring-warning/40"
+      )}
+    >
+      <p className={cn("text-[9px] uppercase", tone === "warning" && value > 0 ? "text-warning" : "text-muted")}>
+        {label}
+      </p>
+      <p className={cn("text-sm font-bold", tone === "warning" && value > 0 ? "text-warning" : "text-gray-900")}>
+        {value}
+      </p>
+      <p className="text-[8px] text-muted">{description}</p>
     </div>
   );
 }
