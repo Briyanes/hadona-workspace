@@ -1522,7 +1522,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Tab Navigation - Scrollable Carousel (sticky supaya konteks tidak hilang saat scroll) */}
-      <div className="sticky top-0 z-20 -mx-4 mb-2 flex gap-1 overflow-x-auto border-b border-border bg-surface/95 px-4 pb-px backdrop-blur supports-[backdrop-filter]:bg-surface/80 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="sticky top-0 z-20 -mx-4 mb-2 flex gap-1 overflow-x-auto border-b border-border bg-transparent px-4 pb-px backdrop-blur-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           onClick={() => setActiveTab("list")}
           className={cn(
