@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Search,
@@ -25,6 +25,7 @@ import {
   TrendingUp,
   AlertTriangle,
   User,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { cn, formatIDR, getInitials } from "@/lib/utils";
@@ -110,10 +111,19 @@ export default function ClientsPage() {
 
   // View & filter state
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [filterStatus, setFilterStatus] = useState("all");
+  // 🆕 Default filter = "active" — user request: filter utama client yang active
+  // Override per request: tampilkan active client sebagai default view.
+  // Quick Status Chips (di bawah) memungkinkan user switch ke status lain dengan 1 klik.
+  const [filterStatus, setFilterStatus] = useState("active");
   const [filterService, setFilterService] = useState("all");
   const [filterAM, setFilterAM] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+
+  // 🆕 Pagination state (Load More pattern — sama dengan reports page)
+  // Default 12 cards. +12 setiap klik Load More. Reset ke 12 saat filter/search/sort berubah.
+  // Performance: hindari render semua client sekaligus kalau dataset tumbuh.
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -354,6 +364,30 @@ export default function ClientsPage() {
 
   const { sortedData, sortState, toggleSort } = useSortable<Client>({ data: filtered });
 
+  // 🆕 Reset pagination ke PAGE_SIZE setiap kali filter/search/sort berubah.
+  // Tanpa ini: user di page 3 (visible=36) → ganti filter → hasil filter cuma 5
+  // → tampilan confusing. Reset ke page 1 = UX paling predictable.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, filterStatus, filterService, filterAM, sortState.key, sortState.direction]);
+
+  // 🆕 Slice sortedData → hanya render visibleCount pertama (performance).
+  // Pattern konsisten dengan reports page (Load More).
+  const visibleClients = useMemo(
+    () => sortedData.slice(0, visibleCount),
+    [sortedData, visibleCount]
+  );
+
+  // 🆕 Counters per-status untuk Quick Status Chips (real-time dari data).
+  // Dipakai di chip label: "Active (12)", "Onboarding (3)", dst.
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: clients.length };
+    for (const s of STATUS_OPTIONS) {
+      counts[s] = clients.filter((c) => c.status === s).length;
+    }
+    return counts;
+  }, [clients]);
+
   // ============================================
   // Stats: Now using REAL MRR from financial data
   // ============================================
@@ -578,7 +612,8 @@ export default function ClientsPage() {
           {activeFilterCount > 0 && (
             <button
               onClick={() => {
-                setFilterStatus("all");
+                // 🆕 Reset ke "active" (default), bukan "all" — sesuai request user.
+                setFilterStatus("active");
                 setFilterService("all");
                 setFilterAM("all");
               }}
@@ -589,6 +624,102 @@ export default function ClientsPage() {
           )}
         </div>
       )}
+
+      {/* 🆕 Quick Status Chips — always-visible filter shortcut.
+          Problem: Filter status sebelumnya tersembunyi di balik tombol "Show Filters" → 2 klik untuk ganti.
+          Solusi: Chips always-visible di top level, 1 klik = filter langsung.
+          Default: "active" (sesuai request user). */}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          onClick={() => setFilterStatus("active")}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            filterStatus === "active"
+              ? "border-success bg-success/10 text-success"
+              : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-success" />
+          Active
+          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            {statusCounts.active || 0}
+          </span>
+        </button>
+        <button
+          onClick={() => setFilterStatus("all")}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            filterStatus === "all"
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          All
+          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            {statusCounts.all || 0}
+          </span>
+        </button>
+        <button
+          onClick={() => setFilterStatus("onboarding")}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            filterStatus === "onboarding"
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+          Onboarding
+          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            {statusCounts.onboarding || 0}
+          </span>
+        </button>
+        <button
+          onClick={() => setFilterStatus("hold")}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            filterStatus === "hold"
+              ? "border-warning bg-warning/10 text-warning"
+              : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+          Hold
+          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            {statusCounts.hold || 0}
+          </span>
+        </button>
+        <button
+          onClick={() => setFilterStatus("inactive")}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            filterStatus === "inactive"
+              ? "border-muted bg-surface text-gray-900"
+              : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-muted" />
+          Inactive
+          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            {statusCounts.inactive || 0}
+          </span>
+        </button>
+        <button
+          onClick={() => setFilterStatus("churned")}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            filterStatus === "churned"
+              ? "border-danger bg-danger/10 text-danger"
+              : "border-border bg-surface text-muted hover:text-gray-900"
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-danger" />
+          Churned
+          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            {statusCounts.churned || 0}
+          </span>
+        </button>
+      </div>
 
       {/* ==================== GRID VIEW ==================== */}
       {viewMode === "grid" && (
@@ -603,7 +734,7 @@ export default function ClientsPage() {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((c) => (
+              {visibleClients.map((c) => (
                 <div key={c.id} className="card card-hover group">
                   <div className="mb-3 flex items-start justify-between">
                     <Link href={`/clients/${c.id}`} className="flex flex-1 items-center gap-3">
@@ -700,6 +831,33 @@ export default function ClientsPage() {
               ))}
             </div>
           )}
+
+          {/* 🆕 Load More pagination (Grid View) — tampilkan sisa cards bertahap (12 per klik).
+              Pattern konsisten dengan reports page. */}
+          {filtered.length > visibleCount && (
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+              >
+                <ChevronDown size={14} className="animate-bounce" />
+                Load More
+                <span className="text-muted">
+                  ({filtered.length - visibleCount} remaining)
+                </span>
+              </button>
+              <p className="text-[10px] text-muted">
+                Showing {visibleClients.length} of {filtered.length} clients
+              </p>
+            </div>
+          )}
+
+          {/* Counter info kalau dataset kecil (tidak melewati PAGE_SIZE) */}
+          {filtered.length > 0 && filtered.length <= visibleCount && (
+            <p className="mt-4 pb-2 text-center text-[10px] text-muted">
+              Showing all {filtered.length} client{filtered.length === 1 ? "" : "s"}
+            </p>
+          )}
         </>
       )}
 
@@ -726,7 +884,7 @@ export default function ClientsPage() {
                   <td colSpan={9} className="py-8 text-center text-sm text-muted">Tidak ada client yang cocok</td>
                 </tr>
               ) : (
-                sortedData.map((c) => (
+                visibleClients.map((c) => (
                   <tr key={c.id} className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-primary/5">
                     <td className="px-4 py-3">
                       <Link href={`/clients/${c.id}`} className="flex items-center gap-2 hover:text-primary">
@@ -813,6 +971,25 @@ export default function ClientsPage() {
               )}
             </tbody>
           </table>
+
+          {/* 🆕 Load More pagination (Table View) — sama dengan grid view */}
+          {filtered.length > visibleCount && (
+            <div className="flex flex-col items-center gap-2 border-t border-border bg-surface px-4 py-3">
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+              >
+                <ChevronDown size={14} className="animate-bounce" />
+                Load More
+                <span className="text-muted">
+                  ({filtered.length - visibleCount} remaining)
+                </span>
+              </button>
+              <p className="text-[10px] text-muted">
+                Showing {visibleClients.length} of {filtered.length} clients
+              </p>
+            </div>
+          )}
         </div>
       )}
 
