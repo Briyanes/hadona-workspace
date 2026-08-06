@@ -416,8 +416,11 @@ export default function ReportsPage() {
 
   // Sheet Preview Modal state (lihat semua sheet tabs — read-only)
   const [showSheetPreview, setShowSheetPreview] = useState(false);
-  const DEFAULT_SHEET_URL =
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbWYiTnXtz9ukLg-CprfY-fNCl3L-PbW-dWl-C8oMQAp-P6vJIN76zPhhk67FfBZi1TsRivogdpIp6/pub?output=csv";
+  // 🔒 P0-1 Security: Hapus hardcoded sheet URL dari client bundle.
+  // Sebelumnya URL spreadsheet terekspos di Production JS bundle (DevTools > Sources).
+  // Sekarang modals dikirim empty string; mereka akan GET /api/reports/sheets
+  // yang membaca DEFAULT_SHEET_URL dari server-only env.
+  const DEFAULT_SHEET_URL = "";
 
   // Sync Now state (auto-sync multi-tab dari published Google Sheet)
   const [syncing, setSyncing] = useState(false);
