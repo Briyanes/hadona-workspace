@@ -1730,9 +1730,11 @@ export default function ReportsPage() {
 
                 <div className="flex items-center justify-between border-t border-border pt-3">
                   <span className="text-xs text-muted">PIC: {r.pic?.full_name || "-"}</span>
-                  <div className="flex items-center gap-1">
-                    {/* 👁️ Tombol "Lihat Detail" eksplisit — selalu visible sebagai fallback
-                        kalau klik card gagal (mis. hydration issue, event bubling, dst.) */}
+                  <div
+                    className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* 👁️ Tombol "Lihat Detail" — show on hover (konsisten dengan Edit/Clone/Delete) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1745,32 +1747,27 @@ export default function ReportsPage() {
                     >
                       <Eye size={12} /> Detail
                     </button>
-                    <div
-                      className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      onClick={() => openEdit(r)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                      title="Edit"
                     >
-                      <button
-                        onClick={() => openEdit(r)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                        title="Edit"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleClone(r)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-accent"
-                        title="Clone untuk minggu depan"
-                      >
-                        <Copy size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                        title="Hapus"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleClone(r)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-accent"
+                      title="Clone untuk minggu depan"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </div>
