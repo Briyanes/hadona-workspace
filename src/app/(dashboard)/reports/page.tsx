@@ -30,6 +30,7 @@ import {
   Table2,
   CheckSquare,
   Layers,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   AreaChart,
@@ -48,7 +49,6 @@ import { EmailScheduleManager } from "@/components/reports/email-schedule-manage
 import { CreativePerformanceTracker } from "@/components/reports/creative-performance-tracker";
 import { ObjectiveSelector } from "@/components/reports/objective-selector";
 import { ObjectiveKPIBar } from "@/components/reports/kpi-bar";
-import { ImportSheetModal } from "@/components/reports/import-sheet-modal";
 import { SheetPreviewModal } from "@/components/reports/sheet-preview-modal";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
@@ -417,9 +417,6 @@ export default function ReportsPage() {
   // Performance: hindari render 285 cards sekaligus setelah sync Google Sheet.
   const PAGE_SIZE = 12;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-  // Import Sheet Modal state
-  const [showImportModal, setShowImportModal] = useState(false);
 
   // Sheet Preview Modal state (lihat semua sheet tabs — read-only)
   const [showSheetPreview, setShowSheetPreview] = useState(false);
@@ -1481,45 +1478,48 @@ export default function ReportsPage() {
             <Download size={14} />
             <span className="hidden sm:inline">Export</span>
           </button>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleSyncNow}
-              disabled={syncing}
-              className="flex items-center gap-1.5 rounded-md bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
-              title="Auto-sync semua sheet tab (Januari-Juli '26) dari published Google Sheet"
-            >
-              {syncing ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span className="hidden sm:inline">Syncing...</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={14} />
-                  <span className="hidden sm:inline">Sync Now</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={() => setShowSheetPreview(true)}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
-              title="Lihat semua sheet tabs (Januari-Juli '26) dari published Google Sheet — read-only preview"
-            >
-              <Eye size={14} />
-              <span className="hidden sm:inline">Lihat Sheet</span>
-            </button>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
-              title="Import semua client dari Google Sheet publish-to-web"
-            >
-              <FileSpreadsheet size={14} />
-              <span className="hidden sm:inline">Import dari Sheet</span>
-            </button>
-            <button onClick={openCreate} className="btn-primary" title="New Report">
-              <Plus size={16} />
-              <span>New Report</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+          {/* ⋯ More dropdown: Sync Now + Lihat Sheet (clean header — Opsi B) */}
+          <details className="relative">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background [&::-webkit-details-marker]:hidden">
+              <MoreHorizontal size={14} />
+              <span className="hidden sm:inline">More</span>
+              <ChevronDown size={12} className="opacity-60" />
+            </summary>
+            <div className="absolute right-0 z-50 mt-1 w-56 rounded-md border border-border bg-surface p-1 shadow-lg">
+              <button
+                onClick={(e) => {
+                  (e.currentTarget.closest("details") as HTMLDetailsElement)?.removeAttribute("open");
+                  handleSyncNow();
+                }}
+                disabled={syncing}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-gray-700 transition-colors hover:bg-background disabled:opacity-50"
+              >
+                {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                <div className="flex flex-col">
+                  <span className="font-medium">{syncing ? "Syncing..." : "Sync Now"}</span>
+                  <span className="text-[10px] text-muted">Auto-sync 7 sheet tabs</span>
+                </div>
+              </button>
+              <button
+                onClick={(e) => {
+                  (e.currentTarget.closest("details") as HTMLDetailsElement)?.removeAttribute("open");
+                  setShowSheetPreview(true);
+                }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-gray-700 transition-colors hover:bg-background"
+              >
+                <Eye size={14} />
+                <div className="flex flex-col">
+                  <span className="font-medium">Lihat Sheet</span>
+                  <span className="text-[10px] text-muted">Preview read-only</span>
+                </div>
+              </button>
+            </div>
+          </details>
+          <button onClick={openCreate} className="btn-primary" title="New Report">
+            <Plus size={16} />
+            <span>New Report</span>
+          </button>
           </div>
         </div>
       </div>
@@ -1772,15 +1772,6 @@ export default function ReportsPage() {
           </div>
         </div>
       )}
-
-      {/* Import Sheet Modal */}
-      <ImportSheetModal
-        open={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        clients={clients}
-        defaultSheetUrl={DEFAULT_SHEET_URL}
-        onImported={() => loadReports()}
-      />
 
       {/* Sheet Preview Modal — lihat semua sheet tabs (read-only) */}
       <SheetPreviewModal
