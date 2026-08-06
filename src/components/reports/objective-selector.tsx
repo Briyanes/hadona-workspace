@@ -90,7 +90,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
           </div>
 
           {/* Grouped list */}
-          <div className="max-h-[60vh] sm:max-h-[350px] overflow-y-auto overscroll-contain p-2">
+          <div className="max-h-[45vh] sm:max-h-[350px] overflow-y-auto overscroll-contain p-2">
             {filteredGroups.map((group) => (
               <div key={group.label} className="mb-2">
                 <p className="mb-1 px-1 text-[10px] sm:text-[9px] font-bold uppercase tracking-wider text-muted">
