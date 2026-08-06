@@ -120,7 +120,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
                             {obj.platform}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[10px] text-muted leading-snug">{obj.description}</p>
+                        <p className="mt-0.5 text-[10px] text-muted leading-snug hidden sm:block">{obj.description}</p>
                       </button>
                     );
                   })}
