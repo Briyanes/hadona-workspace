@@ -529,7 +529,7 @@ export default function TasksPage() {
                                     {task.task_assignees?.map((a) => (
                                       <div key={a.user_id} title={a.user?.full_name}>
                                         {a.user?.avatar_url ? (
-                                          <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 rounded-full border-2 border-background object-cover" referrerPolicy="no-referrer" />
+                                          <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 shrink-0 rounded-full border-2 border-background object-cover" referrerPolicy="no-referrer" />
                                         ) : (
                                           <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900">
                                             {getInitials(a.user?.full_name)}
@@ -698,7 +698,7 @@ export default function TasksPage() {
                           {task.task_assignees?.map((a) => (
                             <div key={a.user_id} title={a.user?.full_name}>
                               {a.user?.avatar_url ? (
-                                <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 rounded-full border-2 border-surface object-cover" referrerPolicy="no-referrer" />
+                                <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 shrink-0 rounded-full border-2 border-surface object-cover" referrerPolicy="no-referrer" />
                               ) : (
                                 <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-gray-900">
                                   {getInitials(a.user?.full_name)}

@@ -127,7 +127,7 @@ export default function ProfileSettingsPage() {
             <div className="relative">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="Avatar" className="h-24 w-24 rounded-full object-cover ring-2 ring-border" />
+                <img src={avatarUrl} alt="Avatar" className="h-24 w-24 shrink-0 rounded-full object-cover ring-2 ring-border" />
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/15 text-2xl font-bold text-primary">
                   {fullName?.charAt(0).toUpperCase() || "?"}

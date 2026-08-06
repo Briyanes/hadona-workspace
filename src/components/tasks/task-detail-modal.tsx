@@ -669,7 +669,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     {task.task_assignees.map((a) => (
                       <div key={a.user_id} className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1">
                         {a.user?.avatar_url ? (
-                          <img src={a.user.avatar_url} alt={a.user?.full_name || "User"} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                          <img src={a.user.avatar_url} alt={a.user?.full_name || "User"} className="h-6 w-6 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
                           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
                             {getInitials(a.user?.full_name)}

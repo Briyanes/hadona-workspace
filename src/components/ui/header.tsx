@@ -164,10 +164,10 @@ export function Header() {
               <img
                 src={avatarUrl}
                 alt="Avatar"
-                className="h-8 w-8 rounded-full object-cover ring-2 ring-border"
+                className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-border"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary ring-2 ring-border">
                 {profile?.full_name?.charAt(0).toUpperCase() || "?"}
               </div>
             )}

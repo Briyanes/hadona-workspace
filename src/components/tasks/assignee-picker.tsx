@@ -114,7 +114,7 @@ export function AssigneePicker({
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface py-0.5 pl-1 pr-2 text-xs"
           >
             {u.avatar_url ? (
-              <img src={u.avatar_url} alt={u.full_name} className="h-5 w-5 rounded-full object-cover" referrerPolicy="no-referrer" />
+              <img src={u.avatar_url} alt={u.full_name} className="h-5 w-5 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
             ) : (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
                 {getInitials(u.full_name)}
@@ -206,7 +206,7 @@ export function AssigneePicker({
                     )}
                   >
                     {u.avatar_url ? (
-                      <img src={u.avatar_url} alt={u.full_name} className="h-6 w-6 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      <img src={u.avatar_url} alt={u.full_name} className="h-6 w-6 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
                         {getInitials(u.full_name)}

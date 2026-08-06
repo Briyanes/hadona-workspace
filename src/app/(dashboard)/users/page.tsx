@@ -382,10 +382,10 @@ export default function UsersPage() {
                       <img
                         src={user.avatar_url}
                         alt={user.full_name}
-                        className="h-10 w-10 rounded-full object-cover"
+                        className="h-10 w-10 shrink-0 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
                         {user.full_name.charAt(0).toUpperCase()}
                       </div>
                     )}
