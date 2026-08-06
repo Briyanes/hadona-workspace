@@ -437,6 +437,11 @@ export default function ReportsPage() {
       skipped: number;
       errors: number;
       durationSec: number;
+      // 🆕 v3: Tambah field opsional untuk aggregate dari sync per-tab.
+      // Field ini di-set oleh handleSyncNow v3, tidak ada di response legacy.
+      unmatchedClientsCount?: number;
+      unmatchedPicsCount?: number;
+      durationMs?: number;
       sheets?: Array<{ name: string; gid: string; raw: number; parsed: number; imported: number }>;
       skippedBreakdown?: {
         noMetrics: number;
@@ -459,92 +464,255 @@ export default function ReportsPage() {
   } | null>(null);
 
   // ─── Sync Now: jalankan auto-sync dari published Google Sheet (multi-tab) ───
+  // 🆕 v3: State untuk progress bar sync per-tab
+  const [syncProgress, setSyncProgress] = useState<{
+    current: number;
+    total: number;
+    currentTabName: string;
+    perTabResults: Array<{ tab: string; imported: number; updated: number; skipped: number; errors: number; durationSec: number }>;
+  } | null>(null);
+
+  /**
+   * 🚀 Sync per-Tab (Vercel Hobby 60s workaround)
+   * ====================================================================
+   * Cara kerja:
+   *   1. GET /api/reports/tabs       → daftar N tabs (~1-2s)
+   *   2. For each tab: POST /api/reports/sync { tabGid } (~5-7s per tab)
+   *   3. Aggregate results, show progress bar real-time
+   *
+   * Total waktu untuk 7 tabs: ~50s (vs 1 request 60s yang sering kena 504).
+   * Karena per-request hanya ~7s, jauh di bawah 60s limit → TIDAK ADA timeout.
+   */
   async function handleSyncNow() {
     if (!confirm(
       "Sync semua weekly reports dari Google Sheet?\n\n" +
       "Sumber: 7 sheet tabs (Januari '26 – Juli '26, ~285 rows)\n" +
-      "Mode: Idempotent (tidak duplikasi, update kalau sudah ada)\n\n" +
-      "Proses butuh ~10-30 detik. Lanjutkan?"
+      "Mode: Idempotent (tidak duplikasi, update kalau sudah ada)\n" +
+      "Strategi: Sync per-tab (mencegah Vercel 60s timeout)\n\n" +
+      "Proses butuh ~30-60 detik. Lanjutkan?"
     )) return;
 
     setSyncing(true);
+    setSyncProgress(null);
+
+    // Aggregate stats across all tabs
+    const aggregated = {
+      imported: 0,
+      updated: 0,
+      skipped: 0,
+      errors: 0,
+      totalRows: 0,
+      unmatchedClients: new Set<string>(),
+      unmatchedPics: new Set<string>(),
+      errors_detail: [] as string[],
+      durationMs: 0,
+      perTabResults: [] as Array<{ tab: string; imported: number; updated: number; skipped: number; errors: number; durationSec: number }>,
+    };
+
     try {
       const { data: session } = await supabase.auth.getSession();
-      // Cache-busting: tambahkan timestamp untuk hindari cache di CDN/proxy/browser.
-      // POST seharusnya tidak di-cache, tapi praktik defensif penting karena
-      // kami mendapati pesan error lama muncul setelah deploy baru.
-      const syncUrl = `/api/reports/sync?_t=${Date.now()}`;
-      const res = await fetch(syncUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.session?.access_token}`,
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-        cache: "no-store",
-        body: JSON.stringify({}), // pakai default URL dari env
+      const accessToken = session.session?.access_token;
+
+      // ─── Step 1: Discover tabs ───
+      setSyncProgress({
+        current: 0,
+        total: 0,
+        currentTabName: "Discovering sheet tabs...",
+        perTabResults: [],
       });
 
-      // ─── Robust response handling ───
-      // Cek content-type sebelum parse JSON. Beberapa kasus response bukan JSON:
-      //  - Vercel build masih running (static placeholder)
-      //  - Middleware redirect (HTML)
-      //  - Function timeout (Vercel error page)
-      //  - Session expired → login page HTML
-      const contentType = res.headers.get("content-type") || "";
-      const rawText = await res.text();
+      const tabsUrl = `/api/reports/tabs?_t=${Date.now()}`;
+      const tabsRes = await fetch(tabsUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+        cache: "no-store",
+      });
 
-      if (!contentType.includes("application/json") || rawText.trim().startsWith("<")) {
-        // Response HTML — bukan dari API route kita
-        if (rawText.includes("Sign in") || rawText.includes("login")) {
-          throw new Error("Session expired. Silakan refresh halaman & login ulang.");
-        }
-        if (res.status === 404) {
-          throw new Error("Endpoint tidak ditemukan (404). Vercel mungkin masih build commit terbaru. Tunggu 2-3 menit lalu coba lagi.");
-        }
-        if (res.status >= 500) {
-          throw new Error(`Server error ${res.status}. Vercel Function mungkin timeout atau crash. Coba lagi dalam 1 menit.`);
-        }
-        throw new Error(`Response tidak valid (HTTP ${res.status}, ${contentType || "no content-type"}). Kemungkinan Vercel masih build. Tunggu 2-3 menit lalu hard refresh (Cmd+Shift+R).`);
+      const tabsContentType = tabsRes.headers.get("content-type") || "";
+      const tabsRaw = await tabsRes.text();
+      if (!tabsContentType.includes("application/json") || tabsRaw.trim().startsWith("<")) {
+        throw new Error("Gagal discover tabs (response bukan JSON). Coba lagi dalam 1 menit.");
       }
 
-      let data: any;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        throw new Error(`Gagal parse JSON response. Raw: ${rawText.slice(0, 200)}`);
+      const tabsData = JSON.parse(tabsRaw);
+      if (!tabsRes.ok) {
+        throw new Error(tabsData.error || "Gagal discover tabs");
       }
 
-      if (!res.ok) {
-        // Pesan error sekarang include role user (lihat /api/reports/sync route)
-        // sehingga lebih informatif untuk debugging
-        const roleInfo = data.debug?.userRole
-          ? ` (role Anda: "${data.debug.userRole}")`
-          : "";
-        throw new Error((data.error || "Gagal sync") + roleInfo);
+      const tabs: Array<{ gid: string; name: string }> = tabsData.tabs || [];
+      const totalTabs = tabs.length;
+      console.log(`[sync-ui] Found ${totalTabs} tabs:`, tabs.map((t) => t.name).join(", "));
+
+      if (totalTabs === 0) {
+        throw new Error("Tidak ada sheet tabs yang ditemukan. Pastikan spreadsheet sudah di-publish.");
       }
 
+      // ─── Step 2: Sync per-tab ───
+      const syncUrl = `/api/reports/sync?_t=${Date.now()}`;
+      for (let i = 0; i < tabs.length; i++) {
+        const tab = tabs[i];
+        const current = i + 1;
+        setSyncProgress({
+          current,
+          total: totalTabs,
+          currentTabName: tab.name,
+          perTabResults: aggregated.perTabResults,
+        });
+
+        console.log(`[sync-ui] Syncing tab ${current}/${totalTabs}: ${tab.name} (gid=${tab.gid})`);
+        const tabStart = Date.now();
+
+        try {
+          const res = await fetch(syncUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+            cache: "no-store",
+            body: JSON.stringify({ tabGid: tab.gid }),
+          });
+
+          // Robust response handling (sama dengan v2)
+          const contentType = res.headers.get("content-type") || "";
+          const rawText = await res.text();
+
+          if (!contentType.includes("application/json") || rawText.trim().startsWith("<")) {
+            if (rawText.includes("Sign in") || rawText.includes("login")) {
+              throw new Error("Session expired. Silakan refresh halaman & login ulang.");
+            }
+            if (res.status >= 500) {
+              throw new Error(`Server error ${res.status} pada tab "${tab.name}". Vercel Function mungkin timeout. Tab ini akan di-skip.`);
+            }
+            throw new Error(`Response tidak valid untuk tab "${tab.name}" (HTTP ${res.status}). Tab di-skip.`);
+          }
+
+          let data: any;
+          try {
+            data = JSON.parse(rawText);
+          } catch {
+            throw new Error(`Gagal parse JSON untuk tab "${tab.name}". Tab di-skip.`);
+          }
+
+          if (!res.ok) {
+            // Error per-tab → catat, lanjut ke tab berikutnya (don't fail整个sync)
+            const errMsg = data.error || `Gagal sync tab "${tab.name}"`;
+            aggregated.errors++;
+            aggregated.errors_detail.push(`Tab "${tab.name}": ${errMsg}`);
+            aggregated.perTabResults.push({
+              tab: tab.name,
+              imported: 0,
+              updated: 0,
+              skipped: 0,
+              errors: 1,
+              durationSec: parseFloat(((Date.now() - tabStart) / 1000).toFixed(2)),
+            });
+            toast.error(`❌ Tab "${tab.name}" gagal: ${errMsg}`);
+          } else {
+            // Success — aggregate
+            const s = data.summary || {};
+            aggregated.imported += s.imported || 0;
+            aggregated.updated += s.updated || 0;
+            aggregated.skipped += s.skipped || 0;
+            aggregated.errors += s.errors || 0;
+            aggregated.totalRows += s.totalRows || 0;
+            aggregated.durationMs += s.durationMs || 0;
+            if (Array.isArray(data.unmatchedClients)) {
+              data.unmatchedClients.forEach((c: string) => aggregated.unmatchedClients.add(c));
+            }
+            if (Array.isArray(data.unmatchedPics)) {
+              data.unmatchedPics.forEach((p: string) => aggregated.unmatchedPics.add(p));
+            }
+            if (Array.isArray(data.errors_detail)) {
+              aggregated.errors_detail.push(...data.errors_detail);
+            }
+            const durationSec = parseFloat(((Date.now() - tabStart) / 1000).toFixed(2));
+            aggregated.perTabResults.push({
+              tab: tab.name,
+              imported: s.imported || 0,
+              updated: s.updated || 0,
+              skipped: s.skipped || 0,
+              errors: s.errors || 0,
+              durationSec,
+            });
+            console.log(`[sync-ui] ✅ Tab "${tab.name}" done in ${durationSec}s: +${s.imported} baru, ~${s.updated} update`);
+          }
+
+          // Update progress real-time
+          setSyncProgress({
+            current,
+            total: totalTabs,
+            currentTabName: tab.name,
+            perTabResults: [...aggregated.perTabResults],
+          });
+        } catch (tabErr) {
+          // Network error per-tab → catat, lanjut
+          console.error(`[sync-ui] Tab "${tab.name}" failed:`, tabErr);
+          aggregated.errors++;
+          aggregated.errors_detail.push(`Tab "${tab.name}": ${tabErr instanceof Error ? tabErr.message : String(tabErr)}`);
+          aggregated.perTabResults.push({
+            tab: tab.name,
+            imported: 0,
+            updated: 0,
+            skipped: 0,
+            errors: 1,
+            durationSec: parseFloat(((Date.now() - tabStart) / 1000).toFixed(2)),
+          });
+        }
+      }
+
+      // ─── Step 3: Final summary ───
+      const totalDurationSec = (aggregated.durationMs / 1000).toFixed(2);
       setSyncResult({
-        summary: data.summary,
-        unmatchedClients: data.unmatchedClients || [],
-        unmatchedPics: data.unmatchedPics || [],
-        errors_detail: data.errors_detail || [],
+        summary: {
+          totalRows: aggregated.totalRows,
+          imported: aggregated.imported,
+          updated: aggregated.updated,
+          skipped: aggregated.skipped,
+          errors: aggregated.errors,
+          unmatchedClientsCount: aggregated.unmatchedClients.size,
+          unmatchedPicsCount: aggregated.unmatchedPics.size,
+          durationMs: aggregated.durationMs,
+          durationSec: parseFloat(totalDurationSec),
+          sheets: aggregated.perTabResults.map((r) => ({
+            name: r.tab,
+            gid: "",
+            raw: 0,
+            parsed: r.imported + r.updated,
+            imported: r.imported,
+          })),
+          skippedBreakdown: undefined,
+        },
+        unmatchedClients: Array.from(aggregated.unmatchedClients),
+        unmatchedPics: Array.from(aggregated.unmatchedPics),
+        errors_detail: aggregated.errors_detail,
       });
       setShowSyncResult(true);
 
+      const successCount = aggregated.perTabResults.filter((r) => r.errors === 0).length;
+      const failedCount = aggregated.perTabResults.length - successCount;
       toast.success(
-        `✅ Sync selesai: ${data.summary.imported} baru, ${data.summary.updated} update, ${data.summary.skipped} skip dalam ${data.summary.durationSec}s`,
-        { duration: 6000 }
+        `✅ Sync selesai: ${aggregated.imported} baru, ${aggregated.updated} update, ${aggregated.skipped} skip ` +
+        `dalam ${totalDurationSec}s (${successCount}/${aggregated.perTabResults.length} tab sukses` +
+        (failedCount > 0 ? `, ${failedCount} gagal` : "") + `)`,
+        { duration: 8000 }
       );
 
       // Reload reports
       loadReports();
     } catch (err) {
+      console.error("[sync-ui] Fatal error:", err);
       toast.error("Gagal sync: " + extractError(err));
     } finally {
       setSyncing(false);
+      // Keep progress visible for 3s after done, then clear
+      setTimeout(() => setSyncProgress(null), 3000);
     }
   }
 
@@ -1779,6 +1947,92 @@ export default function ReportsPage() {
         onClose={() => setShowSheetPreview(false)}
         defaultUrl={DEFAULT_SHEET_URL}
       />
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* 🆕 v3: SYNC PROGRESS BAR — Real-time per-tab */}
+      {/* ═══════════════════════════════════════════ */}
+      {syncing && syncProgress && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 shadow-sm">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Loader2 size={16} className="animate-spin text-primary" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Syncing sheet tabs...
+                  {syncProgress.total > 0 && (
+                    <span className="ml-1 text-primary">
+                      ({syncProgress.current}/{syncProgress.total})
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-muted">
+                  {syncProgress.current === 0
+                    ? syncProgress.currentTabName
+                    : `Memproses: "${syncProgress.currentTabName}"`}
+                </p>
+              </div>
+            </div>
+            {syncProgress.total > 0 && (
+              <span className="text-xs font-bold tabular-nums text-primary">
+                {syncProgress.total > 0
+                  ? Math.round((syncProgress.current / syncProgress.total) * 100)
+                  : 0}
+                %
+              </span>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {syncProgress.total > 0 ? (
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-background">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
+                style={{
+                  width: `${(syncProgress.current / syncProgress.total) * 100}%`,
+                }}
+              />
+            </div>
+          ) : (
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-background">
+              <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
+            </div>
+          )}
+
+          {/* Per-tab results real-time (tampil begitu tab-1 selesai) */}
+          {syncProgress.perTabResults.length > 0 && (
+            <div className="mt-3 space-y-1">
+              <p className="text-[10px] font-semibold uppercase text-muted">
+                ✅ Selesai ({syncProgress.perTabResults.length}):
+              </p>
+              <div className="max-h-32 space-y-0.5 overflow-y-auto">
+                {syncProgress.perTabResults.slice(-5).reverse().map((r, i) => (
+                  <div
+                    key={`${r.tab}-${i}`}
+                    className="flex items-center justify-between rounded bg-background px-2 py-1 text-[10px]"
+                  >
+                    <span className="truncate font-medium text-gray-900">{r.tab}</span>
+                    <span className="flex shrink-0 gap-2 text-muted">
+                      {r.imported > 0 && (
+                        <span className="text-success">+{r.imported} baru</span>
+                      )}
+                      {r.updated > 0 && (
+                        <span className="text-primary">~{r.updated} upd</span>
+                      )}
+                      {r.skipped > 0 && (
+                        <span className="text-muted">{r.skipped} skip</span>
+                      )}
+                      {r.errors > 0 && (
+                        <span className="text-danger">{r.errors} err</span>
+                      )}
+                      <span className="tabular-nums">{r.durationSec}s</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

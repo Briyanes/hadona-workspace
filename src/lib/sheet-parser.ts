@@ -854,8 +854,19 @@ export interface MultiSheetResult {
  *
  * Berguna untuk spreadsheet multi-bulan (mis. "Janury '26", "Februari '26", ...)
  * yang masing-masing berisi weekly reports untuk bulan tersebut.
+ *
+ * 🆕 v3: Opsi `onlyTabGid` untuk fetch HANYA 1 tab tertentu.
+ *        Berguna untuk sync per-tab (Vercel Hobby 60s limit workaround):
+ *          - Sync ALL tabs: ~14s fetch + ~30s DB = ~44s (mepet 60s, rawan timeout)
+ *          - Sync 1 tab:    ~2s fetch + ~5s DB   = ~7s  (safe, jauh di bawah 60s)
+ *
+ *        Frontend cukup loop 7 kali (1 tab per request) → total tetap sama
+ *        tapi TANPA risk of single-request timeout.
  */
-export async function fetchAndParseAllSheets(publishedUrl: string): Promise<MultiSheetResult> {
+export async function fetchAndParseAllSheets(
+  publishedUrl: string,
+  options: { onlyTabGid?: string } = {}
+): Promise<MultiSheetResult> {
   const errors: string[] = [];
   const sheets: MultiSheetResult["sheets"] = [];
   let totalRows = 0;
@@ -869,6 +880,20 @@ export async function fetchAndParseAllSheets(publishedUrl: string): Promise<Mult
     errors.push(`discoverSheets: ${err instanceof Error ? err.message : String(err)}`);
     // Fallback: anggap single sheet
     tabs = [{ gid: "0", name: "Sheet1" }];
+  }
+
+  // 🆕 v3: Filter hanya 1 tab kalau onlyTabGid di-set
+  if (options.onlyTabGid) {
+    const filtered = tabs.filter((t) => t.gid === options.onlyTabGid);
+    if (filtered.length === 0) {
+      // gid tidak ditemukan di daftar tabs — mungkin user beri gid lama.
+      // Buat pseudo-tab pakai gid mentah (Google tetap honor gid walaupun
+      // tidak ada di daftar pubhtml — bisa jadi tab hidden atau sudah rename).
+      tabs = [{ gid: options.onlyTabGid, name: `Tab gid=${options.onlyTabGid}` }];
+    } else {
+      tabs = filtered;
+    }
+    console.log(`[fetchAndParseAllSheets] Filtered to single tab: gid=${options.onlyTabGid} (${tabs[0]?.name})`);
   }
 
   // Step 2: fetch & parse per-tab (parallel dengan limit)

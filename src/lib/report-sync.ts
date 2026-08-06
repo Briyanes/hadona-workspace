@@ -72,7 +72,7 @@ export interface SyncResult {
 
 export async function syncReportsFromSheet(
   sheetUrl: string,
-  options: { autoCreateClient?: boolean } = {}
+  options: { autoCreateClient?: boolean; tabGid?: string } = {}
 ): Promise<SyncResult> {
   const startedAt = new Date();
   const errors_detail: string[] = [];
@@ -120,9 +120,18 @@ export async function syncReportsFromSheet(
     auth: { persistSession: false },
   });
 
-  // ── 2. Fetch & parse SEMUA sheet tabs (parallel) ────────────────────────
-  console.log("[sync-v2] Fetching & parsing sheets:", sheetUrl);
-  const multiResult = await fetchAndParseAllSheets(sheetUrl);
+  // ── 2. Fetch & parse sheet tabs ────────────────────────────────────────
+  // 🆕 v3: Support single-tab sync (`options.tabGid`) untuk Vercel Hobby workaround.
+  // Kalau tabGid di-set, hanya 1 tab yang di-fetch → ~2s vs 14s untuk all-tabs.
+  // Frontend cukup loop 7× POST dengan tabGid berbeda untuk sync semua.
+  if (options.tabGid) {
+    console.log(`[sync-v3] Single-tab sync requested: gid=${options.tabGid}`);
+  }
+  console.log("[sync-v2] Fetching & parsing sheets:", sheetUrl, options.tabGid ? `(tab: ${options.tabGid})` : "(all tabs)");
+  const multiResult = await fetchAndParseAllSheets(
+    sheetUrl,
+    options.tabGid ? { onlyTabGid: options.tabGid } : {}
+  );
   if (multiResult.errors.length > 0) {
     errors_detail.push(...multiResult.errors);
   }

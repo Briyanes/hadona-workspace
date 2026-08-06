@@ -4,13 +4,21 @@
  * Endpoint: POST /api/reports/sync
  *
  * Body:
- *   { }                                    → sync pakai default URL (env)
+ *   { }                                    → sync pakai default URL (env), SEMUA tabs
  *   { sheetUrl: "https://..." }            → sync pakai URL custom
  *   { autoCreateClient: true }             → auto-create client baru
+ *   { tabGid: "0" }                        → 🆕 v3 sync HANYA 1 tab tertentu
+ *
+ * 🆕 v3 (Vercel Hobby 60s workaround):
+ *   Karena Vercel Hobby plan dibatasi max 60s/function call, sync ALL tabs
+ *   (~14s fetch + ~30s DB) sering kena 504 gateway timeout.
+ *   Solusinya: frontend bisa POST 7× dengan `tabGid` berbeda — masing-masing
+ *   request hanya ~7s, jauh di bawah 60s. Frontend menampilkan progress bar
+ *   real-time (1/7, 2/7, ..., 7/7).
  *
  * Auth: wajib login (super_admin/project_manager/creative_director — lihat permission check).
  *
- * Returns: SyncResult (sama dengan cron).
+ * Returns: SyncResult (sama dengan cron) + field tambahan `tabGid` & `tabName`.
  * ============================================================================
  */
 
@@ -65,6 +73,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const sheetUrl: string = body.sheetUrl || getDefaultSheetUrl();
     const autoCreateClient: boolean = body.autoCreateClient === true;
+    // 🆕 v3: tabGid (string, karena gid bisa "0" atau "1234567890")
+    const tabGid: string | undefined =
+      typeof body.tabGid === "string" && body.tabGid.trim()
+        ? body.tabGid.trim()
+        : typeof body.tabGid === "number"
+          ? String(body.tabGid)
+          : undefined;
 
     if (!sheetUrl.includes("docs.google.com/spreadsheets")) {
       return NextResponse.json(
@@ -73,10 +88,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("[reports/sync] Syncing from:", sheetUrl, "autoCreateClient:", autoCreateClient);
+    console.log(
+      "[reports/sync] Syncing from:",
+      sheetUrl,
+      "autoCreateClient:",
+      autoCreateClient,
+      tabGid ? `tabGid=${tabGid}` : "(all tabs)"
+    );
 
     // ── 3. Run sync ────────────────────────────────────────────────────────
-    const result = await syncReportsFromSheet(sheetUrl, { autoCreateClient });
+    // 🆕 v3: Pass tabGid kalau ada → fetchAndParseAllSheets hanya 1 tab (cepat).
+    const result = await syncReportsFromSheet(sheetUrl, {
+      autoCreateClient,
+      ...(tabGid ? { tabGid } : {}),
+    });
 
     const durationSec = ((Date.now() - startedAt) / 1000).toFixed(2);
     console.log(`[reports/sync] Done in ${durationSec}s`);
