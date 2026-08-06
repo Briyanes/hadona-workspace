@@ -21,6 +21,12 @@ import { MetricKey, OBJECTIVE_MAP } from "@/lib/ad-objectives";
  *
  *   POST { action: "clone", reportId, newPeriodStart, newPeriodEnd }
  *     -> Clone report (untuk template minggu depan)
+ *
+ *   POST { action: "bulk-delete", reportIds[] }
+ *     -> Batch delete multiple reports + metrics (admin only)
+ *
+ *   POST { action: "bulk-update-status", reportIds[], status }
+ *     -> Batch update status (draft/submitted/reviewed)
  */
 
 function getAdminClient() {
@@ -589,6 +595,106 @@ export async function POST(request: NextRequest) {
         if (reportErr) throw reportErr;
 
         return NextResponse.json({ report });
+      }
+
+      // ─── BULK DELETE: Batch delete multiple reports + metrics (admin only) ───
+      case "bulk-delete": {
+        const { reportIds } = body as { reportIds: string[] };
+
+        if (!Array.isArray(reportIds) || reportIds.length === 0) {
+          return NextResponse.json(
+            { error: "reportIds[] wajib diisi (array)" },
+            { status: 400 }
+          );
+        }
+
+        // Cap untuk hindari abuse (max 100 report sekali delete)
+        if (reportIds.length > 100) {
+          return NextResponse.json(
+            { error: "Maksimal 100 report per batch" },
+            { status: 400 }
+          );
+        }
+
+        // Hapus metrics dulu (foreign key constraint) — pakai .in() untuk batch
+        const { error: delMetricsErr } = await supabase
+          .from("report_metrics")
+          .delete()
+          .in("weekly_report_id", reportIds);
+
+        if (delMetricsErr) throw delMetricsErr;
+
+        // Hapus shared_reports yang related
+        const { error: delSharesErr } = await supabase
+          .from("shared_reports")
+          .delete()
+          .in("report_id", reportIds);
+
+        if (delSharesErr) {
+          console.warn("[bulk-delete] shared_reports cleanup failed:", delSharesErr.message);
+          // tidak fatal — lanjut
+        }
+
+        // Lalu hapus reports
+        const { error: delReportsErr, count } = await supabase
+          .from("weekly_reports")
+          .delete()
+          .in("id", reportIds);
+
+        if (delReportsErr) throw delReportsErr;
+
+        return NextResponse.json({
+          success: true,
+          deleted: reportIds.length,
+          count: count || reportIds.length,
+        });
+      }
+
+      // ─── BULK UPDATE STATUS: Batch update status (draft/submitted/reviewed) ───
+      case "bulk-update-status": {
+        const { reportIds, status } = body as {
+          reportIds: string[];
+          status: string;
+        };
+
+        if (!Array.isArray(reportIds) || reportIds.length === 0) {
+          return NextResponse.json(
+            { error: "reportIds[] wajib diisi (array)" },
+            { status: 400 }
+          );
+        }
+
+        const VALID_STATUSES = ["draft", "submitted", "reviewed"];
+        if (!VALID_STATUSES.includes(status)) {
+          return NextResponse.json(
+            { error: `Status tidak valid. Pilihan: ${VALID_STATUSES.join(", ")}` },
+            { status: 400 }
+          );
+        }
+
+        if (reportIds.length > 100) {
+          return NextResponse.json(
+            { error: "Maksimal 100 report per batch" },
+            { status: 400 }
+          );
+        }
+
+        const { error: updateErr, count } = await supabase
+          .from("weekly_reports")
+          .update({
+            status,
+            updated_at: new Date().toISOString(),
+          })
+          .in("id", reportIds);
+
+        if (updateErr) throw updateErr;
+
+        return NextResponse.json({
+          success: true,
+          updated: reportIds.length,
+          count: count || reportIds.length,
+          status,
+        });
       }
 
       default:

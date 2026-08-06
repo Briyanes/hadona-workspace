@@ -28,6 +28,8 @@ import {
   ChevronDown,
   LayoutGrid,
   Table2,
+  CheckSquare,
+  Layers,
 } from "lucide-react";
 import {
   AreaChart,
@@ -403,6 +405,11 @@ export default function ReportsPage() {
   // Bulk Actions state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<string>("");
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  // Auto-show bulk bar ketika ada selection (selama di bulk mode)
+  const showBulkBar = bulkMode && selectedIds.size > 0;
 
   // 🆕 Pagination state (Tier 1 — Load More)
   // Default tampilkan 12 cards. Naikkan +12 setiap klik "Load More".
@@ -769,6 +776,179 @@ export default function ReportsPage() {
     } catch (err) {
       toast.error("Gagal hapus: " + extractError(err));
     }
+  }
+
+  // ════════════════════════════════════════════
+  // 🆕 BULK ACTIONS — Multi-select operations
+  // ════════════════════════════════════════════
+
+  // Select/deselect semua reports yang terlihat (filtered)
+  function toggleSelectAll() {
+    if (selectedIds.size === visibleReports.length && visibleReports.length > 0) {
+      // Deselect all
+      setSelectedIds(new Set());
+    } else {
+      // Select all visible
+      setSelectedIds(new Set(visibleReports.map((r) => r.id)));
+    }
+  }
+
+  // Bulk delete dengan konfirmasi yang menampilkan count + nama client
+  async function handleBulkDelete() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    const selectedReports = reports.filter((r) => selectedIds.has(r.id));
+    const clientNames = selectedReports
+      .map((r) => r.client?.name || "Unknown")
+      .slice(0, 5)
+      .join(", ");
+    const moreText = selectedReports.length > 5 ? ` dan ${selectedReports.length - 5} lainnya` : "";
+
+    if (!confirm(
+      `⚠️ Hapus ${ids.length} report?\n\n` +
+      `Client: ${clientNames}${moreText}\n\n` +
+      `Tindakan ini TIDAK DAPAT DIBATALKAN.`
+    )) return;
+
+    setBulkProcessing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "bulk-delete", reportIds: ids }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal bulk delete");
+
+      toast.success(`✅ ${data.deleted} report berhasil dihapus`);
+      setSelectedIds(new Set());
+      setBulkMode(false);
+      loadReports();
+    } catch (err) {
+      toast.error("Gagal bulk delete: " + extractError(err));
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
+
+  // Bulk update status (draft → submitted → reviewed)
+  async function handleBulkUpdateStatus(newStatus: string) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0 || !newStatus) return;
+
+    setBulkProcessing(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ action: "bulk-update-status", reportIds: ids, status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal bulk update status");
+
+      toast.success(`✅ ${data.updated} report diupdate ke "${newStatus}"`);
+      setBulkStatus("");
+      setSelectedIds(new Set());
+      setBulkMode(false);
+      loadReports();
+    } catch (err) {
+      toast.error("Gagal bulk update status: " + extractError(err));
+    } finally {
+      setBulkProcessing(false);
+    }
+  }
+
+  // Bulk export — hanya reports yang dipilih
+  function handleBulkExport() {
+    const selectedReports = reports.filter((r) => selectedIds.has(r.id));
+    if (selectedReports.length === 0) {
+      toast.error("Tidak ada report dipilih");
+      return;
+    }
+
+    const headers = [
+      "Client",
+      "Periode Start",
+      "Periode End",
+      "Status",
+      "PIC",
+      "Spend",
+      "Impressions",
+      "Clicks",
+      "CTR (%)",
+      "Conversions",
+      "CPR",
+      "Revenue",
+      "ROAS",
+      "Summary",
+      "Conclusion",
+      "Action",
+    ];
+
+    const rows = selectedReports.map((r) => {
+      const metrics = r.report_metrics || [];
+      const getMetric = (type: string) => {
+        const aliases = METRIC_ALIASES[type] || [type];
+        if (type === "conversions") {
+          for (const alias of aliases) {
+            const total = metrics.filter((x) => x.metric_type === alias).reduce((s, x) => s + (x.value || 0), 0);
+            if (total > 0) return total;
+          }
+          return 0;
+        }
+        return metrics
+          .filter((x) => aliases.includes(x.metric_type))
+          .reduce((s, x) => s + (x.value || 0), 0);
+      };
+
+      const stringCols = [
+        `"${r.client?.name || ""}"`,
+        `"${r.period_start}"`,
+        `"${r.period_end}"`,
+        `"${r.status}"`,
+        `"${r.pic?.full_name || ""}"`,
+      ];
+      const numCols = [
+        Number(getMetric("spend").toFixed(2)),
+        getMetric("impressions"),
+        getMetric("clicks"),
+        Number(getMetric("ctr").toFixed(2)),
+        getMetric("conversions"),
+        Number(getMetric("cpr").toFixed(2)),
+        Number(getMetric("revenue").toFixed(2)),
+        Number(getMetric("roas").toFixed(2)),
+      ];
+      const textCols = [
+        `"${(r.summary || "").replace(/"/g, '""')}"`,
+        `"${(r.conclusion || "").replace(/"/g, '""')}"`,
+        `"${(r.action || "").replace(/"/g, '""')}"`,
+      ];
+
+      return [...stringCols, ...numCols, ...textCols];
+    });
+
+    const csv = [headers.map((h) => `"${h}"`), ...rows]
+      .map((r) => r.join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `reports-selected-${selectedReports.length}-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success(`✅ ${selectedReports.length} report diexport ke CSV`);
   }
 
   // ─── Clone report (duplicate untuk periode baru) ───
@@ -1761,6 +1941,76 @@ export default function ReportsPage() {
           </button>
         </div>
       </div>
+
+
+      {/* ════════════════════════════════════════════ */}
+      {/* 🆕 STICKY BULK ACTION BAR — muncul saat ada selection */}
+      {/* ════════════════════════════════════════════ */}
+      {showBulkBar && !loading && filtered.length > 0 && (
+        <div className="sticky top-16 z-30 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 shadow-md backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <CheckSquare size={16} className="text-primary" />
+            <span className="text-sm font-semibold text-primary">
+              {selectedIds.size} report dipilih
+            </span>
+            <button
+              onClick={toggleSelectAll}
+              className="ml-1 rounded px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
+            >
+              {selectedIds.size === visibleReports.length && visibleReports.length > 0
+                ? "☑ Hilangkan Semua"
+                : `☐ Pilih Semua (${visibleReports.length})`}
+            </button>
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleBulkExport}
+              disabled={bulkProcessing}
+              className="flex items-center gap-1 rounded-md bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+            >
+              <Download size={12} /> Export Selected
+            </button>
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+              disabled={bulkProcessing}
+              className="input w-auto py-1.5 text-xs"
+            >
+              <option value="">Ubah Status...</option>
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="reviewed">Reviewed</option>
+            </select>
+            {bulkStatus && (
+              <button
+                onClick={() => handleBulkUpdateStatus(bulkStatus)}
+                disabled={bulkProcessing}
+                className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
+              >
+                <Layers size={12} /> {bulkProcessing ? "Processing..." : "Apply Status"}
+              </button>
+            )}
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkProcessing}
+              className="flex items-center gap-1 rounded-md bg-danger/10 px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/20 disabled:opacity-50"
+            >
+              <Trash2 size={12} /> {bulkProcessing ? "Deleting..." : "Delete"}
+            </button>
+            <button
+              onClick={() => {
+                setSelectedIds(new Set());
+                setBulkMode(false);
+                setBulkStatus("");
+              }}
+              disabled={bulkProcessing}
+              className="px-3 py-1.5 text-xs text-muted hover:text-gray-900"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
