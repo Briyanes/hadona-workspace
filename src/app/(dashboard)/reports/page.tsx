@@ -26,6 +26,8 @@ import {
   Mail,
   Eye,
   ChevronDown,
+  LayoutGrid,
+  Table2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -46,6 +48,8 @@ import { ObjectiveSelector } from "@/components/reports/objective-selector";
 import { ObjectiveKPIBar } from "@/components/reports/kpi-bar";
 import { ImportSheetModal } from "@/components/reports/import-sheet-modal";
 import { SheetPreviewModal } from "@/components/reports/sheet-preview-modal";
+import { useSortable } from "@/hooks/use-sortable-table";
+import { SortableTh } from "@/components/ui/sortable-th";
 import { OBJECTIVE_MAP, type ObjectiveKey } from "@/lib/ad-objectives";
 import { generateReportText } from "@/lib/report-generator";
 import { FileSpreadsheet } from "lucide-react";
@@ -352,6 +356,10 @@ export default function ReportsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
+  // 🆕 Sprint 1: Filter parity dengan clients page
+  const [filterPIC, setFilterPIC] = useState("all");
+  const [filterObjective, setFilterObjective] = useState("all");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -997,15 +1005,13 @@ export default function ReportsPage() {
   }
 
   // 🆕 Reset visibleCount ke 12 setiap kali filter/search berubah.
-  // Tanpa ini: user di page 3 (visible=36) → ganti filter → hasil filter cuma 5
-  // → grid kosong/false-empty karena slice(0, 36) pada array[5] = 5, tapi
-  // ada edge case saat hasil filter < visibleCount lalu naik lagi → confus#ing.
-  // Reset ke page 1 adalah UX paling predictable.
+  // Sekarang include filterPIC & filterObjective juga (Sprint 1).
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, statusFilter, clientFilter]);
+  }, [search, statusFilter, clientFilter, filterPIC, filterObjective]);
 
   // ─── Filter logic (B3 fix: include conclusion & action) ───
+  // 🆕 Sprint 1: tambah filterPIC & filterObjective (parity dengan clients page).
   const filtered = reports.filter((r) => {
     const q = search.toLowerCase();
     const matchSearch =
@@ -1017,15 +1023,80 @@ export default function ReportsPage() {
       r.action?.toLowerCase().includes(q);
     const matchStatus = statusFilter === "all" || r.status === statusFilter;
     const matchClient = clientFilter === "all" || r.client_id === clientFilter;
-    return matchSearch && matchStatus && matchClient;
+    // 🆕 PIC filter: match by pic.full_name (already joined from profiles)
+    const matchPIC =
+      filterPIC === "all" ||
+      (r.pic?.full_name && r.pic.full_name === filterPIC);
+    // 🆕 Objective filter: match by objective field (META_CTWA, META_SALES, dll)
+    const matchObjective =
+      filterObjective === "all" ||
+      r.objective === filterObjective;
+    return matchSearch && matchStatus && matchClient && matchPIC && matchObjective;
   });
 
-  // 🆕 Slice filtered → hanya render visibleCount pertama (performance)
+  // 🆕 Sprint 1.3: Quick Status Chips counters (real-time dari reports data).
+  // Pattern sama dengan clients page — chips with counter for 1-klik filter switch.
+  const statusCounts = useMemo(() => ({
+    all: reports.length,
+    draft: reports.filter((r) => r.status === "draft").length,
+    submitted: reports.filter((r) => r.status === "submitted").length,
+    reviewed: reports.filter((r) => r.status === "reviewed").length,
+  }), [reports]);
+
+  // 🆕 Sprint 1.4: Derived list of unique PICs from reports (untuk filter dropdown).
+  const uniquePICs = useMemo(() => {
+    const set = new Set<string>();
+    reports.forEach((r) => {
+      if (r.pic?.full_name) set.add(r.pic.full_name);
+    });
+    return Array.from(set).sort();
+  }, [reports]);
+
+  // 🆕 Sprint 1.4: Derived list of objectives yang dipakai di reports (untuk filter dropdown).
+  // Hanya tampilkan objective yang actually dipakai (lebih relevant dari pada 22 objective).
+  const uniqueObjectives = useMemo(() => {
+    const set = new Set<string>();
+    reports.forEach((r) => {
+      if (r.objective) set.add(r.objective);
+    });
+    // Map ke [id, label] untuk display
+    return Array.from(set).sort().map((id) => ({
+      id,
+      label: OBJECTIVE_MAP[id]?.label || id,
+    }));
+  }, [reports]);
+
+  // 🆕 Sprint 1.3: Active filter count untuk badge (UX: user tau filter aktif).
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== "all") count++;
+    if (clientFilter !== "all") count++;
+    if (filterPIC !== "all") count++;
+    if (filterObjective !== "all") count++;
+    if (search.trim()) count++;
+    return count;
+  }, [statusFilter, clientFilter, filterPIC, filterObjective, search]);
+
+  // 🆕 Sprint 1.3: Reset all filters helper (UX: 1-klik reset).
+  const resetAllFilters = useCallback(() => {
+    setSearch("");
+    setStatusFilter("all");
+    setClientFilter("all");
+    setFilterPIC("all");
+    setFilterObjective("all");
+  }, []);
+
+  // 🆕 Sprint 2: Sortable data via reusable hook (DRY — dipakai juga di clients page).
+  // Sort cycle: null → asc → desc → null. Mendukung nested key ("client.name").
+  const { sortedData, sortState, toggleSort } = useSortable<Report>({ data: filtered });
+
+  // 🆕 Slice sortedData → hanya render visibleCount pertama (performance).
+  // Catatan: gunakan sortedData (bukan filtered) supaya hasil sort konsisten saat Load More.
   // 285 cards × ~40 DOM nodes = ~11.400 nodes (browser recommended <1.500).
   // Dengan slice(0, 12) → 480 nodes. Senyaman non-virtualized list.
   const visibleReports = useMemo(
-    () => filtered.slice(0, visibleCount),
-    [filtered, visibleCount]
+    () => sortedData.slice(0, visibleCount),
+    [sortedData, visibleCount]
   );
 
   // ─── Stats ───
@@ -1580,8 +1651,46 @@ export default function ReportsPage() {
         <CompareView reports={reports} clients={clients} />
       ) : (
         <>
-      {/* Search & Filter */}
-      <div className="flex flex-wrap gap-3">
+      {/* 🆕 Sprint 1.3: Quick Status Chips — 1-klik filter switch dengan counter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase text-muted">Status:</span>
+        {([
+          { key: "all", label: "Semua", count: statusCounts.all, color: "border-border bg-surface text-gray-700" },
+          { key: "draft", label: "Draft", count: statusCounts.draft, color: "border-border bg-surface text-muted" },
+          { key: "submitted", label: "Submitted", count: statusCounts.submitted, color: "border-warning/30 bg-warning/10 text-warning" },
+          { key: "reviewed", label: "Reviewed", count: statusCounts.reviewed, color: "border-success/30 bg-success/10 text-success" },
+        ] as const).map((chip) => (
+          <button
+            key={chip.key}
+            onClick={() => setStatusFilter(chip.key)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-medium transition-all",
+              chip.color,
+              statusFilter === chip.key && "ring-2 ring-primary ring-offset-1 ring-offset-surface"
+            )}
+          >
+            {chip.label}
+            <span className="rounded-full bg-background px-1.5 text-[9px] tabular-nums">
+              {chip.count}
+            </span>
+          </button>
+        ))}
+
+        {/* Active filter badge + reset — tampilkan hanya jika ada filter aktif */}
+        {activeFilterCount > 0 && (
+          <button
+            onClick={resetAllFilters}
+            className="ml-auto flex items-center gap-1 rounded-full border border-danger/30 bg-danger/10 px-2.5 py-1 text-[10px] font-medium text-danger transition-colors hover:bg-danger/20"
+            title="Reset semua filter"
+          >
+            <X size={10} />
+            {activeFilterCount} filter aktif • Reset
+          </button>
+        )}
+      </div>
+
+      {/* Search & Filter + View Mode Toggle */}
+      <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
@@ -1600,12 +1709,54 @@ export default function ReportsPage() {
             </option>
           ))}
         </select>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-auto">
-          <option value="all">Semua Status</option>
-          <option value="draft">Draft</option>
-          <option value="submitted">Submitted</option>
-          <option value="reviewed">Reviewed</option>
+        {/* 🆕 Sprint 1.4: Filter PIC dropdown — hanya tampilkan PIC yang ada di reports */}
+        <select value={filterPIC} onChange={(e) => setFilterPIC(e.target.value)} className="input w-auto">
+          <option value="all">Semua PIC</option>
+          {uniquePICs.map((pic) => (
+            <option key={pic} value={pic}>
+              {pic}
+            </option>
+          ))}
         </select>
+        {/* 🆕 Sprint 1.4: Filter Objective dropdown — hanya tampilkan objective yang dipakai */}
+        <select value={filterObjective} onChange={(e) => setFilterObjective(e.target.value)} className="input w-auto">
+          <option value="all">Semua Objective</option>
+          {uniqueObjectives.map((obj) => (
+            <option key={obj.id} value={obj.id}>
+              {obj.label}
+            </option>
+          ))}
+        </select>
+
+        {/* 🆕 Sprint 1.5: View Mode Toggle (Grid ↔ Table) */}
+        <div className="flex overflow-hidden rounded-md border border-border">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors",
+              viewMode === "grid"
+                ? "bg-primary text-white"
+                : "bg-surface text-muted hover:bg-background hover:text-gray-700"
+            )}
+            title="Tampilan Grid (kartu)"
+          >
+            <LayoutGrid size={12} />
+            <span className="hidden sm:inline">Grid</span>
+          </button>
+          <button
+            onClick={() => setViewMode("table")}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors",
+              viewMode === "table"
+                ? "bg-primary text-white"
+                : "bg-surface text-muted hover:bg-background hover:text-gray-700"
+            )}
+            title="Tampilan Tabel (rapih, sortable)"
+          >
+            <Table2 size={12} />
+            <span className="hidden sm:inline">Tabel</span>
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -1635,6 +1786,132 @@ export default function ReportsPage() {
             >
               Reset Filter
             </button>
+          )}
+        </div>
+      ) : viewMode === "table" ? (
+        // ════════════════════════════════════════════
+        // 🆕 Sprint 2.3: TABLE VIEW — sortable columns
+        // ════════════════════════════════════════════
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-border bg-background">
+                <tr>
+                  <SortableTh label="Client" sortKey="client.name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[200px]" />
+                  <SortableTh label="Periode" sortKey="period_start" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[140px]" />
+                  <SortableTh label="Status" sortKey="status" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[100px]" />
+                  <SortableTh label="PIC" sortKey="pic.full_name" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[140px]" />
+                  <SortableTh label="Objective" sortKey="objective" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[140px]" />
+                  <SortableTh label="Spend" sortKey="spend" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" className="w-[130px]" />
+                  <SortableTh label="Conv" sortKey="conversions" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" className="w-[100px]" />
+                  <SortableTh label="CTR" sortKey="ctr" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" className="w-[90px]" />
+                  <SortableTh label="ROAS" sortKey="roas" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} align="right" className="w-[90px]" />
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase text-muted w-[100px]">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleReports.map((r) => {
+                  const metrics = r.report_metrics || [];
+                  const spend = getMetric(metrics, "spend");
+                  const ctr = getMetric(metrics, "ctr");
+                  const roas = getMetric(metrics, "roas");
+                  const conv = (() => {
+                    for (const alias of METRIC_ALIASES.conversions) {
+                      const v = metrics.filter((m) => m.metric_type === alias).reduce((s, m) => s + (m.value || 0), 0);
+                      if (v > 0) return v;
+                    }
+                    return 0;
+                  })();
+                  const objLabel = r.objective ? (OBJECTIVE_MAP[r.objective]?.label || r.objective) : "-";
+                  return (
+                    <tr
+                      key={r.id}
+                      className="cursor-pointer border-b border-border/50 transition-colors last:border-0 hover:bg-background"
+                      onClick={() => setDetailReport(r)}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{r.client?.name || "-"}</div>
+                        {r.summary && (
+                          <div className="line-clamp-1 text-[10px] text-muted">{r.summary}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted">
+                        {formatDate(r.period_start, { day: "numeric", month: "short" })} —{" "}
+                        {formatDate(r.period_end, { day: "numeric", month: "short" })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`badge ${statusColors[r.status] || statusColors.draft} text-[10px]`}>{r.status}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted">{r.pic?.full_name || "-"}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {r.objective ? (
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">{objLabel}</span>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-xs font-medium text-gray-900">
+                        {spend > 0 ? formatIDR(spend) : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-right text-xs tabular-nums">
+                        {conv > 0 ? formatCompact(conv) : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-right text-xs tabular-nums">
+                        {ctr > 0 ? `${ctr.toFixed(2)}%` : "-"}
+                      </td>
+                      <td className={cn(
+                        "px-4 py-3 text-right text-xs font-medium tabular-nums",
+                        roas > 0 ? (roas >= 3 ? "text-success" : roas >= 1 ? "text-warning" : "text-danger") : "text-muted"
+                      )}>
+                        {roas > 0 ? `${roas.toFixed(2)}x` : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => setDetailReport(r)}
+                            className="rounded p-1 text-muted hover:bg-background hover:text-primary"
+                            title="Lihat detail"
+                          >
+                            <Eye size={12} />
+                          </button>
+                          <button
+                            onClick={() => openEdit(r)}
+                            className="rounded p-1 text-muted hover:bg-background hover:text-primary"
+                            title="Edit"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="rounded p-1 text-muted hover:bg-background hover:text-danger"
+                            title="Hapus"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Load More for table view */}
+          {filtered.length > visibleCount && (
+            <div className="flex flex-col items-center gap-2 border-t border-border py-4">
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+              >
+                <ChevronDown size={14} />
+                Load More
+                <span className="text-muted">({filtered.length - visibleCount} remaining)</span>
+              </button>
+              <p className="text-[10px] text-muted">
+                Showing {visibleReports.length} of {filtered.length} reports
+              </p>
+            </div>
           )}
         </div>
       ) : (
