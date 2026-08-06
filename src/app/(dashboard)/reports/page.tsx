@@ -1145,7 +1145,7 @@ export default function ReportsPage() {
             Laporan performa klien mingguan — auto-pull dari Ads Spend
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {reports.length > 0 && (
             <button
               onClick={() => {
@@ -1158,17 +1158,21 @@ export default function ReportsPage() {
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border bg-surface text-gray-700 hover:bg-background"
               )}
+              title={bulkMode ? "Buat Multi-Select" : "Bulk Action"}
             >
-              <CheckCircle size={14} /> {bulkMode ? "Buat Multi-Select" : "Bulk Action"}
+              <CheckCircle size={14} />
+              <span className="hidden sm:inline">{bulkMode ? "Buat Multi-Select" : "Bulk Action"}</span>
             </button>
           )}
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+            title="Export CSV"
           >
-            <Download size={14} /> Export
+            <Download size={14} />
+            <span className="hidden sm:inline">Export</span>
           </button>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleSyncNow}
               disabled={syncing}
@@ -1177,11 +1181,13 @@ export default function ReportsPage() {
             >
               {syncing ? (
                 <>
-                  <Loader2 size={14} className="animate-spin" /> Syncing...
+                  <Loader2 size={14} className="animate-spin" />
+                  <span className="hidden sm:inline">Syncing...</span>
                 </>
               ) : (
                 <>
-                  <RefreshCw size={14} /> Sync Now
+                  <RefreshCw size={14} />
+                  <span className="hidden sm:inline">Sync Now</span>
                 </>
               )}
             </button>
@@ -1190,17 +1196,20 @@ export default function ReportsPage() {
               className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
               title="Lihat semua sheet tabs (Januari-Juli '26) dari published Google Sheet — read-only preview"
             >
-              <Eye size={14} /> Lihat Sheet
+              <Eye size={14} />
+              <span className="hidden sm:inline">Lihat Sheet</span>
             </button>
             <button
               onClick={() => setShowImportModal(true)}
               className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
               title="Import semua client dari Google Sheet publish-to-web"
             >
-              <FileSpreadsheet size={14} /> Import dari Sheet
+              <FileSpreadsheet size={14} />
+              <span className="hidden sm:inline">Import dari Sheet</span>
             </button>
-            <button onClick={openCreate} className="btn-primary">
-              <Plus size={16} /> New Report
+            <button onClick={openCreate} className="btn-primary" title="New Report">
+              <Plus size={16} />
+              <span className="hidden sm:inline">New Report</span>
             </button>
           </div>
         </div>
