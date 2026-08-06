@@ -1186,6 +1186,13 @@ export default function ReportsPage() {
               )}
             </button>
             <button
+              onClick={() => setShowSheetPreview(true)}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+              title="Lihat semua sheet tabs (Januari-Juli '26) dari published Google Sheet — read-only preview"
+            >
+              <Eye size={14} /> Lihat Sheet
+            </button>
+            <button
               onClick={() => setShowImportModal(true)}
               className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
               title="Import semua client dari Google Sheet publish-to-web"
