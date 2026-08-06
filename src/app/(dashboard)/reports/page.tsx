@@ -782,7 +782,7 @@ export default function ReportsPage() {
   // 🆕 BULK ACTIONS — Multi-select operations
   // ════════════════════════════════════════════
 
-  // Select/deselect semua reports yang terlihat (filtered)
+  // Select/deselect semua reports yang terlihat (visible = sudah ter-render)
   function toggleSelectAll() {
     if (selectedIds.size === visibleReports.length && visibleReports.length > 0) {
       // Deselect all
@@ -1281,6 +1281,36 @@ export default function ReportsPage() {
     () => sortedData.slice(0, visibleCount),
     [sortedData, visibleCount]
   );
+
+  // ════════════════════════════════════════════
+  // 🆕 GMAIL-STYLE "Select All Filtered" pattern
+  // ════════════════════════════════════════════
+  // Saat ada pagination (visibleCount=12, filtered=285), "Pilih Semua" hanya
+  // memilih 12 cards yang visible. Banner ini muncul setelah user klik "Pilih Semua"
+  // untuk menawarkan pilihan select SEMUA hasil filter (285).
+  // Pattern: Gmail → "Select all 12 conversations on this page" + "Select all 285 conversations".
+  function selectAllFiltered() {
+    if (filtered.length === 0) return;
+    setSelectedIds(new Set(filtered.map((r) => r.id)));
+    toast.info(`Memilih semua ${filtered.length} report yang sesuai filter`);
+  }
+
+  // helper: cek apakah visible sudah ter-select semua (untuk label toggle)
+  const allVisibleSelected =
+    visibleReports.length > 0 &&
+    visibleReports.every((r) => selectedIds.has(r.id));
+
+  // Apakah selectedIds mencakup SEMUA filtered (bukan hanya visible)?
+  const allFilteredSelected =
+    filtered.length > 0 &&
+    filtered.every((r) => selectedIds.has(r.id));
+
+  // Apakah user perlu ditawari "Select all filtered" (ada lebih banyak filtered dari visible)?
+  const showSelectAllFilteredBanner =
+    showBulkBar &&
+    allVisibleSelected &&            // sudah select semua yang visible
+    !allFilteredSelected &&          // tapi belum select semua filtered
+    filtered.length > visibleReports.length;
 
   // ─── Stats ───
   const totalReports = reports.length;
@@ -2009,6 +2039,27 @@ export default function ReportsPage() {
               Batal
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════ */}
+      {/* 🆕 GMAIL-STYLE "Select All Filtered" BANNER   */}
+      {/* ════════════════════════════════════════════ */}
+      {/* Muncul saat user sudah "Pilih Semua" 12 cards yang visible,
+          tapi masih ada ratusan filtered yang belum dipilih.
+          Pattern Gmail: "Pilih semua percakapan di halaman ini" → "Pilih semua X percakapan" */}
+      {showSelectAllFilteredBanner && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-accent/30 bg-accent/5 px-3 py-2 text-xs">
+          <span className="text-muted">
+            Semua <b className="text-gray-900">{visibleReports.length}</b> report di halaman ini sudah dipilih.
+          </span>
+          <button
+            onClick={selectAllFiltered}
+            disabled={bulkProcessing}
+            className="font-medium text-accent underline-offset-2 hover:underline disabled:opacity-50"
+          >
+            Pilih semua <b>{filtered.length}</b> report yang sesuai filter →
+          </button>
         </div>
       )}
 
