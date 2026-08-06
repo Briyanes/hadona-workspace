@@ -25,6 +25,7 @@ import {
   Copy,
   Mail,
   Eye,
+  ChevronDown,
 } from "lucide-react";
 import {
   AreaChart,
@@ -394,6 +395,13 @@ export default function ReportsPage() {
   // Bulk Actions state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
+
+  // 🆕 Pagination state (Tier 1 — Load More)
+  // Default tampilkan 12 cards. Naikkan +12 setiap klik "Load More".
+  // Reset ke 12 otomatis saat filter/search berubah (lihat useEffect di bawah).
+  // Performance: hindari render 285 cards sekaligus setelah sync Google Sheet.
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Import Sheet Modal state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -988,6 +996,15 @@ export default function ReportsPage() {
     }
   }
 
+  // 🆕 Reset visibleCount ke 12 setiap kali filter/search berubah.
+  // Tanpa ini: user di page 3 (visible=36) → ganti filter → hasil filter cuma 5
+  // → grid kosong/false-empty karena slice(0, 36) pada array[5] = 5, tapi
+  // ada edge case saat hasil filter < visibleCount lalu naik lagi → confus#ing.
+  // Reset ke page 1 adalah UX paling predictable.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, statusFilter, clientFilter]);
+
   // ─── Filter logic (B3 fix: include conclusion & action) ───
   const filtered = reports.filter((r) => {
     const q = search.toLowerCase();
@@ -1002,6 +1019,14 @@ export default function ReportsPage() {
     const matchClient = clientFilter === "all" || r.client_id === clientFilter;
     return matchSearch && matchStatus && matchClient;
   });
+
+  // 🆕 Slice filtered → hanya render visibleCount pertama (performance)
+  // 285 cards × ~40 DOM nodes = ~11.400 nodes (browser recommended <1.500).
+  // Dengan slice(0, 12) → 480 nodes. Senyaman non-virtualized list.
+  const visibleReports = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount]
+  );
 
   // ─── Stats ───
   const totalReports = reports.length;
@@ -1496,8 +1521,8 @@ export default function ReportsPage() {
         })}
       </div>
 
-      {/* Tab Navigation - Scrollable Carousel */}
-      <div className="flex gap-1 overflow-x-auto border-b border-border pb-px [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Tab Navigation - Scrollable Carousel (sticky supaya konteks tidak hilang saat scroll) */}
+      <div className="sticky top-0 z-20 -mx-4 mb-2 flex gap-1 overflow-x-auto border-b border-border bg-surface/95 px-4 pb-px backdrop-blur supports-[backdrop-filter]:bg-surface/80 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           onClick={() => setActiveTab("list")}
           className={cn(
@@ -1613,8 +1638,9 @@ export default function ReportsPage() {
           )}
         </div>
       ) : (
+        <>
         <div className="grid gap-4 md:grid-cols-2">
-          {filtered.map((r) => {
+          {visibleReports.map((r) => {
             const metrics = r.report_metrics || [];
             // 🆕 Card render: pakai alias resolver
             const spendVal = getMetric(metrics, "spend");
@@ -1751,6 +1777,38 @@ export default function ReportsPage() {
             );
           })}
         </div>
+
+        {/* 🆕 Load More pagination — tampilkan sisa cards bertahap (12 per klik)
+            Kenapa Load More, bukan pagination klasik (1, 2, 3, Next):
+            - UX: user bisa lihat semua cards dalam 1 viewport tanpa harus klik halaman
+            - Performance: tetap limiting DOM nodes (12 → 24 → 36, dst.)
+            - Mobile-friendly: lebih mudah dari pada tap target pagination kecil
+            - Default 12 cards cocok untuk grid 2-col (6 rows × 2 col = 12) */}
+        {filtered.length > visibleCount && (
+          <div className="flex flex-col items-center gap-2 py-6">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+            >
+              <ChevronDown size={14} className="animate-bounce" />
+              Load More
+              <span className="text-muted">
+                ({filtered.length - visibleCount} remaining)
+              </span>
+            </button>
+            <p className="text-[10px] text-muted">
+              Showing {visibleReports.length} of {filtered.length} reports
+            </p>
+          </div>
+        )}
+
+        {/* Counter info kalau dataset kecil (tidak melewati PAGE_SIZE) */}
+        {filtered.length > 0 && filtered.length <= visibleCount && (
+          <p className="pb-2 text-center text-[10px] text-muted">
+            Showing all {filtered.length} report{filtered.length === 1 ? "" : "s"}
+          </p>
+        )}
+        </>
       )}
         </>
       )}
