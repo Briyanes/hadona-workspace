@@ -1209,7 +1209,7 @@ export default function ReportsPage() {
             </button>
             <button onClick={openCreate} className="btn-primary" title="New Report">
               <Plus size={16} />
-              <span className="hidden sm:inline">New Report</span>
+              <span>New Report</span>
             </button>
           </div>
         </div>
