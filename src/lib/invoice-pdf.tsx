@@ -179,6 +179,13 @@ const styles = StyleSheet.create({
 // ============================================
 // Types
 // ============================================
+export interface InvoiceLineItem {
+  description: string;
+  qty: number;
+  unit_price: number;
+  amount: number;
+}
+
 export interface InvoicePDFData {
   invoice_number: string;
   issue_date: string;
@@ -188,6 +195,7 @@ export interface InvoicePDFData {
   status: string;
   notes: string | null;
   billing_period: string | null;
+  items?: InvoiceLineItem[];
   client?: {
     name: string;
     email?: string;
@@ -262,7 +270,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
         {/* ─── Bill To ─── */}
         <View style={styles.billToSection}>
           <View style={styles.billTo}>
-            <Text style={styles.billToLabel}>BILLED TO</Text>
+            <Text style={styles.billToLabel}>OFFERING TO:</Text>
             <Text style={styles.billToName}>{clientName}</Text>
             {invoice.client?.email && (
               <Text style={styles.billToDetail}>{invoice.client.email}</Text>
@@ -298,21 +306,40 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             </Text>
           </View>
 
-          <View style={styles.tableRow}>
-            <View style={styles.colDesc}>
-              <Text style={styles.rowTextBold}>
-                Digital Advertising Management
+          {/* Render line items if available, otherwise fallback to single row */}
+          {invoice.items && invoice.items.length > 0 ? (
+            invoice.items.map((item, idx) => (
+              <View key={idx} style={styles.tableRow} wrap={false}>
+                <View style={styles.colDesc}>
+                  <Text style={styles.rowTextBold}>{item.description}</Text>
+                  {idx === 0 && <Text style={styles.rowSubText}>{period}</Text>}
+                </View>
+                <Text style={[styles.rowText, styles.colQty]}>{item.qty}</Text>
+                <Text style={[styles.rowText, styles.colPrice]}>
+                  {formatIDR(item.unit_price)}
+                </Text>
+                <Text style={[styles.rowTextBold, styles.colTotal]}>
+                  {formatIDR(item.amount)}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <View style={styles.tableRow}>
+              <View style={styles.colDesc}>
+                <Text style={styles.rowTextBold}>
+                  Digital Advertising Management
+                </Text>
+                <Text style={styles.rowSubText}>{period}</Text>
+              </View>
+              <Text style={[styles.rowText, styles.colQty]}>1</Text>
+              <Text style={[styles.rowText, styles.colPrice]}>
+                {formatIDR(subtotal)}
               </Text>
-              <Text style={styles.rowSubText}>{period}</Text>
+              <Text style={[styles.rowTextBold, styles.colTotal]}>
+                {formatIDR(subtotal)}
+              </Text>
             </View>
-            <Text style={[styles.rowText, styles.colQty]}>1</Text>
-            <Text style={[styles.rowText, styles.colPrice]}>
-              {formatIDR(subtotal)}
-            </Text>
-            <Text style={[styles.rowTextBold, styles.colTotal]}>
-              {formatIDR(subtotal)}
-            </Text>
-          </View>
+          )}
         </View>
 
         {/* ─── Summary ─── */}

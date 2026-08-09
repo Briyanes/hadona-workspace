@@ -167,6 +167,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
     tax_rate: 11,
     payment_schedule: "monthly" as string,
     total_months_prepaid: 3,
+    prepaid_amount: 0,
     initialServices: [{ service_name: "", monthly_fee: "" }] as { service_name: string; monthly_fee: string }[],
   });
 
@@ -283,6 +284,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
         payment_schedule: contractForm.payment_schedule,
         is_prepaid: contractForm.payment_schedule === "prepaid_full",
         total_months_prepaid: contractForm.payment_schedule === "prepaid_full" ? contractForm.total_months_prepaid : 1,
+        prepaid_amount: contractForm.payment_schedule === "prepaid_full" ? contractForm.prepaid_amount : null,
       } as never);
 
       if (error) throw error;
@@ -338,6 +340,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
         tax_rate: 11,
         payment_schedule: "monthly",
         total_months_prepaid: 3,
+        prepaid_amount: 0,
         initialServices: [{ service_name: "", monthly_fee: "" }],
       });
       loadContracts();
@@ -1260,9 +1263,27 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   )}
                 </div>
                 {contractForm.payment_schedule === "prepaid_full" && (
-                  <p className="mt-2 text-[10px] text-primary">
-                    💡 Client membayar penuh di awal. Dashboard akan menampilkan total prepaid, bukan per bulan.
-                  </p>
+                  <>
+                    <div className="mt-2">
+                      <label className="mb-1 block text-xs font-medium text-gray-900">Total Pembayaran Prepaid (IDR)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="100000"
+                        value={contractForm.prepaid_amount}
+                        onChange={(e) => setContractForm({ ...contractForm, prepaid_amount: parseFloat(e.target.value) || 0 })}
+                        placeholder="contoh: 30000000"
+                        className="input"
+                      />
+                      <p className="mt-1 text-[10px] text-muted">
+                        Kosongkan jika ingin auto-calculate dari services × jumlah bulan
+                      </p>
+                    </div>
+                    <p className="mt-2 text-[10px] text-primary">
+                      💡 Client membayar penuh di awal. Dashboard akan menampilkan total prepaid, bukan per bulan.
+                      Auto-billing akan skip kontrak ini selama periode prepaid.
+                    </p>
+                  </>
                 )}
               </div>
 

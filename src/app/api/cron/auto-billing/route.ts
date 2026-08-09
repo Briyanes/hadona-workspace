@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Find all active contracts
     const { data: activeContracts, error: fetchError } = await supabase
       .from("client_contracts")
-      .select("id, contract_number, client_id, end_date, status")
+      .select("id, contract_number, client_id, end_date, status, is_prepaid, total_months_prepaid, start_date")
       .eq("status", "active");
 
     if (fetchError) {
@@ -64,6 +64,9 @@ export async function GET(request: NextRequest) {
       client_id: string;
       end_date: string;
       status: string;
+      is_prepaid: boolean | null;
+      total_months_prepaid: number | null;
+      start_date: string;
     };
 
     const results: { contract_id: string; contract_number: string | null; status: string; error?: string }[] = [];
@@ -87,6 +90,25 @@ export async function GET(request: NextRequest) {
         });
         skippedCount++;
         continue;
+      }
+
+      // ═══ PREPAID CHECK ═══
+      // Skip if contract is prepaid and current period is still within prepaid months
+      if (contract.is_prepaid && contract.total_months_prepaid && contract.total_months_prepaid > 0) {
+        const contractStart = new Date(contract.start_date);
+        const prepaidEndDate = new Date(contractStart);
+        prepaidEndDate.setMonth(prepaidEndDate.getMonth() + contract.total_months_prepaid);
+
+        if (periodStart < prepaidEndDate) {
+          console.log(`[Auto-Billing] ⏭️ Contract ${contract.contract_number} is prepaid for ${contract.total_months_prepaid} months — skipping period ${currentPeriod}`);
+          results.push({
+            contract_id: contract.id,
+            contract_number: contract.contract_number,
+            status: "skipped_prepaid",
+          });
+          skippedCount++;
+          continue;
+        }
       }
 
       // Generate billing via RPC

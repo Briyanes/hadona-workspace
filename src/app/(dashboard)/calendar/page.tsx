@@ -484,6 +484,7 @@ export default function CalendarPage() {
     const reportCount = filteredEvents.filter((e) => e.type === "report").length;
     const invoiceCount = filteredEvents.filter((e) => e.type === "invoice").length;
     const contractCount = filteredEvents.filter((e) => e.type === "contract").length;
+    const meetingCount = filteredEvents.filter((e) => e.type === "meeting").length;
 
     return {
       total: filteredEvents.length,
@@ -494,6 +495,7 @@ export default function CalendarPage() {
       reportCount,
       invoiceCount,
       contractCount,
+      meetingCount,
     };
   }, [filteredEvents, eventsByDate, todayStr]);
 
@@ -639,7 +641,8 @@ export default function CalendarPage() {
             t === "task" ? stats.taskCount :
             t === "report" ? stats.reportCount :
             t === "invoice" ? stats.invoiceCount :
-            stats.contractCount;
+            t === "contract" ? stats.contractCount :
+            stats.meetingCount;
           return (
             <button
               key={t}

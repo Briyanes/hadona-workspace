@@ -20,7 +20,7 @@ export async function GET(
       .select(
         `
           id, invoice_number, issue_date, due_date, amount, tax, status,
-          notes, billing_period,
+          notes, billing_period, contract_billing_id,
           client:clients(name, email, phone, address)
         `
       )
@@ -38,6 +38,28 @@ export async function GET(
     const rawData = invoice as Record<string, unknown>;
     const clientData = (rawData.client as InvoicePDFData["client"]) || undefined;
 
+    // Fetch line items from contract_billings.services_snapshot if linked
+    let items: InvoicePDFData["items"] | undefined;
+    const billingId = rawData.contract_billing_id as string | null;
+    if (billingId) {
+      const { data: billing } = await supabase
+        .from("contract_billings")
+        .select("services_snapshot")
+        .eq("id", billingId)
+        .single();
+      const snapshot = (billing as Record<string, unknown> | null)?.services_snapshot as
+        | { service: string; fee: number }[]
+        | null;
+      if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
+        items = snapshot.map((s) => ({
+          description: s.service,
+          qty: 1,
+          unit_price: s.fee,
+          amount: s.fee,
+        }));
+      }
+    }
+
     const pdfData: InvoicePDFData = {
       invoice_number: rawData.invoice_number as string,
       issue_date: rawData.issue_date as string,
@@ -47,6 +69,7 @@ export async function GET(
       status: rawData.status as string,
       notes: (rawData.notes as string) || null,
       billing_period: (rawData.billing_period as string) || null,
+      items,
       client: clientData,
     };
 

@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const { user, supabase } = auth;
     const today = new Date().toISOString().split("T")[0];
 
-    // ── Parallel batch #1: Basic stats + Division analytics ──
-    const [tasks, clients, adAccounts, profiles, profileData, divisionTasksRes, divisionMembersRes] = await Promise.all([
+    // ── Parallel batch #1: Basic stats + Division analytics + MRR ──
+    const [tasks, clients, adAccounts, profiles, profileData, divisionTasksRes, divisionMembersRes, mrrRes] = await Promise.all([
       supabase.from("tasks").select("status, due_date, priority"),
       supabase.from("clients").select("status, contract_value"),
       supabase.from("ad_accounts").select("daily_budget, status").eq("status", "active"),
@@ -29,12 +29,27 @@ export async function GET(request: NextRequest) {
       `),
       // Division members count
       supabase.from("profiles").select("division").eq("is_active", true).eq("approval_status", "approved"),
+      // MRR: Calculate from active contract_services (source of truth)
+      supabase
+        .from("contract_services")
+        .select(`
+          monthly_fee,
+          contract:client_contracts!inner(status, end_date, client:clients!inner(status))
+        `)
+        .eq("status", "active")
+        .eq("contract.status", "active")
+        .gte("contract.end_date", today)
+        .in("contract.client.status", ["active", "onboarding"]),
     ]);
 
     const allTasks = (tasks.data as { status: string; due_date: string | null; priority: string }[]) || [];
     const clientList = (clients.data as { status: string; contract_value: number | null }[]) || [];
     const accountList = (adAccounts.data as { daily_budget: number | null; status: string }[]) || [];
     const profileList = (profiles.data as { id: string }[]) || [];
+
+    // Calculate accurate MRR from contract_services
+    const mrrRows = (mrrRes.data as unknown as Array<{ monthly_fee: number | null }>) || [];
+    const accurateMrr = mrrRows.reduce((sum, r) => sum + (r.monthly_fee || 0), 0);
 
     // ── Process Division Analytics ──
     interface DivisionTaskRow {
@@ -91,7 +106,8 @@ export async function GET(request: NextRequest) {
       activeClients: clientList.filter((c) => c.status === "active").length,
       activeAdAccounts: accountList.length,
       totalBudget: accountList.reduce((sum, a) => sum + (a.daily_budget || 0), 0),
-      totalMrr: clientList
+      // MRR from contract_services (accurate) — fallback to client.contract_value if no contract data
+      totalMrr: accurateMrr || clientList
         .filter((c) => c.status === "active" || c.status === "onboarding")
         .reduce((sum, c) => sum + (c.contract_value || 0), 0),
       teamMembers: profileList.length,
