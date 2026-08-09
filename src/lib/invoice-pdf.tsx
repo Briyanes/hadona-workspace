@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
 
   // ─── Hero Header ───
   hero: {
-    backgroundColor: INK,
+    backgroundColor: HADONA_BLUE,
     paddingHorizontal: 50,
     paddingVertical: 36,
   },
@@ -380,20 +380,20 @@ const styles = StyleSheet.create({
 
   // ─── Footer — pinned to bottom via flexGrow on body ───
   footer: {
-    backgroundColor: INK,
+    backgroundColor: HADONA_BLUE,
     paddingHorizontal: 50,
     paddingVertical: 18,
     alignItems: "center",
   },
   footerText: {
     fontSize: 8,
-    color: SLATE_MUTED,
+    color: "#FFFFFF",
     textAlign: "center",
     marginBottom: 3,
   },
   footerAccent: {
     fontSize: 8,
-    color: "#475569",
+    color: "#CBD5E1",
     textAlign: "center",
   },
 });
