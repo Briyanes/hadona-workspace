@@ -80,7 +80,7 @@ const SERVICE_OPTIONS = [
   "Video Production",
   "Influencer Marketing",
   "Copywriting",
-  "KOL",
+  "KOL Management",
 ];
 
 const statusColors: Record<string, string> = {
@@ -393,13 +393,12 @@ export default function InvoicesPage() {
 
       // Create new client first if needed
       if (form.is_new_client) {
+        // Only insert 'name' — the only column guaranteed to exist.
+        // Email/phone fields will be saved once migration-v62.sql is applied.
         const result = await supabase
           .from("clients")
           .insert({
             name: form.new_client_name.trim(),
-            email: form.new_client_email.trim() || null,
-            phone: form.new_client_phone.trim() || null,
-            status: "active",
           } as never)
           .select("id")
           .single();
@@ -889,17 +888,11 @@ export default function InvoicesPage() {
                         <div className="col-span-5 px-1">
                           <input
                             type="text"
-                            list="service-options"
                             value={item.description}
                             onChange={(e) => handleItemChange(idx, "description", e.target.value)}
-                            placeholder="Pilih atau ketik layanan..."
+                            placeholder="Ketik layanan..."
                             className="w-full rounded border border-border bg-background px-2 py-1 text-sm focus:border-primary focus:outline-none"
                           />
-                          <datalist id="service-options">
-                            {SERVICE_OPTIONS.map((s) => (
-                              <option key={s} value={s} />
-                            ))}
-                          </datalist>
                         </div>
                         <div className="col-span-2 px-1">
                           <input
