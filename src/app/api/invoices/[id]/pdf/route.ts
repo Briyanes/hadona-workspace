@@ -73,11 +73,12 @@ export async function GET(
       { auth: { persistSession: false } }
     );
 
-    // Use select("*") to avoid errors if optional columns (billing_period, contract_billing_id)
-    // don't exist yet in the database. Then separately fetch the client.
+    // SINGLE QUERY with JOIN: Fetch invoice + client data in one shot.
+    // The service-role key bypasses RLS for this JOIN too.
+    // Note: Using explicit column list instead of "*" to ensure the JOIN works reliably.
     const { data: invoice, error } = await supabase
       .from("invoices")
-      .select("*")
+      .select("*, client:clients(name, email, phone, address)")
       .eq("id", params.id)
       .single();
 
@@ -124,11 +125,31 @@ export async function GET(
       }, { status: 200, headers: { "Cache-Control": "no-store" } });
     }
 
-    // ── Fetch client data (Bug #1 fix: multi-level fallback) ──
+    // ── Extract client data (multi-level fallback) ──
     let clientData: InvoicePDFData["client"] | undefined;
 
-    // Strategy 1: Direct client_id from invoice
-    if (clientId) {
+    // Strategy 0 (HIGHEST PRIORITY): Client data from JOIN in the initial query
+    // This was already fetched together with the invoice — no separate query needed.
+    const rawClientFromJoin = rawData.client;
+    if (rawClientFromJoin) {
+      let clientRow: Record<string, unknown> | null = null;
+      if (Array.isArray(rawClientFromJoin) && rawClientFromJoin.length > 0) {
+        clientRow = rawClientFromJoin[0] as Record<string, unknown>;
+      } else if (typeof rawClientFromJoin === "object") {
+        clientRow = rawClientFromJoin as Record<string, unknown>;
+      }
+      if (clientRow && clientRow.name) {
+        clientData = {
+          name: clientRow.name as string,
+          email: clientRow.email as string | undefined,
+          phone: clientRow.phone as string | undefined,
+          address: clientRow.address as string | undefined,
+        };
+      }
+    }
+
+    // Strategy 1: Separate query fallback (only if JOIN didn't return client data)
+    if (!clientData && clientId) {
       const { data: clientRow } = await supabase
         .from("clients")
         .select("name, email, phone, address")
