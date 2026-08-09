@@ -888,11 +888,17 @@ export default function InvoicesPage() {
                         <div className="col-span-5 px-1">
                           <input
                             type="text"
+                            list="service-options"
                             value={item.description}
                             onChange={(e) => handleItemChange(idx, "description", e.target.value)}
-                            placeholder="Ketik layanan..."
+                            placeholder="Pilih atau ketik layanan..."
                             className="w-full rounded border border-border bg-background px-2 py-1 text-sm focus:border-primary focus:outline-none"
                           />
+                          <datalist id="service-options">
+                            {SERVICE_OPTIONS.map((s) => (
+                              <option key={s} value={s} />
+                            ))}
+                          </datalist>
                         </div>
                         <div className="col-span-2 px-1">
                           <input
@@ -900,7 +906,7 @@ export default function InvoicesPage() {
                             min="1"
                             value={item.quantity}
                             onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
-                            className="w-full rounded border border-border bg-background px-2 py-1 text-center text-sm focus:border-primary focus:outline-none"
+                            className="no-spinner w-full rounded border border-border bg-background px-2 py-1 text-center text-sm focus:border-primary focus:outline-none"
                           />
                         </div>
                         <div className="col-span-2 px-1">
@@ -910,7 +916,7 @@ export default function InvoicesPage() {
                             value={item.unit_price}
                             onChange={(e) => handleItemChange(idx, "unit_price", e.target.value)}
                             placeholder="0"
-                            className="w-full rounded border border-border bg-background px-2 py-1 text-right text-sm focus:border-primary focus:outline-none"
+                            className="no-spinner w-full rounded border border-border bg-background px-2 py-1 text-right text-sm focus:border-primary focus:outline-none"
                           />
                         </div>
                         <div className="col-span-2 px-1 text-right text-sm font-medium text-gray-900">
@@ -942,7 +948,7 @@ export default function InvoicesPage() {
                       value={form.tax}
                       onChange={(e) => setForm({ ...form, tax: e.target.value })}
                       placeholder="0"
-                      className="input"
+                      className="no-spinner input"
                     />
                   </div>
                   <div>
