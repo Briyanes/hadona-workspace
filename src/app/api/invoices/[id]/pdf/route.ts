@@ -78,7 +78,7 @@ export async function GET(
     // Note: Using explicit column list instead of "*" to ensure the JOIN works reliably.
     const { data: invoice, error } = await supabase
       .from("invoices")
-      .select("*, client:clients(name, email, phone, address)")
+      .select("*, client:clients(name)")
       .eq("id", params.id)
       .single();
 
@@ -103,7 +103,7 @@ export async function GET(
       if (clientId) {
         const c = await supabase
           .from("clients")
-          .select("id, name, email, phone, address")
+          .select("id, name")
           .eq("id", clientId)
           .single();
         debugClient = c.data;
@@ -152,7 +152,7 @@ export async function GET(
     if (!clientData && clientId) {
       const { data: clientRow } = await supabase
         .from("clients")
-        .select("name, email, phone, address")
+        .select("name")
         .eq("id", clientId)
         .single();
       if (clientRow) {
@@ -174,7 +174,7 @@ export async function GET(
             tax_rate, bank_name, bank_account_name, bank_account_number,
             is_prepaid, total_months_prepaid,
             client_id,
-            client:clients(name, email, phone, address)
+            client:clients(name)
           )
         `
         )
