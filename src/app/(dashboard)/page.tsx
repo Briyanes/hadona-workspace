@@ -42,6 +42,8 @@ interface Stats {
   activeAdAccounts: number;
   totalBudget: number;
   totalMrr: number;
+  totalPrepaidRevenue: number;
+  prepaidContractCount: number;
   teamMembers: number;
 }
 
@@ -81,6 +83,10 @@ interface DashboardData {
   adsKpi: AdsKPI | null;
   myTasks: MyTask[];
   activities: ActivityLog[];
+  prepaid?: {
+    totalRevenue: number;
+    contractCount: number;
+  };
 }
 
 const entityIcons: Record<string, { icon: typeof Activity; color: string }> = {
@@ -176,9 +182,13 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 11 ? "Selamat Pagi" : hour < 15 ? "Selamat Siang" : hour < 19 ? "Selamat Sore" : "Selamat Malam";
 
+  const prepaidRevenue = data?.prepaid?.totalRevenue ?? stats?.totalPrepaidRevenue ?? 0;
+  const prepaidCount = data?.prepaid?.contractCount ?? stats?.prepaidContractCount ?? 0;
+
   const statCards = [
     { label: "Active Clients", value: stats?.activeClients ?? 0, icon: Users, color: "text-primary", bg: "bg-primary/10", href: "/clients" },
     { label: "Total MRR", value: formatIDR(stats?.totalMrr ?? 0), icon: DollarSign, color: "text-success", bg: "bg-success/10", href: "/clients" },
+    { label: "Prepaid Revenue", value: formatIDR(prepaidRevenue), sub: `${prepaidCount} kontrak`, icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/30", href: "/clients" },
     { label: "Tasks In Progress", value: stats?.inProgressTasks ?? 0, icon: Clock, color: "text-warning", bg: "bg-warning/10", href: "/tasks" },
     { label: "Overdue Tasks", value: stats?.overdueTasks ?? 0, icon: AlertCircle, color: "text-danger", bg: "bg-danger/10", href: "/tasks" },
     { label: "Daily Ad Spend", value: formatIDR(stats?.totalBudget ?? 0), icon: Megaphone, color: "text-accent", bg: "bg-accent/10", href: "/ads-spend" },
@@ -215,6 +225,12 @@ export default function DashboardPage() {
           <Link href="/clients" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
             <Plus size={14} /> Client
           </Link>
+          <Link href="/invoices" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
+            <Plus size={14} /> Invoice
+          </Link>
+          <Link href="/clients" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
+            <Plus size={14} /> Contract
+          </Link>
           <Link href="/reports" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
             <Plus size={14} /> Report
           </Link>
@@ -222,7 +238,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -232,10 +248,36 @@ export default function DashboardPage() {
               </div>
               <p className="text-xs text-muted">{card.label}</p>
               <p className="mt-0.5 text-lg font-bold text-gray-900 group-hover:text-primary">{card.value}</p>
+              {"sub" in card && card.sub && (
+                <p className="text-[10px] text-muted">{card.sub}</p>
+              )}
             </Link>
           );
         })}
       </div>
+
+      {/* ════ Revenue Summary (MRR + Prepaid + Total) ════ */}
+      {(stats?.totalMrr || 0) > 0 || prepaidRevenue > 0 ? (
+        <div className="card bg-gradient-to-r from-success/5 to-primary/5 p-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="text-center">
+              <p className="text-[10px] uppercase text-muted">Monthly Recurring Revenue</p>
+              <p className="mt-1 text-xl font-bold text-success">{formatIDR(stats?.totalMrr ?? 0)}</p>
+              <p className="text-[10px] text-muted">dari kontrak aktif</p>
+            </div>
+            <div className="text-center border-border sm:border-x">
+              <p className="text-[10px] uppercase text-muted">Prepaid Revenue</p>
+              <p className="mt-1 text-xl font-bold text-purple-600">{formatIDR(prepaidRevenue)}</p>
+              <p className="text-[10px] text-muted">{prepaidCount} kontrak prepaid</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] uppercase text-muted">Total Contract Value</p>
+              <p className="mt-1 text-xl font-bold text-primary">{formatIDR((stats?.totalMrr ?? 0) + prepaidRevenue)}</p>
+              <p className="text-[10px] text-muted">MRR + Prepaid</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* ════ Budget Pacing Alerts ════ */}
       <BudgetAlertsBar />
