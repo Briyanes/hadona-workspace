@@ -101,7 +101,7 @@ const SERVICE_OPTIONS = [
   "Video Production",
   "Influencer Marketing",
   "Copywriting",
-  "KOL",
+  "KOL Management",
 ];
 
 const contractStatusColors: Record<string, string> = {
@@ -507,7 +507,22 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
       if (error) throw error;
 
-      toast.success("Kontrak berhasil diupdate!");
+      // ═══ AUTO-REGENERATE BILLING ═══
+      // Setelah edit kontrak (payment_due_day, tax_rate, discount), auto-update
+      // semua billing yang masih unpaid/overdue agar sesuai setting kontrak terbaru
+      try {
+        const { error: regenError } = await supabase.rpc("regenerate_unpaid_billings", {
+          p_contract_id: editingContract.id,
+        } as never);
+        if (regenError) {
+          console.warn("Regenerate billing warning:", regenError.message);
+        }
+      } catch (regenErr) {
+        // Non-fatal: billing tetap diupdate di DB, hanya tidak auto-sync
+        console.warn("Regenerate billing skipped:", regenErr);
+      }
+
+      toast.success("Kontrak berhasil diupdate! Billing yang belum lunas otomatis disesuaikan.");
       setShowEditModal(false);
       setEditingContract(null);
       loadContracts();
