@@ -25,25 +25,37 @@ export async function GET(
   try {
     const supabase = createClient();
 
+    // Use select("*") to avoid errors if optional columns (billing_period, contract_billing_id)
+    // don't exist yet in the database. Then separately fetch the client.
     const { data: invoice, error } = await supabase
       .from("invoices")
-      .select(
-        `
-          id, invoice_number, issue_date, due_date, amount, tax, status,
-          notes, billing_period, contract_billing_id,
-          client:clients(name, email, phone, address)
-        `
-      )
+      .select("*")
       .eq("id", params.id)
       .single();
 
     if (error || !invoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Invoice not found", detail: error?.message },
+        { status: 404 }
+      );
+    }
+
+    // Fetch client data separately
+    const clientId = (invoice as Record<string, unknown>).client_id as string;
+    let clientData: InvoicePDFData["client"] | undefined;
+    if (clientId) {
+      const { data: clientRow } = await supabase
+        .from("clients")
+        .select("name, email, phone, address")
+        .eq("id", clientId)
+        .single();
+      if (clientRow) {
+        clientData = clientRow as InvoicePDFData["client"];
+      }
     }
 
     // Cast to record for flexible access
     const rawData = invoice as Record<string, unknown>;
-    const clientData = (rawData.client as InvoicePDFData["client"]) || undefined;
     const billingId = rawData.contract_billing_id as string | null;
 
     // Fetch contract data for tax_rate, bank info, prepaid info + line items (Bug #1, #2, #6)
