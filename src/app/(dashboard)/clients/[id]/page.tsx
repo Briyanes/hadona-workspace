@@ -21,6 +21,7 @@ import {
   DollarSign,
   AlertTriangle,
   Activity as ActivityIcon,
+  MessageSquare,
   CheckCircle,
   PencilLine,
   Trash,
@@ -32,6 +33,7 @@ import { ContractManager } from "@/components/contracts/contract-manager";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { ReportDetailModal } from "@/components/reports/report-detail-modal";
 import { StrategyDetailModal } from "@/components/strategy/strategy-detail-modal";
+import { CommunicationLog } from "@/components/clients/communication-log";
 import { toast } from "sonner";
 
 interface ClientDetail {
@@ -94,7 +96,7 @@ interface ActivityLog {
   user: { full_name: string } | null;
 }
 
-type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "contract" | "activity";
+type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "contract" | "communication" | "activity";
 
 const statusColors: Record<string, string> = {
   active: "bg-success/20 text-success",
@@ -264,6 +266,7 @@ export default function ClientDetailPage() {
     { id: "strategy", label: "Strategy", icon: Target, count: strategies.length },
     { id: "ads", label: "Ad Accounts", icon: Megaphone, count: adAccounts.length },
     { id: "contract", label: "Kontrak", icon: FileText, count: 0 },
+    { id: "communication", label: "Interaksi", icon: MessageSquare, count: 0 },
     { id: "activity", label: "Activity", icon: ActivityIcon, count: activityLogs.length },
   ];
 
@@ -623,6 +626,10 @@ export default function ClientDetailPage() {
 
       {tab === "contract" && (
         <ContractManager clientId={client.id} />
+      )}
+
+      {tab === "communication" && (
+        <CommunicationLog clientId={client.id} />
       )}
 
       {tab === "activity" && (

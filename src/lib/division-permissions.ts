@@ -70,22 +70,22 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   // Tier 2 — Division-specific (show + lock if unauthorized)
   {
     href: "/clients",
-    allowedDivisions: ["Account Executive", "Project Manager"],
+    allowedDivisions: ["Account Executive", "Project Manager", "Developer"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
     href: "/ads-spend",
-    allowedDivisions: ["Advertiser", "Project Manager"],
+    allowedDivisions: ["Advertiser", "Project Manager", "Developer"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
     href: "/reports",
-    allowedDivisions: ["Advertiser", "Account Executive", "Project Manager"],
+    allowedDivisions: ["Advertiser", "Account Executive", "Project Manager", "Developer"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
     href: "/strategy",
-    allowedDivisions: ["Account Executive", "Project Manager", "Advertiser"],
+    allowedDivisions: ["Account Executive", "Project Manager", "Advertiser", "Developer"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
@@ -94,7 +94,7 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   },
   {
     href: "/content-plans",
-    allowedDivisions: ["Content Creator", "Project Manager", "Creative Director"],
+    allowedDivisions: ["Content Creator", "Project Manager", "Creative Director", "Copywriter"],
     allowedRoles: ["super_admin", "project_manager"],
   },
 
