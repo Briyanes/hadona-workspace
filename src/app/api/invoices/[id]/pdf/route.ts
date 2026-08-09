@@ -171,10 +171,31 @@ export async function GET(
       }
     }
 
-    // ── Fetch line items (Bug #2 fix: multi-level fallback) ──
+    // ── Fetch line items (multi-level fallback) ──
     let items: InvoicePDFData["items"] | undefined;
 
-    // Strategy 1: From contract_billings.services_snapshot
+    // Strategy 0 (HIGHEST PRIORITY): Use items stored directly on the invoice
+    // This handles manually created invoices with custom line items.
+    const rawItems = rawData.items as
+      | Array<{ description: string; quantity: number; unit_price: number }>
+      | null;
+
+    if (rawItems && Array.isArray(rawItems) && rawItems.length > 0) {
+      items = rawItems
+        .filter((it) => it && it.description && Number(it.unit_price) > 0)
+        .map((it) => {
+          const qty = Number(it.quantity) || 1;
+          const price = Number(it.unit_price) || 0;
+          return {
+            description: normalizeServiceName(it.description),
+            qty,
+            unit_price: price,
+            amount: qty * price,
+          };
+        });
+    }
+
+    // Strategy 1: From contract_billings.services_snapshot (auto-billing only)
     if (billingId) {
       const { data: billing } = await supabase
         .from("contract_billings")
