@@ -42,12 +42,16 @@ CREATE POLICY "Team can create renewal logs" ON contract_renewal_logs
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid())
   );
 
--- 6. Add notification types for contract renewal
-INSERT INTO notification_types (name, label, description, category) VALUES
-  ('contract_renewal_30d', 'Contract Renewal - 30 Days', 'Reminder 30 days before contract expires', 'contracts'),
-  ('contract_renewal_14d', 'Contract Renewal - 14 Days', 'Reminder 14 days before contract expires', 'contracts'),
-  ('contract_renewal_7d', 'Contract Renewal - 7 Days', 'Reminder 7 days before contract expires', 'contracts'),
-  ('contract_renewal_expired', 'Contract Expired', 'Notification when contract has expired', 'contracts'),
-  ('invoice_overdue_3d', 'Invoice Overdue - 3 Days', 'Reminder 3 days after invoice due date', 'invoices'),
-  ('invoice_overdue_7d', 'Invoice Overdue - 7 Days', 'Reminder 7 days after invoice due date', 'invoices')
-ON CONFLICT (name) DO NOTHING;
+-- 6. Notification types are stored as TEXT in the notifications table
+-- (no separate notification_types table needed in this project)
+-- The cron job inserts directly into notifications with type as TEXT:
+--   contract_renewal_30d, contract_renewal_14d, contract_renewal_7d,
+--   contract_renewal_expired, invoice_overdue_3d, invoice_overdue_7d
+
+-- 7. Add metadata column to notifications if not exists (for storing extra context)
+ALTER TABLE notifications 
+  ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
+
+-- 8. Add link column to notifications if not exists
+ALTER TABLE notifications 
+  ADD COLUMN IF NOT EXISTS link TEXT;
