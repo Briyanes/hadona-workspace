@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { InvoicePDFDocument, type InvoicePDFData } from "@/lib/invoice-pdf";
@@ -66,7 +66,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createClient();
+    // Use service-role client to bypass RLS — ensures client data is always fetched
+    const supabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    );
 
     // Use select("*") to avoid errors if optional columns (billing_period, contract_billing_id)
     // don't exist yet in the database. Then separately fetch the client.
