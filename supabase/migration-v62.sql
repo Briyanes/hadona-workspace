@@ -26,7 +26,37 @@ BEGIN
   END IF;
 END $$;
 
--- Update RLS policies to allow authenticated users to insert/update clients
+-- ============================================================
+-- SLUG SAFETY: Auto-generate slug from name if not provided
+-- This is a DB-level fallback so INSERT never fails on slug NULL
+-- ============================================================
+
+-- Create or replace function to auto-generate slug
+CREATE OR REPLACE FUNCTION public.generate_client_slug()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only generate if slug is NULL or empty
+  IF NEW.slug IS NULL OR NEW.slug = '' THEN
+    NEW.slug := lower(NEW.name);
+    -- Replace spaces and special chars with hyphens
+    NEW.slug := regexp_replace(NEW.slug, '[^a-z0-9]+', '-', 'g');
+    -- Trim leading/trailing hyphens
+    NEW.slug := regexp_replace(NEW.slug, '^-+|-+$', '', 'g');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop existing trigger if any, then create
+DROP TRIGGER IF EXISTS trg_clients_slug ON public.clients;
+CREATE TRIGGER trg_clients_slug
+  BEFORE INSERT OR UPDATE OF name, slug ON public.clients
+  FOR EACH ROW
+  EXECUTE FUNCTION public.generate_client_slug();
+
+-- ============================================================
+-- RLS POLICIES
+-- ============================================================
 -- (This ensures the "Tambah Client Baru" feature works for all roles)
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 

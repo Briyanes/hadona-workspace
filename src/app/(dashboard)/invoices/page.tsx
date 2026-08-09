@@ -393,13 +393,28 @@ export default function InvoicesPage() {
 
       // Create new client first if needed
       if (form.is_new_client) {
-        // Only insert 'name' — the only column guaranteed to exist.
-        // Email/phone fields will be saved once migration-v62.sql is applied.
+        // Generate slug from name: "SAMA Kreatik" → "sama-kreatik"
+        const clientName = form.new_client_name.trim();
+        const slug = clientName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+
+        const insertData: Record<string, string> = {
+          name: clientName,
+          slug: slug,
+        };
+        // Add email/phone if provided (requires migration-v62 columns)
+        if (form.new_client_email.trim()) {
+          insertData.email = form.new_client_email.trim();
+        }
+        if (form.new_client_phone.trim()) {
+          insertData.phone = form.new_client_phone.trim();
+        }
+
         const result = await supabase
           .from("clients")
-          .insert({
-            name: form.new_client_name.trim(),
-          } as never)
+          .insert(insertData as never)
           .select("id")
           .single();
 
