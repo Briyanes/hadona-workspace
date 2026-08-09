@@ -5,28 +5,32 @@
 // ═══════════════════════════════════════════════════════════
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = any;
-
 export async function GET(req: NextRequest) {
-  try {
-    // Verify cron secret
-    const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // Verify cron secret
+  const authHeader = req.headers.get("authorization");
+  const cronSecret = process.env.CRON_SECRET;
 
-    const supabase = createClient();
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Use service role to bypass RLS (cron has no user session)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  try {
     const now = new Date();
     const results = { renewal30d: 0, renewal14d: 0, renewal7d: 0, expired: 0, overdue3d: 0, overdue7d: 0 };
 
-    // ── 1. Contract Renewal: 30, 14, 7 days before expiry ──
+    // ═══ 1. Contract Renewal: 30, 14, 7 days before expiry ═══
     const { data: activeContracts } = await supabase
       .from("client_contracts")
       .select(`
@@ -37,12 +41,25 @@ export async function GET(req: NextRequest) {
       .eq("status", "active")
       .gte("end_date", now.toISOString());
 
-    const contracts: AnyClient[] = (activeContracts as AnyClient[]) || [];
+    type ContractRow = {
+      id: string;
+      client_id: string;
+      end_date: string;
+      start_date: string;
+      monthly_value: number | null;
+      renewal_status: string | null;
+      renewal_sent_at: string | null;
+      client: { name: string } | { name: string }[];
+    };
 
-    for (const contract of contracts) {
-      const endDate = new Date(contract.end_date as string);
+    for (const contract of (activeContracts as ContractRow[]) || []) {
+      const endDate = new Date(contract.end_date);
       const daysUntilExpiry = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      const clientName: string = contract.client?.[0]?.name || contract.client?.name || "Client";
+
+      const clientName: string = Array.isArray(contract.client)
+        ? contract.client[0]?.name || "Client"
+        : contract.client?.name || "Client";
+
       const lastReminder: string | null = contract.renewal_sent_at || null;
 
       let notificationType: string | null = null;
@@ -60,15 +77,13 @@ export async function GET(req: NextRequest) {
       }
 
       if (shouldSend && notificationType) {
-        // Find AE assigned to this client
         const { data: clientRow } = await supabase
           .from("clients")
           .select("assigned_to")
-          .eq("id", contract.client_id as string)
+          .eq("id", contract.client_id)
           .single();
-        const aeId = (clientRow as AnyClient)?.assigned_to ?? null;
+        const aeId = clientRow?.assigned_to ?? null;
 
-        // Insert notification
         await supabase.from("notifications").insert({
           user_id: aeId,
           type: notificationType,
@@ -76,22 +91,21 @@ export async function GET(req: NextRequest) {
           message: `Contract with ${clientName} expires in ${daysUntilExpiry} days (${endDate.toLocaleDateString("id-ID")}). Monthly value: Rp ${Number(contract.monthly_value || 0).toLocaleString("id-ID")}`,
           link: `/clients/${contract.client_id}`,
           metadata: { contract_id: contract.id, days_until_expiry: daysUntilExpiry },
-        } as AnyClient);
+        });
 
-        // Update renewal_sent_at and status
-        await (supabase.from("client_contracts") as AnyClient)
+        await supabase
+          .from("client_contracts")
           .update({
             renewal_sent_at: now.toISOString(),
             renewal_status: daysUntilExpiry <= 14 ? "expiring" : "active",
           })
-          .eq("id", contract.id as string);
+          .eq("id", contract.id);
 
-        // Log
         await supabase.from("contract_renewal_logs").insert({
           contract_id: contract.id,
           action: "reminder_sent",
           days_before_expiry: daysUntilExpiry,
-        } as AnyClient);
+        });
 
         if (notificationType === "contract_renewal_30d") results.renewal30d++;
         else if (notificationType === "contract_renewal_14d") results.renewal14d++;
@@ -99,7 +113,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ── 2. Mark expired contracts ──
+    // ═══ 2. Mark expired contracts ═══
     const { data: expiredContracts } = await supabase
       .from("client_contracts")
       .select("id, client_id, client:clients(name)")
@@ -107,59 +121,114 @@ export async function GET(req: NextRequest) {
       .lt("end_date", now.toISOString())
       .neq("renewal_status", "expired");
 
-    for (const contract of (expiredContracts as AnyClient[]) || []) {
-      const clientName: string = contract.client?.[0]?.name || contract.client?.name || "Client";
+    for (const contract of (expiredContracts as ContractRow[]) || []) {
+      const clientName: string = Array.isArray(contract.client)
+        ? contract.client[0]?.name || "Client"
+        : contract.client?.name || "Client";
 
-      await (supabase.from("client_contracts") as AnyClient)
+      await supabase
+        .from("client_contracts")
         .update({ renewal_status: "expired", status: "expired" })
-        .eq("id", contract.id as string);
+        .eq("id", contract.id);
 
       const { data: clientRow } = await supabase
         .from("clients")
         .select("assigned_to")
-        .eq("id", contract.client_id as string)
+        .eq("id", contract.client_id)
         .single();
 
       await supabase.from("notifications").insert({
-        user_id: (clientRow as AnyClient)?.assigned_to ?? null,
+        user_id: clientRow?.assigned_to ?? null,
         type: "contract_renewal_expired",
         title: `Contract Expired: ${clientName}`,
         message: `Contract with ${clientName} has expired. Contact client for renewal.`,
         link: `/clients/${contract.client_id}`,
         metadata: { contract_id: contract.id },
-      } as AnyClient);
+      });
 
       await supabase.from("contract_renewal_logs").insert({
         contract_id: contract.id,
         action: "expired",
-      } as AnyClient);
+      });
 
       results.expired++;
     }
 
-    // ── 3. Invoice overdue reminders (3d and 7d) ──
+    // ═══ 3. Invoice overdue reminders (3d and 7d) ═══
     const { data: overdueInvoices } = await supabase
       .from("invoices")
       .select("id, invoice_number, due_date, amount, client_id, reminder_count, client:clients(name)")
       .eq("status", "sent")
       .lt("due_date", now.toISOString());
 
-    for (const inv of (overdueInvoices as AnyClient[]) || []) {
-      const dueDate = new Date(inv.due_date as string);
+    type InvoiceRow = {
+      id: string;
+      invoice_number: string;
+      due_date: string;
+      amount: number | null;
+      client_id: string;
+      reminder_count: number | null;
+      client: { name: string } | { name: string }[];
+    };
+
+    for (const inv of (overdueInvoices as InvoiceRow[]) || []) {
+      const dueDate = new Date(inv.due_date);
       const daysOverdue = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       const reminderCount: number = inv.reminder_count || 0;
-      const clientName: string = inv.client?.[0]?.name || inv.client?.name || "Client";
+      const clientName: string = Array.isArray(inv.client)
+        ? inv.client[0]?.name || "Client"
+        : inv.client?.name || "Client";
 
       if (daysOverdue >= 7 && reminderCount < 2) {
-        await sendInvoiceOverdueNotification(supabase, inv, clientName, "invoice_overdue_7d", daysOverdue);
-        await updateInvoiceReminder(supabase, inv.id as string, 2);
+        // Send 7-day overdue notification
+        const { data: invClientRow } = await supabase
+          .from("clients")
+          .select("assigned_to")
+          .eq("id", inv.client_id)
+          .single();
+
+        await supabase.from("notifications").insert({
+          user_id: invClientRow?.assigned_to ?? null,
+          type: "invoice_overdue_7d",
+          title: `Invoice Overdue: ${inv.invoice_number}`,
+          message: `Invoice ${inv.invoice_number} for ${clientName} is ${daysOverdue} days overdue. Amount: Rp ${Number(inv.amount || 0).toLocaleString("id-ID")}`,
+          link: `/invoices`,
+          metadata: { invoice_id: inv.id },
+        });
+
+        await supabase
+          .from("invoices")
+          .update({ reminder_sent_at: new Date().toISOString(), reminder_count: 2 })
+          .eq("id", inv.id);
+
         results.overdue7d++;
       } else if (daysOverdue >= 3 && reminderCount < 1) {
-        await sendInvoiceOverdueNotification(supabase, inv, clientName, "invoice_overdue_3d", daysOverdue);
-        await updateInvoiceReminder(supabase, inv.id as string, 1);
+        // Send 3-day overdue notification
+        const { data: invClientRow } = await supabase
+          .from("clients")
+          .select("assigned_to")
+          .eq("id", inv.client_id)
+          .single();
+
+        await supabase.from("notifications").insert({
+          user_id: invClientRow?.assigned_to ?? null,
+          type: "invoice_overdue_3d",
+          title: `Invoice Overdue: ${inv.invoice_number}`,
+          message: `Invoice ${inv.invoice_number} for ${clientName} is ${daysOverdue} days overdue. Amount: Rp ${Number(inv.amount || 0).toLocaleString("id-ID")}`,
+          link: `/invoices`,
+          metadata: { invoice_id: inv.id },
+        });
+
+        await supabase
+          .from("invoices")
+          .update({ reminder_sent_at: new Date().toISOString(), reminder_count: 1 })
+          .eq("id", inv.id);
+
         results.overdue3d++;
       }
     }
+
+    console.log(`[Contract-Renewal] ✅ Processed: ${JSON.stringify(results)}`);
 
     return NextResponse.json({
       success: true,
@@ -167,38 +236,12 @@ export async function GET(req: NextRequest) {
       timestamp: now.toISOString(),
     });
   } catch (err) {
+    console.error("[Contract-Renewal] Error:", err);
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: "Cron failed: " + msg }, { status: 500 });
   }
 }
 
-// ── Helpers ──
 function daysBetween(fromISO: string, to: Date): number {
   return Math.ceil((to.getTime() - new Date(fromISO).getTime()) / (1000 * 60 * 60 * 24));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function sendInvoiceOverdueNotification(supabase: AnyClient, invoice: AnyClient, clientName: string, type: string, daysOverdue: number) {
-  const { data: clientRow } = await supabase
-    .from("clients")
-    .select("assigned_to")
-    .eq("id", invoice.client_id as string)
-    .single();
-
-  await supabase.from("notifications").insert({
-    user_id: clientRow?.assigned_to ?? null,
-    type,
-    title: `Invoice Overdue: ${invoice.invoice_number}`,
-    message: `Invoice ${invoice.invoice_number} for ${clientName} is ${daysOverdue} days overdue. Amount: Rp ${Number(invoice.amount || 0).toLocaleString("id-ID")}`,
-    link: `/invoices`,
-    metadata: { invoice_id: invoice.id },
-  } as AnyClient);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function updateInvoiceReminder(supabase: AnyClient, invoiceId: string, count: number) {
-  await supabase
-    .from("invoices")
-    .update({ reminder_sent_at: new Date().toISOString(), reminder_count: count } as AnyClient)
-    .eq("id", invoiceId);
 }

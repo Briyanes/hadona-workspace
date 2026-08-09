@@ -3,9 +3,6 @@
 import { useEffect, useState } from "react";
 import { formatIDR } from "@/lib/utils";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Any = any;
-
 interface AEStats {
   totalClients: number;
   activeContracts: number;
