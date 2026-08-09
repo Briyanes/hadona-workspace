@@ -201,7 +201,8 @@ export async function GET(
     }
 
     // Strategy 1: From contract_billings.services_snapshot (auto-billing only)
-    if (billingId) {
+    // ONLY if Strategy 0 didn't find items (prevents overwrite of manual invoice items)
+    if (!items && billingId) {
       const { data: billing } = await supabase
         .from("contract_billings")
         .select("services_snapshot, contract:client_contracts(is_prepaid, total_months_prepaid)")
