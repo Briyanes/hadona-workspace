@@ -62,7 +62,7 @@ interface ContractInfo {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -92,6 +92,37 @@ export async function GET(
     const rawData = invoice as Record<string, unknown>;
     const billingId = rawData.contract_billing_id as string | null;
     let clientId = rawData.client_id as string | null;
+
+    // ── DEBUG MODE: Return raw data as JSON for troubleshooting ──
+    const isDebug = req.nextUrl.searchParams.get("debug") === "json";
+    if (isDebug) {
+      // Fetch client data for debug
+      let debugClient = null;
+      let debugClientError = null;
+      if (clientId) {
+        const c = await supabase
+          .from("clients")
+          .select("id, name, email, phone, address")
+          .eq("id", clientId)
+          .single();
+        debugClient = c.data;
+        debugClientError = c.error?.message || null;
+      }
+      return NextResponse.json({
+        invoice_id: params.id,
+        invoice_number: rawData.invoice_number,
+        client_id: clientId,
+        client_id_type: typeof clientId,
+        billing_id: billingId,
+        has_items: !!(rawData.items && Array.isArray(rawData.items) && rawData.items.length > 0),
+        items_count: Array.isArray(rawData.items) ? rawData.items.length : 0,
+        client_data_from_db: debugClient,
+        client_query_error: debugClientError,
+        env_service_key_set: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        env_service_key_prefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + "...",
+        raw_client_id_value: rawData.client_id,
+      }, { status: 200, headers: { "Cache-Control": "no-store" } });
+    }
 
     // ── Fetch client data (Bug #1 fix: multi-level fallback) ──
     let clientData: InvoicePDFData["client"] | undefined;
