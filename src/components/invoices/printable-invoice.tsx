@@ -279,7 +279,7 @@ export function PrintableInvoice({
             <img
               src="/ttd-hadi.png"
               alt="Tanda Tangan"
-              style={{ width: 140, height: "auto", marginBottom: 4 }}
+              style={{ width: 220, height: "auto", marginBottom: 4 }}
             />
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>
               Nur Hadi Pranowo

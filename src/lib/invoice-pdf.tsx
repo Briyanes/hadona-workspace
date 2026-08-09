@@ -369,8 +369,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   signatureImage: {
-    width: 110,
-    height: 55,
+    width: 170,
+    height: 85,
     marginBottom: 2,
   },
   signName: {
