@@ -101,6 +101,7 @@ const SERVICE_OPTIONS = [
   "Video Production",
   "Influencer Marketing",
   "Copywriting",
+  "KOL",
 ];
 
 const contractStatusColors: Record<string, string> = {

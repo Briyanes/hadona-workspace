@@ -368,6 +368,11 @@ const styles = StyleSheet.create({
     color: SLATE_MUTED,
     marginBottom: 4,
   },
+  signatureImage: {
+    width: 110,
+    height: 55,
+    marginBottom: 2,
+  },
   signName: {
     fontSize: 12,
     fontFamily: "Helvetica-Bold",
@@ -637,6 +642,10 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             {/* Signature */}
             <View style={styles.signatureCard}>
               <Text style={styles.signLine}>Hormat kami,</Text>
+              <Image
+                style={styles.signatureImage}
+                src="https://workspace.hadona.id/ttd-hadi.png"
+              />
               <Text style={styles.signName}>Nur Hadi Pranowo</Text>
               <Text style={styles.signTitle}>CMO</Text>
               <Text style={styles.signWebsite}>www.hadona.id</Text>

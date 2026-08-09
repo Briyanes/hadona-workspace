@@ -11,12 +11,14 @@ import {
   Trash2,
   Search,
   Loader2,
-  DollarSign,
   Clock,
   CheckCircle,
   AlertCircle,
   Printer,
   Download,
+  UserPlus,
+  FileSignature,
+  Sparkles,
 } from "lucide-react";
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
 import { PrintableInvoice } from "@/components/invoices/printable-invoice";
@@ -48,6 +50,39 @@ interface Client {
   name: string;
 }
 
+interface ContractInfo {
+  id: string;
+  contract_number: string | null;
+  is_prepaid: boolean;
+  total_months_prepaid: number;
+  prepaid_amount: number;
+  tax_rate: number;
+  bank_account: string | null;
+  payment_schedule: string;
+}
+
+interface ContractServiceInfo {
+  service_name: string;
+  monthly_fee: number;
+}
+
+// Daftar layanan Hadona (sinkron dengan contract-manager)
+const SERVICE_OPTIONS = [
+  "Meta Ads",
+  "Google Ads",
+  "TikTok Ads",
+  "SEO",
+  "Content Production",
+  "Social Media Management",
+  "Web Development",
+  "Branding",
+  "Photography",
+  "Video Production",
+  "Influencer Marketing",
+  "Copywriting",
+  "KOL",
+];
+
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-muted",
   sent: "bg-primary/20 text-primary",
@@ -66,14 +101,17 @@ const statusLabels: Record<string, string> = {
 
 const emptyForm = {
   client_id: "",
+  is_new_client: false,
+  new_client_name: "",
+  new_client_email: "",
+  new_client_phone: "",
   invoice_number: "",
   issue_date: new Date().toISOString().split("T")[0],
   due_date: "",
-  amount: "",
   tax: "",
   status: "draft",
   notes: "",
-  items: [] as InvoiceItem[],
+  items: [{ description: "", quantity: 1, unit_price: 0 }] as InvoiceItem[],
 };
 
 export default function InvoicesPage() {
@@ -91,20 +129,29 @@ export default function InvoicesPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
+  // Contract auto-fill
+  const [contractInfo, setContractInfo] = useState<ContractInfo | null>(null);
+  const [contractServices, setContractServices] = useState<ContractServiceInfo[]>([]);
+
   // Print
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
 
+  // ── Derived: subtotal from items ──
+  const itemsSubtotal = form.items.reduce(
+    (sum, item) => sum + (item.quantity || 0) * (item.unit_price || 0),
+    0
+  );
+  const taxAmount = parseFloat(form.tax) || 0;
+  const grandTotal = itemsSubtotal + taxAmount;
+
   function handlePrint(inv: Invoice) {
     setPrintInvoice(inv);
-    // Wait for DOM to render the printable area, then trigger print
     setTimeout(() => {
       window.print();
-      // Clean up after print dialog closes
       setTimeout(() => setPrintInvoice(null), 500);
     }, 200);
   }
 
-  // Download professional PDF via API route (matches "Invoice for {Client}" format)
   function handleDownloadPDF(inv: Invoice) {
     window.open(`/api/invoices/${inv.id}/pdf`, "_blank");
   }
@@ -138,6 +185,112 @@ export default function InvoicesPage() {
     setClients((data as unknown as Client[]) || []);
   }
 
+  // ── Fetch active contract for selected client ──
+  async function fetchContractForClient(clientId: string) {
+    setContractInfo(null);
+    setContractServices([]);
+    if (!clientId) return;
+
+    try {
+      const { data: contract } = await supabase
+        .from("contracts")
+        .select("id, contract_number, is_prepaid, total_months_prepaid, prepaid_amount, tax_rate, bank_account, payment_schedule")
+        .eq("client_id", clientId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (contract) {
+        setContractInfo(contract as ContractInfo);
+        const { data: services } = await supabase
+          .from("contract_services")
+          .select("service_name, monthly_fee")
+          .eq("contract_id", (contract as ContractInfo).id)
+          .eq("status", "active");
+        setContractServices((services as ContractServiceInfo[]) || []);
+      }
+    } catch {
+      // silent fail
+    }
+  }
+
+  // ── Auto-fill items from contract ──
+  function autoFillFromContract() {
+    if (!contractInfo) return;
+
+    if (contractInfo.is_prepaid && contractInfo.total_months_prepaid > 0) {
+      // Prepaid: single line item for full prepaid amount
+      const monthlyFee = contractServices.reduce((s, svc) => s + svc.monthly_fee, 0);
+      setForm((prev) => ({
+        ...prev,
+        items: [
+          {
+            description: contractServices.length > 0
+              ? contractServices.map((s) => s.service_name).join(", ")
+              : "Digital Advertising Management",
+            quantity: contractInfo.total_months_prepaid,
+            unit_price: monthlyFee,
+          },
+        ],
+        tax: contractInfo.tax_rate
+          ? Math.round((contractInfo.prepaid_amount * contractInfo.tax_rate) / 100).toString()
+          : prev.tax,
+      }));
+      toast.success(`Auto-fill dari kontrak: ${contractInfo.total_months_prepaid} bulan prepaid`);
+    } else {
+      // Monthly: one item per service or single summary
+      if (contractServices.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          items: contractServices.map((svc) => ({
+            description: svc.service_name,
+            quantity: 1,
+            unit_price: svc.monthly_fee,
+          })),
+          tax: contractInfo.tax_rate
+            ? Math.round((itemsSubtotal * contractInfo.tax_rate) / 100).toString()
+            : prev.tax,
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          items: [{ description: "Digital Advertising Management", quantity: 1, unit_price: 0 }],
+        }));
+      }
+      toast.success("Auto-fill dari kontrak: Monthly billing");
+    }
+  }
+
+  // ── Line items handlers ──
+  function handleItemChange(idx: number, field: keyof InvoiceItem, value: string | number) {
+    setForm((prev) => {
+      const updated = [...prev.items];
+      if (field === "description") {
+        updated[idx] = { ...updated[idx], description: value as string };
+      } else {
+        updated[idx] = { ...updated[idx], [field]: parseFloat(value as string) || 0 };
+      }
+      return { ...prev, items: updated };
+    });
+  }
+
+  function addLineItem() {
+    setForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { description: "", quantity: 1, unit_price: 0 }],
+    }));
+  }
+
+  function removeLineItem(idx: number) {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.length > 1
+        ? prev.items.filter((_, i) => i !== idx)
+        : prev.items,
+    }));
+  }
+
   function generateInvoiceNumber() {
     const year = new Date().getFullYear();
     const month = String(new Date().getMonth() + 1).padStart(2, "0");
@@ -147,52 +300,129 @@ export default function InvoicesPage() {
 
   function openCreate() {
     setEditingId(null);
+    setContractInfo(null);
+    setContractServices([]);
     setForm({
       ...emptyForm,
       invoice_number: generateInvoiceNumber(),
       due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0],
+      items: [{ description: "", quantity: 1, unit_price: 0 }],
     });
     setShowModal(true);
   }
 
   function openEdit(invoice: Invoice) {
     setEditingId(invoice.id);
+    setContractInfo(null);
+    setContractServices([]);
     setForm({
       client_id: invoice.client_id,
+      is_new_client: false,
+      new_client_name: "",
+      new_client_email: "",
+      new_client_phone: "",
       invoice_number: invoice.invoice_number,
       issue_date: invoice.issue_date,
       due_date: invoice.due_date,
-      amount: invoice.amount.toString(),
       tax: invoice.tax?.toString() || "",
       status: invoice.status,
       notes: invoice.notes || "",
-      items: invoice.items || [],
+      items: invoice.items?.length
+        ? invoice.items
+        : [{ description: "Digital Advertising Management", quantity: 1, unit_price: invoice.amount }],
     });
+    fetchContractForClient(invoice.client_id);
     setShowModal(true);
+  }
+
+  // ── Handle client selection ──
+  function handleClientChange(value: string) {
+    if (value === "__new__") {
+      setForm((prev) => ({
+        ...prev,
+        is_new_client: true,
+        client_id: "",
+      }));
+      setContractInfo(null);
+      setContractServices([]);
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        is_new_client: false,
+        client_id: value,
+      }));
+      fetchContractForClient(value);
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.client_id || !form.invoice_number || !form.due_date) {
-      toast.error("Client, nomor invoice, dan due date wajib diisi");
+
+    // Validate
+    if (form.is_new_client) {
+      if (!form.new_client_name.trim()) {
+        toast.error("Nama client baru wajib diisi");
+        return;
+      }
+    } else if (!form.client_id) {
+      toast.error("Pilih client atau tambah client baru");
+      return;
+    }
+
+    if (!form.invoice_number || !form.due_date) {
+      toast.error("Nomor invoice dan jatuh tempo wajib diisi");
+      return;
+    }
+
+    // Validate items
+    const validItems = form.items.filter(
+      (item) => item.description.trim() && item.unit_price > 0
+    );
+    if (validItems.length === 0) {
+      toast.error("Minimal 1 item layanan dengan deskripsi dan harga");
       return;
     }
 
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
+
+      let clientId = form.client_id;
+
+      // Create new client first if needed
+      if (form.is_new_client) {
+        const result = await supabase
+          .from("clients")
+          .insert({
+            name: form.new_client_name.trim(),
+            email: form.new_client_email.trim() || null,
+            phone: form.new_client_phone.trim() || null,
+            status: "active",
+          } as never)
+          .select("id")
+          .single();
+
+        if (result.error) throw result.error;
+        clientId = (result.data as { id: string })?.id || "";
+      }
+
+      const subtotal = validItems.reduce(
+        (sum, item) => sum + item.quantity * item.unit_price,
+        0
+      );
+
       const payload = {
-        client_id: form.client_id,
+        client_id: clientId,
         invoice_number: form.invoice_number,
         issue_date: form.issue_date,
         due_date: form.due_date,
-        amount: parseFloat(form.amount) || 0,
-        tax: form.tax ? parseFloat(form.tax) : 0,
+        amount: subtotal,
+        tax: taxAmount,
         status: form.status,
         notes: form.notes.trim() || null,
-        items: form.items,
+        items: validItems,
         paid_date: form.status === "paid" ? new Date().toISOString().split("T")[0] : null,
         created_by: editingId ? undefined : userData.user?.id,
       };
@@ -212,6 +442,7 @@ export default function InvoicesPage() {
 
       setShowModal(false);
       loadInvoices();
+      loadClients(); // refresh client list if new was added
     } catch (err) {
       const msg = extractError(err);
       toast.error("Gagal menyimpan: " + msg);
@@ -470,10 +701,10 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal — Sticky Header/Footer + Scroll */}
+      {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <h2 className="text-lg font-bold text-gray-900">
@@ -490,125 +721,280 @@ export default function InvoicesPage() {
             {/* Scrollable Body */}
             <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                    Nomor Invoice *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={form.invoice_number}
-                    onChange={(e) => setForm({ ...form, invoice_number: e.target.value })}
-                    className="input font-mono text-sm"
-                  />
+
+                {/* Invoice Number + Client */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                      Nomor Invoice *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={form.invoice_number}
+                      onChange={(e) => setForm({ ...form, invoice_number: e.target.value })}
+                      className="input font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
+                    <select
+                      required
+                      value={form.is_new_client ? "__new__" : form.client_id}
+                      onChange={(e) => handleClientChange(e.target.value)}
+                      className="input"
+                    >
+                      <option value="">— Pilih Client —</option>
+                      <option value="__new__">+ Tambah Client Baru</option>
+                      {clients.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
+                {/* New Client Inline Form */}
+                {form.is_new_client && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-primary">
+                      <UserPlus size={14} /> Client Baru
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="col-span-3 sm:col-span-1">
+                        <label className="mb-1 block text-xs text-muted">Nama *</label>
+                        <input
+                          type="text"
+                          required={form.is_new_client}
+                          value={form.new_client_name}
+                          onChange={(e) => setForm({ ...form, new_client_name: e.target.value })}
+                          placeholder="PT. Contoh"
+                          className="input text-sm"
+                        />
+                      </div>
+                      <div className="col-span-3 sm:col-span-1">
+                        <label className="mb-1 block text-xs text-muted">Email</label>
+                        <input
+                          type="email"
+                          value={form.new_client_email}
+                          onChange={(e) => setForm({ ...form, new_client_email: e.target.value })}
+                          placeholder="email@contoh.com"
+                          className="input text-sm"
+                        />
+                      </div>
+                      <div className="col-span-3 sm:col-span-1">
+                        <label className="mb-1 block text-xs text-muted">Phone</label>
+                        <input
+                          type="text"
+                          value={form.new_client_phone}
+                          onChange={(e) => setForm({ ...form, new_client_phone: e.target.value })}
+                          placeholder="081xxx"
+                          className="input text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Contract Info + Auto-fill */}
+                {contractInfo && !form.is_new_client && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2">
+                        <FileSignature className="mt-0.5 shrink-0 text-primary" size={16} />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            Kontrak Aktif: {contractInfo.contract_number || "—"}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {contractInfo.is_prepaid
+                              ? `Prepaid ${contractInfo.total_months_prepaid} bulan · ${formatIDR(contractInfo.prepaid_amount)}`
+                              : `Monthly · ${contractServices.length} layanan · ${formatIDR(contractServices.reduce((s, svc) => s + svc.monthly_fee, 0))}/bln`}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={autoFillFromContract}
+                        className="btn-primary shrink-0 text-xs"
+                      >
+                        <Sparkles size={12} /> Isi dari Kontrak
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                      Tanggal Invoice
+                    </label>
+                    <input
+                      type="date"
+                      value={form.issue_date}
+                      onChange={(e) => setForm({ ...form, issue_date: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                      Jatuh Tempo *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={form.due_date}
+                      onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                </div>
+
+                {/* ── LINE ITEMS BUILDER ── */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
-                  <select
-                    required
-                    value={form.client_id}
-                    onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                    className="input"
-                  >
-                    <option value="">— Pilih Client —</option>
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-900">
+                      Detail Layanan / Items
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addLineItem}
+                      className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80"
+                    >
+                      <Plus size={12} /> Tambah Item
+                    </button>
+                  </div>
+
+                  {/* Items Table */}
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    {/* Header */}
+                    <div className="grid grid-cols-12 gap-1 border-b border-border bg-surface px-2 py-2 text-[10px] font-semibold uppercase text-muted">
+                      <div className="col-span-5 px-1">Service / Description</div>
+                      <div className="col-span-2 px-1 text-center">Qty</div>
+                      <div className="col-span-2 px-1 text-right">Unit Price</div>
+                      <div className="col-span-2 px-1 text-right">Amount</div>
+                      <div className="col-span-1"></div>
+                    </div>
+                    {/* Rows */}
+                    {form.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "grid grid-cols-12 items-center gap-1 px-2 py-2",
+                          idx % 2 === 1 && "bg-surface/50"
+                        )}
+                      >
+                        <div className="col-span-5 px-1">
+                          <input
+                            type="text"
+                            list="service-options"
+                            value={item.description}
+                            onChange={(e) => handleItemChange(idx, "description", e.target.value)}
+                            placeholder="Pilih atau ketik layanan..."
+                            className="w-full rounded border border-border bg-background px-2 py-1 text-sm focus:border-primary focus:outline-none"
+                          />
+                          <datalist id="service-options">
+                            {SERVICE_OPTIONS.map((s) => (
+                              <option key={s} value={s} />
+                            ))}
+                          </datalist>
+                        </div>
+                        <div className="col-span-2 px-1">
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
+                            className="w-full rounded border border-border bg-background px-2 py-1 text-center text-sm focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                        <div className="col-span-2 px-1">
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.unit_price}
+                            onChange={(e) => handleItemChange(idx, "unit_price", e.target.value)}
+                            placeholder="0"
+                            className="w-full rounded border border-border bg-background px-2 py-1 text-right text-sm focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                        <div className="col-span-2 px-1 text-right text-sm font-medium text-gray-900">
+                          {formatIDR((item.quantity || 0) * (item.unit_price || 0))}
+                        </div>
+                        <div className="col-span-1 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => removeLineItem(idx)}
+                            disabled={form.items.length === 1}
+                            className="rounded p-1 text-muted hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
                     ))}
-                  </select>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
+                {/* Tax + Status */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                      Pajak/PPh (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      value={form.tax}
+                      onChange={(e) => setForm({ ...form, tax: e.target.value })}
+                      placeholder="0"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                    <select
+                      value={form.status}
+                      onChange={(e) => setForm({ ...form, status: e.target.value })}
+                      className="input"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="sent">Sent</option>
+                      <option value="paid">Paid</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Total Summary */}
+                <div className="space-y-1.5 rounded-lg border border-border bg-background p-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted">Subtotal (otomatis dari items)</span>
+                    <span className="font-medium text-gray-900">{formatIDR(itemsSubtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted">Pajak/PPh</span>
+                    <span className="font-medium text-gray-900">{formatIDR(taxAmount)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-1.5">
+                    <span className="text-sm font-bold text-gray-900">Total</span>
+                    <span className="text-lg font-bold text-primary">{formatIDR(grandTotal)}</span>
+                  </div>
+                </div>
+
+                {/* Notes */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                    Tanggal Invoice
-                  </label>
-                  <input
-                    type="date"
-                    value={form.issue_date}
-                    onChange={(e) => setForm({ ...form, issue_date: e.target.value })}
-                    className="input"
+                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
+                  <textarea
+                    rows={2}
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    placeholder="Catatan untuk client..."
+                    className="input resize-none"
                   />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                    Jatuh Tempo *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={form.due_date}
-                    onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                    className="input"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                    Subtotal (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
-                    Pajak/PPh (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    value={form.tax}
-                    onChange={(e) => setForm({ ...form, tax: e.target.value })}
-                    placeholder="0"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="input"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="sent">Sent</option>
-                    <option value="paid">Paid</option>
-                    <option value="overdue">Overdue</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-border bg-background p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted">Total (Subtotal + Pajak):</span>
-                  <span className="text-lg font-bold text-gray-900">
-                    {formatIDR(
-                      (parseFloat(form.amount) || 0) + (parseFloat(form.tax) || 0)
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
-                <textarea
-                  rows={2}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Catatan untuk client..."
-                  className="input resize-none"
-                />
-              </div>
 
               </div>
 
@@ -638,7 +1024,7 @@ export default function InvoicesPage() {
         </div>
       )}
 
-      {/* Print Area — hidden on screen, visible only during print */}
+      {/* Print Area */}
       <PrintableInvoice invoice={printInvoice} />
     </div>
   );

@@ -263,6 +263,34 @@ export function PrintableInvoice({
           )}
         </div>
 
+        {/* Signature */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: 24,
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: "#9ca3af", marginBottom: 4 }}>
+              Hormat kami,
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ttd-hadi.png"
+              alt="Tanda Tangan"
+              style={{ width: 140, height: "auto", marginBottom: 4 }}
+            />
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1f2937" }}>
+              Nur Hadi Pranowo
+            </div>
+            <div style={{ fontSize: 11, color: "#6b7280" }}>CMO</div>
+            <div style={{ fontSize: 11, color: "#2b46bb", fontWeight: 600 }}>
+              www.hadona.id
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
         <div
           style={{
