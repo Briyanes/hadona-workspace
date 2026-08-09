@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/auto-billing",
       "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/api/cron/contract-renewal",
+      "schedule": "0 9 * * *"
     }
   ],
   "functions": {
@@ -40,6 +44,9 @@
     },
     "src/app/api/invoices/[id]/pdf/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/cron/contract-renewal/route.ts": {
+      "maxDuration": 60
     }
   }
 }

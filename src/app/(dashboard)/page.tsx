@@ -29,6 +29,7 @@ import { TeamWorkloadWidget } from "@/components/dashboard/team-workload-widget"
 import { ActivityLogWidget } from "@/components/dashboard/activity-log-widget";
 import { DivisionAnalyticsWidget } from "@/components/dashboard/division-analytics-widget";
 import { ProfitabilityWidget } from "@/components/dashboard/profitability-widget";
+import { AEAnalyticsWidget } from "@/components/dashboard/ae-analytics-widget";
 
 // ── Types ──
 interface Stats {
@@ -238,6 +239,9 @@ export default function DashboardPage() {
 
       {/* ════ Budget Pacing Alerts ════ */}
       <BudgetAlertsBar />
+
+      {/* ════ AE Analytics (Clients, MRR, Contracts) ════ */}
+      <AEAnalyticsWidget />
 
       {/* ════ Ads Performance KPI Bar ════ */}
       {adsKpi && adsKpi.weeklySpend > 0 && (

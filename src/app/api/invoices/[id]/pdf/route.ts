@@ -9,6 +9,49 @@ import { InvoicePDFDocument, type InvoicePDFData } from "@/lib/invoice-pdf";
 // Generates a PDF invoice matching the "Invoice for Yourbestdeal" format
 // ============================================
 
+// ── Service name normalization (Bug #4 fix) ──
+function normalizeServiceName(raw: string): string {
+  const s = raw.trim();
+  const lower = s.toLowerCase();
+
+  // KOL variants → "KOL Management"
+  if (lower === "kol" || lower.includes("kol management") || lower.includes("key opinion leader")) {
+    return "KOL Management";
+  }
+  // Ads / Digital Advertising
+  if (
+    lower.includes("digital advertising") ||
+    lower.includes("ads management") ||
+    lower.includes("meta ads") ||
+    lower.includes("advertising") ||
+    lower === "ads"
+  ) {
+    return "Digital Advertising Management";
+  }
+  // Creative
+  if (lower.includes("creative") || lower.includes("design")) {
+    return "Creative Design";
+  }
+  // Social Media
+  if (lower.includes("social media") || lower.includes("social media management") || lower === "smm") {
+    return "Social Media Management";
+  }
+  // SEO
+  if (lower.includes("seo") || lower.includes("search engine")) {
+    return "Search Engine Optimization (SEO)";
+  }
+  // Content
+  if (lower.includes("content")) {
+    return "Content Production";
+  }
+  // Web Development
+  if (lower.includes("web") || lower.includes("website") || lower.includes("development")) {
+    return "Web Development";
+  }
+  // Default: return original with proper capitalization
+  return s;
+}
+
 interface ContractInfo {
   tax_rate?: number | null;
   bank_name?: string | null;
@@ -40,9 +83,15 @@ export async function GET(
       );
     }
 
-    // Fetch client data separately
-    const clientId = (invoice as Record<string, unknown>).client_id as string;
+    // Cast to record for flexible access
+    const rawData = invoice as Record<string, unknown>;
+    const billingId = rawData.contract_billing_id as string | null;
+    let clientId = rawData.client_id as string | null;
+
+    // ── Fetch client data (Bug #1 fix: multi-level fallback) ──
     let clientData: InvoicePDFData["client"] | undefined;
+
+    // Strategy 1: Direct client_id from invoice
     if (clientId) {
       const { data: clientRow } = await supabase
         .from("clients")
@@ -54,31 +103,91 @@ export async function GET(
       }
     }
 
-    // Cast to record for flexible access
-    const rawData = invoice as Record<string, unknown>;
-    const billingId = rawData.contract_billing_id as string | null;
-
-    // Fetch contract data for tax_rate, bank info, prepaid info + line items (Bug #1, #2, #6)
-    let items: InvoicePDFData["items"] | undefined;
+    // Strategy 2: If no client yet, try via contract_billing_id → contract → client
     let contractData: ContractInfo = {};
+    let contractClientId: string | null = null;
 
     if (billingId) {
       const { data: billing } = await supabase
         .from("contract_billings")
         .select(
-          "services_snapshot, contract:client_contracts(tax_rate, bank_name, bank_account_name, bank_account_number, is_prepaid, total_months_prepaid)"
+          `
+          services_snapshot,
+          contract:client_contracts(
+            tax_rate, bank_name, bank_account_name, bank_account_number,
+            is_prepaid, total_months_prepaid,
+            client_id,
+            client:clients(name, email, phone, address)
+          )
+        `
         )
         .eq("id", billingId)
         .single();
 
       const billingRow = billing as Record<string, unknown> | null;
       if (billingRow) {
-        // Extract services snapshot
+        // Extract contract data — could be object or array from Supabase join
+        const rawContract = billingRow.contract;
+        let contractObj: Record<string, unknown> | null = null;
+
+        if (Array.isArray(rawContract) && rawContract.length > 0) {
+          contractObj = rawContract[0] as Record<string, unknown>;
+        } else if (rawContract && typeof rawContract === "object") {
+          contractObj = rawContract as Record<string, unknown>;
+        }
+
+        if (contractObj) {
+          contractData = contractObj as unknown as ContractInfo;
+          contractClientId = (contractObj as Record<string, unknown>).client_id as string | null;
+
+          // If clientData still missing, extract from contract join
+          if (!clientData) {
+            const rawClient = (contractObj as Record<string, unknown>).client;
+            let clientRow: Record<string, unknown> | null = null;
+            if (Array.isArray(rawClient) && rawClient.length > 0) {
+              clientRow = rawClient[0] as Record<string, unknown>;
+            } else if (rawClient && typeof rawClient === "object") {
+              clientRow = rawClient as Record<string, unknown>;
+            }
+            if (clientRow) {
+              clientData = {
+                name: (clientRow.name as string) || "Client",
+                email: clientRow.email as string | undefined,
+                phone: clientRow.phone as string | undefined,
+                address: clientRow.address as string | undefined,
+              };
+              clientId = contractClientId;
+            }
+          }
+        }
+      }
+    }
+
+    // Strategy 3: If still no client, check for client_name field directly on invoice
+    if (!clientData) {
+      const fallbackName = (rawData.client_name as string) || (rawData.recipient_name as string);
+      if (fallbackName) {
+        clientData = { name: fallbackName };
+      }
+    }
+
+    // ── Fetch line items (Bug #2 fix: multi-level fallback) ──
+    let items: InvoicePDFData["items"] | undefined;
+
+    // Strategy 1: From contract_billings.services_snapshot
+    if (billingId) {
+      const { data: billing } = await supabase
+        .from("contract_billings")
+        .select("services_snapshot, contract:client_contracts(is_prepaid, total_months_prepaid)")
+        .eq("id", billingId)
+        .single();
+
+      const billingRow = billing as Record<string, unknown> | null;
+      if (billingRow) {
         const snapshot = billingRow.services_snapshot as
           | { service: string; fee: number }[]
           | null;
         if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
-          // For prepaid invoices, qty = total_months_prepaid (Bug #6)
           const rawContract2 = billingRow.contract;
           let isPrepaid = false;
           let prepaidMonths = 1;
@@ -93,20 +202,77 @@ export async function GET(
           }
           const qty = isPrepaid ? prepaidMonths : 1;
           items = snapshot.map((s) => ({
-            description: s.service,
+            description: normalizeServiceName(s.service),
             qty,
             unit_price: s.fee,
             amount: s.fee * qty,
           }));
         }
+      }
+    }
 
-        // Extract contract data — could be object or array from Supabase join
-        const rawContract = billingRow.contract;
-        if (Array.isArray(rawContract) && rawContract.length > 0) {
-          contractData = (rawContract[0] as ContractInfo) || {};
-        } else if (rawContract && typeof rawContract === "object") {
-          contractData = rawContract as ContractInfo;
+    // Strategy 2: If no items yet, fetch from contract_services via client_id
+    if (!items && clientId) {
+      const { data: services } = await supabase
+        .from("contract_services")
+        .select(
+          `
+          service_name, monthly_fee,
+          contract:client_contracts!inner(
+            is_prepaid, total_months_prepaid,
+            client_id, status, end_date
+          )
+        `
+        )
+        .eq("contract.client_id", clientId)
+        .eq("contract.status", "active")
+        .eq("status", "active");
+
+      const serviceRows = (services as Record<string, unknown>[] | null) || [];
+      if (serviceRows.length > 0) {
+        let isPrepaid = false;
+        let prepaidMonths = 1;
+
+        const firstContract = serviceRows[0]?.contract;
+        let contractRow: Record<string, unknown> | null = null;
+        if (Array.isArray(firstContract) && firstContract.length > 0) {
+          contractRow = firstContract[0] as Record<string, unknown>;
+        } else if (firstContract && typeof firstContract === "object") {
+          contractRow = firstContract as Record<string, unknown>;
         }
+        if (contractRow) {
+          isPrepaid = (contractRow.is_prepaid as boolean) ?? false;
+          prepaidMonths = (contractRow.total_months_prepaid as number) ?? 1;
+        }
+
+        const qty = isPrepaid ? prepaidMonths : 1;
+        items = serviceRows
+          .filter((r) => r.monthly_fee != null && Number(r.monthly_fee) > 0)
+          .map((r) => {
+            const fee = Number(r.monthly_fee) || 0;
+            return {
+              description: normalizeServiceName((r.service_name as string) || "Service"),
+              qty,
+              unit_price: fee,
+              amount: fee * qty,
+            };
+          });
+      }
+    }
+
+    // Strategy 3: If still no items, create single fallback item from invoice amount
+    // (This ensures the table always shows meaningful data, not just a generic label)
+    if (!items || items.length === 0) {
+      const invoiceAmount = Number(rawData.amount) || 0;
+      if (invoiceAmount > 0) {
+        items = [
+          {
+            description: normalizeServiceName((rawData.description as string) || "Digital Advertising Management"),
+            qty: 1,
+            unit_price: invoiceAmount,
+            amount: invoiceAmount,
+          },
+        ];
       }
     }
 

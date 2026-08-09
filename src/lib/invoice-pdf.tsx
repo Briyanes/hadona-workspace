@@ -546,7 +546,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
           <View style={styles.tableHead}>
             <Text style={[styles.th, styles.colService]}>Service</Text>
             <Text style={[styles.thQty, styles.colQty]}>Qty</Text>
-            <Text style={[styles.thFee, styles.colFee]}>Service Fee</Text>
+            <Text style={[styles.thFee, styles.colFee]}>Fee</Text>
             <Text style={[styles.thTotal, styles.colTotal]}>Total</Text>
           </View>
 
