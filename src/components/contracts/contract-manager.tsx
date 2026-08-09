@@ -145,6 +145,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
     discount_percent: 0,
     tax_rate: 11,
     status: "active",
+    // Bug #5 fix: Add prepaid fields to edit form
+    payment_schedule: "monthly" as string,
+    is_prepaid: false,
+    total_months_prepaid: 3,
+    prepaid_amount: 0,
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [expandedContract, setExpandedContract] = useState<string | null>(null);
@@ -457,6 +462,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
       discount_percent: contract.discount_percent || 0,
       tax_rate: contract.tax_rate ?? 11,
       status: contract.status,
+      // Bug #5 fix: Populate prepaid fields
+      payment_schedule: contract.payment_schedule || (contract.is_prepaid ? "prepaid_full" : "monthly"),
+      is_prepaid: contract.is_prepaid || false,
+      total_months_prepaid: contract.total_months_prepaid || 3,
+      prepaid_amount: contract.prepaid_amount || 0,
     });
     setShowEditModal(true);
   }
@@ -486,6 +496,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
           discount_percent: editForm.discount_percent,
           tax_rate: editForm.tax_rate,
           status: editForm.status,
+          // Bug #5 fix: Save prepaid fields
+          payment_schedule: editForm.payment_schedule,
+          is_prepaid: editForm.payment_schedule === "prepaid_full",
+          total_months_prepaid: editForm.payment_schedule === "prepaid_full" ? editForm.total_months_prepaid : 1,
+          prepaid_amount: editForm.payment_schedule === "prepaid_full" ? editForm.prepaid_amount : null,
         } as never)
         .eq("id", editingContract.id as never);
 
@@ -1585,6 +1600,52 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     className="input"
                   />
                 </div>
+              </div>
+
+              {/* Bug #5 fix: Skema Pembayaran (Prepaid) */}
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-900">Skema Bayar</label>
+                    <select
+                      value={editForm.payment_schedule}
+                      onChange={(e) => setEditForm({ ...editForm, payment_schedule: e.target.value })}
+                      className="input"
+                    >
+                      <option value="monthly">Bulanan (tiap bulan)</option>
+                      <option value="prepaid_full">Prepaid (Bayar Lunas Depan)</option>
+                    </select>
+                  </div>
+                  {editForm.payment_schedule === "prepaid_full" && (
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-900">Jumlah Bulan Prepaid</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={24}
+                        value={editForm.total_months_prepaid}
+                        onChange={(e) => setEditForm({ ...editForm, total_months_prepaid: parseInt(e.target.value) || 3 })}
+                        className="input"
+                      />
+                    </div>
+                  )}
+                </div>
+                {editForm.payment_schedule === "prepaid_full" && (
+                  <div className="mt-2">
+                    <label className="mb-1 block text-xs font-medium text-gray-900">Total Pembayaran Prepaid (IDR)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="100000"
+                      value={editForm.prepaid_amount}
+                      onChange={(e) => setEditForm({ ...editForm, prepaid_amount: parseFloat(e.target.value) || 0 })}
+                      placeholder="contoh: 30000000"
+                      className="input"
+                    />
+                    <p className="mt-1 text-[10px] text-muted">Kosongkan/0 jika ingin auto-calculate dari services × jumlah bulan</p>
+                  </div>
+                )}
               </div>
 
               {/* Sales & Payment */}

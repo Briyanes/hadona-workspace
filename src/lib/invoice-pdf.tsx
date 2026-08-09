@@ -202,6 +202,15 @@ export interface InvoicePDFData {
     phone?: string;
     address?: string;
   };
+  // Dynamic tax rate from contract (Bug #1 fix)
+  tax_rate?: number;
+  // Bank details from contract/workspace (Bug #2 fix)
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  // Prepaid info (Bug #6 fix)
+  is_prepaid?: boolean;
+  prepaid_months?: number;
 }
 
 // ============================================
@@ -233,6 +242,19 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
   const total = subtotal + tax;
   const clientName = invoice.client?.name || "Client";
   const period = invoice.billing_period || "Monthly Service Fee";
+
+  // Dynamic tax rate display (Bug #1 fix)
+  const taxRateDisplay = invoice.tax_rate != null ? invoice.tax_rate : 11;
+
+  // Bank details (Bug #2 fix)
+  const bankName = invoice.bank_name || "BCA";
+  const bankAccName = invoice.bank_account_name || "PT Hadona Digital Kreasi";
+  const bankAccNum = invoice.bank_account_number || "1234567890";
+
+  // Prepaid label (Bug #6 fix)
+  const prepaidLabel = invoice.is_prepaid && invoice.prepaid_months
+    ? ` (Prepaid ${invoice.prepaid_months} bulan)`
+    : "";
 
   return (
     <Document>
@@ -327,7 +349,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             <View style={styles.tableRow}>
               <View style={styles.colDesc}>
                 <Text style={styles.rowTextBold}>
-                  Digital Advertising Management
+                  Digital Advertising Management{prepaidLabel}
                 </Text>
                 <Text style={styles.rowSubText}>{period}</Text>
               </View>
@@ -351,7 +373,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             </View>
             {tax > 0 && (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>PPN (11%)</Text>
+                <Text style={styles.summaryLabel}>PPN ({taxRateDisplay}%)</Text>
                 <Text style={styles.summaryValue}>{formatIDR(tax)}</Text>
               </View>
             )}
@@ -365,9 +387,9 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
         {/* ─── Payment Info ─── */}
         <View style={styles.paymentInfo}>
           <Text style={styles.paymentTitle}>Payment Instructions:</Text>
-          <Text style={styles.paymentDetail}>PT Hadona Digital Kreasi</Text>
+          <Text style={styles.paymentDetail}>{bankAccName}</Text>
           <Text style={styles.paymentDetail}>
-            Bank Mandiri - 1234567890 (example)
+            Bank {bankName} - {bankAccNum}
           </Text>
           <Text style={styles.paymentDetail}>
             Please complete payment by {formatDate(invoice.due_date)}

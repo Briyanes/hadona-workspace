@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().split("T")[0];
 
     // ── Parallel batch #1: Basic stats + Division analytics + MRR ──
-    const [tasks, clients, adAccounts, profiles, profileData, divisionTasksRes, divisionMembersRes, mrrRes] = await Promise.all([
+    const [tasks, clients, adAccounts, profiles, profileData, divisionTasksRes, divisionMembersRes, mrrRes, prepaidRes] = await Promise.all([
       supabase.from("tasks").select("status, due_date, priority"),
       supabase.from("clients").select("status, contract_value"),
       supabase.from("ad_accounts").select("daily_budget, status").eq("status", "active"),
@@ -29,17 +29,24 @@ export async function GET(request: NextRequest) {
       `),
       // Division members count
       supabase.from("profiles").select("division").eq("is_active", true).eq("approval_status", "approved"),
-      // MRR: Calculate from active contract_services (source of truth)
+      // MRR: Calculate from active contract_services with discount applied (Bug #3 fix)
       supabase
         .from("contract_services")
         .select(`
           monthly_fee,
-          contract:client_contracts!inner(status, end_date, client:clients!inner(status))
+          contract:client_contracts!inner(status, end_date, discount_percent, client:clients!inner(status))
         `)
         .eq("status", "active")
         .eq("contract.status", "active")
         .gte("contract.end_date", today)
         .in("contract.client.status", ["active", "onboarding"]),
+      // Prepaid revenue (Bug #4 fix)
+      supabase
+        .from("client_contracts")
+        .select("prepaid_amount, is_prepaid")
+        .eq("status", "active")
+        .eq("is_prepaid", true)
+        .gt("prepaid_amount", 0),
     ]);
 
     const allTasks = (tasks.data as { status: string; due_date: string | null; priority: string }[]) || [];
@@ -47,9 +54,27 @@ export async function GET(request: NextRequest) {
     const accountList = (adAccounts.data as { daily_budget: number | null; status: string }[]) || [];
     const profileList = (profiles.data as { id: string }[]) || [];
 
-    // Calculate accurate MRR from contract_services
-    const mrrRows = (mrrRes.data as unknown as Array<{ monthly_fee: number | null }>) || [];
-    const accurateMrr = mrrRows.reduce((sum, r) => sum + (r.monthly_fee || 0), 0);
+    // Calculate accurate MRR from contract_services — apply discount (Bug #3 fix)
+    interface MrrRow {
+      monthly_fee: number | null;
+      contract: { discount_percent: number | null } | { discount_percent: number | null }[];
+    }
+    const mrrRows = (mrrRes.data as unknown as MrrRow[]) || [];
+    const accurateMrr = mrrRows.reduce((sum, r) => {
+      const fee = r.monthly_fee || 0;
+      const contractData = Array.isArray(r.contract) ? r.contract[0] : r.contract;
+      const disc = contractData?.discount_percent || 0;
+      return sum + (fee * (1 - disc / 100));
+    }, 0);
+
+    // Calculate total prepaid revenue (Bug #4 fix)
+    interface PrepaidRow {
+      prepaid_amount: number | null;
+      is_prepaid: boolean | null;
+    }
+    const prepaidRows = (prepaidRes.data as unknown as PrepaidRow[]) || [];
+    const totalPrepaidRevenue = prepaidRows.reduce((sum, r) => sum + (r.prepaid_amount || 0), 0);
+    const prepaidContractCount = prepaidRows.length;
 
     // ── Process Division Analytics ──
     interface DivisionTaskRow {
@@ -110,6 +135,9 @@ export async function GET(request: NextRequest) {
       totalMrr: accurateMrr || clientList
         .filter((c) => c.status === "active" || c.status === "onboarding")
         .reduce((sum, c) => sum + (c.contract_value || 0), 0),
+      // New: Prepaid revenue metric (Bug #4 fix)
+      totalPrepaidRevenue,
+      prepaidContractCount,
       teamMembers: profileList.length,
     };
 
@@ -218,6 +246,11 @@ export async function GET(request: NextRequest) {
       divisionStats,
       myTasks: myTasksRes.data || [],
       activities: activityRes.data || [],
+      // Prepaid revenue metrics (Bug #4 fix)
+      prepaid: {
+        totalRevenue: totalPrepaidRevenue,
+        contractCount: prepaidContractCount,
+      },
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
