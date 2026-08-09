@@ -1,0 +1,59 @@
+{
+  "passed": [
+    "Page navigation",
+    "Login successful",
+    "Page heading",
+    "Click New Report button",
+    "Modal rendered",
+    "🎯 Campaign Objective label",
+    "Click trigger button",
+    "Dropdown panel rendered",
+    "Desktop dropdown width",
+    "Desktop x position",
+    "Group labels (AWARENESS/TRAFFIC/etc.)",
+    "Search input found",
+    "Search 'awareness' filter",
+    "Dropdown closes on select",
+    "Value updated",
+    "Dropdown re-opens",
+    "Outside click closes dropdown",
+    "No console errors",
+    "Login successful",
+    "Mobile: page no horizontal overflow",
+    "Click New Report button",
+    "Mobile: trigger clicked",
+    "✅ Fix #1: Dropdown width ≤ viewport",
+    "✅ Fix #2: No horizontal overflow",
+    "✅ Fix #3: Touch targets ≥36px",
+    "✅ Fix #4: Height ≤ 65% viewport",
+    "✅ Fix #5: Search input height ≥36px",
+    "✅ Fix #5: Search font ≥13px (no iOS zoom)",
+    "✅ Fix #6: Group labels rendered",
+    "Mobile: search 'traffic' typed",
+    "Mobile: filter result",
+    "Overscroll-contain works",
+    "Mobile: tap option closes dropdown",
+    "Mobile: post-action no overflow",
+    "Login successful",
+    "Click New Report button",
+    "Empty state message"
+  ],
+  "failed": [],
+  "warnings": [
+    {
+      "test": "Re-select different objective",
+      "detail": "\"CTWA (Click-to-WhatsApp)meta\" → \"CTWA (Click-to-WhatsApp)meta\""
+    }
+  ],
+  "bugs": [],
+  "metrics": {
+    "desktopNavMs": 2319,
+    "desktopDropdownWidth": 400,
+    "mobileDropdownWidth": 327,
+    "mobileDropdownX": -5,
+    "mobileDropdownRight": 322,
+    "mobileDropdownHeight": 422,
+    "mobileSearchHeight": 38,
+    "mobileSearchFontSize": "14.0"
+  }
+}

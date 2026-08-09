@@ -13,6 +13,7 @@
     "@aws-sdk/client-s3": "^3.654.0",
     "@aws-sdk/s3-request-presigner": "^3.654.0",
     "@hello-pangea/dnd": "^16.6.0",
+    "@react-pdf/renderer": "^4.6.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.4",
     "class-variance-authority": "^0.7.0",

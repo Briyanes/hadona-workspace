@@ -16,6 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
   Printer,
+  Download,
 } from "lucide-react";
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
 import { PrintableInvoice } from "@/components/invoices/printable-invoice";
@@ -101,6 +102,11 @@ export default function InvoicesPage() {
       // Clean up after print dialog closes
       setTimeout(() => setPrintInvoice(null), 500);
     }, 200);
+  }
+
+  // Download professional PDF via API route (matches "Invoice for {Client}" format)
+  function handleDownloadPDF(inv: Invoice) {
+    window.open(`/api/invoices/${inv.id}/pdf`, "_blank");
   }
 
   useEffect(() => {
@@ -427,9 +433,16 @@ export default function InvoicesPage() {
                           </button>
                         )}
                         <button
+                          onClick={() => handleDownloadPDF(inv)}
+                          className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                          title="Download PDF"
+                        >
+                          <Download size={14} />
+                        </button>
+                        <button
                           onClick={() => handlePrint(inv)}
                           className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                          title="Print / Save as PDF"
+                          title="Print"
                         >
                           <Printer size={14} />
                         </button>

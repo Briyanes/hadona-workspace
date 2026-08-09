@@ -46,6 +46,10 @@ interface Contract {
   bank_account: string | null;
   discount_percent: number;
   tax_rate: number;
+  payment_schedule: string;
+  is_prepaid: boolean;
+  total_months_prepaid: number;
+  prepaid_amount: number;
   created_at: string;
 }
 
@@ -124,7 +128,25 @@ export function ContractManager({ clientId }: { clientId: string }) {
   const [billings, setBillings] = useState<Record<string, Billing[]>>({});
   const [loading, setLoading] = useState(true);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [showServiceModal, setShowServiceModal] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    end_date: "",
+    minimum_months: 3,
+    contract_type: "monthly",
+    notes: "",
+    pic_name: "",
+    pic_phone: "",
+    pic_email: "",
+    sales_person_id: "",
+    payment_due_day: 14,
+    bank_account: "BCA",
+    discount_percent: 0,
+    tax_rate: 11,
+    status: "active",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [expandedContract, setExpandedContract] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -143,6 +165,8 @@ export function ContractManager({ clientId }: { clientId: string }) {
     bank_account: "BCA",
     discount_percent: 0,
     tax_rate: 11,
+    payment_schedule: "monthly" as string,
+    total_months_prepaid: 3,
     initialServices: [{ service_name: "", monthly_fee: "" }] as { service_name: string; monthly_fee: string }[],
   });
 
@@ -256,6 +280,9 @@ export function ContractManager({ clientId }: { clientId: string }) {
         bank_account: contractForm.bank_account,
         discount_percent: contractForm.discount_percent,
         tax_rate: contractForm.tax_rate,
+        payment_schedule: contractForm.payment_schedule,
+        is_prepaid: contractForm.payment_schedule === "prepaid_full",
+        total_months_prepaid: contractForm.payment_schedule === "prepaid_full" ? contractForm.total_months_prepaid : 1,
       } as never);
 
       if (error) throw error;
@@ -309,6 +336,8 @@ export function ContractManager({ clientId }: { clientId: string }) {
         bank_account: "BCA",
         discount_percent: 0,
         tax_rate: 11,
+        payment_schedule: "monthly",
+        total_months_prepaid: 3,
         initialServices: [{ service_name: "", monthly_fee: "" }],
       });
       loadContracts();
@@ -403,6 +432,71 @@ export function ContractManager({ clientId }: { clientId: string }) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error("Gagal hapus: " + msg);
+    }
+  }
+
+  // ============================================
+  // Edit Contract
+  // ============================================
+  function openEditModal(contract: Contract) {
+    setEditingContract(contract);
+    setEditForm({
+      end_date: contract.end_date,
+      minimum_months: contract.minimum_months,
+      contract_type: contract.contract_type,
+      notes: contract.notes || "",
+      pic_name: contract.pic_name || "",
+      pic_phone: contract.pic_phone || "",
+      pic_email: contract.pic_email || "",
+      sales_person_id: contract.sales_person_id || "",
+      payment_due_day: contract.payment_due_day || 14,
+      bank_account: contract.bank_account || "BCA",
+      discount_percent: contract.discount_percent || 0,
+      tax_rate: contract.tax_rate ?? 11,
+      status: contract.status,
+    });
+    setShowEditModal(true);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingContract) return;
+    if (!editForm.end_date) {
+      toast.error("Tanggal akhir kontrak wajib diisi");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from("client_contracts")
+        .update({
+          end_date: editForm.end_date,
+          minimum_months: editForm.minimum_months,
+          contract_type: editForm.contract_type,
+          notes: editForm.notes || null,
+          pic_name: editForm.pic_name || null,
+          pic_phone: editForm.pic_phone || null,
+          pic_email: editForm.pic_email || null,
+          sales_person_id: editForm.sales_person_id || null,
+          payment_due_day: editForm.payment_due_day,
+          bank_account: editForm.bank_account,
+          discount_percent: editForm.discount_percent,
+          tax_rate: editForm.tax_rate,
+          status: editForm.status,
+        } as never)
+        .eq("id", editingContract.id as never);
+
+      if (error) throw error;
+
+      toast.success("Kontrak berhasil diupdate!");
+      setShowEditModal(false);
+      setEditingContract(null);
+      loadContracts();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal update kontrak: " + msg);
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -628,8 +722,36 @@ export function ContractManager({ clientId }: { clientId: string }) {
         const paid = calcPaidThisMonth();
         const overdue = calcOverdue();
         const nextDue = getNextDueDate();
+        const prepaidContracts = contracts.filter((c) => c.is_prepaid && c.status === "active");
+        const totalPrepaid = prepaidContracts.reduce((sum, c) => sum + (c.prepaid_amount || calculateMonthlyTotal(c.id) * c.total_months_prepaid), 0);
 
         return (
+          <>
+          {/* Prepaid Banner (if any) */}
+          {prepaidContracts.length > 0 && (
+            <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⚡</span>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-primary">Prepaid Contracts Active</p>
+                  <p className="text-[10px] text-muted">
+                    {prepaidContracts.length} client • Total: <strong className="text-primary">{formatIDR(totalPrepaid)}</strong>
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 space-y-1">
+                {prepaidContracts.map((c) => {
+                  const prepaidVal = c.prepaid_amount || calculateMonthlyTotal(c.id) * c.total_months_prepaid;
+                  return (
+                    <div key={c.id} className="flex items-center justify-between text-[10px]">
+                      <span className="text-muted">{c.contract_number || "Kontrak"}</span>
+                      <span className="font-medium text-gray-900">{formatIDR(prepaidVal)} ({c.total_months_prepaid} bln)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
             {/* MRR */}
             <div className="card p-3 sm:p-4">
@@ -704,6 +826,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
             )}
           </div>
+          </>
         );
       })()}
 
@@ -744,6 +867,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     <span className={cn("badge text-[10px] capitalize", contractStatusColors[contract.status] || contractStatusColors.draft)}>
                       {contract.status}
                     </span>
+                    {contract.is_prepaid && (
+                      <span className="badge bg-primary/20 text-primary text-[10px]">
+                        ⚡ Prepaid {contract.total_months_prepaid} bln
+                      </span>
+                    )}
                   </div>
                   <p className="mt-0.5 text-xs text-muted">
                     {formatDate(contract.start_date, { day: "numeric", month: "short", year: "numeric" })} → {formatDate(contract.end_date, { day: "numeric", month: "short", year: "numeric" })}
@@ -966,6 +1094,17 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     </a>
                   )}
 
+                  {/* Edit Contract */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditModal(contract);
+                    }}
+                    className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-primary hover:bg-primary/10"
+                  >
+                    <RefreshCw size={10} /> Edit Kontrak
+                  </button>
+
                   {/* Renew Contract */}
                   {(contract.status === "active" || contract.status === "expired") && (
                     <button
@@ -1089,6 +1228,42 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     className="input"
                   />
                 </div>
+              </div>
+
+              {/* Section: Payment Schedule / Prepaid */}
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-900">Skema Bayar</label>
+                    <select
+                      value={contractForm.payment_schedule}
+                      onChange={(e) => setContractForm({ ...contractForm, payment_schedule: e.target.value })}
+                      className="input"
+                    >
+                      <option value="monthly">Bulanan (tiap bulan)</option>
+                      <option value="prepaid_full">Prepaid (Bayar Lunas Depan)</option>
+                    </select>
+                  </div>
+                  {contractForm.payment_schedule === "prepaid_full" && (
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-900">Jumlah Bulan Prepaid</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={24}
+                        value={contractForm.total_months_prepaid}
+                        onChange={(e) => setContractForm({ ...contractForm, total_months_prepaid: parseInt(e.target.value) || 3 })}
+                        className="input"
+                      />
+                    </div>
+                  )}
+                </div>
+                {contractForm.payment_schedule === "prepaid_full" && (
+                  <p className="mt-2 text-[10px] text-primary">
+                    💡 Client membayar penuh di awal. Dashboard akan menampilkan total prepaid, bukan per bulan.
+                  </p>
+                )}
               </div>
 
               {/* Section: Sales & Payment */}
@@ -1282,6 +1457,206 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
                   ) : (
                     "Simpan Kontrak"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== Edit Contract Modal ==================== */}
+      {showEditModal && editingContract && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Edit Kontrak</h2>
+                <p className="text-xs text-muted">{editingContract.contract_number || "Kontrak"} • Mulai {formatDate(editingContract.start_date)}</p>
+              </div>
+              <button onClick={() => { setShowEditModal(false); setEditingContract(null); }} className="rounded p-1 text-muted hover:bg-background">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="space-y-4 px-6 py-4">
+              {/* Status & End Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Status Kontrak</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="input"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="active">Active</option>
+                    <option value="expired">Expired</option>
+                    <option value="terminated">Terminated</option>
+                    <option value="renewed">Renewed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Akhir Kontrak *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editForm.end_date}
+                    onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                    className="input"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Minimum Bulan</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editForm.minimum_months}
+                    onChange={(e) => setEditForm({ ...editForm, minimum_months: parseInt(e.target.value) || 3 })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Tipe Kontrak</label>
+                  <select
+                    value={editForm.contract_type}
+                    onChange={(e) => setEditForm({ ...editForm, contract_type: e.target.value })}
+                    className="input"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="semi-annual">Semi-Annual</option>
+                    <option value="annual">Annual</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* PIC Client */}
+              <div className="rounded-md border border-border bg-background/50 p-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-900">Nama PIC</label>
+                    <input
+                      type="text"
+                      value={editForm.pic_name}
+                      onChange={(e) => setEditForm({ ...editForm, pic_name: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-900">No. HP / WA</label>
+                    <input
+                      type="tel"
+                      value={editForm.pic_phone}
+                      onChange={(e) => setEditForm({ ...editForm, pic_phone: e.target.value })}
+                      className="input"
+                    />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Email PIC</label>
+                  <input
+                    type="email"
+                    value={editForm.pic_email}
+                    onChange={(e) => setEditForm({ ...editForm, pic_email: e.target.value })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Sales & Payment */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Sales / AM</label>
+                  <select
+                    value={editForm.sales_person_id}
+                    onChange={(e) => setEditForm({ ...editForm, sales_person_id: e.target.value })}
+                    className="input"
+                  >
+                    <option value="">— Pilih —</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name || m.email} {m.division ? `(${m.division})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Jatuh Tempo (tgl)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={editForm.payment_due_day}
+                    onChange={(e) => setEditForm({ ...editForm, payment_due_day: parseInt(e.target.value) || 14 })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Bank</label>
+                  <select
+                    value={editForm.bank_account}
+                    onChange={(e) => setEditForm({ ...editForm, bank_account: e.target.value })}
+                    className="input"
+                  >
+                    <option value="BCA">BCA</option>
+                    <option value="Mandiri">Mandiri</option>
+                    <option value="BNI">BNI</option>
+                    <option value="BRI">BRI</option>
+                    <option value="CIMB">CIMB</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">Diskon (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.5"
+                    value={editForm.discount_percent}
+                    onChange={(e) => setEditForm({ ...editForm, discount_percent: parseFloat(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-900">PPN (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.5"
+                    value={editForm.tax_rate}
+                    onChange={(e) => setEditForm({ ...editForm, tax_rate: parseFloat(e.target.value) || 0 })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-900">Catatan</label>
+                <textarea
+                  rows={2}
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="input resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-border pt-4">
+                <button type="button" onClick={() => { setShowEditModal(false); setEditingContract(null); }} className="px-4 py-2 text-sm text-muted hover:text-gray-900">
+                  Batal
+                </button>
+                <button type="submit" disabled={savingEdit} className="btn-primary">
+                  {savingEdit ? (
+                    <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
+                  ) : (
+                    "Simpan Perubahan"
                   )}
                 </button>
               </div>

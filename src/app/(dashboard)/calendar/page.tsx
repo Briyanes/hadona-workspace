@@ -17,7 +17,14 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
+  Plus,
+  X,
+  Video,
+  MapPin,
+  Users,
 } from "lucide-react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { cn, formatIDR } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -25,7 +32,7 @@ interface CalendarEvent {
   id: string;
   date: string;
   title: string;
-  type: "task" | "report" | "invoice" | "contract";
+  type: EventType;
   status?: string;
   meta?: string;
   href: string;
@@ -62,7 +69,7 @@ interface ClientRow {
 }
 
 type ViewMode = "month" | "week" | "agenda";
-type EventType = "task" | "report" | "invoice" | "contract";
+type EventType = "task" | "report" | "invoice" | "contract" | "meeting";
 
 const WEEKDAYS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const WEEKDAYS_LONG = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -99,6 +106,13 @@ const typeConfig: Record<
     icon: CalendarClock,
     label: "Contract",
   },
+  meeting: {
+    dot: "bg-purple-500",
+    bg: "bg-purple-500/10",
+    activeBg: "bg-purple-500 text-white",
+    icon: Users,
+    label: "Meeting",
+  },
 };
 
 function pad(n: number) {
@@ -119,8 +133,26 @@ export default function CalendarPage() {
   );
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [activeFilters, setActiveFilters] = useState<Set<EventType>>(
-    new Set<EventType>(["task", "report", "invoice", "contract"])
+    new Set<EventType>(["task", "report", "invoice", "contract", "meeting"])
   );
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [savingEvent, setSavingEvent] = useState(false);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [teamMembers, setTeamMembers] = useState<{ id: string; full_name: string | null; email: string; division: string | null }[]>([]);
+  const [eventForm, setEventForm] = useState({
+    title: "",
+    description: "",
+    event_type: "client_meeting" as "client_meeting" | "internal_meeting" | "review" | "follow_up" | "other",
+    start_datetime: "",
+    end_datetime: "",
+    all_day: false,
+    client_id: "",
+    location: "",
+    meeting_link: "",
+    attendees: [] as string[],
+    create_task_for_pm: false,
+    pm_user_id: "",
+  });
 
   useEffect(() => {
     loadAll();
@@ -128,7 +160,7 @@ export default function CalendarPage() {
 
   async function loadAll() {
     try {
-      const [tasks, reports, invoices, clients] = await Promise.all([
+      const [tasks, reports, invoices, clients, calEvents, teamData, clientList] = await Promise.all([
         supabase
           .from("tasks")
           .select("id, title, due_date, status, client:clients(name)")
@@ -146,7 +178,22 @@ export default function CalendarPage() {
           .from("clients")
           .select("id, name, contract_end, status")
           .not("contract_end", "is", null),
+        supabase
+          .from("calendar_events")
+          .select("id, title, description, event_type, start_datetime, end_datetime, all_day, location, meeting_link, client:clients(name)")
+          .order("start_datetime"),
+        supabase
+          .from("team_members")
+          .select("id, full_name, email, division")
+          .order("full_name"),
+        supabase
+          .from("clients")
+          .select("id, name")
+          .order("name"),
       ]);
+
+      setTeamMembers((teamData.data as unknown as typeof teamMembers) || []);
+      setClients((clientList.data as unknown as { id: string; name: string }[]) || []);
 
       const evts: CalendarEvent[] = [];
 
@@ -202,11 +249,98 @@ export default function CalendarPage() {
         });
       });
 
+      // Calendar Events (meetings)
+      interface CalEventRow {
+        id: string; title: string; description: string | null;
+        event_type: string; start_datetime: string; end_datetime: string | null;
+        all_day: boolean; location: string | null; meeting_link: string | null;
+        client?: { name: string };
+      }
+      ((calEvents.data as unknown as CalEventRow[]) || []).forEach((ev) => {
+        const ds = ev.start_datetime?.slice(0, 10);
+        if (!ds) return;
+        evts.push({
+          id: `meeting-${ev.id}`,
+          date: ds,
+          title: ev.title,
+          type: "meeting",
+          status: ev.event_type,
+          clientName: ev.client?.name,
+          href: "#",
+        });
+      });
+
       setEvents(evts);
     } catch {
       // silent fail
     } finally {
       setLoading(false);
+    }
+  }
+
+  // ============================================
+  // Save Calendar Event
+  // ============================================
+  async function handleSaveEvent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!eventForm.title.trim()) { toast.error("Judul wajib diisi"); return; }
+    if (!eventForm.start_datetime) { toast.error("Waktu mulai wajib diisi"); return; }
+    setSavingEvent(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const insertPayload = {
+        title: eventForm.title.trim(),
+        description: eventForm.description || null,
+        event_type: eventForm.event_type,
+        start_datetime: new Date(eventForm.start_datetime).toISOString(),
+        end_datetime: eventForm.end_datetime ? new Date(eventForm.end_datetime).toISOString() : null,
+        all_day: eventForm.all_day,
+        client_id: eventForm.client_id || null,
+        location: eventForm.location || null,
+        meeting_link: eventForm.meeting_link || null,
+        attendees: eventForm.attendees.map(uid => ({ user_id: uid })),
+        created_by: user?.id || null,
+      };
+      const { data: newEvent, error } = await (supabase
+        .from("calendar_events") as unknown as ReturnType<typeof supabase.from> extends never ? never : {
+          insert: (p: typeof insertPayload) => { select: (c: string) => { single: () => Promise<{ data: { id: string } | null; error: unknown }> };
+        };
+      }).insert(insertPayload).select("id").single();
+
+      if (error) throw error;
+
+      // Optional: create task for PM
+      if (eventForm.create_task_for_pm && eventForm.pm_user_id && (newEvent as { id?: string } | null)?.id) {
+        const startDate = new Date(eventForm.start_datetime);
+        const dueDate = startDate.toISOString().slice(0, 10);
+        await supabase.from("tasks").insert({
+          title: `[Meeting] ${eventForm.title.trim()}`,
+          description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${eventForm.meeting_link ? `Link: ${eventForm.meeting_link}` : ""}`,
+          due_date: dueDate,
+          status: "todo",
+          priority: "medium",
+          assignee_id: eventForm.pm_user_id,
+          client_id: eventForm.client_id || null,
+        } as never);
+        toast.success("Meeting + task untuk PM dibuat!");
+      } else {
+        toast.success("Event meeting dibuat!");
+      }
+
+      setShowEventModal(false);
+      setEventForm({
+        title: "", description: "", event_type: "client_meeting",
+        start_datetime: "", end_datetime: "", all_day: false,
+        client_id: "", location: "", meeting_link: "",
+        attendees: [], create_task_for_pm: false, pm_user_id: "",
+      });
+      loadAll();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal membuat event: " + msg);
+    } finally {
+      setSavingEvent(false);
     }
   }
 
@@ -448,6 +582,9 @@ export default function CalendarPage() {
           </div>
           <button onClick={goToday} className="btn-primary text-xs whitespace-nowrap">
             Hari Ini
+          </button>
+          <button onClick={() => setShowEventModal(true)} className="btn-primary text-xs whitespace-nowrap bg-purple-500 hover:bg-purple-600">
+            <Plus size={14} /> <span className="hidden sm:inline">New Event</span><span className="sm:hidden">Event</span>
           </button>
         </div>
       </div>
@@ -917,6 +1054,191 @@ export default function CalendarPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Event Modal ═══ */}
+      {showEventModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowEventModal(false)}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Users size={20} className="text-purple-500" />
+                Buat Event / Meeting
+              </h2>
+              <button onClick={() => setShowEventModal(false)} className="text-muted hover:text-gray-900">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEvent} className="space-y-3 p-4">
+              {/* Title */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Judul Event <span className="text-danger">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={eventForm.title}
+                  onChange={e => setEventForm({ ...eventForm, title: e.target.value })}
+                  placeholder="cth: Monthly Meeting dengan Client X"
+                  className="input"
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Tipe Event</label>
+                <select
+                  value={eventForm.event_type}
+                  onChange={e => setEventForm({ ...eventForm, event_type: e.target.value as typeof eventForm.event_type })}
+                  className="input"
+                >
+                  <option value="client_meeting">Meeting dengan Client</option>
+                  <option value="internal_meeting">Meeting Internal</option>
+                  <option value="review">Review</option>
+                  <option value="follow_up">Follow Up</option>
+                  <option value="other">Lainnya</option>
+                </select>
+              </div>
+
+              {/* Client */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Client (opsional)</label>
+                <select
+                  value={eventForm.client_id}
+                  onChange={e => setEventForm({ ...eventForm, client_id: e.target.value })}
+                  className="input"
+                >
+                  <option value="">— Pilih Client —</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date & Time */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">Mulai <span className="text-danger">*</span></label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={eventForm.start_datetime}
+                    onChange={e => setEventForm({ ...eventForm, start_datetime: e.target.value })}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">Selesai</label>
+                  <input
+                    type="datetime-local"
+                    value={eventForm.end_datetime}
+                    onChange={e => setEventForm({ ...eventForm, end_datetime: e.target.value })}
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* All Day */}
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={eventForm.all_day}
+                  onChange={e => setEventForm({ ...eventForm, all_day: e.target.checked })}
+                  className="rounded"
+                />
+                <span className="text-gray-700">Sepanjang hari</span>
+              </label>
+
+              {/* Location & Link */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700 flex items-center gap-1">
+                    <MapPin size={12} /> Lokasi
+                  </label>
+                  <input
+                    type="text"
+                    value={eventForm.location}
+                    onChange={e => setEventForm({ ...eventForm, location: e.target.value })}
+                    placeholder="cth: Kantor Hadona"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700 flex items-center gap-1">
+                    <Video size={12} /> Meeting Link
+                  </label>
+                  <input
+                    type="url"
+                    value={eventForm.meeting_link}
+                    onChange={e => setEventForm({ ...eventForm, meeting_link: e.target.value })}
+                    placeholder="https://meet.google.com/..."
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Deskripsi / Agenda</label>
+                <textarea
+                  value={eventForm.description}
+                  onChange={e => setEventForm({ ...eventForm, description: e.target.value })}
+                  rows={2}
+                  placeholder="Agenda meeting..."
+                  className="input resize-none"
+                />
+              </div>
+
+              {/* Auto-create task for PM */}
+              <div className="rounded-md border border-purple-200 bg-purple-50 p-3 space-y-2">
+                <label className="flex items-center gap-2 text-xs font-medium">
+                  <input
+                    type="checkbox"
+                    checked={eventForm.create_task_for_pm}
+                    onChange={e => setEventForm({ ...eventForm, create_task_for_pm: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-purple-900">Assign task preparation ke PM/Team</span>
+                </label>
+                {eventForm.create_task_for_pm && (
+                  <select
+                    value={eventForm.pm_user_id}
+                    onChange={e => setEventForm({ ...eventForm, pm_user_id: e.target.value })}
+                    className="input text-xs"
+                  >
+                    <option value="">— Pilih anggota tim —</option>
+                    {teamMembers.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.full_name || m.email} {m.division ? `(${m.division})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 border-t border-border pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEventModal(false)}
+                  className="btn-secondary text-xs"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEvent}
+                  className="btn-primary text-xs bg-purple-500 hover:bg-purple-600 disabled:opacity-50"
+                >
+                  {savingEvent ? (
+                    <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
+                  ) : (
+                    <><Plus size={14} /> Buat Event</>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
