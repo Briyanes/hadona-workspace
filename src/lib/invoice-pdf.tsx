@@ -8,16 +8,19 @@ import {
 } from "@react-pdf/renderer";
 
 // ============================================
-// Brand Palette
+// Brand Palette — Hadona official colors
+// Extracted from logo: #2B46BD (blue), #EDD947 (yellow)
 // ============================================
 const INK = "#0F172A";
 const SLATE = "#334155";
 const SLATE_LIGHT = "#64748B";
 const SLATE_MUTED = "#94A3B8";
-const ACCENT = "#2563EB";
-const ACCENT_DARK = "#1E40AF";
+const HADONA_BLUE = "#2B46BD";
+const HADONA_BLUE_DARK = "#1E3A8A";
+const HADONA_BLUE_LIGHT = "#DDE3F8";
+const HADONA_YELLOW = "#EDD947";
 const BG_SOFT = "#F8FAFC";
-const BG_TABLE_HEAD = "#1E293B";
+const BG_TABLE_HEAD = "#2B46BD";
 const BG_ROW_ALT = "#F1F5F9";
 const BORDER = "#E2E8F0";
 const WHITE = "#FFFFFF";
@@ -31,6 +34,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     fontSize: 10,
     color: SLATE,
+    flexDirection: "column",
   },
 
   // ─── Hero Header ───
@@ -65,7 +69,7 @@ const styles = StyleSheet.create({
   },
   brandSub: {
     fontSize: 8,
-    color: SLATE_MUTED,
+    color: HADONA_YELLOW,
     marginTop: 5,
     letterSpacing: 3,
     textTransform: "uppercase",
@@ -82,7 +86,7 @@ const styles = StyleSheet.create({
   },
   invoiceBadge: {
     marginTop: 8,
-    backgroundColor: ACCENT,
+    backgroundColor: HADONA_YELLOW,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 3,
@@ -90,7 +94,7 @@ const styles = StyleSheet.create({
   invoiceBadgeText: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: WHITE,
+    color: INK,
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
@@ -125,13 +129,14 @@ const styles = StyleSheet.create({
   body: {
     paddingHorizontal: 50,
     paddingVertical: 32,
+    flexGrow: 1,
   },
 
   // ─── Offering To ───
   offeringCard: {
     backgroundColor: BG_SOFT,
     borderLeftWidth: 4,
-    borderLeftColor: ACCENT,
+    borderLeftColor: HADONA_BLUE,
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderRadius: 2,
@@ -248,8 +253,8 @@ const styles = StyleSheet.create({
   qtyBadge: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: ACCENT_DARK,
-    backgroundColor: "#DBEAFE",
+    color: HADONA_BLUE_DARK,
+    backgroundColor: HADONA_BLUE_LIGHT,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 3,
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: INK,
+    backgroundColor: HADONA_BLUE,
     paddingHorizontal: 18,
     paddingVertical: 16,
     borderRadius: 4,
@@ -321,7 +326,7 @@ const styles = StyleSheet.create({
   paymentTitle: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: ACCENT_DARK,
+    color: HADONA_BLUE_DARK,
     textTransform: "uppercase",
     letterSpacing: 1.5,
     marginBottom: 10,
@@ -369,16 +374,15 @@ const styles = StyleSheet.create({
   },
   signWebsite: {
     fontSize: 9,
-    color: ACCENT,
+    color: HADONA_BLUE,
     fontFamily: "Helvetica-Bold",
   },
 
-  // ─── Footer ───
+  // ─── Footer — pinned to bottom via flexGrow on body ───
   footer: {
     backgroundColor: INK,
     paddingHorizontal: 50,
-    paddingVertical: 20,
-    marginTop: 32,
+    paddingVertical: 18,
     alignItems: "center",
   },
   footerText: {
@@ -474,7 +478,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         {/* ═══ HERO HEADER ═══ */}
-        <View style={styles.hero}>
+        <View style={styles.hero} fixed>
           <View style={styles.heroTop}>
             {/* Brand */}
             <View style={styles.heroBrand}>
@@ -595,7 +599,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
 
           {/* Note */}
           <View style={styles.noteCard}>
-            <Text style={styles.noteTitle}>⚠ Important Note</Text>
+            <Text style={styles.noteTitle}>Important Note</Text>
             <Text style={styles.noteText}>
               {invoice.notes || DEFAULT_NOTE}
             </Text>
@@ -631,7 +635,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
         </View>
 
         {/* ═══ FOOTER ═══ */}
-        <View style={styles.footer}>
+        <View style={styles.footer} fixed>
           <Text style={styles.footerText}>
             PT. Hadona Digital Media · Digital Advertising Agency
           </Text>
