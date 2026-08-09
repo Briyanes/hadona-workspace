@@ -8,23 +8,22 @@ import {
 } from "@react-pdf/renderer";
 
 // ============================================
-// Brand Palette — Hadona Digital Agency
+// Brand Palette
 // ============================================
-const INK = "#0F172A";            // near-black for headings
-const SLATE = "#334155";          // body text
-const SLATE_LIGHT = "#64748B";    // secondary text
-const SLATE_MUTED = "#94A3B8";    // labels
-const ACCENT = "#2563EB";         // primary blue
-const ACCENT_DARK = "#1E40AF";    // dark blue
-const BG_SOFT = "#F8FAFC";        // page accent background
-const BG_TABLE_HEAD = "#1E293B";  // table header bg
-const BG_ROW_ALT = "#F1F5F9";     // alt row
-const BORDER = "#E2E8F0";         // borders
-const BORDER_DARK = "#CBD5E1";    // darker borders
+const INK = "#0F172A";
+const SLATE = "#334155";
+const SLATE_LIGHT = "#64748B";
+const SLATE_MUTED = "#94A3B8";
+const ACCENT = "#2563EB";
+const ACCENT_DARK = "#1E40AF";
+const BG_SOFT = "#F8FAFC";
+const BG_TABLE_HEAD = "#1E293B";
+const BG_ROW_ALT = "#F1F5F9";
+const BORDER = "#E2E8F0";
 const WHITE = "#FFFFFF";
 
 // ============================================
-// Styles — Premium Agency Invoice
+// Styles
 // ============================================
 const styles = StyleSheet.create({
   // ─── Page ───
@@ -32,13 +31,9 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     fontSize: 10,
     color: SLATE,
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    paddingRight: 0,
   },
 
-  // ─── Top Hero Section ───
+  // ─── Hero Header ───
   hero: {
     backgroundColor: INK,
     paddingHorizontal: 50,
@@ -48,48 +43,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 30,
+    marginBottom: 32,
   },
   heroBrand: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
   },
   heroLogo: {
-    width: 52,
-    height: 52,
-    borderRadius: 6,
+    width: 48,
+    height: 48,
+    marginRight: 14,
   },
   heroBrandText: {
     flexDirection: "column",
   },
   brandName: {
-    fontSize: 32,
+    fontSize: 30,
     fontFamily: "Helvetica-Bold",
     color: WHITE,
     lineHeight: 1,
   },
   brandSub: {
-    fontSize: 9,
+    fontSize: 8,
     color: SLATE_MUTED,
-    marginTop: 6,
+    marginTop: 5,
     letterSpacing: 3,
     textTransform: "uppercase",
   },
-  heroInvoiceTitle: {
+  heroRight: {
     flexDirection: "column",
     alignItems: "flex-end",
   },
   invoiceLabel: {
-    fontSize: 32,
+    fontSize: 30,
     fontFamily: "Helvetica-Bold",
     color: WHITE,
     lineHeight: 1,
   },
   invoiceBadge: {
-    marginTop: 6,
+    marginTop: 8,
     backgroundColor: ACCENT,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 3,
   },
@@ -97,17 +91,17 @@ const styles = StyleSheet.create({
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
     color: WHITE,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     textTransform: "uppercase",
   },
 
-  // Hero meta grid
-  heroMeta: {
+  // Hero meta
+  heroMetaRow: {
     flexDirection: "row",
-    gap: 40,
   },
   heroMetaCol: {
     flexDirection: "column",
+    marginRight: 50,
   },
   heroMetaLabel: {
     fontSize: 7,
@@ -115,7 +109,7 @@ const styles = StyleSheet.create({
     color: SLATE_MUTED,
     textTransform: "uppercase",
     letterSpacing: 1.5,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   heroMetaValue: {
     fontSize: 11,
@@ -123,29 +117,25 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   heroMetaValueSmall: {
-    fontSize: 9,
+    fontSize: 10,
     color: "#CBD5E1",
   },
 
-  // ─── Body content ───
+  // ─── Body ───
   body: {
     paddingHorizontal: 50,
     paddingVertical: 32,
   },
 
   // ─── Offering To ───
-  offeringSection: {
-    flexDirection: "row",
-    marginBottom: 28,
-  },
   offeringCard: {
-    flex: 1,
     backgroundColor: BG_SOFT,
     borderLeftWidth: 4,
     borderLeftColor: ACCENT,
     paddingHorizontal: 18,
     paddingVertical: 14,
     borderRadius: 2,
+    marginBottom: 28,
   },
   offeringLabel: {
     fontSize: 7,
@@ -167,26 +157,49 @@ const styles = StyleSheet.create({
   },
 
   // ─── Table ───
-  table: {
-    marginBottom: 0,
-  },
   tableHead: {
     flexDirection: "row",
     backgroundColor: BG_TABLE_HEAD,
-    paddingVertical: 12,
+    paddingVertical: 11,
     paddingHorizontal: 14,
     borderRadius: 4,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   colService: { flex: 3 },
-  colQty: { flex: 1, textAlign: "center" as const },
-  colFee: { flex: 2, textAlign: "right" as const },
-  colTotal: { flex: 2, textAlign: "right" as const },
+  colQty: { flex: 1 },
+  colFee: { flex: 2 },
+  colTotal: { flex: 2 },
   th: {
     fontSize: 7.5,
     fontFamily: "Helvetica-Bold",
     color: WHITE,
     textTransform: "uppercase",
     letterSpacing: 1,
+  },
+  thQty: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: WHITE,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    textAlign: "center",
+  },
+  thFee: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: WHITE,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    textAlign: "right",
+  },
+  thTotal: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: WHITE,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    textAlign: "right",
   },
   tableBody: {
     borderWidth: 1,
@@ -195,7 +208,7 @@ const styles = StyleSheet.create({
   },
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
@@ -220,21 +233,26 @@ const styles = StyleSheet.create({
   rowText: {
     fontSize: 10,
     color: SLATE,
+    textAlign: "right",
   },
   rowTextBold: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: INK,
+    textAlign: "right",
+  },
+  qtyBadgeWrapper: {
+    flexDirection: "row",
+    justifyContent: "center",
   },
   qtyBadge: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
     color: ACCENT_DARK,
     backgroundColor: "#DBEAFE",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 3,
-    alignSelf: "center",
   },
 
   // ─── Total Bar ───
@@ -253,7 +271,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: WHITE,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   totalValue: {
     fontSize: 22,
@@ -289,16 +307,16 @@ const styles = StyleSheet.create({
   // ─── Payment & Signature ───
   bottomRow: {
     flexDirection: "row",
-    gap: 24,
     marginTop: 24,
   },
   paymentCard: {
-    flex: 1.2,
+    flex: 1.3,
     backgroundColor: BG_SOFT,
     borderRadius: 4,
     padding: 16,
     borderWidth: 1,
     borderColor: BORDER,
+    marginRight: 24,
   },
   paymentTitle: {
     fontSize: 8,
@@ -310,12 +328,12 @@ const styles = StyleSheet.create({
   },
   paymentRow: {
     flexDirection: "row",
-    marginBottom: 3,
+    marginBottom: 4,
   },
   paymentLabel: {
     fontSize: 8,
     color: SLATE_MUTED,
-    width: 70,
+    width: 65,
   },
   paymentValue: {
     fontSize: 9,
@@ -331,7 +349,7 @@ const styles = StyleSheet.create({
   signatureCard: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 8,
+    paddingTop: 6,
   },
   signLine: {
     fontSize: 8,
@@ -361,14 +379,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 50,
     paddingVertical: 20,
     marginTop: 32,
-    flexDirection: "column",
     alignItems: "center",
   },
   footerText: {
     fontSize: 8,
     color: SLATE_MUTED,
     textAlign: "center",
-    marginBottom: 2,
+    marginBottom: 3,
   },
   footerAccent: {
     fontSize: 8,
@@ -433,13 +450,13 @@ function formatDateLong(d: string) {
 }
 
 // ============================================
-// Default NOTE text
+// Default NOTE
 // ============================================
 const DEFAULT_NOTE =
   "The quotation above does not include the ad budget and service fee. Additionally, the prices in this quotation are tentative and may change depending on the agreed campaign action plan with minimum contract for 3 months.";
 
 // ============================================
-// PDF Component — Premium Agency Design
+// PDF Component
 // ============================================
 export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
   const total = invoice.amount + (invoice.tax || 0);
@@ -449,7 +466,6 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
     ? `PREPAID ${invoice.prepaid_months || ""} MO`.trim()
     : "MONTHLY";
 
-  // Bank details
   const bankName = invoice.bank_name || "Bank Mandiri";
   const bankAccName = invoice.bank_account_name || "PT. Hadona Digital Media";
   const bankAccNum = invoice.bank_account_number || "1370023988708";
@@ -471,8 +487,9 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
                 <Text style={styles.brandSub}>Digital Agency</Text>
               </View>
             </View>
+
             {/* Invoice Title */}
-            <View style={styles.heroInvoiceTitle}>
+            <View style={styles.heroRight}>
               <Text style={styles.invoiceLabel}>INVOICE</Text>
               <View style={styles.invoiceBadge}>
                 <Text style={styles.invoiceBadgeText}>{statusLabel}</Text>
@@ -481,7 +498,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
           </View>
 
           {/* Meta Grid */}
-          <View style={styles.heroMeta}>
+          <View style={styles.heroMetaRow}>
             <View style={styles.heroMetaCol}>
               <Text style={styles.heroMetaLabel}>Invoice Number</Text>
               <Text style={styles.heroMetaValue}>{invoice.invoice_number}</Text>
@@ -500,75 +517,74 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
         {/* ═══ BODY ═══ */}
         <View style={styles.body}>
           {/* Offering To */}
-          <View style={styles.offeringSection}>
-            <View style={styles.offeringCard}>
-              <Text style={styles.offeringLabel}>Offering to</Text>
-              <Text style={styles.clientName}>{clientName}</Text>
-              <Text style={styles.clientLocality}>Di Tempat</Text>
-            </View>
+          <View style={styles.offeringCard}>
+            <Text style={styles.offeringLabel}>Offering to</Text>
+            <Text style={styles.clientName}>{clientName}</Text>
+            <Text style={styles.clientLocality}>Di Tempat</Text>
           </View>
 
-          {/* Table */}
-          <View style={styles.table}>
-            {/* Header */}
-            <View style={styles.tableHead}>
-              <Text style={[styles.th, styles.colService]}>Service</Text>
-              <Text style={[styles.th, styles.colQty]}>Qty</Text>
-              <Text style={[styles.th, styles.colFee]}>Service Fee</Text>
-              <Text style={[styles.th, styles.colTotal]}>Total</Text>
-            </View>
+          {/* Table Header */}
+          <View style={styles.tableHead}>
+            <Text style={[styles.th, styles.colService]}>Service</Text>
+            <Text style={[styles.thQty, styles.colQty]}>Qty</Text>
+            <Text style={[styles.thFee, styles.colFee]}>Service Fee</Text>
+            <Text style={[styles.thTotal, styles.colTotal]}>Total</Text>
+          </View>
 
-            {/* Body */}
-            <View style={styles.tableBody}>
-              {invoice.items && invoice.items.length > 0 ? (
-                invoice.items.map((item, idx) => {
-                  const isLast = idx === invoice.items!.length - 1;
-                  return (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.tableRow,
-                        idx % 2 === 1 ? styles.rowAlt : {},
-                        isLast ? styles.tableRowLast : {},
-                      ]}
-                      wrap={false}
-                    >
-                      <View style={styles.colService}>
-                        <Text style={styles.serviceName}>{item.description}</Text>
-                        {idx === 0 && (
-                          <Text style={styles.servicePeriod}>{period}</Text>
-                        )}
-                      </View>
-                      <View style={styles.colQty}>
+          {/* Table Body */}
+          <View style={styles.tableBody}>
+            {invoice.items && invoice.items.length > 0 ? (
+              invoice.items.map((item, idx) => {
+                const isLast = idx === invoice.items!.length - 1;
+                return (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.tableRow,
+                      idx % 2 === 1 ? styles.rowAlt : {},
+                      isLast ? styles.tableRowLast : {},
+                    ]}
+                    wrap={false}
+                  >
+                    <View style={styles.colService}>
+                      <Text style={styles.serviceName}>{item.description}</Text>
+                      {idx === 0 && (
+                        <Text style={styles.servicePeriod}>{period}</Text>
+                      )}
+                    </View>
+                    <View style={styles.colQty}>
+                      <View style={styles.qtyBadgeWrapper}>
                         <Text style={styles.qtyBadge}>{item.qty}mo</Text>
                       </View>
-                      <Text style={[styles.rowText, styles.colFee]}>
-                        {formatIDR(item.unit_price)}
-                      </Text>
-                      <Text style={[styles.rowTextBold, styles.colTotal]}>
-                        {formatIDR(item.amount)}
-                      </Text>
                     </View>
-                  );
-                })
-              ) : (
-                <View style={styles.tableRow}>
-                  <View style={styles.colService}>
-                    <Text style={styles.serviceName}>Digital Advertising Management</Text>
-                    <Text style={styles.servicePeriod}>{period}</Text>
+                    <Text style={[styles.rowText, styles.colFee]}>
+                      {formatIDR(item.unit_price)}
+                    </Text>
+                    <Text style={[styles.rowTextBold, styles.colTotal]}>
+                      {formatIDR(item.amount)}
+                    </Text>
                   </View>
-                  <View style={styles.colQty}>
+                );
+              })
+            ) : (
+              <View style={styles.tableRow} wrap={false}>
+                <View style={styles.colService}>
+                  <Text style={styles.serviceName}>Digital Advertising Management</Text>
+                  <Text style={styles.servicePeriod}>{period}</Text>
+                </View>
+                <View style={styles.colQty}>
+                  <View style={styles.qtyBadgeWrapper}>
                     <Text style={styles.qtyBadge}>1mo</Text>
                   </View>
-                  <Text style={[styles.rowText, styles.colFee]}>
-                    {formatIDR(invoice.amount)}
-                  </Text>
-                  <Text style={[styles.rowTextBold, styles.colTotal]}>
-                    {formatIDR(invoice.amount)}
-                  </Text>
                 </View>
-              )}
-            </View>
+                <Text style={[styles.rowText, styles.colFee]}>
+                  {formatIDR(invoice.amount)}
+                </Text>
+                <Text style={[styles.rowTextBold, styles.colTotal]}>
+                  {formatIDR(invoice.amount)}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Total Bar */}
