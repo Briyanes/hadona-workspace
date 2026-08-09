@@ -78,11 +78,25 @@ export async function GET(
           | { service: string; fee: number }[]
           | null;
         if (snapshot && Array.isArray(snapshot) && snapshot.length > 0) {
+          // For prepaid invoices, qty = total_months_prepaid (Bug #6)
+          const rawContract2 = billingRow.contract;
+          let isPrepaid = false;
+          let prepaidMonths = 1;
+          if (Array.isArray(rawContract2) && rawContract2.length > 0) {
+            const c = rawContract2[0] as ContractInfo;
+            isPrepaid = c?.is_prepaid ?? false;
+            prepaidMonths = c?.total_months_prepaid ?? 1;
+          } else if (rawContract2 && typeof rawContract2 === "object") {
+            const c = rawContract2 as ContractInfo;
+            isPrepaid = c?.is_prepaid ?? false;
+            prepaidMonths = c?.total_months_prepaid ?? 1;
+          }
+          const qty = isPrepaid ? prepaidMonths : 1;
           items = snapshot.map((s) => ({
             description: s.service,
-            qty: 1,
+            qty,
             unit_price: s.fee,
-            amount: s.fee,
+            amount: s.fee * qty,
           }));
         }
 
