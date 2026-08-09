@@ -3,6 +3,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from "@react-pdf/renderer";
 
@@ -50,6 +51,16 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   heroBrand: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  heroLogo: {
+    width: 52,
+    height: 52,
+    borderRadius: 6,
+  },
+  heroBrandText: {
     flexDirection: "column",
   },
   brandName: {
@@ -451,8 +462,14 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
           <View style={styles.heroTop}>
             {/* Brand */}
             <View style={styles.heroBrand}>
-              <Text style={styles.brandName}>Hadona</Text>
-              <Text style={styles.brandSub}>Digital Agency</Text>
+              <Image
+                style={styles.heroLogo}
+                src="https://workspace.hadona.id/logo/logo-hadona.png"
+              />
+              <View style={styles.heroBrandText}>
+                <Text style={styles.brandName}>Hadona</Text>
+                <Text style={styles.brandSub}>Digital Agency</Text>
+              </View>
             </View>
             {/* Invoice Title */}
             <View style={styles.heroInvoiceTitle}>
