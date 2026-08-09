@@ -133,14 +133,21 @@ const styles = StyleSheet.create({
   },
 
   // ─── Offering To ───
+  offeringWrapper: {
+    flexDirection: "row",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 28,
+  },
+  offeringAccent: {
+    width: 5,
+    backgroundColor: HADONA_BLUE,
+  },
   offeringCard: {
+    flex: 1,
     backgroundColor: BG_SOFT,
-    borderLeftWidth: 4,
-    borderLeftColor: HADONA_BLUE,
     paddingHorizontal: 18,
     paddingVertical: 14,
-    borderRadius: 2,
-    marginBottom: 28,
   },
   offeringLabel: {
     fontSize: 7,
@@ -521,10 +528,13 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
         {/* ═══ BODY ═══ */}
         <View style={styles.body}>
           {/* Offering To */}
-          <View style={styles.offeringCard}>
-            <Text style={styles.offeringLabel}>Offering to</Text>
-            <Text style={styles.clientName}>{clientName}</Text>
-            <Text style={styles.clientLocality}>Di Tempat</Text>
+          <View style={styles.offeringWrapper}>
+            <View style={styles.offeringAccent} />
+            <View style={styles.offeringCard}>
+              <Text style={styles.offeringLabel}>Offering to</Text>
+              <Text style={styles.clientName}>{clientName}</Text>
+              <Text style={styles.clientLocality}>Di Tempat</Text>
+            </View>
           </View>
 
           {/* Table Header */}
