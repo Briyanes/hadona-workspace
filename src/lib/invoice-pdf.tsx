@@ -7,173 +7,284 @@ import {
 } from "@react-pdf/renderer";
 
 // ============================================
-// Styles - match Invoice for Yourbestdeal format
+// Brand Colors
+// ============================================
+const BRAND_BLUE = "#1B3A5C";      // Deep navy blue — header accent
+const BRAND_BLUE_LIGHT = "#2E5A87"; // Lighter blue — subtle accents
+const BRAND_GRAY = "#F4F6F8";       // Very light gray — table header bg
+const BRAND_GRAY_BORDER = "#E0E4E8"; // Border gray
+const TEXT_DARK = "#1a1a1a";
+const TEXT_MEDIUM = "#555555";
+const TEXT_LIGHT = "#999999";
+
+// ============================================
+// Styles — match "Invoice for Yourbestdeal" Canva format
 // ============================================
 const styles = StyleSheet.create({
+  // ─── Page ───
   page: {
     flexDirection: "column",
     backgroundColor: "#FFFFFF",
-    padding: 40,
+    paddingTop: 0,
+    paddingBottom: 40,
+    paddingLeft: 48,
+    paddingRight: 48,
     fontFamily: "Helvetica",
     fontSize: 10,
-    color: "#333333",
+    color: TEXT_DARK,
   },
+
+  // ─── Top Blue Accent Bar ───
+  topAccentBar: {
+    width: "100%",
+    height: 6,
+    backgroundColor: BRAND_BLUE,
+    marginBottom: 36,
+  },
+
+  // ─── Header ───
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  logoSection: { flexDirection: "column" },
+  logoSection: {
+    flexDirection: "column",
+  },
   logoText: {
-    fontSize: 22,
+    fontSize: 28,
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
-    marginBottom: 4,
+    color: BRAND_BLUE,
+    marginBottom: 2,
   },
   logoSubtitle: {
-    fontSize: 8,
-    color: "#666666",
-    letterSpacing: 1,
+    fontSize: 7,
+    color: TEXT_LIGHT,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+
+  // ─── Invoice Title & Meta ───
+  invoiceTitleBlock: {
+    flexDirection: "column",
+    alignItems: "flex-end",
   },
   invoiceTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
-    textAlign: "right",
+    color: BRAND_BLUE,
+    lineHeight: 1,
+    marginBottom: 8,
   },
   invoiceMeta: {
     flexDirection: "column",
     alignItems: "flex-end",
-    marginTop: 8,
   },
-  metaText: { fontSize: 9, color: "#666666", marginBottom: 2 },
-  metaBold: { fontSize: 9, fontFamily: "Helvetica-Bold", color: "#333333" },
+  metaRow: {
+    flexDirection: "row",
+    marginBottom: 3,
+  },
+  metaLabel: {
+    fontSize: 8,
+    color: TEXT_LIGHT,
+    marginRight: 4,
+  },
+  metaValue: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: TEXT_DARK,
+  },
+
+  // ─── Divider ───
   divider: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#1a1a1a",
-    marginBottom: 24,
+    borderBottomWidth: 1.5,
+    borderBottomColor: BRAND_BLUE,
+    marginBottom: 20,
   },
+
+  // ─── Bill To Section ───
   billToSection: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 28,
   },
-  billTo: { flexDirection: "column" },
+  billTo: {
+    flexDirection: "column",
+    flex: 1,
+  },
   billToLabel: {
-    fontSize: 8,
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: "#999999",
+    color: TEXT_LIGHT,
     marginBottom: 6,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   billToName: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
-    marginBottom: 3,
+    color: TEXT_DARK,
+    marginBottom: 4,
   },
-  billToDetail: { fontSize: 9, color: "#666666", marginBottom: 1 },
-  infoSection: { flexDirection: "column", alignItems: "flex-end" },
-  table: { marginTop: 20 },
+  billToDetail: {
+    fontSize: 9,
+    color: TEXT_MEDIUM,
+    marginBottom: 2,
+  },
+  infoSection: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
+
+  // ─── Table ───
+  table: {
+    marginBottom: 20,
+  },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f5f5f5",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    backgroundColor: BRAND_BLUE,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
   },
-  colDesc: { flex: 2 },
+  colDesc: { flex: 3 },
   colQty: { flex: 1, textAlign: "center" as const },
   colPrice: { flex: 2, textAlign: "right" as const },
   colTotal: { flex: 2, textAlign: "right" as const },
   tableHeaderText: {
     fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: "#666",
+    color: "#FFFFFF",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   tableRow: {
     flexDirection: "row",
     paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#eee",
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: BRAND_GRAY_BORDER,
     alignItems: "flex-start",
   },
-  rowText: { fontSize: 10, color: "#333" },
+  tableRowAlt: {
+    backgroundColor: "#FAFBFC",
+  },
+  rowText: {
+    fontSize: 10,
+    color: TEXT_DARK,
+  },
   rowTextBold: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
+    color: TEXT_DARK,
   },
-  rowSubText: { fontSize: 8, color: "#999", marginTop: 2 },
+  rowSubText: {
+    fontSize: 8,
+    color: TEXT_LIGHT,
+    marginTop: 3,
+  },
+
+  // ─── Summary ───
   summary: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 20,
+    marginTop: 16,
+    marginBottom: 20,
   },
-  summaryBox: { width: "50%" },
+  summaryBox: {
+    width: "45%",
+  },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
-  summaryLabel: { fontSize: 10, color: "#666" },
-  summaryValue: { fontSize: 10, color: "#333" },
+  summaryLabel: {
+    fontSize: 10,
+    color: TEXT_MEDIUM,
+  },
+  summaryValue: {
+    fontSize: 10,
+    color: TEXT_DARK,
+  },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#1a1a1a",
-    marginTop: 6,
-    marginBottom: 6,
+    paddingVertical: 12,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: BRAND_BLUE,
+    marginTop: 8,
+    marginBottom: 4,
   },
   totalLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
+    color: BRAND_BLUE,
   },
   totalValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: "Helvetica-Bold",
-    color: "#1a1a1a",
+    color: BRAND_BLUE,
   },
+
+  // ─── Payment Info Box ───
+  paymentInfo: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#F0F4F8",
+    borderLeftWidth: 4,
+    borderLeftColor: BRAND_BLUE,
+    borderRadius: 2,
+  },
+  paymentTitle: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND_BLUE,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  paymentDetail: {
+    fontSize: 9,
+    color: TEXT_MEDIUM,
+    marginBottom: 3,
+  },
+  paymentDetailBold: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: TEXT_DARK,
+    marginBottom: 3,
+  },
+
+  // ─── Footer ───
   footer: {
     position: "absolute",
     bottom: 30,
-    left: 40,
-    right: 40,
+    left: 48,
+    right: 48,
+    flexDirection: "column",
   },
   footerDivider: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#ddd",
+    borderBottomWidth: 1,
+    borderBottomColor: BRAND_GRAY_BORDER,
     marginBottom: 10,
   },
   footerText: {
     fontSize: 8,
-    color: "#999",
+    color: TEXT_LIGHT,
     textAlign: "center",
-    lineHeight: 1.5,
+    lineHeight: 1.6,
   },
-  paymentInfo: {
-    marginTop: 24,
-    padding: 12,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 4,
-  },
-  paymentTitle: {
-    fontSize: 9,
+  footerBrand: {
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: "#333",
-    marginBottom: 6,
+    color: BRAND_BLUE,
+    textAlign: "center",
+    marginTop: 2,
   },
-  paymentDetail: { fontSize: 9, color: "#666", marginBottom: 2 },
 });
 
 // ============================================
@@ -214,7 +325,7 @@ export interface InvoicePDFData {
 }
 
 // ============================================
-// Helper
+// Helper Functions
 // ============================================
 function formatIDR(n: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -252,47 +363,56 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
   const bankAccNum = invoice.bank_account_number || "1234567890";
 
   // Prepaid label (Bug #6 fix)
-  const prepaidLabel = invoice.is_prepaid && invoice.prepaid_months
-    ? ` (Prepaid ${invoice.prepaid_months} bulan)`
-    : "";
+  const prepaidLabel =
+    invoice.is_prepaid && invoice.prepaid_months
+      ? ` (Prepaid ${invoice.prepaid_months} bulan)`
+      : "";
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* ─── Top Accent Bar ─── */}
+        <View style={styles.topAccentBar} />
+
         {/* ─── Header ─── */}
         <View style={styles.header}>
+          {/* Logo / Brand */}
           <View style={styles.logoSection}>
             <Text style={styles.logoText}>hadona.</Text>
             <Text style={styles.logoSubtitle}>DIGITAL ADVERTISING AGENCY</Text>
           </View>
-          <View>
+
+          {/* Invoice Title & Meta */}
+          <View style={styles.invoiceTitleBlock}>
             <Text style={styles.invoiceTitle}>INVOICE</Text>
             <View style={styles.invoiceMeta}>
-              <Text style={styles.metaText}>
-                No: <Text style={styles.metaBold}>{invoice.invoice_number}</Text>
-              </Text>
-              <Text style={styles.metaText}>
-                Date:{" "}
-                <Text style={styles.metaBold}>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>No.</Text>
+                <Text style={styles.metaValue}>{invoice.invoice_number}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Date</Text>
+                <Text style={styles.metaValue}>
                   {formatDate(invoice.issue_date)}
                 </Text>
-              </Text>
-              <Text style={styles.metaText}>
-                Due:{" "}
-                <Text style={styles.metaBold}>
+              </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Due</Text>
+                <Text style={styles.metaValue}>
                   {formatDate(invoice.due_date)}
                 </Text>
-              </Text>
+              </View>
             </View>
           </View>
         </View>
 
         <View style={styles.divider} />
 
-        {/* ─── Bill To ─── */}
+        {/* ─── Bill To Section ─── */}
         <View style={styles.billToSection}>
+          {/* Offering To */}
           <View style={styles.billTo}>
-            <Text style={styles.billToLabel}>OFFERING TO:</Text>
+            <Text style={styles.billToLabel}>OFFERING TO</Text>
             <Text style={styles.billToName}>{clientName}</Text>
             {invoice.client?.email && (
               <Text style={styles.billToDetail}>{invoice.client.email}</Text>
@@ -304,6 +424,8 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
               <Text style={styles.billToDetail}>{invoice.client.address}</Text>
             )}
           </View>
+
+          {/* From */}
           <View style={styles.infoSection}>
             <Text style={styles.billToLabel}>FROM</Text>
             <Text style={styles.billToName}>hadona.</Text>
@@ -313,8 +435,9 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
           </View>
         </View>
 
-        {/* ─── Table ─── */}
+        {/* ─── Items Table ─── */}
         <View style={styles.table}>
+          {/* Table Header */}
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderText, styles.colDesc]}>
               DESCRIPTION
@@ -328,10 +451,17 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             </Text>
           </View>
 
-          {/* Render line items if available, otherwise fallback to single row */}
+          {/* Table Rows */}
           {invoice.items && invoice.items.length > 0 ? (
             invoice.items.map((item, idx) => (
-              <View key={idx} style={styles.tableRow} wrap={false}>
+              <View
+                key={idx}
+                style={[
+                  styles.tableRow,
+                  idx % 2 === 1 ? styles.tableRowAlt : {},
+                ]}
+                wrap={false}
+              >
                 <View style={styles.colDesc}>
                   <Text style={styles.rowTextBold}>{item.description}</Text>
                   {idx === 0 && <Text style={styles.rowSubText}>{period}</Text>}
@@ -373,7 +503,9 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             </View>
             {tax > 0 && (
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>PPN ({taxRateDisplay}%)</Text>
+                <Text style={styles.summaryLabel}>
+                  PPN ({taxRateDisplay}%)
+                </Text>
                 <Text style={styles.summaryValue}>{formatIDR(tax)}</Text>
               </View>
             )}
@@ -386,13 +518,13 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
 
         {/* ─── Payment Info ─── */}
         <View style={styles.paymentInfo}>
-          <Text style={styles.paymentTitle}>Payment Instructions:</Text>
-          <Text style={styles.paymentDetail}>{bankAccName}</Text>
+          <Text style={styles.paymentTitle}>Payment Instructions</Text>
+          <Text style={styles.paymentDetailBold}>{bankAccName}</Text>
           <Text style={styles.paymentDetail}>
-            Bank {bankName} - {bankAccNum}
+            Bank {bankName} — {bankAccNum}
           </Text>
-          <Text style={styles.paymentDetail}>
-            Please complete payment by {formatDate(invoice.due_date)}
+          <Text style={[styles.paymentDetail, { marginTop: 6 }]}>
+            Please complete payment by {formatDate(invoice.due_date)}.
           </Text>
           {invoice.notes && (
             <Text
@@ -410,7 +542,9 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
         <View style={styles.footer}>
           <View style={styles.footerDivider} />
           <Text style={styles.footerText}>
-            Terima kasih atas kepercayaan Anda kepada hadona.{"\n"}
+            Terima kasih atas kepercayaan Anda kepada hadona.
+          </Text>
+          <Text style={styles.footerBrand}>
             hadona.id — Digital Advertising Agency
           </Text>
         </View>
