@@ -2,10 +2,11 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,15 +16,60 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus email field on mount
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
+
+  const validateEmail = (val: string) => {
+    if (!val) return "Email wajib diisi";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Format email tidak valid";
+    return undefined;
+  };
+
+  const validatePassword = (val: string) => {
+    if (!val) return "Password wajib diisi";
+    if (val.length < 6) return "Password minimal 6 karakter";
+    return undefined;
+  };
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (errors.email) setErrors((p) => ({ ...p, email: validateEmail(val) }));
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (errors.password) setErrors((p) => ({ ...p, password: validatePassword(val) }));
+  };
+
+  const isFormValid = () => !validateEmail(email) && !validatePassword(password);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate all fields
+    const emailErr = validateEmail(email);
+    const passwordErr = validatePassword(password);
+    setErrors({ email: emailErr, password: passwordErr });
+    if (emailErr || passwordErr) return;
+
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      toast.error("Login gagal: " + error.message);
+      // User-friendly error messages
+      let msg = error.message;
+      if (msg.includes("Invalid login credentials")) msg = "Email atau password salah";
+      else if (msg.includes("Email not confirmed")) msg = "Email belum dikonfirmasi. Hubungi admin.";
+      else if (msg.includes("rate limit") || msg.includes("too many")) msg = "Terlalu banyak percobaan. Coba lagi nanti.";
+
+      toast.error("Login gagal: " + msg);
       setLoading(false);
       return;
     }
@@ -81,29 +127,74 @@ export default function LoginPage() {
         <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-black/20">
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@hadona.id"
-                className="input"
-              />
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-900">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  ref={emailRef}
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={() => setErrors((p) => ({ ...p, email: validateEmail(email) }))}
+                  placeholder="nama@hadona.id"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
+                  className={`input pl-9 ${errors.email ? "border-danger focus:border-danger focus:ring-danger/20" : ""}`}
+                />
+              </div>
+              {errors.email && (
+                <p id="email-error" className="mt-1 text-xs text-danger" role="alert">
+                  {errors.email}
+                </p>
+              )}
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-900">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="input"
-              />
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-900">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  onBlur={() => setErrors((p) => ({ ...p, password: validatePassword(password) }))}
+                  placeholder="••••••••"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "pw-error" : undefined}
+                  className={`input pl-9 pr-9 ${errors.password ? "border-danger focus:border-danger focus:ring-danger/20" : ""}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p id="pw-error" className="mt-1 text-xs text-danger" role="alert">
+                  {errors.password}
+                </p>
+              )}
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "Loading..." : "Masuk"}
+            <button type="submit" disabled={loading || !isFormValid()} className="btn-primary w-full">
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Memproses...
+                </span>
+              ) : (
+                "Masuk"
+              )}
             </button>
           </form>
 
