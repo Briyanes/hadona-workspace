@@ -689,6 +689,81 @@ export interface Database {
           { foreignKeyName: "contract_billings_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] }
         ];
       };
+      chat_channels: {
+        Row: {
+          id: string;
+          name: string;
+          type: string;
+          division: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          type?: string;
+          division?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          name?: string;
+          type?: string;
+          division?: string | null;
+          created_by?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "chat_channels_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          channel_id: string;
+          user_id: string;
+          content: string;
+          message_type: string;
+          metadata: Json;
+          reply_to: string | null;
+          created_at: string;
+        };
+        Insert: {
+          channel_id: string;
+          user_id: string;
+          content: string;
+          message_type?: string;
+          metadata?: Json;
+          reply_to?: string | null;
+        };
+        Update: {
+          content?: string;
+          message_type?: string;
+          metadata?: Json;
+          reply_to?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "chat_messages_channel_id_fkey"; columns: ["channel_id"]; referencedRelation: "chat_channels"; referencedColumns: ["id"] },
+          { foreignKeyName: "chat_messages_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "chat_messages_reply_to_fkey"; columns: ["reply_to"]; referencedRelation: "chat_messages"; referencedColumns: ["id"] }
+        ];
+      };
+      chat_read_receipts: {
+        Row: {
+          user_id: string;
+          channel_id: string;
+          last_read_at: string;
+        };
+        Insert: {
+          user_id: string;
+          channel_id: string;
+          last_read_at?: string;
+        };
+        Update: {
+          last_read_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "chat_read_receipts_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "chat_read_receipts_channel_id_fkey"; columns: ["channel_id"]; referencedRelation: "chat_channels"; referencedColumns: ["id"] }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

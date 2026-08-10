@@ -18,6 +18,7 @@ import {
   FileText,
   Settings,
   Lock,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -46,6 +47,7 @@ const navItems: NavItem[] = [
   { label: "Strategy (OKR)", href: "/strategy", icon: Target },
   { label: "Creative Requests", href: "/creative", icon: Palette },
   { label: "Content Plans", href: "/content-plans", icon: Calendar },
+  { label: "Team Chat", href: "/chat", icon: MessageSquare },
   { label: "Calendar", href: "/calendar", icon: CalendarDays },
   { label: "Timesheet", href: "/timesheet", icon: Clock },
   { label: "Invoices", href: "/invoices", icon: FileText },
