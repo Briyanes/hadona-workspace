@@ -15,9 +15,9 @@ const BASE_URL = 'https://workspace.hadona.id';
 const LOGIN_URL = `${BASE_URL}/login`;
 const CALENDAR_URL = `${BASE_URL}/calendar`;
 
-// ⚠️ Set your test credentials here (or via env)
+// Credentials provided by user
 const TEST_EMAIL = process.env.TEST_EMAIL || 'admin@hadona.id';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || '@Yogyakarta2026';
 
 const consoleErrors = [];
 const networkErrors = [];
