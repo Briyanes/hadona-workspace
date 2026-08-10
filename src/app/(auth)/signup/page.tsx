@@ -2,10 +2,11 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
+import { Eye, EyeOff, Mail, Lock, User, CheckCircle2, XCircle } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,39 +17,109 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [errors, setErrors] = useState<{ [k: string]: string | undefined }>({});
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameRef.current?.focus();
+  }, []);
+
+  // ─── Validators ───
+  const validateName = (v: string) => {
+    if (!v.trim()) return "Nama wajib diisi";
+    if (v.trim().length < 2) return "Nama minimal 2 karakter";
+    return undefined;
+  };
+  const validateEmail = (v: string) => {
+    if (!v) return "Email wajib diisi";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Format email tidak valid";
+    return undefined;
+  };
+  const validatePassword = (v: string) => {
+    if (!v) return "Password wajib diisi";
+    if (v.length < 6) return "Password minimal 6 karakter";
+    return undefined;
+  };
+  const validateConfirm = (v: string) => {
+    if (!v) return "Konfirmasi password wajib diisi";
+    if (v !== password) return "Password tidak cocok";
+    return undefined;
+  };
+
+  // ─── Password Strength ───
+  const getPasswordStrength = (pw: string): { score: number; label: string; color: string } => {
+    let score = 0;
+    if (pw.length >= 6) score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+    if (/\d/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const levels = [
+      { label: "Terlalu pendek", color: "bg-muted" },
+      { label: "Lemah", color: "bg-danger" },
+      { label: "Cukup", color: "bg-warning" },
+      { label: "Baik", color: "bg-info" },
+      { label: "Kuat", color: "bg-success" },
+      { label: "Sangat Kuat", color: "bg-success" },
+    ];
+    return { score, ...levels[score] };
+  };
+
+  const strength = getPasswordStrength(password);
+
+  // ─── Change handlers with live validation ───
+  const handleChange = (field: string, val: string, validator: (v: string) => string | undefined) => {
+    const setters: Record<string, (v: string) => void> = {
+      fullName: setFullName,
+      email: setEmail,
+      password: setPassword,
+      confirmPassword: setConfirmPassword,
+    };
+    setters[field]?.(val);
+    if (errors[field]) setErrors((p) => ({ ...p, [field]: validator(val) }));
+    // Re-validate confirm when password changes
+    if (field === "password" && confirmPassword) {
+      setErrors((p) => ({ ...p, confirmPassword: validateConfirm(confirmPassword) }));
+    }
+  };
+
+  const isFormValid = () =>
+    !validateName(fullName) &&
+    !validateEmail(email) &&
+    !validatePassword(password) &&
+    !validateConfirm(confirmPassword);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      toast.error("Password dan konfirmasi password tidak cocok");
-      return;
-    }
-
-    if (password.length < 6) {
-      toast.error("Password minimal 6 karakter");
-      return;
-    }
+    const newErrors = {
+      fullName: validateName(fullName),
+      email: validateEmail(email),
+      password: validatePassword(password),
+      confirmPassword: validateConfirm(confirmPassword),
+    };
+    setErrors(newErrors);
+    if (Object.values(newErrors).some(Boolean)) return;
 
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
+      options: { data: { full_name: fullName } },
     });
 
     if (error) {
-      toast.error("Pendaftaran gagal: " + error.message);
+      let msg = error.message;
+      if (msg.includes("already registered")) msg = "Email sudah terdaftar. Silakan login.";
+      else if (msg.includes("weak")) msg = "Password terlalu lemah. Gunakan kombinasi yang lebih kuat.";
+      toast.error("Pendaftaran gagal: " + msg);
       setLoading(false);
       return;
     }
 
-    // Jika email confirmation diaktifkan di Supabase
     if (data.user && !data.session) {
       toast.success("Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.");
       setLoading(false);
@@ -64,106 +135,178 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     setGoogleLoading(true);
     const redirectTo = `${window.location.origin}/auth/callback?redirect=/`;
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-      },
-    });
-
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     if (error) {
       toast.error("Google signup gagal: " + error.message);
       setGoogleLoading(false);
     }
   };
 
+  // ─── Reusable input class with error state ───
+  const inputClass = (field: string) =>
+    `input pl-9 pr-9 ${errors[field] ? "border-danger focus:border-danger focus:ring-danger/20" : ""}`;
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-primary to-primary-dark px-4 py-8">
-      {/* Decorative shapes */}
       <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-hadona-yellow/10 blur-3xl" />
       <div className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-light/5 blur-3xl" />
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Logo & Title */}
         <div className="mb-6 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
-            <Image
-              src="/logo/logo-hadona.png"
-              alt="Hadona Digital Media"
-              width={48}
-              height={48}
-              className="h-full w-full object-contain"
-              priority
-            />
+            <Image src="/logo/logo-hadona.png" alt="Hadona Digital Media" width={48} height={48} className="h-full w-full object-contain" priority />
           </div>
           <h1 className="text-2xl font-bold text-white">Buat Akun Baru</h1>
           <p className="mt-1 text-sm text-white/70">Hadona Digital Media Team</p>
         </div>
 
-        {/* Signup Card */}
         <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-black/20">
           <form onSubmit={handleSignup} className="space-y-4">
+            {/* Full Name */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-900">Nama Lengkap</label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Doe"
-                className="input"
-              />
+              <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-gray-900">Nama Lengkap</label>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                <input
+                  id="fullName"
+                  type="text"
+                  required
+                  ref={nameRef}
+                  value={fullName}
+                  onChange={(e) => handleChange("fullName", e.target.value, validateName)}
+                  onBlur={() => setErrors((p) => ({ ...p, fullName: validateName(fullName) }))}
+                  placeholder="John Doe"
+                  aria-invalid={!!errors.fullName}
+                  aria-describedby={errors.fullName ? "name-error" : undefined}
+                  className={inputClass("fullName")}
+                />
+              </div>
+              {errors.fullName && <p id="name-error" className="mt-1 text-xs text-danger" role="alert">{errors.fullName}</p>}
             </div>
+
+            {/* Email */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@hadona.id"
-                className="input"
-              />
+              <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                <input
+                  id="signup-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => handleChange("email", e.target.value, validateEmail)}
+                  onBlur={() => setErrors((p) => ({ ...p, email: validateEmail(email) }))}
+                  placeholder="nama@hadona.id"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "signup-email-error" : undefined}
+                  className={inputClass("email")}
+                />
+              </div>
+              {errors.email && <p id="signup-email-error" className="mt-1 text-xs text-danger" role="alert">{errors.email}</p>}
             </div>
+
+            {/* Password */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-900">Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimal 6 karakter"
-                className="input"
-              />
+              <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-gray-900">Password</label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                <input
+                  id="signup-password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => handleChange("password", e.target.value, validatePassword)}
+                  onBlur={() => setErrors((p) => ({ ...p, password: validatePassword(password) }))}
+                  placeholder="Minimal 6 karakter"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? "signup-pw-error" : undefined}
+                  className={inputClass("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {/* Password strength bar */}
+              {password && (
+                <div className="mt-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${i <= strength.score ? strength.color : "bg-border"}`}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-muted">Kekuatan: {strength.label}</p>
+                </div>
+              )}
+              {errors.password && <p id="signup-pw-error" className="mt-1 text-xs text-danger" role="alert">{errors.password}</p>}
             </div>
+
+            {/* Confirm Password */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-900">Konfirmasi Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="input"
-              />
+              <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-gray-900">Konfirmasi Password</label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
+                <input
+                  id="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => handleChange("confirmPassword", e.target.value, validateConfirm)}
+                  onBlur={() => setErrors((p) => ({ ...p, confirmPassword: validateConfirm(confirmPassword) }))}
+                  placeholder="••••••••"
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? "confirm-error" : confirmPassword && !errors.confirmPassword ? "confirm-ok" : undefined}
+                  className={inputClass("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+                  aria-label={showConfirm ? "Sembunyikan password" : "Tampilkan password"}
+                  tabIndex={-1}
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+                {/* Match indicator */}
+                {confirmPassword && !errors.confirmPassword && (
+                  <CheckCircle2 className="absolute right-9 top-1/2 -translate-y-1/2 text-success" size={16} aria-hidden />
+                )}
+                {confirmPassword && errors.confirmPassword && (
+                  <XCircle className="absolute right-9 top-1/2 -translate-y-1/2 text-danger" size={16} aria-hidden />
+                )}
+              </div>
+              {errors.confirmPassword ? (
+                <p id="confirm-error" className="mt-1 text-xs text-danger" role="alert">{errors.confirmPassword}</p>
+              ) : confirmPassword ? (
+                <p id="confirm-ok" className="mt-1 text-xs text-success">Password cocok</p>
+              ) : null}
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "Loading..." : "Daftar"}
+
+            <button type="submit" disabled={loading || !isFormValid()} className="btn-primary w-full">
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Memproses...
+                </span>
+              ) : "Daftar"}
             </button>
           </form>
 
-          {/* Divider */}
           <div className="my-5 flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
             <span className="text-xs text-muted">atau</span>
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          {/* Google Signup Button */}
           <button
             onClick={handleGoogleSignup}
             disabled={googleLoading}
@@ -186,15 +329,12 @@ export default function SignupPage() {
 
           <p className="mt-5 text-center text-sm text-muted">
             Sudah punya akun?{" "}
-            <Link href="/login" className="text-primary font-medium hover:underline">
-              Masuk di sini
-            </Link>
+            <Link href="/login" className="text-primary font-medium hover:underline">Masuk di sini</Link>
           </p>
         </div>
 
         <p className="mt-6 text-center text-xs text-white/50">
-          Dengan mendaftar, Anda akan mendapat role default sebagai "Advertiser".
-          Manager dapat mengubah role Anda setelah login.
+          Dengan mendaftar, Anda akan mendapat role default sebagai "Advertiser". Manager dapat mengubah role Anda setelah login.
         </p>
       </div>
     </div>

@@ -329,6 +329,56 @@
   appearance: textfield;
 }
 
+@layer base {
+  /* === ACCESSIBILITY: Focus-visible === */
+  /* Global focus-visible ring for keyboard navigation only (not mouse) */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white;
+  }
+  .dark *:focus-visible {
+    ring-color: theme("colors.primary.DEFAULT");
+    --tw-ring-offset-color: #0f172a;
+  }
+
+  /* === ACCESSIBILITY: Skip-to-content link === */
+  .skip-link {
+    @apply absolute left-2 top-2 z-[100] rounded-md bg-primary px-4 py-2 text-sm font-medium text-white opacity-0 transition-opacity;
+    transform: translateY(-150%);
+  }
+  .skip-link:focus {
+    @apply opacity-100;
+    transform: translateY(0);
+  }
+  .dark .skip-link {
+    @apply text-[#0f172a];
+  }
+
+  /* === ACCESSIBILITY: Screen reader only text === */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* === ACCESSIBILITY: Reduced motion === */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
 @layer utilities {
   /* === RESPONSIVE TABLE WRAPPER === */
   /* Wrap any table/grid to prevent horizontal overflow on mobile */
