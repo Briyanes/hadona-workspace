@@ -68,8 +68,8 @@ export function Modal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
+      <div
+        className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-4 sm:p-6"
       onClick={(e) => {
         // Close on backdrop click
         if (e.target === e.currentTarget) onClose();
@@ -91,7 +91,7 @@ export function Modal({
           <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
             <div>
               {title && (
-                <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+                <h2 className="text-lg font-bold text-foreground">{title}</h2>
               )}
               {subtitle && (
                 <p className="mt-0.5 text-xs text-muted">{subtitle}</p>
@@ -99,7 +99,7 @@ export function Modal({
             </div>
             <button
               onClick={onClose}
-              className="rounded p-1 text-muted transition-colors hover:bg-background hover:text-gray-900"
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground"
               aria-label="Close modal"
             >
               <X size={18} />

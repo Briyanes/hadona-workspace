@@ -81,3 +81,20 @@ export function getClientIP(request: Request): string {
 export function checkPublicReportRateLimit(ip: string) {
   return checkRateLimit(`public-report:${ip}`, 60, 5 * 60 * 1000);
 }
+
+/**
+ * Rate limit untuk auth endpoints (login/signup)
+ * - 5 attempts per 15 menit per IP (mencegah brute-force)
+ * - Setelah 5x gagal, IP diblok selama 15 menit
+ */
+export function checkAuthRateLimit(ip: string) {
+  return checkRateLimit(`auth:${ip}`, 5, 15 * 60 * 1000);
+}
+
+/**
+ * Rate limit untuk API mutations (POST/PUT/DELETE)
+ * - 30 request per menit per IP (mencegah spam/abuse)
+ */
+export function checkMutationRateLimit(ip: string) {
+  return checkRateLimit(`mutation:${ip}`, 30, 60 * 1000);
+}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { digestEmailTemplate, sendEmail } from "@/lib/email-templates";
+import { verifyCronSecret } from "@/lib/cron-auth";
 
 /**
  * POST /api/cron/digest
@@ -15,12 +16,9 @@ import { digestEmailTemplate, sendEmail } from "@/lib/email-templates";
 
 export async function POST(request: NextRequest) {
   try {
-    // ── Auth check ──
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // ── Strict auth: fail-closed ──
+    const authError = verifyCronSecret(request);
+    if (authError) return authError;
 
     const type = new URL(request.url).searchParams.get("type") || "daily";
     const period: "daily" | "weekly" = type === "weekly" ? "weekly" : "daily";

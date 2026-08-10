@@ -22,6 +22,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncReportsFromSheet, getDefaultSheetUrl } from "@/lib/report-sync";
 import { createClient } from "@/lib/supabase/server";
+import { verifyCronSecret } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // 60 detik (Vercel Pro) — sync ~285 rows butuh ~10s
@@ -42,11 +43,9 @@ async function handleCronSync(req: NextRequest) {
   const startedAt = Date.now();
   console.log("[cron/sync] Started at", new Date().toISOString());
 
-  // ── 1. Auth check ────────────────────────────────────────────────────────
-  const authOk = checkAuth(req);
-  if (!authOk) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // ── 1. Auth check (strict, fail-closed) ──────────────────────────────────
+  const authError = verifyCronSecret(req);
+  if (authError) return authError;
 
   try {
     // ── 2. Run sync ────────────────────────────────────────────────────────
@@ -116,31 +115,3 @@ async function handleCronSync(req: NextRequest) {
   }
 }
 
-// ============================================================================
-// AUTH CHECK
-// ============================================================================
-
-function checkAuth(req: NextRequest): boolean {
-  // ── Vercel Cron ──────────────────────────────────────────────────────────
-  // Vercel mengirim header `Authorization: Bearer <CRON_SECRET>` (jika di-set)
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader === `Bearer ${cronSecret}`) return true;
-  }
-
-  // ── Query string key (untuk manual trigger via browser) ──────────────────
-  const adminSecret = process.env.ADMIN_SECRET || process.env.CRON_SECRET;
-  if (adminSecret) {
-    const url = new URL(req.url);
-    const key = url.searchParams.get("key");
-    if (key === adminSecret) return true;
-  }
-
-  // ── Dev mode: allow kalau tidak ada secret yang di-set ──────────────────
-  if (process.env.NODE_ENV === "development" && !cronSecret && !adminSecret) {
-    return true;
-  }
-
-  return false;
-}

@@ -25,6 +25,14 @@ const ALLOWED_SYNC_ROLES = ["super_admin", "project_manager", "creative_director
 
 export async function GET() {
   try {
+    // 🔒 Security: Disable in production
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "This endpoint is disabled in production" },
+        { status: 404 }
+      );
+    }
+
     const supabase = createClient();
 
     // 1. Cek session

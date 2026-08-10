@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { verifyCronSecret } from "@/lib/cron-auth";
 
 /**
  * GET /api/cron/auto-billing
@@ -17,13 +18,9 @@ import { createClient } from "@supabase/supabase-js";
  */
 
 export async function GET(request: NextRequest) {
-  // Verify authorization
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // 🔒 Strict auth: fail-closed if CRON_SECRET not set or mismatched
+  const authError = verifyCronSecret(request);
+  if (authError) return authError;
 
   // Use service role to bypass RLS (cron has no user session)
   // Note: No Database generic — RPC functions are not typed in Database type

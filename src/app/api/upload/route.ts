@@ -15,6 +15,65 @@ const ALLOWED_FOLDERS = [
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (presigned URL limit)
 
+// 🔒 MIME type whitelist — blocks dangerous file types
+const ALLOWED_MIME_TYPES: Record<string, string[]> = {
+  "client-attachments": [
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "application/pdf", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/csv", "text/plain", "application/zip",
+  ],
+  "weekly-report-pdfs": ["application/pdf"],
+  "creative-assets": [
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "video/mp4", "video/quicktime",
+    "application/zip", "application/x-zip-compressed",
+  ],
+  "avatar-assets": ["image/jpeg", "image/png", "image/webp"],
+  "client-logos": ["image/jpeg", "image/png", "image/svg+xml", "image/webp"],
+  "task-attachments": [
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "application/pdf",
+    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/csv", "text/plain", "application/zip",
+  ],
+  "uploads": [
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "application/pdf", "text/csv", "text/plain",
+  ],
+};
+
+// 🔒 Dangerous extensions that should NEVER be uploaded
+const BLOCKED_EXTENSIONS = [
+  ".exe", ".bat", ".cmd", ".sh", ".php", ".jsp", ".asp", ".aspx",
+  ".js", ".mjs", ".html", ".htm", ".svg", // SVG can carry XSS via script tags
+  ".htaccess", ".env", ".sql",
+];
+
+// 🔒 Sanitize filename: remove path traversal and dangerous characters
+function sanitizeFilename(filename: string): string {
+  // Remove directory traversal attempts
+  const basename = filename.replace(/^.*[\\/]/, "");
+  // Remove dangerous characters
+  const cleaned = basename.replace(/[&;`$|<>{}()\[\]!#%^*~]/g, "_");
+  // Collapse multiple underscores/dots
+  return cleaned.replace(/_{2,}/g, "_").replace(/\.{2,}/g, ".").slice(0, 200);
+}
+
+// 🔒 Validate file type
+function isFileTypeAllowed(folder: string, mimeType: string, filename: string): boolean {
+  // First: check blocked extensions (always block, regardless of folder)
+  const ext = filename.toLowerCase().match(/\.[^.]+$/)?.[0] || "";
+  if (BLOCKED_EXTENSIONS.includes(ext)) return false;
+
+  // Check MIME type against folder whitelist
+  const allowed = ALLOWED_MIME_TYPES[folder] || ALLOWED_MIME_TYPES["uploads"];
+  if (!allowed.includes(mimeType)) return false;
+
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limit: 20 uploads per minute per IP
@@ -58,11 +117,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // 🔒 Validate file type
+      const safeFolder = folder;
+      const safeName = sanitizeFilename(file.name);
+      const safeMime = file.type || "application/octet-stream";
+      if (!isFileTypeAllowed(safeFolder, safeMime, file.name)) {
+        return NextResponse.json(
+          { error: `File type not allowed for folder: ${folder}. File: ${file.name}` },
+          { status: 415 }
+        );
+      }
+
       const buffer = Buffer.from(await file.arrayBuffer());
       const { publicUrl, key } = await uploadBuffer(
         buffer,
-        file.name,
-        file.type || "application/octet-stream",
+        safeName,
+        safeMime,
         folder
       );
 
@@ -99,8 +169,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 🔒 Validate file type
+    if (!isFileTypeAllowed(folder, fileType, fileName)) {
+      return NextResponse.json(
+        { error: `File type not allowed for folder: ${folder}. File: ${fileName}` },
+        { status: 415 }
+      );
+    }
+
+    const safeFileName = sanitizeFilename(fileName);
     const { uploadUrl, publicUrl, key } = await getUploadUrl(
-      fileName,
+      safeFileName,
       fileType,
       folder
     );

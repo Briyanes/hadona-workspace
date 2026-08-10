@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -98,10 +98,31 @@ const entityIcons: Record<string, { icon: typeof Activity; color: string }> = {
 };
 
 export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="card skeleton h-32" />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const abortRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Show toast if redirected due to access denied
   useEffect(() => {
@@ -122,10 +143,11 @@ export default function DashboardPage() {
     async function load() {
       try {
         const controller = new AbortController();
+        abortRef.current = controller;
         const timeout = setTimeout(() => controller.abort(), 10000);
+        timeoutRef.current = timeout;
 
         const res = await fetch("/api/dashboard", { signal: controller.signal });
-        clearTimeout(timeout);
 
         if (!res.ok) throw new Error("Failed to load dashboard");
 
@@ -145,6 +167,11 @@ export default function DashboardPage() {
 
     return () => {
       cancelled = true;
+      // ✅ FIX: Properly cleanup timeout and abort controller on unmount
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (abortRef.current && !abortRef.current.signal.aborted) {
+        abortRef.current.abort();
+      }
     };
   }, []);
 
@@ -238,7 +265,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (

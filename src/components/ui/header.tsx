@@ -3,11 +3,12 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { LogOut, Search, PanelLeftClose, PanelLeftOpen, Menu, Settings, User, ChevronDown, Sun, Moon } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen, Menu, Settings, User, ChevronDown, Sun, Moon } from "lucide-react";
 import type { Profile } from "@/types";
 import { useSidebar } from "@/components/ui/sidebar-context";
 import { useTheme } from "@/components/theme-provider";
 import { NotificationBell } from "@/components/ui/notification-bell";
+import { GlobalSearch } from "@/components/ui/global-search";
 import { cn } from "@/lib/utils";
 
 const DIVISION_BADGE_COLORS: Record<string, string> = {
@@ -29,7 +30,6 @@ export function Header() {
   const { isCollapsed, toggle, openMobile } = useSidebar();
   const { isDark, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,13 +77,6 @@ export function Header() {
     router.push("/login");
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/tasks?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
   const divisions: string[] = Array.isArray(profile?.division) ? (profile!.division as unknown as string[]) : [];
 
   return (
@@ -106,17 +99,8 @@ export function Header() {
         >
           {isCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
-        {/* Search bar (functional) */}
-        <form onSubmit={handleSearch} className="relative w-full max-w-[200px] sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tasks, clients..."
-            className="input pl-9"
-          />
-        </form>
+        {/* Global Search — real-time across clients, tasks, invoices */}
+        <GlobalSearch />
       </div>
 
       {/* SECTION 2: Right — Badges → Divider → Name → Avatar → Bell */}
@@ -147,7 +131,7 @@ export function Header() {
 
         {/* Profile Name */}
         <div className="hidden text-right sm:block">
-          <div className="text-sm font-semibold text-gray-900">
+          <div className="text-sm font-semibold text-foreground">
             {profile?.full_name || "User"}
           </div>
         </div>
@@ -182,10 +166,10 @@ export function Header() {
 
           {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-white shadow-lg dropdown-panel">
+            <div className="absolute right-0 top-full mt-2 w-56 origin-top-right animate-slide-up rounded-lg border border-border bg-surface shadow-lg dropdown-panel">
               {/* User Info Header */}
               <div className="border-b border-border px-4 py-3">
-                <p className="truncate text-sm font-semibold text-gray-900">
+                <p className="truncate text-sm font-semibold text-foreground">
                   {profile?.full_name || "User"}
                 </p>
                 <p className="truncate text-xs text-muted">
@@ -200,7 +184,7 @@ export function Header() {
                     setMenuOpen(false);
                     router.push("/settings/profile");
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
+                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface-hover"
                 >
                   <User size={15} className="text-muted" />
                   My Profile
@@ -210,7 +194,7 @@ export function Header() {
                     setMenuOpen(false);
                     router.push("/settings");
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-surface-hover"
+                  className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface-hover"
                 >
                   <Settings size={15} className="text-muted" />
                   Settings

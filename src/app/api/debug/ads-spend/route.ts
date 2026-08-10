@@ -68,6 +68,14 @@ async function verifyUser(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // 🔒 Security: Disable in production
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "This endpoint is disabled in production" },
+        { status: 404 }
+      );
+    }
+
     const user = await verifyUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
