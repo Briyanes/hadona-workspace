@@ -61,9 +61,15 @@ WHERE NOT EXISTS (SELECT 1 FROM chat_channels WHERE name = 'strategy' AND type =
 
 -- ============================================
 -- ENABLE REALTIME
+-- (DO $$ blocks handle case where tables are already in the publication)
 -- ============================================
-ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE chat_read_receipts;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE chat_read_receipts;
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ============================================
 -- ROW LEVEL SECURITY (RLS)
@@ -73,13 +79,18 @@ ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_read_receipts ENABLE ROW LEVEL SECURITY;
 
 -- Helper function: get current user's divisions
+-- NOTE: profiles.division is a single TEXT column, so we wrap it in an array
 CREATE OR REPLACE FUNCTION get_user_divisions()
 RETURNS TEXT[]
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
 AS $$
-  SELECT COALESCE(division, ARRAY[]::TEXT[]) FROM profiles WHERE id = auth.uid();
+  SELECT CASE
+    WHEN division IS NOT NULL THEN ARRAY[division]
+    ELSE ARRAY[]::TEXT[]
+  END
+  FROM profiles WHERE id = auth.uid();
 $$;
 
 -- CHANNELS: Users can see general, announcement, their division channels, and DMs
@@ -91,7 +102,7 @@ CREATE POLICY "channels_select_policy" ON chat_channels
     OR created_by = auth.uid()
   );
 
--- CHANNELS: Admin and manager can create channels
+-- CHANNELS: super_admin and project_manager can create channels
 DROP POLICY IF EXISTS "channels_insert_policy" ON chat_channels;
 CREATE POLICY "channels_insert_policy" ON chat_channels
   FOR INSERT WITH CHECK (
@@ -99,7 +110,7 @@ CREATE POLICY "channels_insert_policy" ON chat_channels
     AND EXISTS (
       SELECT 1 FROM profiles
       WHERE id = auth.uid()
-      AND role IN ('admin', 'manager')
+      AND role IN ('super_admin', 'project_manager')
     )
   );
 
