@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Bell, Shield, Settings2, Palette } from "lucide-react";
+import { User, Bell, Shield, Settings2, Palette, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -11,6 +11,7 @@ const TABS = [
   { href: "/settings/security", label: "Security", icon: Shield },
   { href: "/settings/workspace", label: "Workspace", icon: Settings2 },
   { href: "/settings/preferences", label: "Preferences", icon: Palette },
+  { href: "/settings/integrations", label: "Integrations", icon: Plug },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

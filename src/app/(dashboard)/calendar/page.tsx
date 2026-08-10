@@ -152,10 +152,16 @@ export default function CalendarPage() {
     attendees: [] as string[],
     create_task_for_pm: false,
     pm_user_id: "",
+    auto_generate_meet: true,
   });
+  const [googleConnected, setGoogleConnected] = useState(false);
 
   useEffect(() => {
     loadAll();
+    // Check Google connected status
+    fetch("/api/google/status").then(res => res.json()).then(data => {
+      setGoogleConnected(!!data.connected);
+    }).catch(() => {});
   }, []);
 
   async function loadAll() {
@@ -289,6 +295,31 @@ export default function CalendarPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Auto-generate Google Meet if enabled & connected
+      let finalMeetingLink = eventForm.meeting_link;
+      if (eventForm.auto_generate_meet && googleConnected && !eventForm.all_day) {
+        try {
+          const meetRes = await fetch("/api/google/create-meet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: eventForm.title.trim(),
+              description: eventForm.description,
+              start_datetime: eventForm.start_datetime,
+              end_datetime: eventForm.end_datetime,
+              location: eventForm.location,
+            }),
+          });
+          if (meetRes.ok) {
+            const meetData = await meetRes.json();
+            finalMeetingLink = meetData.google_meet_code || finalMeetingLink;
+            toast.success("Google Meet link di-generate otomatis");
+          }
+        } catch {
+          toast.warning("Gagal generate Meet link, lanjut tanpa link");
+        }
+      }
+
       const insertPayload = {
         title: eventForm.title.trim(),
         description: eventForm.description || null,
@@ -298,7 +329,7 @@ export default function CalendarPage() {
         all_day: eventForm.all_day,
         client_id: eventForm.client_id || null,
         location: eventForm.location || null,
-        meeting_link: eventForm.meeting_link || null,
+        meeting_link: finalMeetingLink || null,
         attendees: eventForm.attendees.map(uid => ({ user_id: uid })),
         created_by: user?.id || null,
       };
@@ -334,6 +365,7 @@ export default function CalendarPage() {
         start_datetime: "", end_datetime: "", all_day: false,
         client_id: "", location: "", meeting_link: "",
         attendees: [], create_task_for_pm: false, pm_user_id: "",
+        auto_generate_meet: true,
       });
       loadAll();
     } catch (err) {
@@ -1180,6 +1212,25 @@ export default function CalendarPage() {
                   />
                 </div>
               </div>
+
+              {/* Auto-generate Google Meet */}
+              {googleConnected && !eventForm.all_day && (
+                <label className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={eventForm.auto_generate_meet}
+                    onChange={e => setEventForm({ ...eventForm, auto_generate_meet: e.target.checked })}
+                    className="rounded"
+                  />
+                  <Video size={14} className="text-blue-600" />
+                  <span className="text-blue-900">Auto-generate Google Meet link</span>
+                </label>
+              )}
+              {!googleConnected && !eventForm.all_day && (
+                <p className="text-[10px] text-muted">
+                  💡 Hubungkan Google Calendar di Settings → Integrations untuk auto-generate Meet link
+                </p>
+              )}
 
               {/* Description */}
               <div>
