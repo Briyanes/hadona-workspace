@@ -367,52 +367,35 @@ export default function CalendarPage() {
       }
       loadAll();
 
-      // Optional: create task for PM (NON-BLOCKING — if this fails, event is already saved)
+      // Optional: create task for PM via server-side API (bypass RLS)
       if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
         try {
           const startDate = new Date(eventForm.start_datetime);
           const dueDate = startDate.toISOString().slice(0, 10);
 
-          // Step 1: Insert task
-          const { data: taskData, error: taskError } = await supabase
-            .from("tasks")
-            .insert({
+          const taskRes = await fetch("/api/calendar/create-task", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
               title: `[Meeting] ${eventForm.title.trim()}`,
               description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${finalMeetingLink ? `Link: ${finalMeetingLink}` : ""}`,
               due_date: dueDate,
-              status: "todo",
-              priority: "medium",
               client_id: eventForm.client_id || null,
-            } as never)
-            .select("id")
-            .single();
+              pm_user_id: eventForm.pm_user_id,
+              event_id: eventId,
+              created_by: user?.id || null,
+            }),
+          });
 
-          if (taskError) {
-            console.error("[Calendar] Task insert error:", JSON.stringify(taskError));
-            toast.warning("Event tersimpan, tapi gagal buat task PM: " + (taskError as { message?: string }).message);
-            return;
-          }
+          const taskResult = await taskRes.json();
 
-          const taskId = (taskData as { id?: string } | null)?.id;
-
-          // Step 2: Assign PM via task_assignees junction table
-          if (taskId) {
-            const { error: assignErr } = await supabase.from("task_assignees").insert({
-              task_id: taskId,
-              user_id: eventForm.pm_user_id,
-            } as never);
-
-            if (assignErr) {
-              console.error("[Calendar] task_assignees insert error:", JSON.stringify(assignErr));
-              toast.warning("Task dibuat, tapi gagal assign ke PM. Assign manual di /tasks");
-            } else {
-              // Link task back to calendar event
-              await supabase
-                .from("calendar_events")
-                .update({ linked_task_id: taskId } as never)
-                .eq("id", eventId);
-              toast.success("Meeting + task untuk PM dibuat!");
-            }
+          if (!taskRes.ok) {
+            console.error("[Calendar] API create-task failed:", taskResult);
+            toast.warning("Event tersimpan, tapi gagal buat task PM: " + (taskResult.error || taskResult.details || "Unknown error"));
+          } else if (taskResult.warning) {
+            toast.warning(taskResult.warning);
+          } else {
+            toast.success("Meeting + task untuk PM dibuat!");
           }
         } catch (taskErr) {
           console.error("[Calendar] Task creation exception:", taskErr);
