@@ -59,10 +59,13 @@ export function NotificationBell() {
     loadNotifications();
   }, [loadNotifications]);
 
-  // Realtime subscription
+  // Realtime subscription — use a ref to avoid re-subscribing on every render
+  const loadRef = useRef(loadNotifications);
+  loadRef.current = loadNotifications;
+
   useEffect(() => {
     const channel = supabase
-      .channel("notifications-changes")
+      .channel(`notifications-${Date.now()}`)
       .on(
         "postgres_changes",
         {
@@ -71,7 +74,7 @@ export function NotificationBell() {
           table: "notifications",
         },
         () => {
-          loadNotifications();
+          loadRef.current();
         }
       )
       .on(
@@ -82,7 +85,7 @@ export function NotificationBell() {
           table: "notifications",
         },
         () => {
-          loadNotifications();
+          loadRef.current();
         }
       )
       .subscribe();
@@ -90,7 +93,8 @@ export function NotificationBell() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, loadNotifications]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Close on outside click
   useEffect(() => {
