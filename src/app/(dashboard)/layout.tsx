@@ -1,7 +1,13 @@
 import { DashboardShell } from "@/components/ui/dashboard-shell";
-
-export const dynamic = "force-dynamic";
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <DashboardShell>{children}</DashboardShell>;
-}
+import { CommandPalette } from "@/components/ui/command-palette";
+ 
+ export const dynamic = "force_dynamic";
+ 
+ export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardShell>
+      <CommandPalette />
+      {children}
+    </DashboardShell>
+  );
+ }

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Shield, Key, Monitor, Smartphone, Globe, CheckCircle2, AlertCircle } from "lucide-react";
+import { Shield, Key, Monitor, Smartphone, Globe, CheckCircle2, AlertCircle, Lock, Copy } from "lucide-react";
 
 export default function SecuritySettingsPage() {
   const supabase = createClient();
@@ -14,10 +14,29 @@ export default function SecuritySettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // 2FA state
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [setupSecret, setSetupSecret] = useState("");
+  const [setupQrUrl, setSetupQrUrl] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [showBackupCodes, setShowBackupCodes] = useState(false);
+  const [disableToken, setDisableToken] = useState("");
+
   useEffect(() => {
     async function load() {
       const { data } = await supabase.auth.getSession();
       setSession(data.session as unknown as { user: { app_metadata: { provider?: string }; created_at: string } } | null);
+      // Load 2FA status
+      try {
+        const res = await fetch("/api/auth/2fa");
+        if (res.ok) {
+          const data2fa = await res.json();
+          setTwoFactorEnabled(data2fa.enabled);
+        }
+      } catch {}
       setLoading(false);
     }
     load();
@@ -42,6 +61,73 @@ export default function SecuritySettingsPage() {
       setConfirmPassword("");
     }
     setChangingPassword(false);
+  };
+
+  // === 2FA Handlers ===
+  const handle2FASetup = async () => {
+    setTwoFactorLoading(true);
+    try {
+      const res = await fetch("/api/auth/2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "setup" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSetupSecret(data.secret);
+      setSetupQrUrl(data.qrUrl);
+      setShowSetupModal(true);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal memulai setup 2FA");
+    }
+    setTwoFactorLoading(false);
+  };
+
+  const handle2FAVerify = async () => {
+    if (!totpCode || totpCode.length !== 6) {
+      toast.error("Masukkan kode 6 digit dari authenticator app");
+      return;
+    }
+    setTwoFactorLoading(true);
+    try {
+      const res = await fetch("/api/auth/2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", token: totpCode, secret: setupSecret }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setBackupCodes(data.backupCodes);
+      setShowBackupCodes(true);
+      setTwoFactorEnabled(true);
+      toast.success("2FA berhasil diaktifkan!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Verifikasi gagal");
+    }
+    setTwoFactorLoading(false);
+  };
+
+  const handle2FADisable = async () => {
+    if (!disableToken || disableToken.length !== 6) {
+      toast.error("Masukkan kode 6 digit untuk konfirmasi");
+      return;
+    }
+    setTwoFactorLoading(true);
+    try {
+      const res = await fetch("/api/auth/2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "disable", token: disableToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setTwoFactorEnabled(false);
+      setDisableToken("");
+      toast.success("2FA dinonaktifkan");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menonaktifkan 2FA");
+    }
+    setTwoFactorLoading(false);
   };
 
   if (loading) return <div className="py-12 text-center text-sm text-muted">Loading...</div>;
@@ -159,6 +245,157 @@ export default function SecuritySettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Two-Factor Authentication (2FA) */}
+      <div className="card p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900">Two-Factor Authentication</h3>
+          {twoFactorEnabled && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+              <CheckCircle2 size={12} /> Active
+            </span>
+          )}
+        </div>
+
+        {!twoFactorEnabled ? (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-lg bg-primary/5 p-4">
+              <Lock size={16} className="mt-0.5 shrink-0 text-primary" />
+              <div className="text-sm">
+                <p className="font-medium text-gray-900">Lindungi akun Anda dengan 2FA</p>
+                <p className="text-xs text-muted">
+                  Gunakan Google Authenticator, Authy, atau 1Password. Setiap login akan memerlukan kode dari app.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handle2FASetup}
+              disabled={twoFactorLoading}
+              className="btn-primary px-4 py-2 text-sm"
+            >
+              {twoFactorLoading ? "Loading..." : "Aktifkan 2FA"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-lg bg-success/5 p-4">
+              <Shield size={16} className="mt-0.5 shrink-0 text-success" />
+              <div className="text-sm">
+                <p className="font-medium text-gray-900">2FA Aktif</p>
+                <p className="text-xs text-muted">
+                  Akun Anda dilindungi dengan TOTP. Setiap login memerlukan kode dari authenticator app.
+                </p>
+              </div>
+            </div>
+
+            {/* Disable 2FA */}
+            <div className="border-t border-border pt-4">
+              <p className="mb-2 text-xs font-medium text-muted">Nonaktifkan 2FA (memerlukan kode verifikasi)</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={disableToken}
+                  onChange={(e) => setDisableToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="6-digit code"
+                  className="input flex-1"
+                  maxLength={6}
+                />
+                <button
+                  onClick={handle2FADisable}
+                  disabled={twoFactorLoading || disableToken.length !== 6}
+                  className="btn-danger px-4 py-2 text-sm"
+                >
+                  Disable
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 2FA Setup Modal */}
+      {showSetupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowSetupModal(false)}>
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-lg font-bold text-gray-900">Setup 2FA</h3>
+
+            {!showBackupCodes ? (
+              <div className="space-y-4">
+                <p className="text-sm text-muted">Scan QR code dengan authenticator app Anda:</p>
+                <div className="flex justify-center">
+                  <img src={setupQrUrl} alt="QR Code" className="h-48 w-48 rounded-lg border border-border" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs text-muted">Atau masukkan manual:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 rounded-lg bg-gray-100 p-2 text-xs text-gray-700 select-all">{setupSecret}</code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(setupSecret);
+                        toast.success("Secret disalin");
+                      }}
+                      className="btn-secondary p-2"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted">Masukkan kode 6-digit dari app:</label>
+                  <input
+                    type="text"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="000000"
+                    className="input text-center text-lg tracking-[0.5em]"
+                    maxLength={6}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowSetupModal(false)} className="btn-secondary flex-1 py-2 text-sm">Cancel</button>
+                  <button
+                    onClick={handle2FAVerify}
+                    disabled={twoFactorLoading || totpCode.length !== 6}
+                    className="btn-primary flex-1 py-2 text-sm"
+                  >
+                    {twoFactorLoading ? "Verifying..." : "Verifikasi & Aktifkan"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 rounded-lg bg-success/5 p-4">
+                  <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-success" />
+                  <div className="text-sm">
+                    <p className="font-medium text-gray-900">2FA Berhasil Diaktifkan!</p>
+                    <p className="text-xs text-muted">Simpan backup codes berikut di tempat aman.</p>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-gray-900 p-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    {backupCodes.map((code, i) => (
+                      <code key={i} className="text-center text-sm font-mono text-green-400">{code}</code>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-muted">
+                  Backup codes bisa digunakan jika Anda kehilangan akses ke authenticator app. Setiap code hanya bisa digunakan sekali.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowSetupModal(false);
+                    setShowBackupCodes(false);
+                    setTotpCode("");
+                  }}
+                  className="btn-primary w-full py-2 text-sm"
+                >
+                  Selesai
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

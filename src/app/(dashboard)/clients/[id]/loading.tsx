@@ -1,13 +1,15 @@
+import { SkeletonCard, SkeletonTable } from "@/components/ui/skeleton";
+
 export default function Loading() {
   return (
     <div className="space-y-6">
-      <div className="h-8 w-48 animate-pulse rounded bg-muted/20" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="card h-24 animate-pulse rounded-lg" />
-        ))}
+      <div className="h-8 w-48 rounded-md bg-muted/50 animate-pulse" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <SkeletonCard lines={4} />
+        <div className="md:col-span-2">
+          <SkeletonTable rows={5} cols={4} />
+        </div>
       </div>
-      <div className="card h-96 animate-pulse rounded-lg" />
     </div>
   );
 }

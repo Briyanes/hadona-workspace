@@ -24,6 +24,10 @@ export interface Database {
           avatar_url: string | null;
           phone: string | null;
           is_active: boolean;
+          two_factor_enabled: boolean;
+          two_factor_secret: string | null;
+          two_factor_backup_codes: string[] | null;
+          two_factor_enabled_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -35,6 +39,10 @@ export interface Database {
           avatar_url?: string | null;
           phone?: string | null;
           is_active?: boolean;
+          two_factor_enabled?: boolean;
+          two_factor_secret?: string | null;
+          two_factor_backup_codes?: string[] | null;
+          two_factor_enabled_at?: string | null;
         };
         Update: {
           email?: string;
@@ -44,6 +52,10 @@ export interface Database {
           avatar_url?: string | null;
           phone?: string | null;
           is_active?: boolean;
+          two_factor_enabled?: boolean;
+          two_factor_secret?: string | null;
+          two_factor_backup_codes?: string[] | null;
+          two_factor_enabled_at?: string | null;
         };
         Relationships: [];
       };

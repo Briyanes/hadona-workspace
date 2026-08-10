@@ -330,6 +330,20 @@
 }
 
 @layer utilities {
+  /* === RESPONSIVE TABLE WRAPPER === */
+  /* Wrap any table/grid to prevent horizontal overflow on mobile */
+  .table-wrap {
+    @apply overflow-x-auto -mx-4 px-4;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-wrap-inner {
+    @apply min-w-full inline-block align-middle;
+  }
+  /* Hide horizontal scrollbar but keep scrollable */
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 4px;
+  }
+
   .skeleton {
     @apply relative overflow-hidden bg-surface;
   }
