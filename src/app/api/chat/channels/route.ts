@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  if (!profile || !["admin", "manager"].includes(profile.role)) {
-    return NextResponse.json({ error: "Forbidden — admin/manager only" }, { status: 403 });
+  if (!profile || !["super_admin", "project_manager"].includes(profile.role)) {
+    return NextResponse.json({ error: "Forbidden — super_admin/project_manager only" }, { status: 403 });
   }
 
   const body = await req.json();
