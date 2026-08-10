@@ -89,6 +89,19 @@ export async function POST(req: NextRequest) {
         .eq("id", event_id);
     }
 
+    // Step 4: Send in-app notification to PM
+    try {
+      await supabaseAdmin.from("notifications").insert({
+        user_id: pm_user_id,
+        type: "meeting_assignment",
+        title: "📅 Meeting baru dari AE",
+        body: `Anda di-assign untuk meeting: ${title}. Cek task detail untuk info lengkap.`,
+        link: "/tasks",
+      });
+    } catch {
+      // Non-critical — don't fail the request if notification fails
+    }
+
     return NextResponse.json({
       success: true,
       task_id: taskId,

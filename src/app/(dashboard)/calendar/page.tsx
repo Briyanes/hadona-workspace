@@ -22,6 +22,12 @@ import {
   Video,
   MapPin,
   Users,
+  Copy,
+  MessageCircle,
+  Pencil,
+  Trash2,
+  CalendarX,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -37,6 +43,14 @@ interface CalendarEvent {
   meta?: string;
   href: string;
   clientName?: string;
+  // Meeting-specific fields (for reschedule/cancel)
+  rawId?: string;
+  googleEventId?: string;
+  meetingLink?: string | null;
+  description?: string | null;
+  location?: string | null;
+  startDatetime?: string;
+  endDatetime?: string | null;
 }
 
 interface TaskRow {
@@ -137,7 +151,7 @@ export default function CalendarPage() {
   );
   const [showEventModal, setShowEventModal] = useState(false);
   const [savingEvent, setSavingEvent] = useState(false);
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string; contact_email: string | null; contact_phone: string | null }[]>([]);
   const [teamMembers, setTeamMembers] = useState<{ id: string; full_name: string | null; email: string; division: string | null }[]>([]);
   const [eventForm, setEventForm] = useState({
     title: "",
@@ -155,6 +169,17 @@ export default function CalendarPage() {
     auto_generate_meet: true,
   });
   const [googleConnected, setGoogleConnected] = useState(false);
+  const [meetSuccess, setMeetSuccess] = useState<{
+    link: string;
+    clientName: string | null;
+    clientPhone: string | null;
+    clientEmail: string | null;
+  } | null>(null);
+  const [detailEvent, setDetailEvent] = useState<CalendarEvent | null>(null);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [rescheduleForm, setRescheduleForm] = useState({ start_datetime: "", end_datetime: "" });
 
   useEffect(() => {
     loadAll();
@@ -186,7 +211,7 @@ export default function CalendarPage() {
           .not("contract_end", "is", null),
         supabase
           .from("calendar_events")
-          .select("id, title, description, event_type, start_datetime, end_datetime, all_day, location, meeting_link, client:clients(name)")
+          .select("id, title, description, event_type, start_datetime, end_datetime, all_day, location, meeting_link, google_event_id, status, client:clients(name)")
           .order("start_datetime"),
         supabase
           .from("profiles")
@@ -195,12 +220,12 @@ export default function CalendarPage() {
           .order("full_name"),
         supabase
           .from("clients")
-          .select("id, name")
+          .select("id, name, contact_email, contact_phone")
           .order("name"),
       ]);
 
       setTeamMembers((teamData.data as unknown as typeof teamMembers) || []);
-      setClients((clientList.data as unknown as { id: string; name: string }[]) || []);
+      setClients((clientList.data as unknown as { id: string; name: string; contact_email: string | null; contact_phone: string | null }[]) || []);
 
       const evts: CalendarEvent[] = [];
 
@@ -261,19 +286,29 @@ export default function CalendarPage() {
         id: string; title: string; description: string | null;
         event_type: string; start_datetime: string; end_datetime: string | null;
         all_day: boolean; location: string | null; meeting_link: string | null;
+        google_event_id: string | null; status: string | null;
         client?: { name: string };
       }
       ((calEvents.data as unknown as CalEventRow[]) || []).forEach((ev) => {
+        // Skip cancelled meetings
+        if (ev.status === "cancelled") return;
         const ds = ev.start_datetime?.slice(0, 10);
         if (!ds) return;
         evts.push({
           id: `meeting-${ev.id}`,
+          rawId: ev.id,
           date: ds,
           title: ev.title,
           type: "meeting",
           status: ev.event_type,
           clientName: ev.client?.name,
           href: "#",
+          googleEventId: ev.google_event_id || undefined,
+          meetingLink: ev.meeting_link,
+          description: ev.description,
+          location: ev.location,
+          startDatetime: ev.start_datetime,
+          endDatetime: ev.end_datetime,
         });
       });
 
@@ -296,8 +331,29 @@ export default function CalendarPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // ─── Collect attendee emails (PM + client if they have email) ───
+      const attendeesEmails: string[] = [];
+      let clientEmail: string | null = null;
+      let clientPhone: string | null = null;
+      let clientName: string | null = null;
+
+      if (eventForm.client_id) {
+        const selectedClient = clients.find(c => c.id === eventForm.client_id);
+        if (selectedClient) {
+          clientName = selectedClient.name;
+          clientEmail = selectedClient.contact_email || null;
+          clientPhone = selectedClient.contact_phone || null;
+          if (clientEmail) attendeesEmails.push(clientEmail);
+        }
+      }
+      if (eventForm.create_task_for_pm && eventForm.pm_user_id) {
+        const pm = teamMembers.find(t => t.id === eventForm.pm_user_id);
+        if (pm?.email) attendeesEmails.push(pm.email);
+      }
+
       // Auto-generate Google Meet if enabled & connected
       let finalMeetingLink = eventForm.meeting_link;
+      let finalGoogleEventId: string | null = null;
       if (eventForm.auto_generate_meet && googleConnected && !eventForm.all_day) {
         try {
           const meetRes = await fetch("/api/google/create-meet", {
@@ -309,12 +365,18 @@ export default function CalendarPage() {
               start_datetime: eventForm.start_datetime,
               end_datetime: eventForm.end_datetime,
               location: eventForm.location,
+              attendees_emails: attendeesEmails,
             }),
           });
           if (meetRes.ok) {
             const meetData = await meetRes.json();
             finalMeetingLink = meetData.google_meet_code || finalMeetingLink;
-            toast.success("Google Meet link di-generate otomatis");
+            finalGoogleEventId = meetData.google_event_id || null;
+            if (clientEmail) {
+              toast.success("✅ Meet dibuat! Invite otomatis dikirim ke email client.");
+            } else {
+              toast.success("Meet link di-generate. Copy link untuk client via WA.");
+            }
           }
         } catch {
           toast.warning("Gagal generate Meet link, lanjut tanpa link");
@@ -331,6 +393,7 @@ export default function CalendarPage() {
         client_id: eventForm.client_id || null,
         location: eventForm.location || null,
         meeting_link: finalMeetingLink || null,
+        google_event_id: finalGoogleEventId,
         attendees: eventForm.attendees.map(uid => ({ user_id: uid })),
         created_by: user?.id || null,
       };
@@ -361,11 +424,21 @@ export default function CalendarPage() {
       });
 
       if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
-        toast.success("Event meeting dibuat! Menbuat task untuk PM...");
+        toast.success("Event meeting dibuat! Membuat task untuk PM...");
       } else {
         toast.success("Event meeting dibuat!");
       }
       loadAll();
+
+      // ─── Show success modal with Meet link + WA shortcut ───
+      if (finalMeetingLink) {
+        setMeetSuccess({
+          link: finalMeetingLink,
+          clientName,
+          clientPhone,
+          clientEmail,
+        });
+      }
 
       // Optional: create task for PM via server-side API (bypass RLS)
       if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
@@ -418,6 +491,83 @@ export default function CalendarPage() {
     } finally {
       setSavingEvent(false);
     }
+  }
+
+  // ============================================
+  // Reschedule Meeting
+  // ============================================
+  async function handleReschedule(e: React.FormEvent) {
+    e.preventDefault();
+    if (!detailEvent?.rawId || !rescheduleForm.start_datetime) {
+      toast.error("Data tidak lengkap");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/calendar/events", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: detailEvent.rawId,
+          start_datetime: rescheduleForm.start_datetime,
+          end_datetime: rescheduleForm.end_datetime || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to reschedule");
+      toast.success("✅ Meeting rescheduled! Email otomatis dikirim ke attendees.");
+      setShowReschedule(false);
+      setDetailEvent(null);
+      loadAll();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal reschedule: " + msg);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // ============================================
+  // Cancel Meeting
+  // ============================================
+  async function handleCancelMeeting() {
+    if (!detailEvent?.rawId) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/calendar/events", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_id: detailEvent.rawId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to cancel");
+      toast.success("❌ Meeting dibatalkan. Email otomatis dikirim ke attendees.");
+      setShowCancelConfirm(false);
+      setDetailEvent(null);
+      loadAll();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal batalkan: " + msg);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // ============================================
+  // Open Reschedule Form (pre-filled)
+  // ============================================
+  function openReschedule(ev: CalendarEvent) {
+    if (!ev.startDatetime) return;
+    const start = new Date(ev.startDatetime);
+    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const startLocal = `${start.getFullYear()}-${pad2(start.getMonth() + 1)}-${pad2(start.getDate())}T${pad2(start.getHours())}:${pad2(start.getMinutes())}`;
+    let endLocal = "";
+    if (ev.endDatetime) {
+      const end = new Date(ev.endDatetime);
+      endLocal = `${end.getFullYear()}-${pad2(end.getMonth() + 1)}-${pad2(end.getDate())}T${pad2(end.getHours())}:${pad2(end.getMinutes())}`;
+    }
+    setRescheduleForm({ start_datetime: startLocal, end_datetime: endLocal });
+    setShowReschedule(true);
   }
 
   // ─── Filtered Events ───
@@ -768,12 +918,25 @@ export default function CalendarPage() {
                 );
                 const isUrgent = days <= 2;
                 const isPast = days < 0;
+                const AgendaWrapper = (props: { children: React.ReactNode; className?: string }) => {
+                  if (e.type === "meeting" && e.rawId) {
+                    return (
+                      <button onClick={() => setDetailEvent(e)} className={props.className}>
+                        {props.children}
+                      </button>
+                    );
+                  }
+                  return (
+                    <Link href={e.href} className={props.className}>
+                      {props.children}
+                    </Link>
+                  );
+                };
                 return (
-                  <Link
+                  <AgendaWrapper
                     key={e.id}
-                    href={e.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary hover:bg-primary/5",
+                      "flex w-full items-center gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary hover:bg-primary/5",
                       isPast && "opacity-50"
                     )}
                   >
@@ -825,7 +988,7 @@ export default function CalendarPage() {
                             ? "Besok"
                             : `${days}h`}
                     </span>
-                  </Link>
+                  </AgendaWrapper>
                 );
               })}
             </div>
@@ -1042,10 +1205,26 @@ export default function CalendarPage() {
                   {selectedEvents.map((e) => {
                     const cfg = typeConfig[e.type];
                     const Icon = cfg.icon;
+                    const EventWrapper = (props: { children: React.ReactNode; className?: string }) => {
+                      if (e.type === "meeting" && e.rawId) {
+                        return (
+                          <button
+                            onClick={() => setDetailEvent(e)}
+                            className={props.className}
+                          >
+                            {props.children}
+                          </button>
+                        );
+                      }
+                      return (
+                        <Link href={e.href} className={props.className}>
+                          {props.children}
+                        </Link>
+                      );
+                    };
                     return (
-                      <Link
+                      <EventWrapper
                         key={e.id}
-                        href={e.href}
                         className="flex items-start gap-2 rounded-md border border-border bg-background p-2 transition-colors hover:border-primary hover:bg-primary/5"
                       >
                         <div className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded", cfg.bg)}>
@@ -1063,7 +1242,7 @@ export default function CalendarPage() {
                             )}
                           </div>
                         </div>
-                      </Link>
+                      </EventWrapper>
                     );
                   })}
                 </div>
@@ -1103,11 +1282,24 @@ export default function CalendarPage() {
                             (new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
                           );
                           const isUrgent = days <= 2;
+                          const UpcomingWrapper = (props: { children: React.ReactNode; className?: string }) => {
+                            if (e.type === "meeting" && e.rawId) {
+                              return (
+                                <button onClick={() => setDetailEvent(e)} className={props.className}>
+                                  {props.children}
+                                </button>
+                              );
+                            }
+                            return (
+                              <Link href={e.href} className={props.className}>
+                                {props.children}
+                              </Link>
+                            );
+                          };
                           return (
-                            <Link
+                            <UpcomingWrapper
                               key={e.id}
-                              href={e.href}
-                              className="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-background"
+                              className="flex w-full items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-background"
                             >
                               <div className={cn(
                                 "flex h-5 w-5 shrink-0 items-center justify-center rounded",
@@ -1124,7 +1316,7 @@ export default function CalendarPage() {
                                   {days === 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
                                 </span>
                               )}
-                            </Link>
+                            </UpcomingWrapper>
                           );
                         })}
                       </div>
@@ -1132,6 +1324,81 @@ export default function CalendarPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Meet Success Modal ═══ */}
+      {meetSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setMeetSuccess(null)}>
+          <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <CheckCircle2 size={20} className="text-success" />
+                Meeting Berhasil Dibuat!
+              </h2>
+              <button onClick={() => setMeetSuccess(null)} className="text-muted hover:text-gray-900">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-3 p-4">
+              {/* Meet Link */}
+              {meetSuccess.link && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-700">🔗 Google Meet Link</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={meetSuccess.link}
+                      className="input flex-1 text-xs"
+                      onClick={e => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(meetSuccess.link);
+                        toast.success("Link disalin ke clipboard!");
+                      }}
+                      className="btn-secondary text-xs whitespace-nowrap"
+                    >
+                      <Copy size={14} /> Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Invite status: email sent OR WA fallback */}
+              {meetSuccess.clientEmail ? (
+                <div className="rounded-md border border-green-200 bg-green-50 p-2.5 text-xs text-green-800">
+                  ✅ Invite Google Meet sudah dikirim ke email <strong>{meetSuccess.clientName}</strong> ({meetSuccess.clientEmail})
+                </div>
+              ) : meetSuccess.clientPhone ? (
+                <div className="space-y-2">
+                  <div className="rounded-md border border-yellow-200 bg-yellow-50 p-2.5 text-xs text-yellow-800">
+                    ⚠️ Client tidak punya email. Copy link di atas, lalu kirim via WhatsApp.
+                  </div>
+                  <a
+                    href={`https://wa.me/${meetSuccess.clientPhone.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=Halo ${encodeURIComponent(meetSuccess.clientName || "")}, berikut link meeting kita: ${encodeURIComponent(meetSuccess.link)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary w-full justify-center text-xs bg-green-500 hover:bg-green-600"
+                  >
+                    <MessageCircle size={14} /> Buka WhatsApp Client
+                  </a>
+                </div>
+              ) : (
+                <div className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800">
+                  📋 Copy link di atas untuk dibagikan ke peserta meeting.
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 border-t border-border pt-3">
+                <button onClick={() => setMeetSuccess(null)} className="btn-primary text-xs">
+                  Selesai
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1337,6 +1604,212 @@ export default function CalendarPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Meeting Detail Modal ═══ */}
+      {detailEvent && !showReschedule && !showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailEvent(null)}>
+          <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Users size={20} className="text-purple-500" />
+                Detail Meeting
+              </h2>
+              <button onClick={() => setDetailEvent(null)} className="text-muted hover:text-gray-900">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-3 p-4">
+              {/* Title */}
+              <div>
+                <p className="text-sm font-bold text-gray-900">{detailEvent.title}</p>
+                {detailEvent.status && (
+                  <span className="mt-0.5 inline-block rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium capitalize text-purple-700">
+                    {detailEvent.status.replace("_", " ")}
+                  </span>
+                )}
+              </div>
+
+              {/* Client */}
+              {detailEvent.clientName && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted">Client:</span>
+                  <span className="font-medium text-gray-900">{detailEvent.clientName}</span>
+                </div>
+              )}
+
+              {/* DateTime */}
+              {detailEvent.startDatetime && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Clock size={14} className="text-muted" />
+                  <span className="text-gray-700">
+                    {new Date(detailEvent.startDatetime).toLocaleString("id-ID", {
+                      weekday: "long", day: "numeric", month: "long", year: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                    {detailEvent.endDatetime && (
+                      <> — {new Date(detailEvent.endDatetime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</>
+                    )}
+                  </span>
+                </div>
+              )}
+
+              {/* Location */}
+              {detailEvent.location && (
+                <div className="flex items-center gap-2 text-xs">
+                  <MapPin size={14} className="text-muted" />
+                  <span className="text-gray-700">{detailEvent.location}</span>
+                </div>
+              )}
+
+              {/* Meeting Link */}
+              {detailEvent.meetingLink && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Video size={14} className="text-muted" />
+                  <a
+                    href={detailEvent.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:underline"
+                  >
+                    Join Google Meet <ExternalLink size={10} />
+                  </a>
+                </div>
+              )}
+
+              {/* Description */}
+              {detailEvent.description && (
+                <div className="rounded-md bg-background p-2.5 text-xs text-gray-700">
+                  <p className="mb-1 font-medium text-gray-900">Agenda:</p>
+                  {detailEvent.description}
+                </div>
+              )}
+
+              {/* Google sync indicator */}
+              {detailEvent.googleEventId && (
+                <div className="flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 p-2 text-[10px] text-green-700">
+                  <CheckCircle2 size={12} />
+                  Tersinkron dengan Google Calendar — reschedule/cancel otomatis update & notify attendees.
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 border-t border-border pt-3">
+                <button
+                  onClick={() => openReschedule(detailEvent)}
+                  disabled={actionLoading}
+                  className="btn-secondary flex-1 justify-center text-xs disabled:opacity-50"
+                >
+                  <Pencil size={14} /> Reschedule
+                </button>
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={actionLoading}
+                  className="btn-secondary flex-1 justify-center text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
+                >
+                  <CalendarX size={14} /> Batalkan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Reschedule Modal ═══ */}
+      {detailEvent && showReschedule && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { setShowReschedule(false); setDetailEvent(null); }}>
+          <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Pencil size={20} className="text-warning" />
+                Reschedule Meeting
+              </h2>
+              <button onClick={() => { setShowReschedule(false); setDetailEvent(null); }} className="text-muted hover:text-gray-900">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleReschedule} className="space-y-3 p-4">
+              <p className="text-xs text-muted">
+                {detailEvent.googleEventId
+                  ? "📅 Meeting di Google Calendar akan otomatis diupdate, dan email notifikasi dikirim ke semua attendees."
+                  : "Jadwal meeting akan diupdate."}
+              </p>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Waktu Mulai Baru <span className="text-danger">*</span></label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={rescheduleForm.start_datetime}
+                  onChange={e => setRescheduleForm({ ...rescheduleForm, start_datetime: e.target.value })}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-700">Waktu Selesai Baru</label>
+                <input
+                  type="datetime-local"
+                  value={rescheduleForm.end_datetime}
+                  onChange={e => setRescheduleForm({ ...rescheduleForm, end_datetime: e.target.value })}
+                  className="input"
+                />
+              </div>
+              <div className="flex justify-end gap-2 border-t border-border pt-3">
+                <button type="button" onClick={() => setShowReschedule(false)} className="btn-secondary text-xs">
+                  Batal
+                </button>
+                <button type="submit" disabled={actionLoading} className="btn-primary text-xs bg-warning hover:bg-orange-600 disabled:opacity-50">
+                  {actionLoading ? (
+                    <><Loader2 size={14} className="animate-spin" /> Menyimpan...</>
+                  ) : (
+                    <><Pencil size={14} /> Reschedule</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Cancel Confirmation Modal ═══ */}
+      {detailEvent && showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCancelConfirm(false)}>
+          <div className="w-full max-w-sm rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-danger/10">
+                <CalendarX size={24} className="text-danger" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900">Batalkan Meeting?</h3>
+              <p className="mt-1.5 text-xs text-muted">
+                Yakin ingin membatalkan <strong>"{detailEvent.title}"</strong>?
+                {detailEvent.googleEventId && (
+                  <span className="mt-1 block text-[10px] text-orange-600">
+                    Google Calendar akan diupdate dan email pembatalan dikirim ke semua attendees.
+                  </span>
+                )}
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  disabled={actionLoading}
+                  className="btn-secondary flex-1 text-xs"
+                >
+                  Tidak
+                </button>
+                <button
+                  onClick={handleCancelMeeting}
+                  disabled={actionLoading}
+                  className="btn-primary flex-1 text-xs bg-danger hover:bg-red-600 disabled:opacity-50"
+                >
+                  {actionLoading ? (
+                    <><Loader2 size={14} className="animate-spin" /> Membatalkan...</>
+                  ) : (
+                    <><Trash2 size={14} /> Ya, Batalkan</>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
