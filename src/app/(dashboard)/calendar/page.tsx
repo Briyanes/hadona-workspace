@@ -189,8 +189,9 @@ export default function CalendarPage() {
           .select("id, title, description, event_type, start_datetime, end_datetime, all_day, location, meeting_link, client:clients(name)")
           .order("start_datetime"),
         supabase
-          .from("team_members")
+          .from("profiles")
           .select("id, full_name, email, division")
+          .eq("is_active", true)
           .order("full_name"),
         supabase
           .from("clients")
@@ -333,27 +334,51 @@ export default function CalendarPage() {
         attendees: eventForm.attendees.map(uid => ({ user_id: uid })),
         created_by: user?.id || null,
       };
-      const { data: newEvent, error } = await (supabase
-        .from("calendar_events") as unknown as ReturnType<typeof supabase.from> extends never ? never : {
-          insert: (p: typeof insertPayload) => { select: (c: string) => { single: () => Promise<{ data: { id: string } | null; error: unknown }> };
-        };
-      }).insert(insertPayload).select("id").single();
+      const { data: newEvent, error } = await supabase
+        .from("calendar_events")
+        .insert(insertPayload as never)
+        .select("id")
+        .single();
 
       if (error) throw error;
 
+      const eventId = (newEvent as { id?: string } | null)?.id;
+
       // Optional: create task for PM
-      if (eventForm.create_task_for_pm && eventForm.pm_user_id && (newEvent as { id?: string } | null)?.id) {
+      if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
         const startDate = new Date(eventForm.start_datetime);
         const dueDate = startDate.toISOString().slice(0, 10);
-        await supabase.from("tasks").insert({
-          title: `[Meeting] ${eventForm.title.trim()}`,
-          description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${eventForm.meeting_link ? `Link: ${eventForm.meeting_link}` : ""}`,
-          due_date: dueDate,
-          status: "todo",
-          priority: "medium",
-          assignee_id: eventForm.pm_user_id,
-          client_id: eventForm.client_id || null,
-        } as never);
+
+        // Step 1: Insert task (tasks table has NO assignee_id column)
+        const { data: taskData, error: taskError } = await supabase
+          .from("tasks")
+          .insert({
+            title: `[Meeting] ${eventForm.title.trim()}`,
+            description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${finalMeetingLink ? `Link: ${finalMeetingLink}` : ""}`,
+            due_date: dueDate,
+            status: "todo",
+            priority: "medium",
+            client_id: eventForm.client_id || null,
+            created_by: user?.id,
+          } as never)
+          .select("id")
+          .single();
+
+        const taskId = (taskData as { id?: string } | null)?.id;
+
+        // Step 2: Assign PM via task_assignees junction table
+        if (!taskError && taskId) {
+          await supabase.from("task_assignees").insert({
+            task_id: taskId,
+            user_id: eventForm.pm_user_id,
+          } as never);
+
+          // Link task back to calendar event
+          await supabase
+            .from("calendar_events")
+            .update({ linked_task_id: taskId } as never)
+            .eq("id", eventId);
+        }
         toast.success("Meeting + task untuk PM dibuat!");
       } else {
         toast.success("Event meeting dibuat!");
