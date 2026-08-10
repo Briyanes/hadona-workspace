@@ -340,50 +340,17 @@ export default function CalendarPage() {
         .select("id")
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Extract real error message from Supabase (it's NOT an Error instance)
+        const supaErr = error as { message?: string; details?: string; hint?: string; code?: string };
+        const errMsg = supaErr.message || supaErr.details || supaErr.hint || `DB Error (${supaErr.code || "unknown"})`;
+        console.error("[Calendar] Insert calendar_events failed:", JSON.stringify(error, null, 2));
+        throw new Error(errMsg);
+      }
 
       const eventId = (newEvent as { id?: string } | null)?.id;
 
-      // Optional: create task for PM
-      if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
-        const startDate = new Date(eventForm.start_datetime);
-        const dueDate = startDate.toISOString().slice(0, 10);
-
-        // Step 1: Insert task (tasks table has NO assignee_id column)
-        const { data: taskData, error: taskError } = await supabase
-          .from("tasks")
-          .insert({
-            title: `[Meeting] ${eventForm.title.trim()}`,
-            description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${finalMeetingLink ? `Link: ${finalMeetingLink}` : ""}`,
-            due_date: dueDate,
-            status: "todo",
-            priority: "medium",
-            client_id: eventForm.client_id || null,
-            created_by: user?.id,
-          } as never)
-          .select("id")
-          .single();
-
-        const taskId = (taskData as { id?: string } | null)?.id;
-
-        // Step 2: Assign PM via task_assignees junction table
-        if (!taskError && taskId) {
-          await supabase.from("task_assignees").insert({
-            task_id: taskId,
-            user_id: eventForm.pm_user_id,
-          } as never);
-
-          // Link task back to calendar event
-          await supabase
-            .from("calendar_events")
-            .update({ linked_task_id: taskId } as never)
-            .eq("id", eventId);
-        }
-        toast.success("Meeting + task untuk PM dibuat!");
-      } else {
-        toast.success("Event meeting dibuat!");
-      }
-
+      // ✅ Event successfully created — close modal & reset immediately
       setShowEventModal(false);
       setEventForm({
         title: "", description: "", event_type: "client_meeting",
@@ -392,9 +359,78 @@ export default function CalendarPage() {
         attendees: [], create_task_for_pm: false, pm_user_id: "",
         auto_generate_meet: true,
       });
+
+      if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
+        toast.success("Event meeting dibuat! Menbuat task untuk PM...");
+      } else {
+        toast.success("Event meeting dibuat!");
+      }
       loadAll();
+
+      // Optional: create task for PM (NON-BLOCKING — if this fails, event is already saved)
+      if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
+        try {
+          const startDate = new Date(eventForm.start_datetime);
+          const dueDate = startDate.toISOString().slice(0, 10);
+
+          // Step 1: Insert task
+          const { data: taskData, error: taskError } = await supabase
+            .from("tasks")
+            .insert({
+              title: `[Meeting] ${eventForm.title.trim()}`,
+              description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${finalMeetingLink ? `Link: ${finalMeetingLink}` : ""}`,
+              due_date: dueDate,
+              status: "todo",
+              priority: "medium",
+              client_id: eventForm.client_id || null,
+            } as never)
+            .select("id")
+            .single();
+
+          if (taskError) {
+            console.error("[Calendar] Task insert error:", JSON.stringify(taskError));
+            toast.warning("Event tersimpan, tapi gagal buat task PM: " + (taskError as { message?: string }).message);
+            return;
+          }
+
+          const taskId = (taskData as { id?: string } | null)?.id;
+
+          // Step 2: Assign PM via task_assignees junction table
+          if (taskId) {
+            const { error: assignErr } = await supabase.from("task_assignees").insert({
+              task_id: taskId,
+              user_id: eventForm.pm_user_id,
+            } as never);
+
+            if (assignErr) {
+              console.error("[Calendar] task_assignees insert error:", JSON.stringify(assignErr));
+              toast.warning("Task dibuat, tapi gagal assign ke PM. Assign manual di /tasks");
+            } else {
+              // Link task back to calendar event
+              await supabase
+                .from("calendar_events")
+                .update({ linked_task_id: taskId } as never)
+                .eq("id", eventId);
+              toast.success("Meeting + task untuk PM dibuat!");
+            }
+          }
+        } catch (taskErr) {
+          console.error("[Calendar] Task creation exception:", taskErr);
+          toast.warning("Event tersimpan, tapi gagal buat task PM. Event tetap ada di calendar.");
+        }
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      // Extract real error message — Supabase errors are plain objects, NOT Error instances
+      let msg = "Unknown error";
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (err && typeof err === "object") {
+        const e = err as { message?: string; details?: string; hint?: string; error_description?: string };
+        msg = e.message || e.details || e.hint || e.error_description || JSON.stringify(err);
+      } else if (typeof err === "string") {
+        msg = err;
+      }
+      console.error("[Calendar] handleSaveEvent failed:", msg, err);
       toast.error("Gagal membuat event: " + msg);
     } finally {
       setSavingEvent(false);
