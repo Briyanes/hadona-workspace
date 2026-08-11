@@ -29,6 +29,18 @@ async function run() {
   const browser = await chromium.launch({ headless: false, slowMo: 200 });
   const context = await browser.newContext({
     viewport: { width: 1400, height: 900 },
+    bypassCSP: true,
+    extraHTTPHeaders: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+    },
+  });
+
+  // Disable cache to ensure we get the latest deployed version
+  await context.route('**/*', route => {
+    const headers = route.request().headers();
+    headers['Cache-Control'] = 'no-cache';
+    route.continue({ headers });
   });
   const page = await context.newPage();
 
