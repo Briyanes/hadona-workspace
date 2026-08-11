@@ -1,37 +1,31 @@
 # Supabase Migration History
 
-> **Status**: Production database sudah menggunakan semua migration v2–v24.
+> **Status**: Production database menggunakan migration v2–v72. Migration v73 (performance indexes) siap untuk di-apply.
 > Jangan re-run migration manapun yang sudah applied.
 
 ## Quick Reference
 
-| Version | File | Description | Lines |
-|---------|------|-------------|-------|
-| v2 | `migration-v2.sql` | Initial schema: profiles, clients, tasks, ad_accounts | ~ |
-| v2-fix | `migration-v2-fix.sql` | Fix constraint issues from v2 | ~ |
-| v3 | `migration-v3.sql` | Add weekly_reports, report_metrics tables | ~ |
-| v4 | `migration-v4.sql` | Add content_plans, creative_assets tables | ~ |
-| v5 | `migration-v5.sql` | Add strategy, strategy_phases tables | ~ |
-| v6 | `migration-v6.sql` | Add file_attachments table | 34 |
-| v8 | `migration-v8.sql` | Major: task_assignees, activity_logs, notifications, timesheets | 297 |
-| v9 | `migration-v9.sql` | Add invoice tables | 82 |
-| v9-fix | `migration-v9-fix.sql` | Fix invoice constraints | 35 |
-| v10 | `migration-v10.sql` | Add calendar_events table | ~ |
-| v11 | `migration-v11.sql` | Add email_schedules, report_shares tables | ~ |
-| v12 | `migration-v12.sql` | Add goal_tracking table | ~ |
-| v13 | `migration-v13.sql` | Add client import mappings | ~ |
-| v14 | `migration-v14.sql` | Add ad_spend_logs table | ~ |
-| v15 | `migration-v15.sql` | Add creative_performance tracking | ~ |
-| v16 | `migration-v16.sql` | Add report_objectives table | ~ |
-| v17 | `migration-v17.sql` | Add user_preferences table | ~ |
-| v18 | `migration-v18.sql` | Add public report sharing tokens | ~ |
-| v19 | `migration-v19.sql` | Add budget_pacing_alerts table | ~ |
-| v20 | `migration-v20.sql` | Google OAuth: onboarding flow, profiles update | ~ |
-| v21 | `migration-v21.sql` | Add role-based access control columns | ~ |
-| v22 | `migration-v22.sql` | Add notification_preferences table | ~ |
-| v23 | `migration-v23.sql` | Add dark_mode preference, UI settings | ~ |
-| v24 | `migration-v24.sql` | Add notifications table (UUID-based, realtime) | ~ |
-| prod-fix | `migration-production-fix.sql` | Emergency production fixes (indexes, RLS) | ~ |
+| Version | File | Description |
+|---------|------|-------------|
+| v2 | `migration-v2.sql` | Initial schema: profiles, clients, tasks, ad_accounts |
+| v2-fix | `migration-v2-fix.sql` | Fix constraint issues from v2 |
+| v3 | `migration-v3.sql` | Add weekly_reports, report_metrics tables |
+| v4 | `migration-v4.sql` | Add content_plans, creative_assets tables |
+| v5 | `migration-v5.sql` | Add strategy, strategy_phases tables |
+| v6 | `migration-v6.sql` | Add file_attachments table |
+| v8 | `migration-v8.sql` | Major: task_assignees, activity_logs, notifications, timesheets |
+| v9 | `migration-v9.sql` | Add invoice tables |
+| v9-fix | `migration-v9-fix.sql` | Fix invoice constraints |
+| v10–v24 | `migration-v10–v24.sql` | Calendar, email_schedules, goals, ad_spend_logs, preferences, RLS |
+| v25–v45 | `migration-v25–v45.sql` | Reports sync, ads spend, creative, strategy, invoices, contracts |
+| v46–v55 | `migration-v46–v55.sql` | Meta API token, sheet import, objective selector, metric formulas |
+| v56–v60 | `migration-v56–v60.sql` | Cron auto-billing, division permissions, contract renewal, AE analytics |
+| v61–v65 | `migration-v61–v65.sql` | Invoice PDF, dashboard widgets, calendar create-task, global search |
+| v66–v69 | `migration-v66–v69.sql` | CSRF utility, API response helper, command palette, API client |
+| v70 | `migration-v70.sql` | Security: 2FA/TOTP support, password reset, session management |
+| v71 | `migration-v71.sql` | Auth pages: login, signup improvements, error boundaries |
+| v72 | `migration-v72.sql` | Chat: channels, messages, read-status, realtime hook |
+| v73 | `migration-v73.sql` | **Performance**: composite indexes for 10 high-traffic tables + ANALYZE |
 
 ## Database Tables (Final State)
 
@@ -59,12 +53,16 @@
 ### Financial
 - `invoices` — Invoice records
 - `budget_pacing_alerts` — Budget threshold alerts
+- `contracts` — Client contract management
 
 ### Communication
 - `notifications` — In-app notifications (UUID PK)
 - `notification_preferences` — Per-user notification settings
 - `email_schedules` — Automated email report schedules
 - `report_shares` — Public share tokens for reports
+- `chat_channels` — Team chat channels
+- `chat_messages` — Chat messages with realtime
+- `chat_read_status` — Per-user channel read tracking
 
 ### System
 - `file_attachments` — R2 file references with ownership
@@ -80,4 +78,25 @@ For fresh databases, use the consolidated file:
 psql -f supabase/migration-all.sql
 ```
 
-For new changes going forward, create `migration-v25.sql`, `v26.sql`, etc.
+For new changes going forward, create `migration-v74.sql`, `v75.sql`, etc.
+
+### ⚠️ Pending Production Migration (v73)
+
+```bash
+# Run this on production to add performance indexes (safe, non-blocking):
+psql -f supabase/migration-v73.sql
+```
+
+This migration adds composite indexes for:
+- `ad_spend_logs` — dashboard queries, sync dedup
+- `tasks` — kanban, workload widget, due date alerts
+- `notifications` — unread badge count
+- `chat_messages` / `chat_read_status` — realtime queries
+- `invoices` — dashboard summary, aging
+- `activity_logs` — activity feed
+- `contracts` — renewal cron
+- `reports` — dashboard listing
+- `profiles` — admin user listing
+- `clients` — filtered client listing
+
+All use `CREATE INDEX IF NOT EXISTS` (idempotent, safe to re-run).

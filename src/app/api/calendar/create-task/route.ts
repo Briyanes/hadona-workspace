@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sanitizePlainText, sanitizeHtml } from "@/lib/sanitize";
 
 /**
  * POST /api/calendar/create-task
- * 
+ *
  * Creates a task + assigns it to a PM (task_assignees) server-side.
  * Uses service role key to bypass RLS policies that block client-side inserts.
- * 
+ *
  * Body:
  *   title: string
  *   description: string
@@ -39,8 +40,8 @@ export async function POST(req: NextRequest) {
     const { data: taskData, error: taskError } = await supabaseAdmin
       .from("tasks")
       .insert({
-        title,
-        description: description || null,
+        title: sanitizePlainText(title).slice(0, 255),
+        description: description ? sanitizeHtml(description).slice(0, 5000) : null,
         due_date,
         status: "todo",
         priority: "medium",
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
         user_id: pm_user_id,
         type: "meeting_assignment",
         title: "📅 Meeting baru dari AE",
-        body: `Anda di-assign untuk meeting: ${title}. Cek task detail untuk info lengkap.`,
+        body: `Anda di-assign untuk meeting: ${sanitizePlainText(title).slice(0, 100)}. Cek task detail untuk info lengkap.`,
         link: "/tasks",
       });
     } catch {

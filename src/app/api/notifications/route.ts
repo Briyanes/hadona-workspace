@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizePlainText } from "@/lib/sanitize";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
 export async function GET() {

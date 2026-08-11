@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sanitizePlainText } from "@/lib/sanitize";
 import { createClient } from "@supabase/supabase-js";
 
 // Force dynamic rendering — this route reads request.headers at runtime

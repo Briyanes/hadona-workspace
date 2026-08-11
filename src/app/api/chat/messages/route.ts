@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizePlainText } from "@/lib/sanitize";
 
 const db = () => createClient() as any;
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
     .insert({
       channel_id,
       user_id: user.id,
-      content: content.trim(),
+      content: sanitizePlainText(content).slice(0, 5000),
       message_type,
       metadata,
       reply_to,

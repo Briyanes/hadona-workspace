@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sanitizePlainText } from "@/lib/sanitize";
 import { createClient } from "@supabase/supabase-js";
 import { logActivity } from "@/lib/activity-logger";
 import { approvalEmailTemplate, rejectionEmailTemplate, sendEmail } from "@/lib/email-templates";

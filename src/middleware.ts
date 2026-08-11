@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { canAccessRoute } from "@/lib/division-permissions";
+import { validateCsrf } from "@/lib/csrf";
 
 type CookieOptions = {
   name: string;
@@ -46,10 +47,15 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Allow API routes (they handle their own auth internally)
+  // Allow API routes — but enforce CSRF on mutation methods
   // Critical for OAuth callbacks (e.g., /api/meta/callback) where
   // cross-domain redirects may cause cookie/session timing issues
   if (pathname.startsWith("/api/")) {
+    // CSRF check for mutation methods (POST, PUT, PATCH, DELETE)
+    const csrfError = validateCsrf(request);
+    if (csrfError) {
+      return csrfError;
+    }
     return supabaseResponse;
   }
 

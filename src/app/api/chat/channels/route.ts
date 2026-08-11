@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sanitizePlainText } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/server";
 
 const db = () => createClient() as any;
