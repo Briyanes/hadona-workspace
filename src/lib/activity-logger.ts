@@ -9,15 +9,21 @@ type ActionType =
   | "create"
   | "update"
   | "delete"
+  | "restore"
   | "status_change"
   | "assign"
   | "approve"
   | "reject"
   | "invite"
-  | "login";
+  | "login"
+  | "login_failed"
+  | "export"
+  | "share"
+  | "purge";
 
 type EntityType =
   | "task"
+  | "subtask"
   | "client"
   | "report"
   | "ad_account"
@@ -25,7 +31,11 @@ type EntityType =
   | "user"
   | "content_plan"
   | "strategy"
-  | "invoice";
+  | "strategy_objective"
+  | "strategy_key_result"
+  | "contract"
+  | "invoice"
+  | "timesheet";
 
 interface LogActivityParams {
   supabase: SupabaseClient;
@@ -35,6 +45,10 @@ interface LogActivityParams {
   description: string;
   entityId?: string;
   metadata?: Record<string, unknown>;
+  /** Previous values before update (for audit diff) */
+  oldValues?: Record<string, unknown>;
+  /** New values after update (for audit diff) */
+  newValues?: Record<string, unknown>;
 }
 
 /**
@@ -49,15 +63,24 @@ export async function logActivity({
   description,
   entityId,
   metadata,
+  oldValues,
+  newValues,
 }: LogActivityParams) {
   try {
+    // Merge oldValues/newValues into metadata for audit trail
+    const enrichedMetadata = {
+      ...metadata,
+      ...(oldValues ? { oldValues } : {}),
+      ...(newValues ? { newValues } : {}),
+    };
+
     const { error } = await supabase.from("activity_logs").insert({
       user_id: userId,
       action,
       entity_type: entityType,
       entity_id: entityId || null,
       description,
-      metadata: metadata || {},
+      metadata: enrichedMetadata,
     });
 
     if (error) {

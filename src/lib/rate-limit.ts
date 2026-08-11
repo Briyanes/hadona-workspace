@@ -14,6 +14,61 @@ interface RateLimitEntry {
 
 const store = new Map<string, RateLimitEntry>();
 
+// Track blocked attempts for admin dashboard
+interface BlockedAttempt {
+  key: string;
+  ip: string;
+  endpoint: string;
+  timestamp: number;
+}
+const blockedAttempts: BlockedAttempt[] = [];
+const MAX_BLOCKED_HISTORY = 200;
+
+/**
+ * Get rate limit stats for admin dashboard (per-instance snapshot)
+ */
+export function getRateLimitStats() {
+  const now = Date.now();
+  const activeEntries: Array<{ key: string; count: number; resetAt: number }> =
+    [];
+  let totalActive = 0;
+  let nearLimit = 0;
+
+  store.forEach((entry, key) => {
+    if (entry.resetAt > now) {
+      totalActive++;
+      activeEntries.push({ key, ...entry });
+      if (entry.count > 5) nearLimit++;
+    }
+  });
+
+  // Group blocked by endpoint
+  const endpointStats: Record<string, number> = {};
+  const ipStats: Record<string, number> = {};
+  const recentBlocked = blockedAttempts.slice(-50);
+
+  for (const attempt of recentBlocked) {
+    endpointStats[attempt.endpoint] =
+      (endpointStats[attempt.endpoint] || 0) + 1;
+    ipStats[attempt.ip] = (ipStats[attempt.ip] || 0) + 1;
+  }
+
+  return {
+    totalActiveKeys: totalActive,
+    nearLimitKeys: nearLimit,
+    recentBlockedCount: blockedAttempts.length,
+    topBlockedEndpoints: Object.entries(endpointStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([endpoint, count]) => ({ endpoint, count })),
+    topBlockedIps: Object.entries(ipStats)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([ip, count]) => ({ ip, count })),
+    recentBlocked,
+  };
+}
+
 // Cleanup expired entries setiap 5 menit
 const CLEANUP_INTERVAL = 5 * 60 * 1000;
 let lastCleanup = Date.now();
@@ -52,6 +107,18 @@ export function checkRateLimit(
   existing.count++;
 
   if (existing.count > limit) {
+    // Record blocked attempt for admin dashboard
+    const parts = key.split(":");
+    blockedAttempts.push({
+      key,
+      ip: parts[1] || "unknown",
+      endpoint: parts[0] || "unknown",
+      timestamp: now,
+    });
+    // Trim history
+    if (blockedAttempts.length > MAX_BLOCKED_HISTORY) {
+      blockedAttempts.splice(0, blockedAttempts.length - MAX_BLOCKED_HISTORY);
+    }
     return { allowed: false, remaining: 0, resetAtMs: existing.resetAt };
   }
 
