@@ -2,8 +2,14 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
+
+// Code-split @hello-pangea/dnd (~120KB) — only loads in board view
+const DragDropContext = dynamic(() => import("@hello-pangea/dnd").then((m) => m.DragDropContext), { ssr: false });
+const Droppable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Droppable), { ssr: false });
+const Draggable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Draggable), { ssr: false });
 import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User, CheckSquare, Trash2, Layers } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
