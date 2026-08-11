@@ -25,6 +25,18 @@ import {
 import { cn, formatIDR, formatDate } from "@/lib/utils";
 
 // ============================================
+// Error Helper — Supabase PostgrestError is NOT an instance of Error
+// ============================================
+function getErrorMessage(err: unknown, fallback = "Unknown error"): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null) {
+    const e = err as Record<string, unknown>;
+    if (typeof e.message === "string") return e.message;
+  }
+  return fallback;
+}
+
+// ============================================
 // Types
 // ============================================
 interface Contract {
@@ -222,7 +234,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       setServices(servicesMap);
       setBillings(billingsMap);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal memuat kontrak: " + msg);
     } finally {
       setLoading(false);
@@ -233,18 +245,32 @@ export function ContractManager({ clientId }: { clientId: string }) {
     loadContracts();
   }, [loadContracts]);
 
-  // Load team members for sales/AM dropdown
+  // Load team members for sales/AM dropdown via /api/team endpoint
+  // (uses SERVICE ROLE key server-side to bypass RLS on profiles table)
   useEffect(() => {
     async function loadTeam() {
       try {
-        const { data, error } = await supabase
-          .from("team_members")
-          .select("id, full_name, email, division")
-          .order("full_name", { ascending: true });
-        if (error) throw error;
-        setTeamMembers((data as unknown as TeamMember[]) || []);
-      } catch {
-        // Silent fail — dropdown just empty
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch("/api/team", {
+          headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+        });
+        if (!res.ok) {
+          console.error("[ContractManager] /api/team returned", res.status);
+          return;
+        }
+        const json = await res.json();
+        const team = (json.team || []) as Array<{ id: string; full_name: string | null; role?: string; division?: string[] | string | null }>;
+        // Map to TeamMember interface
+        setTeamMembers(
+          team.map((m) => ({
+            id: m.id,
+            full_name: m.full_name,
+            email: "", // not returned by API, not needed for dropdown
+            division: Array.isArray(m.division) ? m.division.join(", ") : (m.division as string) || null,
+          }))
+        );
+      } catch (err) {
+        console.error("[ContractManager] Failed to load team members:", getErrorMessage(err));
       }
     }
     loadTeam();
@@ -351,7 +377,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       });
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal membuat kontrak: " + msg);
     } finally {
       setSaving(false);
@@ -396,7 +422,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success("Kontrak diperpanjang! Services perlu ditambahkan ke kontrak baru.");
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal memperpanjang: " + msg);
     }
   }
@@ -426,7 +452,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success("Dokumen kontrak diupload!");
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal upload: " + msg);
     }
   }
@@ -439,7 +465,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success("Kontrak dihapus");
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal hapus: " + msg);
     }
   }
@@ -527,7 +553,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       setEditingContract(null);
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal update kontrak: " + msg);
     } finally {
       setSavingEdit(false);
@@ -564,7 +590,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       });
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal menambah service: " + msg);
     } finally {
       setSaving(false);
@@ -583,7 +609,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success("Service diakhiri");
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal mengakhiri service: " + msg);
     }
   }
@@ -596,7 +622,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success("Service dihapus");
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal hapus: " + msg);
     }
   }
@@ -614,7 +640,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success(`Billing ${period} dibuat!`);
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal generate billing: " + msg);
     }
   }
@@ -633,7 +659,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       toast.success("Pembayaran ditandai lunas!");
       loadContracts();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = getErrorMessage(err);
       toast.error("Gagal update: " + msg);
     }
   }
