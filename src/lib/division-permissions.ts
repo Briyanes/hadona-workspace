@@ -105,6 +105,11 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
     allowedDivisions: ["Content Creator", "Project Manager", "Creative Director", "Copywriter"],
     allowedRoles: ["super_admin", "project_manager"],
   },
+  {
+    href: "/content-studio",
+    allowedDivisions: ["Content Creator", "Project Manager", "Creative Director", "Copywriter", "Production"],
+    allowedRoles: ["super_admin", "project_manager"],
+  },
 
   // Tier 3 — Management only (HIDDEN for unauthorized, not locked)
   {
