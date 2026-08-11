@@ -46,7 +46,7 @@ export function PrintableInvoice({
             <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.5 }}>
               Jl. Sudirman No. 123, Jakarta
               <br />
-              admin@hadona.id · +62 21 1234 5678
+              admin@hadona.id · +62 851-5800-0123
             </div>
           </div>
           <div style={{ textAlign: "right" }}>

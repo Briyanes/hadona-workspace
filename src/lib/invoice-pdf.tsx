@@ -469,7 +469,7 @@ function formatDateLong(d: string) {
 // Default NOTE
 // ============================================
 const DEFAULT_NOTE =
-  "The quotation above does not include the ad budget and service fee. Additionally, the prices in this quotation are tentative and may change depending on the agreed campaign action plan with minimum contract for 3 months.";
+  "The quotation above does not include the ad budget. Additionally, the prices in this quotation are tentative and may change depending on the agreed campaign action plan with minimum contract for 3 months.";
 
 // ============================================
 // Subtotal Bar (for multi-item invoices)
@@ -710,7 +710,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
             PT. Hadona Digital Media · Digital Advertising Agency
           </Text>
           <Text style={styles.footerAccent}>
-            info@hadona.id · www.hadona.id · +62 21 1234 5678
+            info@hadona.id · www.hadona.id · +62 851-5800-0123
           </Text>
         </View>
       </Page>
