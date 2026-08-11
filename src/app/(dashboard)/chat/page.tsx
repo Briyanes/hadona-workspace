@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useChatChannels, useChatRealtime, type ChatMessage } from "@/hooks/use-chat-realtime";
-import { DashboardShell } from "@/components/ui/dashboard-shell";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -355,7 +354,7 @@ export default function ChatPage() {
   };
 
   return (
-    <DashboardShell>
+    <>
       <PageHeader title="Team Chat" />
       <p className="text-sm text-muted-foreground -mt-2 mb-4">
         Chat internal tim dan video call dengan Google Meet
@@ -408,6 +407,6 @@ export default function ChatPage() {
           </div>
         </details>
       </div>
-    </DashboardShell>
+    </>
   );
 }
