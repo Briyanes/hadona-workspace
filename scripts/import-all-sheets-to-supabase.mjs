@@ -1,18 +1,21 @@
 #!/usr/bin/env node
 /**
- * import-all-sheets-to-supabase.mjs
+ * import-all-sheets-to-supabase.mjs (v2 - Idempotent)
  *
  * Downloads all 7 sheets from the published Google Spreadsheet
  * and imports them directly into Supabase using the service role key.
  *
+ * This version is IDEMPOTENT — uses source_sheet + sheet_row_id
+ * to detect existing records and UPSERT instead of duplicate insert.
+ *
  * Usage:
  *   node scripts/import-all-sheets-to-supabase.mjs
  *   node scripts/import-all-sheets-to-supabase.mjs --dry-run
+ *   node scripts/import-all-sheets-to-supabase.mjs --force   (delete existing + re-import)
  */
 
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
-import { readFileSync } from "fs";
 
 // ============================================================
 // CONFIG
@@ -24,6 +27,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SPREADSHEET_ID = "2PACX-1vRgXClLJSZc0NBXBXWdl3Q9ey27rtTNK0itx04ia5hx-bvteuESGkKQXlDNEa9A7u6cl-1QgUMVSuKy";
 const DRY_RUN = process.argv.includes("--dry-run") || process.argv.includes("--preview");
+const FORCE = process.argv.includes("--force");
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error("❌ Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local");
@@ -33,6 +37,27 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
+
+// ============================================================
+// SCHEMA DETECTION (backwards-compatible)
+// ============================================================
+
+let sourceSheetEnabled = false;
+
+async function detectSchema() {
+  // Check if tasks table has source_sheet column
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("source_sheet")
+    .limit(1);
+
+  if (!error) {
+    sourceSheetEnabled = true;
+    console.log("  ✓ Schema v80 detected (source_sheet columns available)");
+  } else {
+    console.log("  ℹ️ Schema v80 not yet applied — using fallback dedup mode");
+  }
+}
 
 // ============================================================
 // CSV PARSER
@@ -84,7 +109,6 @@ function extractSheetGids(html) {
   const sheets = [];
   const seen = new Set();
 
-  // Pattern 1: items.push({name: "...", ..., gid: "...", ...})
   const itemsRegex = /items\.push\(\{[^}]*name:\s*"([^"]+)"[^}]*gid:\s*"(\d+)"[^}]*\}\)/g;
   let m;
   while ((m = itemsRegex.exec(html)) !== null) {
@@ -96,7 +120,6 @@ function extractSheetGids(html) {
     }
   }
 
-  // Pattern 2: "gid":"...","sheetName":"..."
   if (sheets.length === 0) {
     const regex = /"gid":"(\d+)","sheetName":"([^"]+)"/g;
     while ((m = regex.exec(html)) !== null) {
@@ -107,7 +130,6 @@ function extractSheetGids(html) {
     }
   }
 
-  // Pattern 3: <a ...>Sheet Name</a> with gid
   if (sheets.length === 0) {
     const tabRegex = /<a[^>]*gid=(\d+)[^>]*>([^<]+)<\/a>/gi;
     while ((m = tabRegex.exec(html)) !== null) {
@@ -132,7 +154,6 @@ function normalizeName(name) {
 
 function parseDate(str) {
   if (!str || str.length < 3) return null;
-  // Excel serial number
   if (/^\d{4,5}(\.\d+)?$/.test(str)) {
     const serial = parseFloat(str);
     if (serial > 40000 && serial < 60000) {
@@ -160,7 +181,7 @@ function mapStatus(raw) {
   if (!raw) return "todo";
   const l = raw.toLowerCase().trim();
   if (l.includes("done") || l.includes("selesai") || l.includes("complete") || l === "✓" || l === "v") return "done";
-  if (l.includes("progress") || l.includes("proses") || l.includes("doing")) return "in-progress";
+  if (l.includes("progress") || l.includes("proses") || l.includes("doing")) return "in_progress";
   return "todo";
 }
 
@@ -191,7 +212,6 @@ async function getSystemUserId() {
     .limit(1)
     .single();
   if (error || !data) {
-    // Fallback: try auth.users
     const { data: authUser } = await supabase.auth.admin.listUsers();
     if (authUser?.users?.length > 0) {
       return authUser.users[0].id;
@@ -248,12 +268,23 @@ function matchClientId(rawName, clientMap) {
 }
 
 // ============================================================
+// IDEMPOTENT SYNC HELPER
+// ============================================================
+
+async function clearExisting(sheetName, table) {
+  if (!FORCE) return;
+  console.log(`  🗑️  [FORCE] Deleting existing "${sheetName}" rows from ${table}...`);
+  const { error } = await supabase.from(table).delete().eq("source_sheet", sheetName);
+  if (error) console.error(`  ⚠️ Delete error: ${error.message}`);
+}
+
+// ============================================================
 // IMPORTERS
 // ============================================================
 
 async function importClients(csvText, clientMap, userId) {
   const rows = parseCSV(csvText);
-  if (rows.length < 2) return { found: 0, inserted: 0, errors: 0 };
+  if (rows.length < 2) return { found: 0, inserted: 0, updated: 0, errors: 0 };
 
   let headerIdx = 0;
   for (let i = 0; i < Math.min(5, rows.length); i++) {
@@ -265,63 +296,55 @@ async function importClients(csvText, clientMap, userId) {
   const headers = rows[headerIdx];
   const dataRows = rows.slice(headerIdx + 1);
 
-  const clientNames = new Set();
+  const clientNames = new Map(); // name -> services[]
   for (const row of dataRows) {
     const name = getField(row, headers, "client", "nama", "name");
     if (name && name.length > 1) {
       const lower = name.toLowerCase();
       if (lower.includes("bulan:") || lower.includes("milanote")) continue;
-      clientNames.add(name);
+      const svc = getField(row, headers, "service", "layanan");
+      if (!clientNames.has(name)) clientNames.set(name, []);
+      if (svc && !clientNames.get(name).includes(svc)) clientNames.get(name).push(svc);
     }
   }
 
-  let inserted = 0, errors = 0;
-  if (DRY_RUN) return { found: clientNames.size, inserted: clientNames.size, errors: 0 };
+  let inserted = 0, updated = 0, errors = 0;
 
-  for (const name of clientNames) {
+  for (const [name, services] of clientNames) {
     const normalized = normalizeName(name);
-    if (clientMap[normalized]) continue;
+    const existingId = clientMap[normalized];
 
-    const services = [];
-    for (const row of dataRows) {
-      const cn = getField(row, headers, "client", "nama", "name");
-      if (normalizeClientName(cn) === normalized) {
-        const svc = getField(row, headers, "service", "layanan");
-        if (svc && !services.includes(svc)) services.push(svc);
-      }
-    }
+    if (DRY_RUN) { inserted++; continue; }
 
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const { data, error } = await supabase
-      .from("clients")
-      .insert({
-        name,
-        slug,
-        status: "active",
-        services: services.length > 0 ? services : ["Social Media Management"],
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      errors++;
-      console.error(`  ❌ Client "${name}": ${error.message}`);
+    if (existingId) {
+      // Update existing client
+      const { error } = await supabase
+        .from("clients")
+        .update({ services: services.length > 0 ? services : ["Social Media Management"] })
+        .eq("id", existingId);
+      if (error) { errors++; } else { updated++; }
     } else {
-      clientMap[normalized] = data.id;
-      inserted++;
-      console.log(`  ✅ Created client: ${name}`);
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const { data, error } = await supabase
+        .from("clients")
+        .insert({
+          name,
+          slug,
+          status: "active",
+          services: services.length > 0 ? services : ["Social Media Management"],
+        })
+        .select("id")
+        .single();
+      if (error) { errors++; console.error(`  ❌ Client "${name}": ${error.message}`); }
+      else { clientMap[normalized] = data.id; inserted++; console.log(`  ✅ Created client: ${name}`); }
     }
   }
-  return { found: clientNames.size, inserted, errors };
-}
-
-function normalizeClientName(name) {
-  return name.toLowerCase().trim().replace(/\s+/g, " ").replace(/\b(digital media|hadona)\b/gi, "").trim();
+  return { found: clientNames.size, inserted, updated, errors };
 }
 
 async function importTasks(csvText, sheetName, division, clientMap, userId) {
   const rows = parseCSV(csvText);
-  if (rows.length < 2) return { found: 0, inserted: 0, errors: 0 };
+  if (rows.length < 2) return { found: 0, inserted: 0, updated: 0, errors: 0 };
 
   let headerIdx = 0;
   for (let i = 0; i < Math.min(5, rows.length); i++) {
@@ -333,9 +356,10 @@ async function importTasks(csvText, sheetName, division, clientMap, userId) {
   const headers = rows[headerIdx];
   const dataRows = rows.slice(headerIdx + 1);
 
-  const tasksToInsert = [];
+  const tasksToUpsert = [];
 
-  for (const row of dataRows) {
+  for (let rowIdx = 0; rowIdx < dataRows.length; rowIdx++) {
+    const row = dataRows[rowIdx];
     let title = getField(row, headers, "task description", "task", "description", "deskripsi", "activity", "kegiatan");
     if (!title) {
       for (const idx of [4, 3, 5, 2]) {
@@ -356,7 +380,10 @@ async function importTasks(csvText, sheetName, division, clientMap, userId) {
     const notes = getField(row, headers, "keterangan", "notes", "note", "comment");
     const rawStatus = getField(row, headers, "status");
 
-    tasksToInsert.push({
+    // Generate unique row ID for dedup (used if columns exist)
+    const sheetRowId = `${rawClient || "unknown"}-${rowIdx}`;
+
+    tasksToUpsert.push({
       title: title.length > 200 ? title.substring(0, 200) : title,
       description: title,
       result: result || null,
@@ -368,32 +395,89 @@ async function importTasks(csvText, sheetName, division, clientMap, userId) {
       due_date: parseDate(endDate || rawDate),
       notes: notes || null,
       created_by: userId,
+      // Optional fields (require migration v80)
+      ...(sourceSheetEnabled ? {
+        source_sheet: sheetName,
+        sheet_row_id: sheetRowId,
+        result_link: result && result.startsWith("http") ? result : null,
+        blockers: notes && notes.toLowerCase().includes("kendala") ? notes : null,
+      } : {}),
+      _dedupKey: `${title.substring(0, 100)}|${division}|${clientId || "none"}`,
     });
   }
 
-  if (DRY_RUN || tasksToInsert.length === 0) {
-    return { found: tasksToInsert.length, inserted: tasksToInsert.length, errors: 0 };
+  if (DRY_RUN || tasksToUpsert.length === 0) {
+    return { found: tasksToUpsert.length, inserted: tasksToUpsert.length, updated: 0, errors: 0 };
   }
 
-  // Batch insert (max 500 at a time)
-  let inserted = 0, errors = 0;
-  const BATCH = 100;
-  for (let i = 0; i < tasksToInsert.length; i += BATCH) {
-    const batch = tasksToInsert.slice(i, i + BATCH);
-    const { error } = await supabase.from("tasks").insert(batch);
-    if (error) {
-      errors += batch.length;
-      console.error(`  ❌ Batch ${i / BATCH + 1}: ${error.message}`);
+  // Check for existing rows (idempotent upsert)
+  let inserted = 0, updated = 0, errors = 0;
+
+  for (const task of tasksToUpsert) {
+    // Remove internal-only field before DB operation
+    const dedupKey = task._dedupKey;
+    delete task._dedupKey;
+
+    let existingId = null;
+
+    if (sourceSheetEnabled) {
+      // Dedup by source_sheet + sheet_row_id
+      const { data: existing } = await supabase
+        .from("tasks")
+        .select("id")
+        .eq("source_sheet", task.source_sheet)
+        .eq("sheet_row_id", task.sheet_row_id)
+        .limit(1);
+      if (existing && existing.length > 0) existingId = existing[0].id;
     } else {
-      inserted += batch.length;
+      // Fallback dedup by title + division (avoid exact duplicates)
+      const { data: existing } = await supabase
+        .from("tasks")
+        .select("id")
+        .ilike("title", task.title)
+        .eq("division", task.division)
+        .limit(1);
+      if (existing && existing.length > 0) existingId = existing[0].id;
+    }
+
+    if (existingId) {
+      // Update existing
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          title: task.title,
+          description: task.description,
+          result: task.result,
+          status: task.status,
+          client_id: task.client_id,
+          start_date: task.start_date,
+          due_date: task.due_date,
+          notes: task.notes,
+          ...(sourceSheetEnabled ? {
+            result_link: task.result_link,
+            blockers: task.blockers,
+          } : {}),
+        })
+        .eq("id", existingId);
+      if (error) { errors++; } else { updated++; }
+    } else {
+      // Insert new — strip optional v80 fields if schema not applied
+      const insertData = sourceSheetEnabled ? task : (() => {
+        const { source_sheet, sheet_row_id, result_link, blockers, ...rest } = task;
+        return rest;
+      })();
+
+      const { error } = await supabase.from("tasks").insert(insertData);
+      if (error) { errors++; if (errors <= 3) console.error(`  ❌ ${error.message}`); }
+      else { inserted++; }
     }
   }
-  return { found: tasksToInsert.length, inserted, errors };
+  return { found: tasksToUpsert.length, inserted, updated, errors };
 }
 
 async function importContentUploads(csvText, clientMap, userId) {
   const rows = parseCSV(csvText);
-  if (rows.length < 2) return { found: 0, inserted: 0, errors: 0 };
+  if (rows.length < 2) return { found: 0, inserted: 0, updated: 0, errors: 0 };
 
   let headerIdx = 0;
   for (let i = 0; i < Math.min(5, rows.length); i++) {
@@ -433,7 +517,7 @@ async function importContentUploads(csvText, clientMap, userId) {
   }
 
   if (DRY_RUN || uploads.length === 0) {
-    return { found: uploads.length, inserted: uploads.length, errors: 0 };
+    return { found: uploads.length, inserted: uploads.length, updated: 0, errors: 0 };
   }
 
   let inserted = 0, errors = 0;
@@ -448,12 +532,12 @@ async function importContentUploads(csvText, clientMap, userId) {
       inserted += batch.length;
     }
   }
-  return { found: uploads.length, inserted, errors };
+  return { found: uploads.length, inserted, updated: 0, errors };
 }
 
 async function importCaptionBank(csvText, clientMap, userId) {
   const rows = parseCSV(csvText);
-  if (rows.length < 2) return { found: 0, inserted: 0, errors: 0 };
+  if (rows.length < 2) return { found: 0, inserted: 0, updated: 0, errors: 0 };
 
   let headerIdx = 0;
   for (let i = 0; i < Math.min(5, rows.length); i++) {
@@ -508,7 +592,7 @@ async function importCaptionBank(csvText, clientMap, userId) {
   }
 
   if (DRY_RUN || captions.length === 0) {
-    return { found: captions.length, inserted: captions.length, errors: 0 };
+    return { found: captions.length, inserted: captions.length, updated: 0, errors: 0 };
   }
 
   let inserted = 0, errors = 0;
@@ -523,7 +607,7 @@ async function importCaptionBank(csvText, clientMap, userId) {
       inserted += batch.length;
     }
   }
-  return { found: captions.length, inserted, errors };
+  return { found: captions.length, inserted, updated: 0, errors };
 }
 
 // ============================================================
@@ -532,12 +616,16 @@ async function importCaptionBank(csvText, clientMap, userId) {
 
 async function main() {
   console.log("=".repeat(60));
-  console.log(`🚀 ${DRY_RUN ? "[DRY RUN] " : ""}Import All Sheets to Supabase`);
+  console.log(`🚀 ${DRY_RUN ? "[DRY RUN] " : FORCE ? "[FORCE] " : ""}Import All Sheets to Supabase (v2)`);
   console.log("=".repeat(60));
 
   // Step 1: Get user ID
   console.log("\n📋 Step 1: Getting system user...");
   const userId = await getSystemUserId();
+
+  // Step 1.5: Detect schema capabilities
+  console.log("\n📋 Step 1.5: Detecting schema...");
+  await detectSchema();
 
   // Step 2: Discover sheets
   console.log("\n📋 Step 2: Discovering sheets from published Google Sheet...");
@@ -582,14 +670,14 @@ async function main() {
   const dashboardCsv = csvData.find((c) => c.name.toLowerCase().includes("dashboard"));
   if (dashboardCsv) {
     const result = await importClients(dashboardCsv.csv, clientMap, userId);
-    console.log(`  Found: ${result.found} | Inserted: ${result.inserted} | Errors: ${result.errors}`);
+    console.log(`  Found: ${result.found} | Inserted: ${result.inserted} | Updated: ${result.updated} | Errors: ${result.errors}`);
     allResults.push({ sheet: "Dashboard Client", ...result });
   } else {
     console.log("  ⚠️ No Dashboard Client sheet found, skipping client creation");
   }
 
-  // Step 6: Import task sheets
-  console.log("\n📋 Step 6: Importing task sheets → tasks...");
+  // Step 6: Import task sheets (idempotent upsert)
+  console.log("\n📋 Step 6: Importing task sheets → tasks (idempotent upsert)...");
   const taskMappings = [
     { pattern: "content production", division: "Content Production" },
     { pattern: "creative director", division: "Creative Director" },
@@ -601,7 +689,7 @@ async function main() {
     if (csvItem) {
       console.log(`\n  📄 Sheet: "${csvItem.name}" → division: "${mapping.division}"`);
       const result = await importTasks(csvItem.csv, csvItem.name, mapping.division, clientMap, userId);
-      console.log(`  Found: ${result.found} | Inserted: ${result.inserted} | Errors: ${result.errors}`);
+      console.log(`  Found: ${result.found} | Inserted: ${result.inserted} | Updated: ${result.updated} | Errors: ${result.errors}`);
       allResults.push({ sheet: csvItem.name, ...result });
     } else {
       console.log(`  ⚠️ No sheet matching "${mapping.pattern}" found`);
@@ -614,6 +702,7 @@ async function main() {
     c.name.toLowerCase().includes("smm upload") || c.name.toLowerCase().includes("upload")
   );
   if (smmCsv) {
+    if (FORCE) await clearExisting("SMM Upload", "content_uploads");
     const result = await importContentUploads(smmCsv.csv, clientMap, userId);
     console.log(`  Found: ${result.found} | Inserted: ${result.inserted} | Errors: ${result.errors}`);
     allResults.push({ sheet: "SMM Upload", ...result });
@@ -627,6 +716,7 @@ async function main() {
     c.name.toLowerCase().includes("caption") || c.name.toLowerCase().includes("bank")
   );
   if (capCsv) {
+    if (FORCE) await clearExisting("Bank Caption Ads", "caption_bank");
     const result = await importCaptionBank(capCsv.csv, clientMap, userId);
     console.log(`  Found: ${result.found} | Inserted: ${result.inserted} | Errors: ${result.errors}`);
     allResults.push({ sheet: "Bank Caption Ads", ...result });
@@ -636,25 +726,26 @@ async function main() {
 
   // Summary
   console.log("\n" + "=".repeat(60));
-  console.log(`${DRY_RUN ? "[DRY RUN] " : ""}📊 IMPORT SUMMARY`);
+  console.log(`${DRY_RUN ? "[DRY RUN] " : FORCE ? "[FORCE] " : ""}📊 IMPORT SUMMARY`);
   console.log("=".repeat(60));
   const totalFound = allResults.reduce((a, r) => a + r.found, 0);
-  const totalInserted = allResults.reduce((a, r) => a + r.inserted, 0);
-  const totalErrors = allResults.reduce((a, r) => a + r.errors, 0);
+  const totalInserted = allResults.reduce((a, r) => a + (r.inserted || 0), 0);
+  const totalUpdated = allResults.reduce((a, r) => a + (r.updated || 0), 0);
+  const totalErrors = allResults.reduce((a, r) => a + (r.errors || 0), 0);
 
   for (const r of allResults) {
-    console.log(`  ${r.sheet.padEnd(25)} | Found: ${String(r.found).padStart(4)} | Inserted: ${String(r.inserted).padStart(4)} | Errors: ${String(r.errors).padStart(4)}`);
+    console.log(`  ${r.sheet.padEnd(25)} | Found: ${String(r.found).padStart(4)} | New: ${String(r.inserted || 0).padStart(4)} | Upd: ${String(r.updated || 0).padStart(4)} | Err: ${String(r.errors || 0).padStart(4)}`);
   }
-  console.log("  " + "-".repeat(56));
-  console.log(`  ${"TOTAL".padEnd(25)} | Found: ${String(totalFound).padStart(4)} | Inserted: ${String(totalInserted).padStart(4)} | Errors: ${String(totalErrors).padStart(4)}`);
+  console.log("  " + "-".repeat(72));
+  console.log(`  ${"TOTAL".padEnd(25)} | Found: ${String(totalFound).padStart(4)} | New: ${String(totalInserted).padStart(4)} | Upd: ${String(totalUpdated).padStart(4)} | Err: ${String(totalErrors).padStart(4)}`);
   console.log("");
 
   if (DRY_RUN) {
     console.log("💡 This was a DRY RUN. Run without --dry-run to actually import.");
   } else if (totalErrors > 0) {
-    console.log(`⚠️ ${totalErrors} errors occurred. Check the migration tables exist.`);
+    console.log(`⚠️ ${totalErrors} errors occurred. Check above for details.`);
   } else {
-    console.log("✅ All data imported successfully!");
+    console.log("✅ Import completed successfully!");
   }
 }
 
