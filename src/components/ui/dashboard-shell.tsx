@@ -3,6 +3,7 @@
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar-context";
 import { Sidebar } from "@/components/ui/sidebar";
 import { Header } from "@/components/ui/header";
+import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar();
@@ -18,8 +19,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }
       >
         <Header />
-        <main className="p-4 sm:p-6 overflow-x-hidden">{children}</main>
+        {/* pb-20 on mobile to prevent bottom nav from covering content */}
+        <main className="overflow-x-hidden p-4 pb-20 sm:p-6 lg:pb-6">{children}</main>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }

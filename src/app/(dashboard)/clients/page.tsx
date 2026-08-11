@@ -526,7 +526,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
             showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
@@ -634,7 +634,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setFilterStatus("active")}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
             filterStatus === "active"
               ? "border-success bg-success/10 text-success"
               : "border-border bg-surface text-muted hover:text-foreground"
@@ -649,7 +649,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setFilterStatus("all")}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
             filterStatus === "all"
               ? "border-primary bg-primary/10 text-primary"
               : "border-border bg-surface text-muted hover:text-foreground"
@@ -663,7 +663,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setFilterStatus("onboarding")}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
             filterStatus === "onboarding"
               ? "border-primary bg-primary/10 text-primary"
               : "border-border bg-surface text-muted hover:text-foreground"
@@ -678,7 +678,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setFilterStatus("hold")}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
             filterStatus === "hold"
               ? "border-warning bg-warning/10 text-warning"
               : "border-border bg-surface text-muted hover:text-foreground"
@@ -693,7 +693,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setFilterStatus("inactive")}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
             filterStatus === "inactive"
               ? "border-muted bg-surface text-foreground"
               : "border-border bg-surface text-muted hover:text-foreground"
@@ -708,7 +708,7 @@ export default function ClientsPage() {
         <button
           onClick={() => setFilterStatus("churned")}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
             filterStatus === "churned"
               ? "border-danger bg-danger/10 text-danger"
               : "border-border bg-surface text-muted hover:text-foreground"
