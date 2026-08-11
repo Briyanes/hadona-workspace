@@ -22,6 +22,11 @@ const DIVISION_BADGE_COLORS: Record<string, string> = {
   "Developer": "border-success/30 text-success",
 };
 
+const ROLE_BADGE_COLORS: Record<string, string> = {
+  super_admin: "border-danger/40 text-danger font-bold",
+  admin: "border-primary/40 text-primary font-semibold",
+};
+
 export function Header() {
   const router = useRouter();
   const supabase = createClient();
@@ -78,6 +83,8 @@ export function Header() {
   };
 
   const divisions: string[] = Array.isArray(profile?.division) ? (profile!.division as unknown as string[]) : [];
+  const isAdmin = profile?.role === "super_admin" || profile?.role === "admin";
+  const roleLabel = profile?.role === "super_admin" ? "Super Admin" : "Admin";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 sm:px-6 backdrop-blur">
@@ -105,9 +112,18 @@ export function Header() {
 
       {/* SECTION 2: Right — Badges → Divider → Name → Avatar → Bell */}
       <div className="flex flex-1 items-center justify-end gap-3">
-        {/* Division Badges */}
+        {/* Role / Division Badges */}
         <div className="hidden items-center gap-1.5 md:flex">
-          {divisions.length > 0 ? (
+          {isAdmin ? (
+            <span
+              className={cn(
+                "whitespace-nowrap rounded-full border bg-surface px-3 py-1 text-[10px] leading-tight",
+                ROLE_BADGE_COLORS[profile!.role!] || "border-border text-muted"
+              )}
+            >
+              {roleLabel}
+            </span>
+          ) : divisions.length > 0 ? (
             divisions.map((d) => (
               <span
                 key={d}

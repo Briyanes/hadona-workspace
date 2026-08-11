@@ -2,9 +2,9 @@
 // HADONA WORKSPACE - TYPE DEFINITIONS
 // ============================================
 
-export type UserRole = "super_admin" | "project_manager" | "creative_director" | "advertiser" | "account_executive" | "designer" | "copywriter" | "developer";
+export type UserRole = "super_admin" | "admin" | "project_manager" | "creative_director" | "advertiser" | "account_executive" | "designer" | "copywriter" | "developer";
 
-export type Division = "Creative Director" | "Advertiser" | "Account Executive" | "Designer" | "Copywriter" | "Developer";
+export type Division = "Creative Director" | "Advertiser" | "Account Executive" | "Designer" | "Copywriter" | "Developer" | "Production";
 
 export type ClientStatus = "active" | "inactive" | "hold" | "onboarding";
 
