@@ -79,6 +79,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const body = await req.json();
+  const { name, type = "general", division = null, dm_with } = body;
+
+  // DM channel creation — any user can create DMs (bypass role check)
+  if (type === "dm" && dm_with) {
+    // Check if DM channel already exists between these two users
+    const dmName = [user.id, dm_with].sort().join("__");
+    const { data: existing } = await supabase
+      .from("chat_channels")
+      .select("*")
+      .eq("type", "dm")
+      .eq("name", dmName)
+      .single();
+
+    if (existing) {
+      return NextResponse.json({ channel: existing });
+    }
+
+    const { data: dmChannel, error: dmError } = await supabase
+      .from("chat_channels")
+      .insert({
+        name: dmName,
+        type: "dm",
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (dmError) {
+      return NextResponse.json({ error: dmError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ channel: dmChannel });
+  }
+
+  // Non-DM channel creation: admin/PM only
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -88,9 +124,6 @@ export async function POST(req: NextRequest) {
   if (!profile || !["super_admin", "project_manager"].includes(profile.role)) {
     return NextResponse.json({ error: "Forbidden — super_admin/project_manager only" }, { status: 403 });
   }
-
-  const body = await req.json();
-  const { name, type = "general", division = null } = body;
 
   if (!name?.trim()) {
     return NextResponse.json({ error: "Channel name required" }, { status: 400 });

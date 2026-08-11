@@ -1,73 +1,106 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/types/database";
+"use client";
 
-export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"] & {
+import { useEffect, useRef, useState, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+let realtimeClient: ReturnType<typeof createClient> | null = null;
+
+// Singleton browser client (avoid recreating on every render)
+function getRealtimeClient() {
+  if (!realtimeClient) {
+    realtimeClient = createClient();
+  }
+  return realtimeClient;
+}
+
+export interface ChatMessage {
+  id: string;
+  channel_id: string;
+  user_id: string;
+  content: string;
+  message_type: string;
+  metadata: any;
+  reply_to: string | null;
+  created_at: string;
+  edited_at: string | null;
+  mentions: string[] | null;
+  is_pinned: boolean;
+  deleted_at: string | null;
   profiles?: {
     full_name: string;
     avatar_url: string | null;
     role: string;
   };
-};
+  chat_reactions?: {
+    id: string;
+    user_id: string;
+    emoji: string;
+  }[];
+}
 
-export type ChatChannel = Database["public"]["Tables"]["chat_channels"]["Row"] & {
-  unread_count?: number;
-};
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+export interface TypingUser {
+  user_id: string;
+  user_name: string;
+}
 
 export function useChatRealtime(channelId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const supabaseRef = useRef<ReturnType<typeof createBrowserClient<Database>> | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
+  const [onlineUsers, setOnlineUsers] = useState<Map<string, string>>(new Map());
+  const channelRef = useRef<any>(null);
+  const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  // Initialize browser client
-  if (!supabaseRef.current && supabaseUrl && supabaseAnonKey) {
-    supabaseRef.current = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
-  }
-  const supabase = supabaseRef.current;
-
-  // Fetch initial messages
-  const fetchMessages = useCallback(async () => {
+  // Load initial messages
+  const loadMessages = useCallback(async () => {
     if (!channelId) return;
-    setLoading(true);
-    setError(null);
-
     try {
       const res = await fetch(`/api/chat/messages?channelId=${channelId}&limit=50`);
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Failed to load messages (${res.status})`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages || []);
       }
-      const data = await res.json();
-      setMessages(data.messages || []);
-      setLoading(false);
-
-      // Mark as read (fire-and-forget, don't crash on failure)
-      fetch("/api/chat/read-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel_id: channelId }),
-      }).catch(() => {});
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Gagal memuat pesan";
-      setError(msg);
-      setMessages([]);
-      setLoading(false);
+      console.error("Failed to load messages:", err);
     }
   }, [channelId]);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+  // Load older messages (pagination)
+  const loadOlderMessages = useCallback(async (): Promise<boolean> => {
+    if (!channelId || messages.length === 0) return false;
+    try {
+      const before = messages[0]?.created_at;
+      const res = await fetch(`/api/chat/messages?channelId=${channelId}&limit=50&before=${encodeURIComponent(before)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const older = data.messages || [];
+        if (older.length > 0) {
+          setMessages((prev) => [...older, ...prev]);
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, [channelId, messages]);
 
-  // Subscribe to realtime
+  // Load messages when channel changes
   useEffect(() => {
-    if (!channelId || !supabase) return;
+    if (channelId) {
+      loadMessages();
+    } else {
+      setMessages([]);
+    }
+  }, [channelId, loadMessages]);
 
-    const channel = supabase
+  // Subscribe to realtime updates
+  useEffect(() => {
+    const client = getRealtimeClient();
+    if (!client || !channelId) return;
+
+    // Database changes channel
+    const dbChannel = client
       .channel(`chat:${channelId}`)
       .on(
         "postgres_changes",
@@ -77,35 +110,75 @@ export function useChatRealtime(channelId: string | null) {
           table: "chat_messages",
           filter: `channel_id=eq.${channelId}`,
         },
-        async (payload) => {
-          const newMsg = payload.new as ChatMessage;
-          // Fetch profile data for the new message
+        async (payload: any) => {
+          // Fetch full message with relations
           try {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name, avatar_url, role")
-              .eq("id", newMsg.user_id)
-              .single();
-
-            setMessages((prev) => {
-              // Avoid duplicates
-              if (prev.some((m) => m.id === newMsg.id)) return prev;
-              return [...prev, { ...newMsg, profiles: profile || undefined }];
-            });
+            const res = await fetch(`/api/chat/messages?channelId=${channelId}&limit=1`);
+            if (res.ok) {
+              const data = await res.json();
+              const newMsg = data.messages?.find((m: ChatMessage) => m.id === payload.new.id);
+              if (newMsg) {
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === newMsg.id)) return prev;
+                  return [...prev, newMsg];
+                });
+              }
+            }
           } catch {
-            // If profile fetch fails, still add the message without profile
+            // Fallback: use payload directly
             setMessages((prev) => {
-              if (prev.some((m) => m.id === newMsg.id)) return prev;
-              return [...prev, { ...newMsg, profiles: undefined }];
+              if (prev.some((m) => m.id === payload.new.id)) return prev;
+              return [...prev, payload.new as ChatMessage];
             });
           }
-
-          // Auto-mark as read since we're viewing this channel
-          fetch("/api/chat/read-status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ channel_id: channelId }),
-          }).catch(() => {});
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_messages",
+          filter: `channel_id=eq.${channelId}`,
+        },
+        (payload: any) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === payload.new.id
+                ? {
+                    ...m,
+                    content: payload.new.content,
+                    edited_at: payload.new.edited_at,
+                    deleted_at: payload.new.deleted_at,
+                  }
+                : m
+            )
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_reactions",
+        },
+        async (payload: any) => {
+          // Update reactions on the message
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m.id === payload.new.message_id) {
+                const reactions = m.chat_reactions || [];
+                if (!reactions.some((r: any) => r.id === payload.new.id)) {
+                  return {
+                    ...m,
+                    chat_reactions: [...reactions, { id: payload.new.id, user_id: payload.new.user_id, emoji: payload.new.emoji }],
+                  };
+                }
+              }
+              return m;
+            })
+          );
         }
       )
       .on(
@@ -113,114 +186,107 @@ export function useChatRealtime(channelId: string | null) {
         {
           event: "DELETE",
           schema: "public",
-          table: "chat_messages",
-          filter: `channel_id=eq.${channelId}`,
+          table: "chat_reactions",
         },
-        (payload) => {
-          const deletedId = (payload.old as { id: string }).id;
-          setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+        (payload: any) => {
+          setMessages((prev) =>
+            prev.map((m) => ({
+              ...m,
+              chat_reactions: (m.chat_reactions || []).filter((r: any) => r.id !== payload.old.id),
+            }))
+          );
         }
       )
+      .subscribe((status: string) => {
+        setIsConnected(status === "SUBSCRIBED");
+      });
+
+    channelRef.current = dbChannel;
+
+    // Presence for online users
+    const presenceChannel = client.channel(`presence:${channelId}`);
+    presenceChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = presenceChannel.presenceState();
+        const online = new Map<string, string>();
+        Object.entries(state).forEach(([key, presences]: [string, any]) => {
+          if (presences[0]?.user_name) {
+            online.set(key, presences[0].user_name);
+          }
+        });
+        setOnlineUsers(online);
+      })
+      .on("broadcast", { event: "typing" }, (payload: any) => {
+        const { user_id, user_name } = payload.payload;
+        if (user_id) {
+          setTypingUsers((prev) => {
+            const next = new Map(prev);
+            next.set(user_id, { user_id, user_name });
+            return next;
+          });
+          // Clear typing after 3 seconds
+          const existing = typingTimeoutRef.current.get(user_id);
+          if (existing) clearTimeout(existing);
+          typingTimeoutRef.current.set(
+            user_id,
+            setTimeout(() => {
+              setTypingUsers((prev) => {
+                const next = new Map(prev);
+                next.delete(user_id);
+                return next;
+              });
+            }, 3000)
+          );
+        }
+      })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      dbChannel.unsubscribe();
+      presenceChannel.unsubscribe();
+      typingTimeoutRef.current.forEach((t) => clearTimeout(t));
+      typingTimeoutRef.current.clear();
     };
-  }, [channelId, supabase]);
+  }, [channelId]);
 
-  // Send message
-  const sendMessage = useCallback(
-    async (content: string, options?: { message_type?: string; metadata?: Record<string, unknown>; reply_to?: string | null }) => {
-      const res = await fetch("/api/chat/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel_id: channelId,
-          content,
-          message_type: options?.message_type || "text",
-          metadata: options?.metadata || {},
-          reply_to: options?.reply_to || null,
-        }),
+  // Broadcast typing indicator
+  const broadcastTyping = useCallback(
+    (userName: string, userId: string) => {
+      const client = getRealtimeClient();
+      if (!client || !channelId) return;
+      client.channel(`presence:${channelId}`).send({
+        type: "broadcast",
+        event: "typing",
+        payload: { user_id: userId, user_name: userName },
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Failed to send message" }));
-        throw new Error(err.error || "Failed to send message");
-      }
-
-      // The realtime subscription will handle adding the message
-      return res.json();
     },
     [channelId]
   );
 
-  // Delete message
-  const deleteMessage = useCallback(async (messageId: string) => {
-    try {
-      await fetch(`/api/chat/messages?id=${messageId}`, { method: "DELETE" });
-    } catch {
-      // Silently fail - realtime will handle state
-    }
-  }, []);
-
-  return { messages, loading, error, sendMessage, deleteMessage, refetch: fetchMessages };
-}
-
-// Hook for channels list with realtime unread updates
-export function useChatChannels() {
-  const [channels, setChannels] = useState<ChatChannel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const supabaseRef = useRef<ReturnType<typeof createBrowserClient<Database>> | null>(null);
-
-  if (!supabaseRef.current && supabaseUrl && supabaseAnonKey) {
-    supabaseRef.current = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
-  }
-  const supabase = supabaseRef.current;
-
-  const fetchChannels = useCallback(async () => {
-    setError(null);
-    try {
-      const res = await fetch("/api/chat/channels");
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Failed to load channels (${res.status})`);
-      }
-      const data = await res.json();
-      setChannels(data.channels || []);
-      setLoading(false);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Gagal memuat channel";
-      setError(msg);
-      setChannels([]);
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchChannels();
-  }, [fetchChannels]);
-
-  // Realtime: listen for new messages across all channels to update unread
-  useEffect(() => {
-    if (!supabase) return;
-
-    const channel = supabase
-      .channel("chat-global")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages" },
-        () => {
-          // Refetch channels to update unread counts
-          fetchChannels();
+  // Join presence
+  const joinPresence = useCallback(
+    (userName: string, userId: string) => {
+      const client = getRealtimeClient();
+      if (!client || !channelId) return;
+      const ch = client.channel(`presence:${channelId}`);
+      ch.subscribe(async (status: string) => {
+        if (status === "SUBSCRIBED") {
+          await ch.track({ user_name: userName, user_id: userId });
         }
-      )
-      .subscribe();
+      });
+    },
+    [channelId]
+  );
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, fetchChannels]);
-
-  return { channels, loading, error, refetch: fetchChannels };
+  return {
+    messages,
+    setMessages,
+    isConnected,
+    typingUsers,
+    onlineUsers,
+    loadMessages,
+    loadOlderMessages,
+    broadcastTyping,
+    joinPresence,
+  };
 }
