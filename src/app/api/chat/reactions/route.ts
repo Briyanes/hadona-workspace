@@ -4,46 +4,55 @@ import { createClient } from "@/lib/supabase/server";
 const db = () => createClient() as any;
 
 export async function POST(req: NextRequest) {
-  const supabase = db();
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const supabase = db();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const body = await req.json();
-  const { message_id, emoji } = body;
+    const body = await req.json();
+    const { message_id, emoji } = body;
 
-  if (!message_id || !emoji) {
-    return NextResponse.json({ error: "message_id and emoji required" }, { status: 400 });
-  }
+    if (!message_id || !emoji) {
+      return NextResponse.json({ error: "message_id and emoji required" }, { status: 400 });
+    }
 
-  // Toggle reaction: if exists, delete; if not, insert
-  const { data: existing } = await supabase
-    .from("chat_reactions")
-    .select("id")
-    .eq("message_id", message_id)
-    .eq("user_id", user.id)
-    .eq("emoji", emoji)
-    .single();
-
-  if (existing) {
-    await supabase
+    // Toggle reaction: if exists, delete; if not, insert
+    const { data: existing } = await supabase
       .from("chat_reactions")
-      .delete()
-      .eq("id", existing.id);
-    return NextResponse.json({ action: "removed" });
+      .select("id")
+      .eq("message_id", message_id)
+      .eq("user_id", user.id)
+      .eq("emoji", emoji)
+      .single();
+
+    if (existing) {
+      await supabase
+        .from("chat_reactions")
+        .delete()
+        .eq("id", existing.id);
+      return NextResponse.json({ action: "removed" });
+    }
+
+    const { data, error } = await supabase
+      .from("chat_reactions")
+      .insert({ message_id, user_id: user.id, emoji })
+      .select("id, message_id, user_id, emoji")
+      .single();
+
+    if (error) {
+      console.error("[chat/reactions POST] DB error:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ action: "added", reaction: data });
+  } catch (err: any) {
+    console.error("[chat/reactions POST] Unhandled error:", err);
+    return NextResponse.json(
+      { error: "Internal server error", detail: err?.message || String(err) },
+      { status: 500 }
+    );
   }
-
-  const { data, error } = await supabase
-    .from("chat_reactions")
-    .insert({ message_id, user_id: user.id, emoji })
-    .select("id, message_id, user_id, emoji")
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ action: "added", reaction: data });
 }
