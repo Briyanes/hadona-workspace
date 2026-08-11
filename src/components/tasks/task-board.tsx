@@ -61,6 +61,15 @@ export interface TaskBoardProps {
   defaultDivision?: string;
 }
 
+// Division tab options for filter
+const DIVISION_TABS = [
+  { label: "All Tasks", value: null },
+  { label: "Creative", value: "Creative Director" },
+  { label: "Editor", value: "Editor" },
+  { label: "Production", value: "Production" },
+  { label: "Social Media", value: "Social Media Manager" },
+];
+
 export function TaskBoard({
   division = null,
   pageTitle = "Task Board",
@@ -73,6 +82,9 @@ export function TaskBoard({
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false);
+
+  // Active division filter (internal state, initialized from prop)
+  const [activeDivision, setActiveDivision] = useState<string | null>(division);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,12 +133,12 @@ export function TaskBoard({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, division]);
+  }, [supabase, activeDivision]);
 
-  // Reset form division when defaultDivision changes
+  // Reset form division when activeDivision changes
   useEffect(() => {
-    setForm((f) => ({ ...f, division: defaultDivision }));
-  }, [defaultDivision]);
+    setForm((f) => ({ ...f, division: activeDivision || defaultDivision }));
+  }, [activeDivision, defaultDivision]);
 
   async function loadCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -147,8 +159,8 @@ export function TaskBoard({
         .order("created_at", { ascending: false });
 
       // Filter by division if specified
-      if (division) {
-        query = query.eq("division", division);
+      if (activeDivision) {
+        query = query.eq("division", activeDivision);
       }
 
       const { data, error } = await query;
@@ -425,6 +437,26 @@ export function TaskBoard({
         </div>
       </div>
 
+      {/* Division Filter Tabs */}
+      {!division && (
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-3">
+          {DIVISION_TABS.map((tab) => (
+            <button
+              key={tab.label}
+              onClick={() => setActiveDivision(tab.value)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                activeDivision === tab.value
+                  ? "bg-primary text-white"
+                  : "bg-surface text-muted hover:bg-background hover:text-foreground"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Search & Filter Bar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[150px] flex-1">
@@ -680,7 +712,7 @@ export function TaskBoard({
                 <SortableTh label="Priority" sortKey="priority" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[90px]" />
                 <th className="w-[110px] px-4 py-3 text-left text-xs font-medium">Assignees</th>
                 <SortableTh label="Deadline" sortKey="due_date" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[120px]" />
-                {!division && (
+                {!activeDivision && (
                   <SortableTh label="Division" sortKey="division" activeKey={sortState.key} direction={sortState.direction} onSort={toggleSort} className="w-[130px]" />
                 )}
               </tr>
@@ -688,7 +720,7 @@ export function TaskBoard({
             <tbody>
               {sortedTasks.length === 0 ? (
                 <tr>
-                  <td colSpan={division ? 7 : 8} className="py-8 text-center text-sm text-muted">Tidak ada task yang cocok dengan filter</td>
+                  <td colSpan={activeDivision ? 7 : 8} className="py-8 text-center text-sm text-muted">Tidak ada task yang cocok dengan filter</td>
                 </tr>
               ) : (
                 sortedTasks.map((task) => {
@@ -751,7 +783,7 @@ export function TaskBoard({
                       <td className={cn("px-4 py-3 text-xs", isOverdue ? "font-medium text-danger" : "text-muted")}>
                         {task.due_date ? formatDate(task.due_date, { day: "numeric", month: "short", year: "numeric" }) : "—"}
                       </td>
-                      {!division && (
+                      {!activeDivision && (
                         <td className="px-4 py-3 text-xs text-muted">
                           <span className="block truncate" title={task.division || undefined}>
                             {task.division || "—"}
@@ -899,7 +931,7 @@ export function TaskBoard({
                       onChange={(e) => setForm({ ...form, division: e.target.value })}
                       className="input"
                       // Lock division when on a sub-page (division prop is set)
-                      disabled={!!division}
+                      disabled={!!activeDivision}
                     >
                       <option value="">— Pilih Divisi —</option>
                       <option value="Creative Director">Creative Director</option>
@@ -914,8 +946,8 @@ export function TaskBoard({
                       <option value="Copywriter">Copywriter</option>
                       <option value="Developer">Developer</option>
                     </select>
-                    {division && (
-                      <p className="mt-1 text-xs text-muted">🔒 Division terkunci: <strong>{division}</strong></p>
+                    {activeDivision && (
+                      <p className="mt-1 text-xs text-muted">🔒 Division terkunci: <strong>{activeDivision}</strong></p>
                     )}
                   </div>
 

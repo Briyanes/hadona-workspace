@@ -20,7 +20,6 @@ import {
   Settings,
   Lock,
   MessageSquare,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -38,7 +37,6 @@ interface NavItem {
   label: string;
   href: string;
   icon: typeof LayoutDashboard;
-  children?: NavItem[];
 }
 
 interface NavSection {
@@ -51,18 +49,7 @@ const navSections: NavSection[] = [
     title: "Operational",
     items: [
       { label: "Dashboard", href: "/", icon: LayoutDashboard },
-      {
-        label: "Tasks",
-        href: "/tasks",
-        icon: CheckSquare,
-        children: [
-          { label: "All Tasks", href: "/tasks", icon: CheckSquare },
-          { label: "Creative", href: "/tasks/creative", icon: Palette },
-          { label: "Editor", href: "/tasks/editor", icon: Clapperboard },
-          { label: "Production", href: "/tasks/production", icon: Clapperboard },
-          { label: "Social Media", href: "/tasks/social-media", icon: Megaphone },
-        ],
-      },
+      { label: "Tasks", href: "/tasks", icon: CheckSquare },
       { label: "Calendar", href: "/calendar", icon: CalendarDays },
       { label: "Timesheet", href: "/timesheet", icon: Clock },
     ],
@@ -130,17 +117,6 @@ export function Sidebar() {
     };
     loadProfile();
   }, [supabase]);
-
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
-
-  function toggleMenu(href: string) {
-    setExpandedMenus((prev) => {
-      const next = new Set(prev);
-      if (next.has(href)) next.delete(href);
-      else next.add(href);
-      return next;
-    });
-  }
 
   const iconSize = isCollapsed ? 20 : 18;
 
@@ -278,73 +254,7 @@ export function Sidebar() {
                     );
                   }
 
-                  // Item with children (expandable sub-menu)
-                  if (item.children && !isCollapsed) {
-                    const isChildActive = item.children.some(
-                      (child) =>
-                        pathname === child.href ||
-                        (child.href !== "/" && pathname.startsWith(child.href))
-                    );
-                    const isExpanded = isChildActive || expandedMenus.has(item.href);
-
-                    return (
-                      <div key={item.href}>
-                        <button
-                          type="button"
-                          onClick={() => toggleMenu(item.href)}
-                          title={isCollapsed ? item.label : undefined}
-                          className={cn(
-                            "sidebar-link w-full",
-                            isChildActive && "sidebar-link-active",
-                            isCollapsed && "justify-center px-0 py-2.5"
-                          )}
-                        >
-                          <Icon size={iconSize} className="shrink-0" />
-                          {!isCollapsed && (
-                            <>
-                              <span className="flex-1 text-left">{item.label}</span>
-                              <ChevronDown
-                                size={14}
-                                className={cn(
-                                  "shrink-0 text-muted transition-transform",
-                                  isExpanded && "rotate-180"
-                                )}
-                              />
-                            </>
-                          )}
-                        </button>
-                        {/* Sub-menu children */}
-                        {isExpanded && !isCollapsed && (
-                          <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-3">
-                            {item.children.map((child) => {
-                              const ChildIcon = child.icon;
-                              const childActive =
-                                pathname === child.href ||
-                                (child.href !== "/" && pathname.startsWith(child.href));
-                              return (
-                                <Link
-                                  key={child.href}
-                                  href={child.href}
-                                  onClick={closeMobile}
-                                  className={cn(
-                                    "flex items-center gap-2 rounded-md px-3 py-1.5 text-xs transition-colors hover:bg-background",
-                                    childActive
-                                      ? "font-semibold text-primary"
-                                      : "text-muted"
-                                  )}
-                                >
-                                  <ChildIcon size={13} className="shrink-0" />
-                                  {child.label}
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  // Full access menu item (no children or collapsed mode)
+                  // Full access menu item
                   return (
                     <Link
                       key={item.href}
