@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-check:
+    name: Lint + Type-Check + Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+
+      - name: Type check
+        run: npx tsc --noEmit
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+          CRON_SECRET: ci-test-secret
+          META_APP_ID: ci-test
+          META_APP_SECRET: ci-test
+          META_BUSINESS_ID: ci-test
+          GOOGLE_CLIENT_ID: ci-test
+          GOOGLE_CLIENT_SECRET: ci-test
+          GOOGLE_REDIRECT_URI: http://localhost:3000/api/google/callback
+          RESEND_API_KEY: re_ci_test
+          EMAIL_FROM: "test@localhost"
+          R2_ACCOUNT_ID: ci-test
+          R2_ACCESS_KEY_ID: ci-test
+          R2_SECRET_ACCESS_KEY: ci-test
+          R2_BUCKET_NAME: ci-test
+          R2_PUBLIC_URL: https://ci-test.r2.dev
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          WEEKLY_REPORT_SHEET_URL: https://docs.google.com/spreadsheets/d/test/edit
