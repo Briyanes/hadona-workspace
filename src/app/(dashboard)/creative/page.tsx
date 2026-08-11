@@ -3,8 +3,10 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Send } from "lucide-react";
+import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Send, Upload, BookMarked } from "lucide-react";
 import { formatDate, cn, extractError } from "@/lib/utils";
+import UploadTracker from "@/components/content-studio/upload-tracker";
+import CaptionBank from "@/components/content-studio/caption-bank";
 
 interface CreativeRequest {
   id: string;
@@ -96,6 +98,7 @@ export default function CreativePage() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [activeTab, setActiveTab] = useState<"requests" | "uploads" | "captions">("requests");
 
   // Revisions
   const [revisions, setRevisions] = useState<Record<string, Revision[]>>({});
@@ -313,11 +316,52 @@ export default function CreativePage() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Content Studio</h1>
+        <p className="text-sm text-muted">Kelola creative request, upload tracker, dan bank caption</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 overflow-x-auto border-b border-border">
+        <button
+          onClick={() => setActiveTab("requests")}
+          className={cn(
+            "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "requests" ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground"
+          )}
+        >
+          <Palette size={15} /> Creative Requests
+        </button>
+        <button
+          onClick={() => setActiveTab("uploads")}
+          className={cn(
+            "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "uploads" ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground"
+          )}
+        >
+          <Upload size={15} /> Upload Tracker
+        </button>
+        <button
+          onClick={() => setActiveTab("captions")}
+          className={cn(
+            "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "captions" ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground"
+          )}
+        >
+          <BookMarked size={15} /> Bank Caption
+        </button>
+      </div>
+
+      {/* Upload Tracker Tab */}
+      {activeTab === "uploads" && <UploadTracker />}
+
+      {/* Caption Bank Tab */}
+      {activeTab === "captions" && <CaptionBank />}
+
+      {/* Creative Requests Tab */}
+      {activeTab === "requests" && (
+      <>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Creative Requests</h1>
-          <p className="text-sm text-muted">Request kreatif untuk tim design/copy</p>
-        </div>
         <button
           onClick={() => {
             setEditingId(null);
@@ -629,6 +673,8 @@ export default function CreativePage() {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
 
       {/* Create/Edit Modal — Sticky Header/Footer + Scroll */}

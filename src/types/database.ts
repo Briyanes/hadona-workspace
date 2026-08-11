@@ -764,6 +764,85 @@ export interface Database {
           { foreignKeyName: "chat_read_receipts_channel_id_fkey"; columns: ["channel_id"]; referencedRelation: "chat_channels"; referencedColumns: ["id"] }
         ];
       };
+      content_uploads: {
+        Row: {
+          id: string;
+          client_id: string | null;
+          upload_date: string;
+          division: string | null;
+          brief_no: string | null;
+          caption: string | null;
+          content_link: string | null;
+          status: string;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id?: string | null;
+          upload_date?: string;
+          division?: string | null;
+          brief_no?: string | null;
+          caption?: string | null;
+          content_link?: string | null;
+          status?: string;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          client_id?: string | null;
+          upload_date?: string;
+          division?: string | null;
+          brief_no?: string | null;
+          caption?: string | null;
+          content_link?: string | null;
+          status?: string;
+          notes?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "content_uploads_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "content_uploads_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      caption_bank: {
+        Row: {
+          id: string;
+          client_id: string | null;
+          product: string | null;
+          theme: string | null;
+          headline: string | null;
+          caption: string | null;
+          hashtags: string | null;
+          performance: string;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id?: string | null;
+          product?: string | null;
+          theme?: string | null;
+          headline?: string | null;
+          caption?: string | null;
+          hashtags?: string | null;
+          performance?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          client_id?: string | null;
+          product?: string | null;
+          theme?: string | null;
+          headline?: string | null;
+          caption?: string | null;
+          hashtags?: string | null;
+          performance?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "caption_bank_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "caption_bank_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
