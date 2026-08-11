@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getInitials, cn } from "@/lib/utils";
 import { Check, ChevronDown, X, UserPlus, Users } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 
 interface User {
   id: string;
@@ -113,13 +114,7 @@ export function AssigneePicker({
             key={u.id}
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface py-0.5 pl-1 pr-2 text-xs"
           >
-            {u.avatar_url ? (
-              <img src={u.avatar_url} alt={u.full_name} className="h-5 w-5 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
-            ) : (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary">
-                {getInitials(u.full_name)}
-              </span>
-            )}
+            <Avatar src={u.avatar_url} name={u.full_name} size={20} referrerPolicy="no-referrer" />
             <span className="text-muted">{u.full_name}</span>
             <button
               type="button"
@@ -205,13 +200,7 @@ export function AssigneePicker({
                       isSelected && "bg-primary/5"
                     )}
                   >
-                    {u.avatar_url ? (
-                      <img src={u.avatar_url} alt={u.full_name} className="h-6 w-6 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
-                        {getInitials(u.full_name)}
-                      </span>
-                    )}
+                    <Avatar src={u.avatar_url} name={u.full_name} size={24} referrerPolicy="no-referrer" />
                     <div className="flex-1">
                       <p className="font-medium text-foreground">{u.full_name}</p>
                       <div className="flex items-center gap-1.5">

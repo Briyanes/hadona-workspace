@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { formatDate, timeUntil, getInitials, cn } from "@/lib/utils";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
+import { Avatar } from "@/components/ui/avatar";
 
 interface Task {
   id: string;
@@ -669,7 +670,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     {task.task_assignees.map((a) => (
                       <div key={a.user_id} className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1">
                         {a.user?.avatar_url ? (
-                          <img src={a.user.avatar_url} alt={a.user?.full_name || "User"} className="h-6 w-6 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                          <Avatar src={a.user.avatar_url} name={a.user?.full_name} size={24} referrerPolicy="no-referrer" />
                         ) : (
                           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                             {getInitials(a.user?.full_name)}
@@ -819,7 +820,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                       comments.map((c) => (
                         <div key={c.id} className="flex gap-2">
                           {c.user?.avatar_url ? (
-                            <img src={c.user.avatar_url} alt={c.user?.full_name || "User"} className="h-7 w-7 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                            <Avatar src={c.user.avatar_url} name={c.user?.full_name} size={28} referrerPolicy="no-referrer" />
                           ) : (
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                               {getInitials(c.user?.full_name)}

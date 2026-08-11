@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { Users, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
 
 interface WorkloadMember {
   user_id: string;
@@ -168,7 +169,7 @@ export function TeamWorkloadWidget() {
               {/* Avatar */}
               <div className="relative shrink-0">
                 {m.avatar_url ? (
-                  <img src={m.avatar_url} alt={m.full_name || ""} className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                  <Avatar src={m.avatar_url} name={m.full_name} size={36} />
                 ) : (
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-xs font-semibold text-foreground">
                     {getInitials(m.full_name)}

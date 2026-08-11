@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Shield, Key, Monitor, Smartphone, Globe, CheckCircle2, AlertCircle, Lock, Copy } from "lucide-react";
+import Image from "next/image";
 
 export default function SecuritySettingsPage() {
   const supabase = createClient();
@@ -323,7 +324,7 @@ export default function SecuritySettingsPage() {
               <div className="space-y-4">
                 <p className="text-sm text-muted">Scan QR code dengan authenticator app Anda:</p>
                 <div className="flex justify-center">
-                  <img src={setupQrUrl} alt="QR Code" className="h-48 w-48 rounded-lg border border-border" />
+                  <Image src={setupQrUrl} alt="QR Code" width={192} height={192} className="h-48 w-48 rounded-lg border border-border" />
                 </div>
                 <div>
                   <p className="mb-1 text-xs text-muted">Atau masukkan manual:</p>

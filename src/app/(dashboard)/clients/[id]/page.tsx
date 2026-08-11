@@ -35,6 +35,7 @@ import { ReportDetailModal } from "@/components/reports/report-detail-modal";
 import { StrategyDetailModal } from "@/components/strategy/strategy-detail-modal";
 import { CommunicationLog } from "@/components/clients/communication-log";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface ClientDetail {
   id: string;
@@ -287,7 +288,7 @@ export default function ClientDetailPage() {
         <div className="flex items-start gap-3">
           {client.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={client.logo_url} alt={client.name} className="h-12 w-12 shrink-0 rounded-xl border border-border object-contain sm:h-14 sm:w-14" />
+            <Image src={client.logo_url!} alt={client.name} width={56} height={56} className="h-12 w-12 shrink-0 rounded-xl border border-border object-contain sm:h-14 sm:w-14" />
           ) : (
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface text-base font-bold text-primary sm:h-14 sm:w-14 sm:text-lg">
               {getInitials(client.name)}

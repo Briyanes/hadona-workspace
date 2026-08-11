@@ -33,6 +33,7 @@ import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 import { uploadFile } from "@/lib/upload";
 import { ImagePlus } from "lucide-react";
+import Image from "next/image";
 
 interface Client {
   id: string;
@@ -740,7 +741,7 @@ export default function ClientsPage() {
                     <Link href={`/clients/${c.id}`} className="flex flex-1 items-center gap-3">
                       {c.logo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={c.logo_url} alt={c.name} className="h-10 w-10 rounded-lg border border-border object-contain" />
+                        <Image src={c.logo_url!} alt={c.name} width={40} height={40} className="h-10 w-10 rounded-lg border border-border object-contain" />
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface text-xs font-bold text-primary">
                           {getInitials(c.name)}
@@ -890,7 +891,7 @@ export default function ClientsPage() {
                       <Link href={`/clients/${c.id}`} className="flex items-center gap-2 hover:text-primary">
                         {c.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.logo_url} alt={c.name} className="h-8 w-8 shrink-0 rounded-lg border border-border object-contain" />
+                          <Image src={c.logo_url!} alt={c.name} width={32} height={32} className="h-8 w-8 shrink-0 rounded-lg border border-border object-contain" />
                         ) : (
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[10px] font-bold text-primary">
                             {getInitials(c.name)}
@@ -1024,7 +1025,7 @@ export default function ClientsPage() {
                       <div className="relative shrink-0">
                         {form.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={form.logo_url} alt="Logo" className="h-14 w-14 rounded-lg border border-border object-contain" />
+                          <Image src={form.logo_url!} alt="Logo" width={56} height={56} className="h-14 w-14 rounded-lg border border-border object-contain" />
                         ) : (
                           <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-surface text-muted">
                             <Building2 size={18} />

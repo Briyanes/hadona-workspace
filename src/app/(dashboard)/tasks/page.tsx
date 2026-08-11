@@ -10,6 +10,7 @@ import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
+import { Avatar } from "@/components/ui/avatar";
 
 interface Task {
   id: string;
@@ -531,7 +532,7 @@ export default function TasksPage() {
                                     {task.task_assignees?.map((a) => (
                                       <div key={a.user_id} title={a.user?.full_name}>
                                         {a.user?.avatar_url ? (
-                                          <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 shrink-0 rounded-full border-2 border-background object-cover" referrerPolicy="no-referrer" />
+                                          <Avatar src={a.user.avatar_url} name={a.user?.full_name} size={24} className="border-2 border-background" referrerPolicy="no-referrer" />
                                         ) : (
                                           <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-foreground">
                                             {getInitials(a.user?.full_name)}
@@ -700,7 +701,7 @@ export default function TasksPage() {
                           {task.task_assignees?.map((a) => (
                             <div key={a.user_id} title={a.user?.full_name}>
                               {a.user?.avatar_url ? (
-                                <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 shrink-0 rounded-full border-2 border-surface object-cover" referrerPolicy="no-referrer" />
+                                <Avatar src={a.user.avatar_url} name={a.user?.full_name} size={24} className="border-2 border-surface" referrerPolicy="no-referrer" />
                               ) : (
                                 <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-foreground">
                                   {getInitials(a.user?.full_name)}

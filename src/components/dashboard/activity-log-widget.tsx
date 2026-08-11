@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { cn, timeUntil, getInitials } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
 
 interface ActivityLog {
   id: string;
@@ -106,7 +107,7 @@ export function ActivityLogWidget() {
                 {/* Avatar */}
                 <div className="relative shrink-0">
                   {log.user?.avatar_url ? (
-                    <img src={log.user.avatar_url} alt={log.user?.full_name || ""} className="h-7 w-7 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                    <Avatar src={log.user.avatar_url} name={log.user?.full_name} size={28} referrerPolicy="no-referrer" />
                   ) : (
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                       {getInitials(log.user?.full_name)}

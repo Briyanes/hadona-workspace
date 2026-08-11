@@ -8,6 +8,7 @@ import type { Database } from "@/types/database";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -553,7 +554,7 @@ export default function UsersPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.full_name} className="h-8 w-8 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                        <Avatar src={user.avatar_url} name={user.full_name} size={32} referrerPolicy="no-referrer" />
                       ) : (
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                           {user.full_name.charAt(0).toUpperCase()}

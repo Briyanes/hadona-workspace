@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Save, Upload, Linkedin, Instagram, Globe, Phone, User } from "lucide-react";
 import type { Profile } from "@/types";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const DIVISIONS = [
   "Creative Director",
@@ -127,7 +128,7 @@ export default function ProfileSettingsPage() {
             <div className="relative">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="Avatar" className="h-24 w-24 shrink-0 rounded-full object-cover ring-2 ring-border" />
+                <Image src={avatarUrl!} alt="Avatar" width={96} height={96} className="h-24 w-24 shrink-0 rounded-full object-cover ring-2 ring-border" />
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/15 text-2xl font-bold text-primary">
                   {fullName?.charAt(0).toUpperCase() || "?"}
