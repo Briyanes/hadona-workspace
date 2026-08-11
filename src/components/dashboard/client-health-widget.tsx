@@ -33,9 +33,18 @@ export function ClientHealthWidget() {
 
   useEffect(() => {
     fetch("/api/dashboard/client-health")
-      .then((r) => r.json())
-      .then(setData)
-      .catch(console.error)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => {
+        if (d && d.summary) {
+          setData(d);
+        }
+      })
+      .catch(() => {
+        // Silent fail — widget just won't show
+      })
       .finally(() => setLoading(false));
   }, []);
 

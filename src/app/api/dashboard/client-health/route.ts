@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all clients with their health scores
+    // Use left join (not !inner) so clients without contracts still appear
     const { data: clients, error } = await supabase
       .from("clients")
       .select(`
@@ -17,18 +18,25 @@ export async function GET(req: NextRequest) {
         name,
         status,
         health_score,
-        last_interaction_date,
-        contracts!inner(status, end_date)
+        last_interaction_date
       `)
       .order("health_score", { ascending: true })
       .limit(20);
 
-    if (error) throw error;
+    if (error) {
+      // If health_score column doesn't exist yet, return empty state gracefully
+      console.error("[API /dashboard/client-health] Query error:", error);
+      return NextResponse.json({
+        summary: { total: 0, atRisk: 0, needsAttention: 0, healthy: 0 },
+        atRiskClients: [],
+        needsAttentionClients: [],
+      });
+    }
 
-    // Categorize by health
-    const atRisk = (clients || []).filter((c: any) => c.health_score !== null && c.health_score < 50);
-    const needsAttention = (clients || []).filter((c: any) => c.health_score !== null && c.health_score >= 50 && c.health_score < 75);
-    const healthy = (clients || []).filter((c: any) => c.health_score !== null && c.health_score >= 75);
+    // Categorize by health (null/undefined scores are ignored)
+    const atRisk = (clients || []).filter((c: any) => c.health_score != null && c.health_score < 50);
+    const needsAttention = (clients || []).filter((c: any) => c.health_score != null && c.health_score >= 50 && c.health_score < 75);
+    const healthy = (clients || []).filter((c: any) => c.health_score != null && c.health_score >= 75);
 
     return NextResponse.json({
       summary: {
