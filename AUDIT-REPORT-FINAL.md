@@ -166,14 +166,27 @@
 
 ---
 
-## 🚀 REKOMENDASI NEXT STEPS (Prioritas)
+## 🚀 REKOMENDASI NEXT STEPS — STATUS UPDATE
 
-1. **P0 — Segera**: Setup GitHub Actions CI (lint + type-check + build gate)
-2. **P1 — Minggu ini**: CSRF protection + DOMPurify untuk rich text input
-3. **P1 — Minggu ini**: Database index audit (terutama `ad_spend_logs`)
-4. **P2 — Bulan ini**: API response format standardization
-5. **P2 — Bulan ini**: Skeleton loading menggantikan spinner
-6. **P3 — Backlog**: Mobile bottom navigation, a11y audit, soft delete migration
+| # | Prioritas | Task | Status |
+|---|-----------|------|--------|
+| 1 | P0 | GitHub Actions CI (lint + type-check + build gate) | ✅ **DONE** (`.github/workflows/ci.yml`) |
+| 2 | P1 | CSRF protection utility + middleware | ✅ **DONE** (`src/lib/csrf.ts`, `src/middleware.ts`) |
+| 3 | P1 | DOMPurify XSS sanitization | ✅ **DONE** (`src/lib/sanitize.ts` + integrasi chat/calendar/clients/notifications) |
+| 4 | P1 | Database index audit (10 high-traffic tables) | ✅ **DONE** (`supabase/migration-v73.sql`) |
+| 5 | P2 | API response format standardization | ✅ **DONE** (`src/lib/api-response.ts`) |
+| 6 | P2 | Skeleton loading components | ✅ **DONE** (`src/components/ui/skeleton.tsx`) |
+| 7 | P2 | 2FA/TOTP security | ✅ **DONE** (`src/lib/totp.ts`, `src/app/api/auth/2fa/route.ts`) |
+| 8 | P2 | Global search + command palette | ✅ **DONE** (`src/components/ui/global-search.tsx`, `command-palette.tsx`) |
+| 9 | P3 | Mobile bottom navigation | ⏳ Backlog |
+| 10 | P3 | a11y audit (focus trap, ARIA labels) | ⏳ Backlog |
+| 11 | P3 | Soft delete migration untuk semua tables | ⏳ Backlog |
+
+### Recent Commits (P0–P5):
+3. `cc3b012` — CSRF middleware, XSS sanitize integration, DB indexes v73, supabase docs
+2. `60c4b0f` — Skeleton loading, API response helper, command palette, CI/CD pipeline
+1. `a0fdbdd` — Security fix (invoice PDF auth), dark mode, env sync, console.log cleanup
+0. `c3659fb` — Stabilitas & infrastruktur (double shell, error boundaries, loading states)
 
 ---
 
