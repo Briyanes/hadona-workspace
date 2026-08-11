@@ -1,5 +1,6 @@
 import { DashboardShell } from "@/components/ui/dashboard-shell";
 import { CommandPalette } from "@/components/ui/command-palette";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
  
  export const dynamic = "force_dynamic";
  
@@ -12,6 +13,10 @@ import { CommandPalette } from "@/components/ui/command-palette";
        </a>
        <DashboardShell>
          <CommandPalette />
+         {/* Breadcrumb Navigation */}
+         <div className="px-4 pt-3 sm:px-6 lg:px-8">
+           <Breadcrumb />
+         </div>
          <div id="main-content" tabIndex={-1}>
            {children}
          </div>

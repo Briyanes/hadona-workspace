@@ -39,21 +39,60 @@ interface NavItem {
   icon: typeof LayoutDashboard;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Clients", href: "/clients", icon: UsersIcon },
-  { label: "Ads Spend", href: "/ads-spend", icon: Megaphone },
-  { label: "Weekly Report", href: "/reports", icon: BarChart3 },
-  { label: "Strategy (OKR)", href: "/strategy", icon: Target },
-  { label: "Creative Requests", href: "/creative", icon: Palette },
-  { label: "Content Plans", href: "/content-plans", icon: Calendar },
-  { label: "Content Studio", href: "/content-studio", icon: Clapperboard },
-  { label: "Team Chat", href: "/chat", icon: MessageSquare },
-  { label: "Calendar", href: "/calendar", icon: CalendarDays },
-  { label: "Timesheet", href: "/timesheet", icon: Clock },
-  { label: "Invoices", href: "/invoices", icon: FileText },
-  { label: "User Management", href: "/users", icon: UserCog },
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    title: "Operational",
+    items: [
+      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Tasks", href: "/tasks", icon: CheckSquare },
+      { label: "Calendar", href: "/calendar", icon: CalendarDays },
+      { label: "Timesheet", href: "/timesheet", icon: Clock },
+    ],
+  },
+  {
+    title: "CRM",
+    items: [
+      { label: "Clients", href: "/clients", icon: UsersIcon },
+      { label: "Leads Pipeline", href: "/leads", icon: Target },
+      { label: "Invoices", href: "/invoices", icon: FileText },
+    ],
+  },
+  {
+    title: "Performance",
+    items: [
+      { label: "Ads Spend", href: "/ads-spend", icon: Megaphone },
+      { label: "Weekly Report", href: "/reports", icon: BarChart3 },
+      { label: "Strategy (OKR)", href: "/strategy", icon: Target },
+    ],
+  },
+  {
+    title: "Creative",
+    items: [
+      { label: "Creative Requests", href: "/creative", icon: Palette },
+      { label: "Content Plans", href: "/content-plans", icon: Calendar },
+      { label: "Content Studio", href: "/content-studio", icon: Clapperboard },
+      { label: "Production", href: "/production", icon: Clapperboard },
+      { label: "Brand Kits", href: "/brand-kits", icon: Palette },
+      { label: "Approvals", href: "/approvals", icon: FileText },
+    ],
+  },
+  {
+    title: "Communication",
+    items: [
+      { label: "Team Chat", href: "/chat", icon: MessageSquare },
+    ],
+  },
+  {
+    title: "Admin",
+    items: [
+      { label: "User Management", href: "/users", icon: UserCog },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -142,74 +181,98 @@ export function Sidebar() {
         {/* Zone 2: Navigation (scrollable) */}
         <nav
           className={cn(
-            "flex-1 space-y-1 overflow-y-auto overflow-x-hidden p-3",
-            isCollapsed && "space-y-2"
+            "flex-1 overflow-y-auto overflow-x-hidden p-3",
+            isCollapsed ? "space-y-2" : "space-y-4"
           )}
         >
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(item.href));
+          {navSections.map((section, sectionIdx) => {
+            // Filter visible items first
+            const visibleItems = section.items.filter((item) => {
+              const access = profile
+                ? checkMenuAccess(item.href, profile.division, profile.role)
+                : "full";
+              return access !== "hidden";
+            });
 
-            // Check access level
-            const access = profile
-              ? checkMenuAccess(item.href, profile.division, profile.role)
-              : "full"; // Default to full while loading
+            // Skip empty sections
+            if (visibleItems.length === 0) return null;
 
-            // Skip hidden items entirely (Tier 3 — management only)
-            if (access === "hidden") return null;
-
-            const isLocked = access === "locked";
-
-            // Locked menu item
-            if (isLocked) {
-              return (
-                <button
-                  key={item.href}
-                  type="button"
-                  onClick={() => handleLockedClick(item.label, item.href)}
-                  title={isCollapsed ? `🔒 ${item.label}` : undefined}
-                  className={cn(
-                    "sidebar-link cursor-not-allowed opacity-40 hover:opacity-60",
-                    isCollapsed && "justify-center px-0 py-2.5"
-                  )}
-                >
-                  <div className="relative shrink-0">
-                    <Icon size={iconSize} />
-                    {isCollapsed && (
-                      <Lock
-                        size={10}
-                        className="absolute -bottom-1 -right-1 rounded-full bg-white text-muted"
-                      />
-                    )}
-                  </div>
-                  {!isCollapsed && (
-                    <span className="flex items-center gap-1.5">
-                      {item.label}
-                      <Lock size={10} className="text-muted" />
-                    </span>
-                  )}
-                </button>
-              );
-            }
-
-            // Full access menu item
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={isCollapsed ? item.label : undefined}
-                onClick={closeMobile}
-                className={cn(
-                  "sidebar-link",
-                  isActive && "sidebar-link-active",
-                  isCollapsed && "justify-center px-0 py-2.5"
+              <div key={section.title} className={cn(isCollapsed ? "space-y-2" : "space-y-1")}>
+                {/* Section Title */}
+                {!isCollapsed && (
+                  <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted/60">
+                    {section.title}
+                  </p>
                 )}
-              >
-                <Icon size={iconSize} className="shrink-0" />
-                {!isCollapsed && item.label}
-              </Link>
+                {/* Collapsed separator */}
+                {isCollapsed && sectionIdx > 0 && (
+                  <div className="mx-3 my-1 border-t border-border" />
+                )}
+                {/* Section Items */}
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/" && pathname.startsWith(item.href));
+
+                  const access = profile
+                    ? checkMenuAccess(item.href, profile.division, profile.role)
+                    : "full";
+
+                  const isLocked = access === "locked";
+
+                  // Locked menu item
+                  if (isLocked) {
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        onClick={() => handleLockedClick(item.label, item.href)}
+                        title={isCollapsed ? `🔒 ${item.label}` : undefined}
+                        className={cn(
+                          "sidebar-link cursor-not-allowed opacity-40 hover:opacity-60",
+                          isCollapsed && "justify-center px-0 py-2.5"
+                        )}
+                      >
+                        <div className="relative shrink-0">
+                          <Icon size={iconSize} />
+                          {isCollapsed && (
+                            <Lock
+                              size={10}
+                              className="absolute -bottom-1 -right-1 rounded-full bg-white text-muted"
+                            />
+                          )}
+                        </div>
+                        {!isCollapsed && (
+                          <span className="flex items-center gap-1.5">
+                            {item.label}
+                            <Lock size={10} className="text-muted" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+
+                  // Full access menu item
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={isCollapsed ? item.label : undefined}
+                      onClick={closeMobile}
+                      className={cn(
+                        "sidebar-link",
+                        isActive && "sidebar-link-active",
+                        isCollapsed && "justify-center px-0 py-2.5"
+                      )}
+                    >
+                      <Icon size={iconSize} className="shrink-0" />
+                      {!isCollapsed && item.label}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>

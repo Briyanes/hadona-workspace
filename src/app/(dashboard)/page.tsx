@@ -33,6 +33,7 @@ import { ProfitabilityWidget } from "@/components/dashboard/profitability-widget
 import { AEAnalyticsWidget } from "@/components/dashboard/ae-analytics-widget";
 import { DashboardSheetImportModal } from "@/components/dashboard/dashboard-sheet-import-modal";
 import { ContentStudioWidget } from "@/components/dashboard/content-studio-widget";
+import { ClientHealthWidget } from "@/components/dashboard/client-health-widget";
 
 // ── Types ──
 interface Stats {
@@ -322,6 +323,9 @@ function DashboardContent() {
 
       {/* ════ AE Analytics (Clients, MRR, Contracts) ════ */}
       <AEAnalyticsWidget />
+
+      {/* ════ Client Health Score ════ */}
+      <ClientHealthWidget />
 
       {/* ════ Ads Performance KPI Bar ════ */}
       {adsKpi && adsKpi.weeklySpend > 0 && (

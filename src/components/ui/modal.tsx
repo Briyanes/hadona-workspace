@@ -186,3 +186,22 @@ export function Modal({
     </div>
   );
 }
+
+/**
+ * Simple Card component for static content display
+ */
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+export function Card({ className, children, ...props }: CardProps) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-surface shadow-sm",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}

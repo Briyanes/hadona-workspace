@@ -33,6 +33,25 @@ export async function GET() {
       );
     }
 
+    // 🔒 Admin-only: Block non-admin access even in development
+    const preCheck = createClient();
+    const { data: { user: preUser } } = await preCheck.auth.getUser();
+    if (!preUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { data: preProfile } = await preCheck
+      .from("profiles")
+      .select("role")
+      .eq("id", preUser.id)
+      .single();
+    const preRole = (preProfile as { role?: string | null } | null)?.role;
+    if (preRole !== "admin" && preRole !== "super_admin") {
+      return NextResponse.json(
+        { error: "Forbidden — admin access required" },
+        { status: 403 }
+      );
+    }
+
     const supabase = createClient();
 
     // 1. Cek session

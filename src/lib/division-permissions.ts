@@ -111,6 +111,28 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
     allowedRoles: ["super_admin", "project_manager"],
   },
 
+  // Phase 2 — New modules
+  {
+    href: "/leads",
+    allowedDivisions: ["Account Executive", "Project Manager", "Advertiser"],
+    allowedRoles: ["super_admin", "project_manager"],
+  },
+  {
+    href: "/approvals",
+    allowedDivisions: ["Account Executive", "Project Manager", "Creative Director", "Content Creator", "Copywriter"],
+    allowedRoles: ["super_admin", "project_manager"],
+  },
+  {
+    href: "/production",
+    allowedDivisions: ["Production", "Creative Director", "Content Creator"],
+    allowedRoles: ["super_admin", "project_manager"],
+  },
+  {
+    href: "/brand-kits",
+    allowedDivisions: ["Creative Director", "Content Creator", "Copywriter", "Account Executive", "Production"],
+    allowedRoles: ["super_admin", "project_manager"],
+  },
+
   // Tier 3 — Management only (HIDDEN for unauthorized, not locked)
   {
     href: "/invoices",

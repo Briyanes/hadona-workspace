@@ -843,6 +843,420 @@ export interface Database {
           { foreignKeyName: "caption_bank_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
         ];
       };
+      // ─── Phase 2 Tables (migration-v79) ───
+      leads: {
+        Row: {
+          id: string;
+          company_name: string;
+          contact_person: string | null;
+          contact_email: string | null;
+          contact_phone: string | null;
+          stage: string;
+          priority: string;
+          estimated_value: number;
+          actual_value: number;
+          source: string | null;
+          notes: string | null;
+          assigned_to: string | null;
+          client_id: string | null;
+          expected_close_date: string | null;
+          won_at: string | null;
+          lost_reason: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          company_name: string;
+          contact_person?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          stage?: string;
+          priority?: string;
+          estimated_value?: number;
+          actual_value?: number;
+          source?: string | null;
+          notes?: string | null;
+          assigned_to?: string | null;
+          client_id?: string | null;
+          expected_close_date?: string | null;
+          won_at?: string | null;
+          lost_reason?: string | null;
+          created_by: string;
+        };
+        Update: {
+          company_name?: string;
+          contact_person?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          stage?: string;
+          priority?: string;
+          estimated_value?: number;
+          actual_value?: number;
+          source?: string | null;
+          notes?: string | null;
+          assigned_to?: string | null;
+          client_id?: string | null;
+          expected_close_date?: string | null;
+          won_at?: string | null;
+          lost_reason?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "leads_assigned_to_fkey"; columns: ["assigned_to"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "leads_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "leads_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      lead_activities: {
+        Row: {
+          id: string;
+          lead_id: string;
+          activity_type: string;
+          description: string | null;
+          metadata: Json;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          lead_id: string;
+          activity_type?: string;
+          description?: string | null;
+          metadata?: Json;
+          created_by: string;
+        };
+        Update: {
+          activity_type?: string;
+          description?: string | null;
+          metadata?: Json;
+        };
+        Relationships: [
+          { foreignKeyName: "lead_activities_lead_id_fkey"; columns: ["lead_id"]; referencedRelation: "leads"; referencedColumns: ["id"] },
+          { foreignKeyName: "lead_activities_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      approval_requests: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          type: string;
+          status: string;
+          client_id: string | null;
+          task_id: string | null;
+          content_url: string | null;
+          submitted_by: string;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          review_notes: string | null;
+          due_date: string | null;
+          priority: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          title: string;
+          description?: string | null;
+          type?: string;
+          status?: string;
+          client_id?: string | null;
+          task_id?: string | null;
+          content_url?: string | null;
+          submitted_by: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          review_notes?: string | null;
+          due_date?: string | null;
+          priority?: string;
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          type?: string;
+          status?: string;
+          client_id?: string | null;
+          task_id?: string | null;
+          content_url?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          review_notes?: string | null;
+          due_date?: string | null;
+          priority?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "approval_requests_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "approval_requests_task_id_fkey"; columns: ["task_id"]; referencedRelation: "tasks"; referencedColumns: ["id"] },
+          { foreignKeyName: "approval_requests_submitted_by_fkey"; columns: ["submitted_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "approval_requests_reviewed_by_fkey"; columns: ["reviewed_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      production_schedules: {
+        Row: {
+          id: string;
+          title: string;
+          description: string | null;
+          client_id: string | null;
+          task_id: string | null;
+          status: string;
+          shoot_date: string | null;
+          shoot_location: string | null;
+          crew: Json;
+          deliverables: Json;
+          assigned_to: string | null;
+          notes: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          title: string;
+          description?: string | null;
+          client_id?: string | null;
+          task_id?: string | null;
+          status?: string;
+          shoot_date?: string | null;
+          shoot_location?: string | null;
+          crew?: Json;
+          deliverables?: Json;
+          assigned_to?: string | null;
+          notes?: string | null;
+          created_by: string;
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          client_id?: string | null;
+          task_id?: string | null;
+          status?: string;
+          shoot_date?: string | null;
+          shoot_location?: string | null;
+          crew?: Json;
+          deliverables?: Json;
+          assigned_to?: string | null;
+          notes?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "production_schedules_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "production_schedules_task_id_fkey"; columns: ["task_id"]; referencedRelation: "tasks"; referencedColumns: ["id"] },
+          { foreignKeyName: "production_schedules_assigned_to_fkey"; columns: ["assigned_to"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "production_schedules_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      equipment: {
+        Row: {
+          id: string;
+          name: string;
+          category: string;
+          brand: string | null;
+          model: string | null;
+          serial_number: string | null;
+          status: string;
+          purchase_date: string | null;
+          purchase_price: number | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          name: string;
+          category?: string;
+          brand?: string | null;
+          model?: string | null;
+          serial_number?: string | null;
+          status?: string;
+          purchase_date?: string | null;
+          purchase_price?: number | null;
+          notes?: string | null;
+        };
+        Update: {
+          name?: string;
+          category?: string;
+          brand?: string | null;
+          model?: string | null;
+          serial_number?: string | null;
+          status?: string;
+          purchase_date?: string | null;
+          purchase_price?: number | null;
+          notes?: string | null;
+        };
+        Relationships: [];
+      };
+      equipment_bookings: {
+        Row: {
+          id: string;
+          equipment_id: string;
+          production_id: string | null;
+          booked_by: string;
+          start_date: string;
+          end_date: string;
+          status: string | null;
+          notes: string | null;
+          returned_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          equipment_id: string;
+          production_id?: string | null;
+          booked_by: string;
+          start_date: string;
+          end_date: string;
+          status?: string | null;
+          notes?: string | null;
+          returned_at?: string | null;
+        };
+        Update: {
+          equipment_id?: string;
+          production_id?: string | null;
+          booked_by?: string;
+          start_date?: string;
+          end_date?: string;
+          status?: string | null;
+          notes?: string | null;
+          returned_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "equipment_bookings_equipment_id_fkey"; columns: ["equipment_id"]; referencedRelation: "equipment"; referencedColumns: ["id"] },
+          { foreignKeyName: "equipment_bookings_production_id_fkey"; columns: ["production_id"]; referencedRelation: "production_schedules"; referencedColumns: ["id"] },
+          { foreignKeyName: "equipment_bookings_booked_by_fkey"; columns: ["booked_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      client_health_scores: {
+        Row: {
+          id: string;
+          client_id: string;
+          score: number;
+          status: string;
+          revenue_trend: string | null;
+          communication_freq: string | null;
+          payment_status: string | null;
+          satisfaction_score: number | null;
+          churn_risk_level: string | null;
+          notes: string | null;
+          last_reviewed_at: string;
+          reviewed_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id: string;
+          score?: number;
+          status?: string;
+          revenue_trend?: string | null;
+          communication_freq?: string | null;
+          payment_status?: string | null;
+          satisfaction_score?: number | null;
+          churn_risk_level?: string | null;
+          notes?: string | null;
+          last_reviewed_at?: string;
+          reviewed_by?: string | null;
+        };
+        Update: {
+          score?: number;
+          status?: string;
+          revenue_trend?: string | null;
+          communication_freq?: string | null;
+          payment_status?: string | null;
+          satisfaction_score?: number | null;
+          churn_risk_level?: string | null;
+          notes?: string | null;
+          last_reviewed_at?: string;
+          reviewed_by?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "client_health_scores_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "client_health_scores_reviewed_by_fkey"; columns: ["reviewed_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      brand_kits: {
+        Row: {
+          id: string;
+          client_id: string | null;
+          name: string;
+          description: string | null;
+          primary_color: string | null;
+          secondary_color: string | null;
+          accent_color: string | null;
+          font_primary: string | null;
+          font_secondary: string | null;
+          brand_voice: string | null;
+          guidelines_url: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          client_id?: string | null;
+          name: string;
+          description?: string | null;
+          primary_color?: string | null;
+          secondary_color?: string | null;
+          accent_color?: string | null;
+          font_primary?: string | null;
+          font_secondary?: string | null;
+          brand_voice?: string | null;
+          guidelines_url?: string | null;
+          created_by: string;
+        };
+        Update: {
+          client_id?: string | null;
+          name?: string;
+          description?: string | null;
+          primary_color?: string | null;
+          secondary_color?: string | null;
+          accent_color?: string | null;
+          font_primary?: string | null;
+          font_secondary?: string | null;
+          brand_voice?: string | null;
+          guidelines_url?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "brand_kits_client_id_fkey"; columns: ["client_id"]; referencedRelation: "clients"; referencedColumns: ["id"] },
+          { foreignKeyName: "brand_kits_created_by_fkey"; columns: ["created_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
+      brand_assets: {
+        Row: {
+          id: string;
+          brand_kit_id: string;
+          name: string;
+          type: string;
+          file_url: string;
+          thumbnail_url: string | null;
+          file_size: number | null;
+          mime_type: string | null;
+          tags: string[];
+          is_public: boolean;
+          uploaded_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_kit_id: string;
+          name: string;
+          type?: string;
+          file_url: string;
+          thumbnail_url?: string | null;
+          file_size?: number | null;
+          mime_type?: string | null;
+          tags?: string[];
+          is_public?: boolean;
+          uploaded_by: string;
+        };
+        Update: {
+          brand_kit_id?: string;
+          name?: string;
+          type?: string;
+          file_url?: string;
+          thumbnail_url?: string | null;
+          file_size?: number | null;
+          mime_type?: string | null;
+          tags?: string[];
+          is_public?: boolean;
+        };
+        Relationships: [
+          { foreignKeyName: "brand_assets_brand_kit_id_fkey"; columns: ["brand_kit_id"]; referencedRelation: "brand_kits"; referencedColumns: ["id"] },
+          { foreignKeyName: "brand_assets_uploaded_by_fkey"; columns: ["uploaded_by"]; referencedRelation: "profiles"; referencedColumns: ["id"] }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
