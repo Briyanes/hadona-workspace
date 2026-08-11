@@ -347,19 +347,19 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] flex-col space-y-4">
+    <div className="flex min-h-[calc(100vh-7rem)] flex-col space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground sm:text-2xl">Task Board</h1>
-          <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas • Klik kartu untuk detail</p>
+          <p className="hidden text-sm text-muted sm:block">Drag & drop untuk memindahkan tugas • Klik kartu untuk detail</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex overflow-hidden rounded-md border border-border">
             <button
               onClick={() => setViewMode("board")}
               className={cn(
-                "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
+                "flex min-h-[44px] items-center gap-1 px-3 py-2.5 text-xs font-medium transition-colors",
                 viewMode === "board" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
               )}
             >
@@ -368,7 +368,7 @@ export default function TasksPage() {
             <button
               onClick={() => setViewMode("table")}
               className={cn(
-                "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
+                "flex min-h-[44px] items-center gap-1 px-3 py-2.5 text-xs font-medium transition-colors",
                 viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
               )}
             >
@@ -378,13 +378,13 @@ export default function TasksPage() {
           <button
             onClick={() => setShowMyTasksOnly(!showMyTasksOnly)}
             className={cn(
-              "flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+              "flex min-h-[44px] items-center gap-1 rounded-md px-3 py-2.5 text-xs font-medium transition-colors",
               showMyTasksOnly ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
             )}
           >
             <User size={14} /> My Tasks
           </button>
-          <button onClick={() => setShowModal(true)} className="btn-primary">
+          <button onClick={() => setShowModal(true)} className="btn-primary min-h-[44px]">
             <Plus size={16} /> New Task
           </button>
         </div>
@@ -392,17 +392,17 @@ export default function TasksPage() {
 
       {/* Search & Filter Bar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
+        <div className="relative min-w-[150px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={14} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari task, client, atau deskripsi..."
-            className="input py-1.5 pl-8 text-xs"
+            placeholder="Cari task..."
+            className="input min-h-[44px] py-2 pl-9 text-xs"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground">
+            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 min-h-[44px] min-w-[44px] -translate-y-1/2 text-muted hover:text-foreground">
               <X size={14} />
             </button>
           )}
@@ -410,7 +410,7 @@ export default function TasksPage() {
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+            "flex min-h-[44px] items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
             showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
@@ -468,7 +468,8 @@ export default function TasksPage() {
       {/* ==================== BOARD VIEW ==================== */}
       {viewMode === "board" && (
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-x-auto sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Mobile: horizontal scroll Kanban; Desktop: CSS grid */}
+        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-x-visible xl:grid-cols-5">
           {COLUMNS.map((col) => {
             const colTasks = visibleTasks.filter((t) => t.status === col.id);
             return (
@@ -478,7 +479,8 @@ export default function TasksPage() {
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={cn(
-                      "flex min-h-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors",
+                      // Mobile: fixed width for horizontal scroll; Desktop: full width in grid
+                      "flex min-h-[300px] w-[280px] shrink-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors lg:w-auto lg:shrink",
                       col.color,
                       snapshot.isDraggingOver && "bg-primary/5"
                     )}

@@ -166,6 +166,48 @@
 
 ---
 
+## 📱 FASE 6 — Mobile UX Audit & Fix (Playwright Automated Test)
+
+### Tools: Playwright Mobile Emulation (iPhone 14 Pro - 390×844px)
+
+**Test Results:**
+| Metric | Status |
+|--------|--------|
+| Console errors | ✅ 0 |
+| Horizontal overflow | ✅ NO |
+| Table overflow | ✅ NO |
+| Modal fits viewport | ✅ Yes (828px / 844px) |
+| Small touch targets | ⚠️ 28 (FIXED in code, pending deploy) |
+
+### Fixes Applied:
+
+#### 1. Touch Target Compliance (WCAG 2.5.5)
+- **Issue**: 28 interactive elements < 44px (sidebar links 36px height)
+- **Fix**: Added `min-h-[44px]` to `.sidebar-link` CSS class + all Tasks page buttons
+- **Files**: `src/app/globals.css`, `src/app/(dashboard)/tasks/page.tsx`
+
+#### 2. Kanban Board Mobile Layout
+- **Issue**: 5 columns stacked vertically → extremely long scroll on mobile
+- **Fix**: Changed to horizontal scroll Kanban on mobile (`flex overflow-x-auto w-[280px]`), CSS grid on desktop (`lg:grid lg:grid-cols-5`)
+- **File**: `src/app/(dashboard)/tasks/page.tsx`
+
+#### 3. Table View Responsive
+- **Issue**: Fixed-width table (940px) overflowing on 390px screen
+- **Fix**: Added `table-fixed` + horizontal scroll wrapper, min-width on search input
+- **File**: `src/app/(dashboard)/tasks/page.tsx`
+
+#### 4. Header & Filter Mobile
+- **Issue**: Buttons too small (py-1.5 = ~32px), subtitle wasting space
+- **Fix**: All buttons `min-h-[44px]`, subtitle hidden on mobile (`hidden sm:block`), search input taller
+- **File**: `src/app/(dashboard)/tasks/page.tsx`
+
+#### 5. Board Column Min-Height
+- **Issue**: Empty columns could collapse, making drag-drop awkward
+- **Fix**: Added `min-h-[300px]` to Droppable columns
+- **File**: `src/app/(dashboard)/tasks/page.tsx`
+
+---
+
 ## 🚀 REKOMENDASI NEXT STEPS — STATUS UPDATE
 
 | # | Prioritas | Task | Status |
@@ -181,12 +223,15 @@
 | 9 | P3 | Mobile bottom navigation | ⏳ Backlog |
 | 10 | P3 | a11y audit (focus trap, ARIA labels) | ⏳ Backlog |
 | 11 | P3 | Soft delete migration untuk semua tables | ⏳ Backlog |
+| 12 | P3 | Touch target audit semua pages (Tasks ✅ done) | 🔄 In Progress |
+| 13 | P3 | Kanban horizontal scroll: apply ke Creative/Content Plans | ⏳ Backlog |
 
-### Recent Commits (P0–P5):
-3. `cc3b012` — CSRF middleware, XSS sanitize integration, DB indexes v73, supabase docs
-2. `60c4b0f` — Skeleton loading, API response helper, command palette, CI/CD pipeline
-1. `a0fdbdd` — Security fix (invoice PDF auth), dark mode, env sync, console.log cleanup
-0. `c3659fb` — Stabilitas & infrastruktur (double shell, error boundaries, loading states)
+### Recent Commits (P0–P6):
+6. `pending` — Mobile UX fix: touch targets 44px, Kanban horizontal scroll, table responsive
+5. `cc3b012` — CSRF middleware, XSS sanitize integration, DB indexes v73, supabase docs
+4. `60c4b0f` — Skeleton loading, API response helper, command palette, CI/CD pipeline
+3. `a0fdbdd` — Security fix (invoice PDF auth), dark mode, env sync, console.log cleanup
+2. `c3659fb` — Stabilitas & infrastruktur (double shell, error boundaries, loading states)
 
 ---
 
