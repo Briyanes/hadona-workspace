@@ -39,11 +39,16 @@ const ROUTES = [
   { path: "/strategy",      label: "Strategy (OKR)",     expectData: true },
   { path: "/creative",      label: "Creative Requests",  expectData: true },
   { path: "/content-plans", label: "Content Plans",      expectData: true },
+  { path: "/content-studio",label: "Content Studio",     expectData: true },
   { path: "/chat",          label: "Team Chat",          expectData: true },
   { path: "/calendar",      label: "Calendar",           expectData: true },
   { path: "/timesheet",     label: "Timesheet",          expectData: true },
   { path: "/invoices",      label: "Invoices",           expectData: true },
   { path: "/users",         label: "User Management",    expectData: true },
+  { path: "/leads",         label: "Leads (CRM)",        expectData: true },
+  { path: "/approvals",     label: "Approvals",          expectData: true },
+  { path: "/production",    label: "Production",         expectData: true },
+  { path: "/brand-kits",    label: "Brand Kits",         expectData: true },
   { path: "/settings",      label: "Settings",           expectData: false },
 ];
 

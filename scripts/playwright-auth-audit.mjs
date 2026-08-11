@@ -42,6 +42,12 @@ const ROUTES = [
   { path: "/timesheet", label: "Timesheet", group: "main" },
   { path: "/invoices", label: "Invoices", group: "main" },
   { path: "/users", label: "User Management", group: "main" },
+  // New routes (v78+v79)
+  { path: "/content-studio", label: "Content Studio", group: "main" },
+  { path: "/leads", label: "Leads (CRM)", group: "main" },
+  { path: "/approvals", label: "Approvals", group: "main" },
+  { path: "/production", label: "Production", group: "main" },
+  { path: "/brand-kits", label: "Brand Kits", group: "main" },
   // Settings sub-pages
   { path: "/settings", label: "Settings (Index)", group: "settings" },
   { path: "/settings/profile", label: "Settings → Profile", group: "settings" },
