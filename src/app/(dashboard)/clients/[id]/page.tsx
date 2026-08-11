@@ -23,6 +23,7 @@ import {
   Activity as ActivityIcon,
   MessageSquare,
   CheckCircle,
+  Upload,
   PencilLine,
   Trash,
   TrendingUp,
@@ -34,6 +35,7 @@ import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { ReportDetailModal } from "@/components/reports/report-detail-modal";
 import { StrategyDetailModal } from "@/components/strategy/strategy-detail-modal";
 import { CommunicationLog } from "@/components/clients/communication-log";
+import { ClientContentTab } from "@/components/clients/client-content-tab";
 import { toast } from "sonner";
 import Image from "next/image";
 
@@ -97,7 +99,7 @@ interface ActivityLog {
   user: { full_name: string } | null;
 }
 
-type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "contract" | "communication" | "activity";
+type Tab = "overview" | "tasks" | "reports" | "strategy" | "ads" | "contract" | "communication" | "content" | "activity";
 
 const statusColors: Record<string, string> = {
   active: "bg-success/20 text-success",
@@ -268,6 +270,7 @@ export default function ClientDetailPage() {
     { id: "ads", label: "Ad Accounts", icon: Megaphone, count: adAccounts.length },
     { id: "contract", label: "Kontrak", icon: FileText, count: 0 },
     { id: "communication", label: "Interaksi", icon: MessageSquare, count: 0 },
+    { id: "content", label: "Content", icon: Upload, count: 0 },
     { id: "activity", label: "Activity", icon: ActivityIcon, count: activityLogs.length },
   ];
 
@@ -631,6 +634,10 @@ export default function ClientDetailPage() {
 
       {tab === "communication" && (
         <CommunicationLog clientId={client.id} />
+      )}
+
+      {tab === "content" && (
+        <ClientContentTab clientId={client.id} />
       )}
 
       {tab === "activity" && (

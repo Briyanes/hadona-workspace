@@ -70,7 +70,15 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   // Tier 2 — Division-specific (show + lock if unauthorized)
   {
     href: "/clients",
-    allowedDivisions: ["Account Executive", "Project Manager", "Developer"],
+    allowedDivisions: [
+      "Account Executive",
+      "Project Manager",
+      "Developer",
+      "Content Creator",
+      "Creative Director",
+      "Copywriter",
+      "Production",
+    ],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
