@@ -7,14 +7,11 @@
 --    (dashboard queries by date range + account, sync queries by client)
 
 -- Index untuk filter by ad_account + date range (dashboard charts)
+--    NOTE: Hanya include kolom dari schema dasar v10 (spend, impressions, clicks)
+--    Kolom reach hanya ada jika v19 sudah di-apply; results TIDAK ADA di schema manapun
 CREATE INDEX IF NOT EXISTS idx_ad_spend_logs_account_date_range
   ON public.ad_spend_logs(ad_account_id, log_date DESC)
-  INCLUDE (spend, impressions, clicks, reach, results);
-
--- Index untuk filter by client_id (multi-account client queries)
-CREATE INDEX IF NOT EXISTS idx_ad_spend_logs_client_date
-  ON public.ad_spend_logs(client_id, log_date DESC)
-  INCLUDE (spend);
+  INCLUDE (spend, impressions, clicks);
 
 -- Index untuk sync dedup check (account + date unique lookup)
 CREATE INDEX IF NOT EXISTS idx_ad_spend_logs_sync_lookup

@@ -26,6 +26,7 @@
 | v71 | `migration-v71.sql` | Auth pages: login, signup improvements, error boundaries |
 | v72 | `migration-v72.sql` | Chat: channels, messages, read-status, realtime hook |
 | v73 | `migration-v73.sql` | **Performance**: composite indexes for 10 high-traffic tables + ANALYZE |
+| v73-fix | `migration-v73-fix.sql` | **FIX**: Drop & recreate ad_spend_logs index (reach/results/client_id tidak ada) |
 
 ## Database Tables (Final State)
 
