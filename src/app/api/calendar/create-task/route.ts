@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       .from("tasks")
       .insert({
         title: sanitizePlainText(title).slice(0, 255),
-        description: description ? sanitizeHtml(description).slice(0, 5000) : null,
+        description: description ? (await sanitizeHtml(description)).slice(0, 5000) : null,
         due_date,
         status: "todo",
         priority: "medium",
