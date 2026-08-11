@@ -22,6 +22,7 @@ import {
   Trophy,
   Send,
   TrendingUp,
+  Database,
 } from "lucide-react";
 import { formatIDR, timeUntil, cn } from "@/lib/utils";
 import { BudgetAlertsBar } from "@/components/dashboard/budget-alerts-bar";
@@ -30,6 +31,7 @@ import { ActivityLogWidget } from "@/components/dashboard/activity-log-widget";
 import { DivisionAnalyticsWidget } from "@/components/dashboard/division-analytics-widget";
 import { ProfitabilityWidget } from "@/components/dashboard/profitability-widget";
 import { AEAnalyticsWidget } from "@/components/dashboard/ae-analytics-widget";
+import { DashboardSheetImportModal } from "@/components/dashboard/dashboard-sheet-import-modal";
 
 // ── Types ──
 interface Stats {
@@ -120,6 +122,7 @@ function DashboardContent() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const searchParams = useSearchParams();
   const abortRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -261,6 +264,13 @@ function DashboardContent() {
           <Link href="/reports" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background">
             <Plus size={14} /> Report
           </Link>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+            title="Import dashboard dari Google Sheet"
+          >
+            <Database size={14} /> Import Sheet
+          </button>
         </div>
       </div>
 
@@ -541,6 +551,16 @@ function DashboardContent() {
 
       {/* ════ Activity Log (Full Width) ════ */}
       <ActivityLogWidget />
+
+      {/* ════ Dashboard Sheet Import Modal ════ */}
+      <DashboardSheetImportModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImported={() => {
+          // Reload dashboard data after import
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
