@@ -39,15 +39,15 @@ interface Client {
 }
 
 const statusColors: Record<string, string> = {
-  draft: "bg-surface text-muted",
-  scheduled: "bg-accent/20 text-accent",
+  todo: "bg-surface text-muted",
+  "in-progress": "bg-accent/20 text-accent",
   uploaded: "bg-primary/20 text-primary",
   done: "bg-success/20 text-success",
 };
 
 const statusLabels: Record<string, string> = {
-  draft: "Draft",
-  scheduled: "Scheduled",
+  todo: "To Do",
+  "in-progress": "In Progress",
   uploaded: "Uploaded",
   done: "Done",
 };
@@ -59,7 +59,7 @@ const EMPTY_FORM = {
   brief_no: "",
   caption: "",
   content_link: "",
-  status: "draft",
+  status: "todo",
   notes: "",
 };
 
@@ -205,8 +205,8 @@ export default function UploadTracker() {
   });
 
   const totalUploads = uploads.length;
-  const scheduledCount = uploads.filter((u) => u.status === "scheduled").length;
-  const uploadedCount = uploads.filter((u) => u.status === "uploaded").length;
+  const todoCount = uploads.filter((u) => u.status === "todo").length;
+  const inProgressCount = uploads.filter((u) => u.status === "in-progress").length;
   const doneCount = uploads.filter((u) => u.status === "done").length;
 
   return (
@@ -223,16 +223,16 @@ export default function UploadTracker() {
         <div className="card p-4">
           <div className="flex items-center gap-2">
             <Clock className="text-accent" size={16} />
-            <p className="text-xs uppercase text-muted">Scheduled</p>
+            <p className="text-xs uppercase text-muted">In Progress</p>
           </div>
-          <p className="mt-1 text-2xl font-bold text-foreground">{scheduledCount}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{inProgressCount}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2">
             <LinkIcon className="text-primary" size={16} />
-            <p className="text-xs uppercase text-muted">Uploaded</p>
+            <p className="text-xs uppercase text-muted">To Do</p>
           </div>
-          <p className="mt-1 text-2xl font-bold text-foreground">{uploadedCount}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{todoCount}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2">
@@ -267,9 +267,8 @@ export default function UploadTracker() {
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-auto">
             <option value="all">Semua Status</option>
-            <option value="draft">Draft</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="uploaded">Uploaded</option>
+            <option value="todo">To Do</option>
+            <option value="in-progress">In Progress</option>
             <option value="done">Done</option>
           </select>
         </div>
@@ -301,7 +300,7 @@ export default function UploadTracker() {
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold text-foreground">{u.client?.name || "No Client"}</h3>
-                    <span className={cn("badge", statusColors[u.status] || statusColors.draft)}>
+                    <span className={cn("badge", statusColors[u.status] || statusColors.todo)}>
                       {statusLabels[u.status] || u.status}
                     </span>
                     {u.brief_no && (
@@ -347,9 +346,8 @@ export default function UploadTracker() {
                     onChange={(e) => updateStatus(u.id, e.target.value)}
                     className="rounded-md border-0 bg-background px-2 py-1 text-xs font-medium"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="uploaded">Uploaded</option>
+                    <option value="todo">To Do</option>
+                    <option value="in-progress">In Progress</option>
                     <option value="done">Done</option>
                   </select>
                   <button
@@ -439,9 +437,8 @@ export default function UploadTracker() {
                       onChange={(e) => setForm({ ...form, status: e.target.value })}
                       className="input"
                     >
-                      <option value="draft">Draft</option>
-                      <option value="scheduled">Scheduled</option>
-                      <option value="uploaded">Uploaded</option>
+                      <option value="todo">To Do</option>
+                      <option value="in-progress">In Progress</option>
                       <option value="done">Done</option>
                     </select>
                   </div>

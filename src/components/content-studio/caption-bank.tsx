@@ -37,19 +37,19 @@ interface Client {
 
 const perfColors: Record<string, string> = {
   good: "bg-success/20 text-success",
-  no: "bg-danger/20 text-danger",
+  poor: "bg-danger/20 text-danger",
   untested: "bg-surface text-muted",
 };
 
 const perfLabels: Record<string, string> = {
   good: "Good",
-  no: "No",
+  poor: "Poor",
   untested: "Untested",
 };
 
 const perfIcons: Record<string, typeof TrendingUp> = {
   good: TrendingUp,
-  no: ThumbsDown,
+  poor: ThumbsDown,
   untested: HelpCircle,
 };
 
@@ -204,7 +204,7 @@ export default function CaptionBank() {
   });
 
   const goodCount = captions.filter((c) => c.performance === "good").length;
-  const noCount = captions.filter((c) => c.performance === "no").length;
+  const poorCount = captions.filter((c) => c.performance === "poor").length;
   const untestedCount = captions.filter((c) => c.performance === "untested").length;
 
   return (
@@ -228,9 +228,9 @@ export default function CaptionBank() {
         <div className="card p-4">
           <div className="flex items-center gap-2">
             <ThumbsDown className="text-danger" size={16} />
-            <p className="text-xs uppercase text-muted">No</p>
+            <p className="text-xs uppercase text-muted">Poor</p>
           </div>
-          <p className="mt-1 text-2xl font-bold text-foreground">{noCount}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{poorCount}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function CaptionBank() {
           <select value={perfFilter} onChange={(e) => setPerfFilter(e.target.value)} className="input w-auto">
             <option value="all">Semua Performance</option>
             <option value="good">Good</option>
-            <option value="no">No</option>
+            <option value="poor">Poor</option>
             <option value="untested">Untested</option>
           </select>
         </div>
@@ -355,7 +355,7 @@ export default function CaptionBank() {
                   >
                     <option value="untested">Untested</option>
                     <option value="good">Good</option>
-                    <option value="no">No</option>
+                    <option value="poor">Poor</option>
                   </select>
                   <div className="flex gap-1">
                     <button
@@ -453,7 +453,7 @@ export default function CaptionBank() {
                     >
                       <option value="untested">Untested</option>
                       <option value="good">Good</option>
-                      <option value="no">No</option>
+                      <option value="poor">Poor</option>
                     </select>
                   </div>
                 </div>
