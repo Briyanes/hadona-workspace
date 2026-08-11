@@ -7,8 +7,8 @@ export default function NotFound() {
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
         <Search className="text-primary" size={32} />
       </div>
-      <h1 className="mb-2 text-6xl font-bold text-gray-900">404</h1>
-      <h2 className="mb-2 text-lg font-semibold text-gray-900">
+      <h1 className="mb-2 text-6xl font-bold text-foreground">404</h1>
+      <h2 className="mb-2 text-lg font-semibold text-foreground">
         Halaman Tidak Ditemukan
       </h2>
       <p className="mb-6 max-w-sm text-sm text-muted">

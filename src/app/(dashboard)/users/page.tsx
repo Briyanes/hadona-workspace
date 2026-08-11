@@ -270,7 +270,7 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">User Management</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">User Management</h1>
           <p className="text-sm text-muted">Kelola tim, role, dan status akun</p>
         </div>
         <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function UsersPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div className="card p-4">
           <p className="text-xs text-muted">Total User</p>
-          <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+          <p className="text-2xl font-bold text-foreground">{users.length}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-muted">Active</p>
@@ -364,7 +364,7 @@ export default function UsersPage() {
         <div className="rounded-lg border-2 border-warning/30 bg-warning/5 p-4">
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-warning" />
-            <h2 className="text-sm font-bold text-gray-900">
+            <h2 className="text-sm font-bold text-foreground">
               Antrian Persetujuan ({pendingUsers.length})
             </h2>
           </div>
@@ -374,7 +374,7 @@ export default function UsersPage() {
               return (
                 <div
                   key={user.id}
-                  className="flex flex-col gap-3 rounded-lg border border-border bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   {/* User info */}
                   <div className="flex items-center gap-3">
@@ -390,7 +390,7 @@ export default function UsersPage() {
                       </div>
                     )}
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{user.full_name}</p>
+                      <p className="text-sm font-semibold text-foreground">{user.full_name}</p>
                       <p className="text-xs text-muted">{user.email}</p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {(user.division || []).map((d) => (
@@ -433,7 +433,7 @@ export default function UsersPage() {
                         </button>
                         <button
                           onClick={() => { setShowRejectFor(null); setRejectReason(""); }}
-                          className="px-3 py-1 text-xs text-muted hover:text-gray-900"
+                          className="px-3 py-1 text-xs text-muted hover:text-foreground"
                         >
                           Batal
                         </button>
@@ -559,7 +559,7 @@ export default function UsersPage() {
                           {user.full_name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="truncate font-medium text-gray-900">{user.full_name}</span>
+                      <span className="truncate font-medium text-foreground">{user.full_name}</span>
                       {user.id === currentUserId && (
                         <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
                           You
@@ -682,7 +682,7 @@ export default function UsersPage() {
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="px-3 py-1 text-xs text-muted hover:text-gray-900"
+                          className="px-3 py-1 text-xs text-muted hover:text-foreground"
                         >
                           Batal
                         </button>
@@ -705,7 +705,7 @@ export default function UsersPage() {
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(null)}
-                          className="px-2 py-1 text-[10px] text-muted hover:text-gray-900"
+                          className="px-2 py-1 text-[10px] text-muted hover:text-foreground"
                         >
                           Batal
                         </button>
@@ -749,7 +749,7 @@ export default function UsersPage() {
         <div className="flex items-start gap-3">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-success" />
           <div className="text-sm">
-            <p className="font-medium text-gray-900">Tentang Role & Hak Akses</p>
+            <p className="font-medium text-foreground">Tentang Role & Hak Akses</p>
             <ul className="mt-2 space-y-1 text-xs text-muted">
               <li>
                 <span className="text-danger">Super Admin</span> &{" "}

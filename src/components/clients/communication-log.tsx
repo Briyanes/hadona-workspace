@@ -208,7 +208,7 @@ export function CommunicationLog({ clientId }: CommunicationLogProps) {
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card p-3 text-center">
-          <p className="text-2xl font-bold text-gray-900">{logs.length}</p>
+          <p className="text-2xl font-bold text-foreground">{logs.length}</p>
           <p className="text-xs text-muted">Total Interaksi</p>
         </div>
         <div className="card p-3 text-center">
@@ -256,7 +256,7 @@ export function CommunicationLog({ clientId }: CommunicationLogProps) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-900">{log.subject}</h4>
+                        <h4 className="text-sm font-semibold text-foreground">{log.subject}</h4>
                         <p className="mt-0.5 text-xs text-muted">
                           {getCommType(log.type).label} • {formatDate(log.created_at, { hour: "2-digit", minute: "2-digit" })}
                           {log.user?.full_name && ` • ${log.user.full_name}`}
@@ -282,7 +282,7 @@ export function CommunicationLog({ clientId }: CommunicationLogProps) {
 
                     {/* Notes */}
                     {log.notes && (
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{log.notes}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{log.notes}</p>
                     )}
 
                     {/* Outcome + Follow-up badges */}
@@ -318,7 +318,7 @@ export function CommunicationLog({ clientId }: CommunicationLogProps) {
               <h3 className="text-base font-bold">
                 {editingId ? "Edit Interaksi" : "Log Interaksi Baru"}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-muted hover:text-gray-900">
+              <button onClick={() => setShowModal(false)} className="text-muted hover:text-foreground">
                 <X size={20} />
               </button>
             </div>

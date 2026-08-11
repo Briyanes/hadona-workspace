@@ -225,7 +225,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    console.log(`[Contract-Renewal] ✅ Processed: ${JSON.stringify(results)}`);
 
     return NextResponse.json({
       success: true,

@@ -39,7 +39,7 @@ export default function WorkspaceSettingsPage() {
       <div className="card p-6">
         <div className="mb-4 flex items-center gap-2">
           <Gamepad2 size={18} className="text-primary" />
-          <h3 className="text-sm font-semibold text-gray-900">WorkAdventure Integration</h3>
+          <h3 className="text-sm font-semibold text-foreground">WorkAdventure Integration</h3>
         </div>
         <div className="space-y-3 text-sm">
           <div className="rounded-md border border-border bg-surface p-3">
@@ -70,7 +70,7 @@ export default function WorkspaceSettingsPage() {
       <div className="card p-6">
         <div className="mb-4 flex items-center gap-2">
           <Settings2 size={18} className="text-primary" />
-          <h3 className="text-sm font-semibold text-gray-900">Meta (Facebook) API</h3>
+          <h3 className="text-sm font-semibold text-foreground">Meta (Facebook) API</h3>
         </div>
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -83,7 +83,7 @@ export default function WorkspaceSettingsPage() {
                 <XCircle size={18} className="text-danger" />
               )}
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   {metaStatus === "connected" ? "Connected" : metaStatus === "loading" ? "Checking..." : "Not Connected"}
                 </p>
                 <p className="text-xs text-muted">

@@ -180,8 +180,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log(`[Auto-Assign] Fetching: ${sheetUrl}`);
-    console.log(`[Auto-Assign] Client col: ${clientCol}, Account col: ${accountCol}`);
 
     // Fetch published HTML
     const res = await fetch(sheetUrl, {
@@ -197,7 +195,6 @@ export async function POST(request: NextRequest) {
     const html = await res.text();
     const rows = parseSheetRows(html);
 
-    console.log(`[Auto-Assign] Parsed ${rows.length} rows from sheet`);
 
     // Convert column letters to indices
     const clientIdx = clientCol.charCodeAt(0) - 65;
@@ -231,7 +228,6 @@ export async function POST(request: NextRequest) {
       pairs.push({ client, nomorAkun });
     }
 
-    console.log(`[Auto-Assign] Found ${pairs.length} valid (client → account) pairs`);
 
     if (pairs.length === 0) {
       return NextResponse.json({
@@ -264,10 +260,6 @@ export async function POST(request: NextRequest) {
 
     // Unassigned accounts (for matching priority)
     const unassigned = allAccounts.filter((a) => !a.client_id);
-
-    console.log(
-      `[Auto-Assign] DB: ${clients.length} clients, ${allAccounts.length} accounts (${unassigned.length} unassigned)`
-    );
 
     // ─── Process each pair ──────────────────────────────────
     let matched = 0;
@@ -310,7 +302,6 @@ export async function POST(request: NextRequest) {
         dbClient = newClientRaw as unknown as DbClient;
         clientMap.set(normalize(client), dbClient);
         createdClients++;
-        console.log(`[Auto-Assign] ✨ Created client: ${client}`);
       }
 
       // 2. Find matching ad account
@@ -371,7 +362,6 @@ export async function POST(request: NextRequest) {
     if (duplicates > 0) parts.push(`${duplicates} duplikat dilewati`);
     if (noMatch > 0) parts.push(`${noMatch} tidak match`);
 
-    console.log(`[Auto-Assign] Done: ${parts.join(", ")}`);
 
     return NextResponse.json({
       success: true,

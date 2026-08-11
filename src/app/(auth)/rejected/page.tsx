@@ -99,7 +99,7 @@ export default function RejectedPage() {
       <div className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-black/10 blur-3xl" />
 
       <div className="relative z-10 w-full max-w-lg">
-        <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-black/20">
+        <div className="rounded-2xl bg-surface p-8 shadow-2xl shadow-black/20">
           {/* Logo + Icon */}
           <div className="mb-6 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-danger/5 p-2">
@@ -120,11 +120,11 @@ export default function RejectedPage() {
               </div>
             </div>
 
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-foreground">
               Akses Ditolak
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Halo <span className="font-semibold text-gray-900">{userName}</span>, mohon maaf,
+              Halo <span className="font-semibold text-foreground">{userName}</span>, mohon maaf,
               permintaan akses Anda belum dapat disetujui pada saat ini.
             </p>
           </div>
@@ -133,7 +133,7 @@ export default function RejectedPage() {
           <div className="mb-4 rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4 text-muted" />
-              <span className="font-medium text-gray-900">{userEmail}</span>
+              <span className="font-medium text-foreground">{userEmail}</span>
             </div>
           </div>
 
@@ -141,13 +141,13 @@ export default function RejectedPage() {
           {rejectionReason && (
             <div className="mb-4 rounded-lg border border-danger/30 bg-danger/5 p-4">
               <p className="mb-1 text-xs font-semibold text-danger">Alasan Penolakan:</p>
-              <p className="text-sm text-gray-700">{rejectionReason}</p>
+              <p className="text-sm text-muted">{rejectionReason}</p>
             </div>
           )}
 
           {/* Info */}
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-info/30 bg-blue-50 p-3">
-            <p className="text-xs text-gray-700">
+            <p className="text-xs text-muted">
               <span className="font-semibold">Butuh bantuan?</span> Hubungi Admin Hadona untuk
               informasi lebih lanjut atau ajukan ulang dengan divisi yang sesuai.
             </p>

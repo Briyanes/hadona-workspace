@@ -237,7 +237,7 @@ function DashboardContent() {
       {/* Header with greeting */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">
             {greeting}{currentUserName ? `, ${currentUserName.split(" ")[0]}` : ""}!
           </h1>
           <p className="text-sm text-muted">
@@ -249,16 +249,16 @@ function DashboardContent() {
           <Link href="/tasks" className="btn-primary flex items-center gap-1.5 text-xs">
             <Plus size={14} /> Task
           </Link>
-          <Link href="/clients" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
+          <Link href="/clients" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background">
             <Plus size={14} /> Client
           </Link>
-          <Link href="/invoices" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
+          <Link href="/invoices" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background">
             <Plus size={14} /> Invoice
           </Link>
-          <Link href="/clients" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
+          <Link href="/clients" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background">
             <Plus size={14} /> Contract
           </Link>
-          <Link href="/reports" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background">
+          <Link href="/reports" className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background">
             <Plus size={14} /> Report
           </Link>
         </div>
@@ -274,7 +274,7 @@ function DashboardContent() {
                 <Icon className={card.color} size={18} />
               </div>
               <p className="text-xs text-muted">{card.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-gray-900 group-hover:text-primary">{card.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground group-hover:text-primary">{card.value}</p>
               {"sub" in card && card.sub && (
                 <p className="text-[10px] text-muted">{card.sub}</p>
               )}
@@ -318,7 +318,7 @@ function DashboardContent() {
           <div className="flex items-center justify-between border-b border-border bg-gradient-to-r from-accent/5 to-primary/5 px-4 py-2.5">
             <div className="flex items-center gap-2">
               <BarChart3 className="text-accent" size={16} />
-              <h2 className="text-sm font-semibold text-gray-900">Performa Iklan Minggu Ini</h2>
+              <h2 className="text-sm font-semibold text-foreground">Performa Iklan Minggu Ini</h2>
             </div>
             <Link href="/reports" className="flex items-center gap-1 text-xs text-primary hover:underline">
               Detail <ArrowRight size={10} />
@@ -327,11 +327,11 @@ function DashboardContent() {
           <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
             <div className="rounded-lg bg-background p-3 text-center">
               <p className="text-[10px] uppercase text-muted">Weekly Spend</p>
-              <p className="mt-1 text-base font-bold text-gray-900">{formatIDR(adsKpi.weeklySpend)}</p>
+              <p className="mt-1 text-base font-bold text-foreground">{formatIDR(adsKpi.weeklySpend)}</p>
             </div>
             <div className="rounded-lg bg-background p-3 text-center">
               <p className="text-[10px] uppercase text-muted">Conversions</p>
-              <p className="mt-1 text-base font-bold text-gray-900">{adsKpi.weeklyConversions}</p>
+              <p className="mt-1 text-base font-bold text-foreground">{adsKpi.weeklyConversions}</p>
             </div>
             <div className="rounded-lg bg-background p-3 text-center">
               <p className="text-[10px] uppercase text-muted">Avg ROAS</p>
@@ -371,7 +371,7 @@ function DashboardContent() {
           <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <Clock className="text-primary" size={18} />
-              <h2 className="font-semibold text-gray-900">Tugas Saya</h2>
+              <h2 className="font-semibold text-foreground">Tugas Saya</h2>
             </div>
             <Link href="/tasks" className="flex items-center gap-1 text-xs text-primary hover:underline">
               Lihat semua <ArrowRight size={10} />
@@ -402,7 +402,7 @@ function DashboardContent() {
                       task.priority === "medium" ? "bg-primary" : "bg-muted"
                     )} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900">{task.title}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                       <div className="flex items-center gap-2 text-xs text-muted">
                         {task.client && <span className="truncate">{task.client.name}</span>}
                         <span className={cn("badge px-1.5 py-0 text-[10px]", statusColors[task.status] || statusColors.todo)}>
@@ -432,7 +432,7 @@ function DashboardContent() {
           <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <FileText className="text-accent" size={18} />
-              <h2 className="font-semibold text-gray-900">Laporan Pending</h2>
+              <h2 className="font-semibold text-foreground">Laporan Pending</h2>
             </div>
             <Link href="/reports" className="flex items-center gap-1 text-xs text-primary hover:underline">
               Semua <ArrowRight size={10} />
@@ -460,7 +460,7 @@ function DashboardContent() {
                       r.status === "draft" ? "bg-muted" : "bg-warning"
                     )} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900">{r.clientName}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{r.clientName}</p>
                       <p className="text-xs text-muted">
                         s/d {new Date(r.periodEnd).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                       </p>
@@ -492,7 +492,7 @@ function DashboardContent() {
           <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <Activity className="text-primary" size={18} />
-              <h2 className="font-semibold text-gray-900">Aktivitas Terbaru</h2>
+              <h2 className="font-semibold text-foreground">Aktivitas Terbaru</h2>
             </div>
           </div>
           <div className="space-y-2">
@@ -511,7 +511,7 @@ function DashboardContent() {
                       <Icon size={14} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-900">{log.description}</p>
+                      <p className="text-xs text-foreground">{log.description}</p>
                       <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted">
                         {log.client?.name && <span className="truncate">{log.client.name}</span>}
                         <span>•</span>

@@ -27,13 +27,13 @@ export function ManualTokenModal({
         {/* Sticky Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Connect dengan Token</h2>
+            <h2 className="text-lg font-bold text-foreground">Connect dengan Token</h2>
             <p className="mt-0.5 text-xs text-muted">Alternatif jika OAuth tidak memungkinkan</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
           >
             <X size={18} />
           </button>
@@ -50,7 +50,7 @@ export function ManualTokenModal({
                   ⭐ REKOMENDASI: System User Token (Permanent)
                 </span>
               </div>
-              <p className="mb-2 text-[11px] text-gray-700 dark:text-gray-300">
+              <p className="mb-2 text-[11px] text-muted dark:text-border">
                 Token yang tidak pernah expired dan <strong>tidak butuh App Review</strong>. Cocok untuk agency.
               </p>
               <ol className="list-decimal space-y-1.5 pl-4 text-[11px] text-muted">
@@ -107,7 +107,7 @@ export function ManualTokenModal({
 
             {/* Token Input */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">
+              <label className="mb-1 block text-xs font-medium text-muted">
                 Access Token *
               </label>
               <textarea
@@ -130,7 +130,7 @@ export function ManualTokenModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+              className="px-4 py-2 text-sm text-muted hover:text-foreground"
             >
               Batal
             </button>

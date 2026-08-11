@@ -176,7 +176,7 @@ export function CompareView({
       {/* Controls */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-700">Client</label>
+          <label className="mb-1 block text-xs font-medium text-muted">Client</label>
           <select
             value={selectedClient}
             onChange={(e) => setSelectedClient(e.target.value)}
@@ -191,7 +191,7 @@ export function CompareView({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-700">Jumlah Minggu</label>
+          <label className="mb-1 block text-xs font-medium text-muted">Jumlah Minggu</label>
           <select
             value={weekCount}
             onChange={(e) => setWeekCount(Number(e.target.value))}
@@ -205,7 +205,7 @@ export function CompareView({
         </div>
         {/* B11: Objective Filter */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-700">Objective</label>
+          <label className="mb-1 block text-xs font-medium text-muted">Objective</label>
           <select
             value={objectiveFilter}
             onChange={(e) => setObjectiveFilter(e.target.value)}
@@ -247,7 +247,7 @@ export function CompareView({
         <div className="ml-auto flex gap-3">
           <div className="rounded-lg border border-border bg-surface px-3 py-2">
             <p className="text-[9px] text-muted">TOTAL SPEND</p>
-            <p className="text-sm font-bold text-gray-900">{formatIDR(totalSpend)}</p>
+            <p className="text-sm font-bold text-foreground">{formatIDR(totalSpend)}</p>
           </div>
           <div className="rounded-lg border border-border bg-surface px-3 py-2">
             <p className="text-[9px] text-muted">OVERALL ROAS</p>
@@ -273,7 +273,7 @@ export function CompareView({
             return (
               <div key={client.clientId} className="card overflow-hidden">
                 <div className="border-b border-border bg-background px-4 py-3">
-                  <h3 className="font-semibold text-gray-900">{client.clientName}</h3>
+                  <h3 className="font-semibold text-foreground">{client.clientName}</h3>
                   <p className="text-xs text-muted">
                     {client.weeks.length} minggu •{" "}
                     {formatDate(client.weeks[0].report.period_start, { day: "numeric", month: "short" })} —{" "}
@@ -322,7 +322,7 @@ export function CompareView({
 
                         return (
                           <tr key={metricDef.key} className="border-b border-border last:border-0 hover:bg-background/50">
-                            <td className="sticky left-0 z-10 bg-surface px-3 py-2 font-medium text-gray-700">
+                            <td className="sticky left-0 z-10 bg-surface px-3 py-2 font-medium text-muted">
                               {metricDef.label}
                             </td>
                             {values.map((val, i) => {
@@ -333,7 +333,7 @@ export function CompareView({
                               return (
                                 <td key={i} className="px-3 py-2 text-right">
                                   <div className="flex flex-col items-end">
-                                    <span className="font-semibold text-gray-900">
+                                    <span className="font-semibold text-foreground">
                                       {fmt(val, metricDef.unit)}
                                     </span>
                                     {wowDelta !== null && Math.abs(wowDelta) > 0.1 && (

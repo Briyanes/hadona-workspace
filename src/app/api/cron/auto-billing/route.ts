@@ -97,7 +97,6 @@ export async function GET(request: NextRequest) {
         prepaidEndDate.setMonth(prepaidEndDate.getMonth() + contract.total_months_prepaid);
 
         if (periodStart < prepaidEndDate) {
-          console.log(`[Auto-Billing] ⏭️ Contract ${contract.contract_number} is prepaid for ${contract.total_months_prepaid} months — skipping period ${currentPeriod}`);
           results.push({
             contract_id: contract.id,
             contract_number: contract.contract_number,
@@ -132,7 +131,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`[Auto-Billing] ✅ Period ${currentPeriod}: ${generatedCount} generated, ${skippedCount} skipped`);
 
     return NextResponse.json({
       success: true,

@@ -154,18 +154,18 @@ export default function SignupPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface p-2 shadow-lg shadow-black/10">
             <Image src="/logo/logo-hadona.png" alt="Hadona Digital Media" width={48} height={48} className="h-full w-full object-contain" priority />
           </div>
           <h1 className="text-2xl font-bold text-white">Buat Akun Baru</h1>
           <p className="mt-1 text-sm text-white/70">Hadona Digital Media Team</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-black/20">
+        <div className="rounded-2xl bg-surface p-8 shadow-2xl shadow-black/20">
           <form onSubmit={handleSignup} className="space-y-4">
             {/* Full Name */}
             <div>
-              <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-gray-900">Nama Lengkap</label>
+              <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-foreground">Nama Lengkap</label>
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                 <input
@@ -187,7 +187,7 @@ export default function SignupPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-gray-900">Email</label>
+              <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                 <input
@@ -208,7 +208,7 @@ export default function SignupPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-gray-900">Password</label>
+              <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                 <input
@@ -226,7 +226,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   tabIndex={-1}
                 >
@@ -252,7 +252,7 @@ export default function SignupPage() {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-gray-900">Konfirmasi Password</label>
+              <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-foreground">Konfirmasi Password</label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
                 <input
@@ -270,7 +270,7 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   aria-label={showConfirm ? "Sembunyikan password" : "Tampilkan password"}
                   tabIndex={-1}
                 >
@@ -310,7 +310,7 @@ export default function SignupPage() {
           <button
             onClick={handleGoogleSignup}
             disabled={googleLoading}
-            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-surface disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface disabled:opacity-50"
           >
             {googleLoading ? (
               <span className="text-xs">Mengarahkan ke Google...</span>

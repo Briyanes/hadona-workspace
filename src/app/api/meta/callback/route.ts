@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
     const supabase = createClient();
 
     // Verify the user
-    console.log("[Meta Callback] Step 0: Verifying user auth...");
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -55,14 +54,11 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${origin}/api/meta/callback`;
 
     // Step 1: Exchange code for short-lived token
-    console.log("[Meta Callback] Step 1: Exchanging code for token...");
     const tokenData = await exchangeCodeForToken(code, redirectUri);
-    console.log("[Meta Callback] Step 1 ✅ Token received (expires in:", tokenData.expires_in, "s)");
 
     // Step 2: Exchange for long-lived token (60 days)
     // FIX B1: Long-lived exchange is MANDATORY. Short-lived tokens expire in 1-2 hours
     // and cause Error [190] on sync. No silent fallback!
-    console.log("[Meta Callback] Step 2: Getting long-lived token (mandatory)...");
     let longLivedToken: string;
     let expiresInSeconds: number;
 
@@ -76,7 +72,6 @@ export async function GET(request: NextRequest) {
         throw new Error(`Long-lived exchange returned suspiciously short expiry: ${expiresInSeconds}s. App may be in Development Mode without proper config.`);
       }
 
-      console.log("[Meta Callback] Step 2 ✅ Long-lived token received (expires in", expiresInSeconds, "s)");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("[Meta Callback] Step 2 ❌ Long-lived exchange FAILED:", errMsg);
@@ -86,13 +81,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 3: Get Meta user profile
-    console.log("[Meta Callback] Step 3: Getting Meta user profile...");
     const metaUser = await getMetaUser(longLivedToken);
-    console.log("[Meta Callback] Step 3 ✅ User:", metaUser.name, "(" + metaUser.id + ")");
 
     // Step 4: Get ad accounts from BOTH Business Manager AND personal
     // NOTE: Without ads_read scope, personal may fail. BM might still work.
-    console.log("[Meta Callback] Step 4: Getting ad accounts (BM + personal)...");
     let adAccounts: Awaited<ReturnType<typeof getAdAccounts>> = [];
     let tokenNeedsUpgrade = false;
 
@@ -100,7 +92,6 @@ export async function GET(request: NextRequest) {
     try {
       const bmAccounts = await getBusinessAdAccounts(HADONA_BM_ID, longLivedToken);
       adAccounts = bmAccounts;
-      console.log("[Meta Callback] Step 4 ✅ Found", bmAccounts.length, "BM ad accounts");
     } catch (bmErr) {
       const bmMsg = bmErr instanceof Error ? bmErr.message : String(bmErr);
       console.warn("[Meta Callback] Step 4 ⚠️ BM ad accounts fetch failed:", bmMsg);
@@ -115,7 +106,6 @@ export async function GET(request: NextRequest) {
           adAccounts.push(pa);
         }
       }
-      console.log("[Meta Callback] Step 4 ✅ Total unique ad accounts:", adAccounts.length);
     } catch (adsErr) {
       const adsMsg = adsErr instanceof Error ? adsErr.message : String(adsErr);
       console.warn("[Meta Callback] Step 4 ⚠️ Personal ad accounts fetch failed:", adsMsg);
@@ -134,7 +124,6 @@ export async function GET(request: NextRequest) {
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
 
     // Step 5: Upsert connection to DB
-    console.log("[Meta Callback] Step 5: Saving to database...");
     const { data: connectionDataRaw, error: dbError } = await supabase
       .from("meta_connections")
       .upsert({
@@ -162,7 +151,6 @@ export async function GET(request: NextRequest) {
         new URL("/ads-spend?meta_error=db_error", origin)
       );
     }
-    console.log("[Meta Callback] Step 5 ✅ Connection saved:", connectionData.id);
 
     // Step 6: Auto-link existing META ad accounts in DB to this connection
     // Match by ad_account_id (Meta returns account_id without "act_" prefix)

@@ -177,7 +177,7 @@ export function CommandPalette() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Cari halaman, client, task, atau invoice..."
-              className="flex-1 bg-transparent py-4 text-sm text-gray-900 outline-none placeholder:text-muted dark:text-[#f1f5f9]"
+              className="flex-1 bg-transparent py-4 text-sm text-foreground outline-none placeholder:text-muted dark:text-[#f1f5f9]"
             />
             <kbd className="hidden rounded border border-border bg-surface px-1.5 py-0.5 text-xs text-muted dark:border-[#475569] dark:bg-[#0f172a] sm:block">
               ESC
@@ -215,7 +215,7 @@ export function CommandPalette() {
                         className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors ${
                           isActive
                             ? 'bg-primary text-white dark:bg-[#FFD60A] dark:text-[#0f172a]'
-                            : 'text-gray-700 hover:bg-surface-hover dark:text-[#cbd5e1] dark:hover:bg-[#334155]'
+                            : 'text-muted hover:bg-surface-hover dark:text-[#cbd5e1] dark:hover:bg-[#334155]'
                         }`}
                       >
                         {item.type === 'command' ? (

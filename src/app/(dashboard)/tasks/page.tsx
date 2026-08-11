@@ -351,7 +351,7 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Task Board</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Task Board</h1>
           <p className="text-sm text-muted">Drag & drop untuk memindahkan tugas • Klik kartu untuk detail</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -360,7 +360,7 @@ export default function TasksPage() {
               onClick={() => setViewMode("board")}
               className={cn(
                 "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
-                viewMode === "board" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+                viewMode === "board" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
               )}
             >
               <LayoutGrid size={14} /> Board
@@ -369,7 +369,7 @@ export default function TasksPage() {
               onClick={() => setViewMode("table")}
               className={cn(
                 "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
-                viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+                viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
               )}
             >
               <List size={14} /> Table
@@ -379,7 +379,7 @@ export default function TasksPage() {
             onClick={() => setShowMyTasksOnly(!showMyTasksOnly)}
             className={cn(
               "flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
-              showMyTasksOnly ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+              showMyTasksOnly ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
             )}
           >
             <User size={14} /> My Tasks
@@ -402,7 +402,7 @@ export default function TasksPage() {
             className="input py-1.5 pl-8 text-xs"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-gray-900">
+            <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground">
               <X size={14} />
             </button>
           )}
@@ -411,7 +411,7 @@ export default function TasksPage() {
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-            showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-gray-900"
+            showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <Filter size={12} />
@@ -484,7 +484,7 @@ export default function TasksPage() {
                     )}
                   >
                     <div className="flex shrink-0 items-center justify-between border-b border-border p-3">
-                      <span className="text-sm font-semibold text-gray-900">{col.label}</span>
+                      <span className="text-sm font-semibold text-foreground">{col.label}</span>
                       <span className="badge bg-background text-muted">{colTasks.length}</span>
                     </div>
                     <div className="flex-1 space-y-2 overflow-y-auto p-2">
@@ -504,7 +504,7 @@ export default function TasksPage() {
                                 )}
                               >
                                 <div className="mb-1.5 flex items-start justify-between gap-2">
-                                  <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                                  <p className="text-sm font-medium text-foreground">{task.title}</p>
                                   <div className="flex items-center gap-1">
                                     {isOverdue && <AlertTriangle size={12} className="text-danger" />}
                                     <Flag size={12} className={priorityColors[task.priority] || "text-muted"} />
@@ -531,7 +531,7 @@ export default function TasksPage() {
                                         {a.user?.avatar_url ? (
                                           <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 shrink-0 rounded-full border-2 border-background object-cover" referrerPolicy="no-referrer" />
                                         ) : (
-                                          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-gray-900">
+                                          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-foreground">
                                             {getInitials(a.user?.full_name)}
                                           </div>
                                         )}
@@ -615,7 +615,7 @@ export default function TasksPage() {
             </button>
             <button
               onClick={() => { setSelectedIds(new Set()); setShowBulkBar(false); }}
-              className="px-3 py-1.5 text-xs text-muted hover:text-gray-900"
+              className="px-3 py-1.5 text-xs text-muted hover:text-foreground"
             >
               Batal
             </button>
@@ -675,7 +675,7 @@ export default function TasksPage() {
                       <td className="px-4 py-3" title={task.title}>
                         <div className="flex items-center gap-1.5 overflow-hidden">
                           {isOverdue && <AlertTriangle size={12} className="shrink-0 text-danger" />}
-                          <span className="truncate font-medium text-gray-900">{task.title}</span>
+                          <span className="truncate font-medium text-foreground">{task.title}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted">
@@ -700,7 +700,7 @@ export default function TasksPage() {
                               {a.user?.avatar_url ? (
                                 <img src={a.user.avatar_url} alt={a.user?.full_name || ""} className="h-6 w-6 shrink-0 rounded-full border-2 border-surface object-cover" referrerPolicy="no-referrer" />
                               ) : (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-gray-900">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-foreground">
                                   {getInitials(a.user?.full_name)}
                                 </div>
                               )}
@@ -742,10 +742,10 @@ export default function TasksPage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">Buat Task Baru</h2>
+              <h2 className="text-lg font-bold text-foreground">Buat Task Baru</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -756,7 +756,7 @@ export default function TasksPage() {
               <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
                 {/* Full-width: Title */}
                 <div className="lg:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Judul Task *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Judul Task *</label>
                   <input
                     type="text"
                     required
@@ -770,7 +770,7 @@ export default function TasksPage() {
 
                 {/* Full-width: Description */}
                 <div className="lg:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
                   <textarea
                     rows={2}
                     value={form.description}
@@ -783,7 +783,7 @@ export default function TasksPage() {
                 {/* LEFT column fields */}
                 <div className="space-y-4">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
                     <select
                       value={form.client_id}
                       onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -799,7 +799,7 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Status Awal</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Status Awal</label>
                     <select
                       value={form.status}
                       onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -814,7 +814,7 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Start Date</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Start Date</label>
                     <input
                       type="date"
                       value={form.start_date}
@@ -824,7 +824,7 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Result / Output</label>
                     <input
                       type="text"
                       value={form.result}
@@ -838,7 +838,7 @@ export default function TasksPage() {
                 {/* RIGHT column fields */}
                 <div className="space-y-4">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Prioritas</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Prioritas</label>
                     <select
                       value={form.priority}
                       onChange={(e) => setForm({ ...form, priority: e.target.value })}
@@ -852,7 +852,7 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Divisi</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Divisi</label>
                     <select
                       value={form.division}
                       onChange={(e) => setForm({ ...form, division: e.target.value })}
@@ -871,7 +871,7 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
                     <input
                       type="date"
                       value={form.due_date}
@@ -881,7 +881,7 @@ export default function TasksPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Blocker / Kendala
                     </label>
                     <textarea
@@ -916,7 +916,7 @@ export default function TasksPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>

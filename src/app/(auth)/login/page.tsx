@@ -109,7 +109,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo & Title */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface p-2 shadow-lg shadow-black/10">
             <Image
               src="/logo/logo-hadona.png"
               alt="Hadona Digital Media"
@@ -124,10 +124,10 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl bg-white p-8 shadow-2xl shadow-black/20">
+        <div className="rounded-2xl bg-surface p-8 shadow-2xl shadow-black/20">
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-900">
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
                 Email
               </label>
               <div className="relative">
@@ -153,7 +153,7 @@ export default function LoginPage() {
               )}
             </div>
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-900">
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground">
                 Password
               </label>
               <div className="relative">
@@ -173,7 +173,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   tabIndex={-1}
                 >
@@ -209,7 +209,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-surface disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface disabled:opacity-50"
           >
             {googleLoading ? (
               <span className="text-xs">Mengarahkan ke Google...</span>

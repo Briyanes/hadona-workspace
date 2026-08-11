@@ -35,13 +35,13 @@ export function AdAccountModal({
       <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
         {/* Sticky Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="text-lg font-bold text-foreground">
             {editingId ? "Edit Ad Account" : "Tambah Ad Account"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
           >
             <X size={18} />
           </button>
@@ -178,7 +178,7 @@ export function AdAccountModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+              className="px-4 py-2 text-sm text-muted hover:text-foreground"
             >
               Batal
             </button>

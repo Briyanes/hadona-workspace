@@ -121,7 +121,7 @@ export default function ProfileSettingsPage() {
     <div className="space-y-6">
       {/* Avatar & Basic Info */}
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Avatar & Identity</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Avatar & Identity</h3>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-2">
             <div className="relative">
@@ -157,7 +157,7 @@ export default function ProfileSettingsPage() {
 
       {/* Contact & Bio */}
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Contact & Bio</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Contact & Bio</h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-muted">Phone</label>
@@ -175,7 +175,7 @@ export default function ProfileSettingsPage() {
 
       {/* Social Links */}
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Social Links</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Social Links</h3>
         <div className="grid gap-4 sm:grid-cols-1">
           <div>
             <label className="mb-1 block text-xs font-medium text-muted">LinkedIn</label>
@@ -203,7 +203,7 @@ export default function ProfileSettingsPage() {
 
       {/* Divisions */}
       <div className="card p-6">
-        <h3 className="mb-1 text-sm font-semibold text-gray-900">Divisions</h3>
+        <h3 className="mb-1 text-sm font-semibold text-foreground">Divisions</h3>
         <p className="mb-3 text-xs text-muted">Select divisi yang Anda jalani. Admin dapat mengubah ini juga.</p>
         <div className="flex flex-wrap gap-2">
           {DIVISIONS.map((d) => {

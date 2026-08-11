@@ -230,7 +230,7 @@ export default function ContentPlansPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Content Plans</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Content Plans</h1>
           <p className="text-sm text-muted">Content calendar & plan per klien</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -248,7 +248,7 @@ export default function ContentPlansPage() {
                 <Icon className={card.color} size={18} />
               </div>
               <p className="text-xs text-muted">{card.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
             </div>
           );
         })}
@@ -318,7 +318,7 @@ export default function ContentPlansPage() {
             <div key={p.id} className="card group">
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{p.client?.name || "Unknown"}</h3>
+                  <h3 className="font-semibold text-foreground">{p.client?.name || "Unknown"}</h3>
                   <p className="flex items-center gap-1 text-xs text-muted">
                     <CalendarDays size={12} /> {formatDate(p.month + "-01", { month: "long", year: "numeric" })}
                   </p>
@@ -379,12 +379,12 @@ export default function ContentPlansPage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingId ? "Edit Content Plan" : "Content Plan Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -394,7 +394,7 @@ export default function ContentPlansPage() {
             <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Client *</label>
                 <select
                   required
                   value={form.client_id}
@@ -412,7 +412,7 @@ export default function ContentPlansPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Bulan *</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Bulan *</label>
                   <input
                     type="month"
                     required
@@ -422,7 +422,7 @@ export default function ContentPlansPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -437,7 +437,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-900">Services</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">Services</label>
                 <div className="flex flex-wrap gap-2">
                   {SERVICE_OPTIONS.map((s) => (
                     <button
@@ -448,7 +448,7 @@ export default function ContentPlansPage() {
                         "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                         form.services.includes(s)
                           ? "bg-primary text-white"
-                          : "bg-background text-muted hover:text-gray-900"
+                          : "bg-background text-muted hover:text-foreground"
                       )}
                     >
                       {s}
@@ -458,7 +458,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
                   Plan URL (Google Sheets/Drive)
                 </label>
                 <input
@@ -471,7 +471,7 @@ export default function ContentPlansPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -488,7 +488,7 @@ export default function ContentPlansPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>

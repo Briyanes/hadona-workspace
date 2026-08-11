@@ -83,7 +83,7 @@ export default function EmbedTasksPage() {
   return (
     <div className="flex h-screen flex-col">
       <header className="border-b border-border bg-surface px-4 py-3">
-        <h1 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+        <h1 className="flex items-center gap-2 text-sm font-bold text-foreground">
           <span className="flex h-6 w-6 items-center justify-center rounded gradient-primary text-[10px]">H</span>
           My Tasks
         </h1>
@@ -98,7 +98,7 @@ export default function EmbedTasksPage() {
             <div key={t.id} className="flex items-start gap-2 rounded-md border border-border bg-surface p-2.5">
               {statusIcons[t.status]}
               <div className="flex-1">
-                <p className="text-xs font-medium text-gray-900">{t.title}</p>
+                <p className="text-xs font-medium text-foreground">{t.title}</p>
                 {t.client && <p className="text-[10px] text-muted">{t.client.name}</p>}
               </div>
               {t.due_date && (

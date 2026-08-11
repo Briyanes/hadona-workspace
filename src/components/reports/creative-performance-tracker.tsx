@@ -264,7 +264,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
   return (
     <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-primary/5 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <ImageIcon size={16} /> Creative Performance Tracker
         </p>
         {!showForm && (
@@ -330,7 +330,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
             className="input text-xs"
           />
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setShowForm(false)} className="text-xs text-muted hover:text-gray-900">
+            <button type="button" onClick={() => setShowForm(false)} className="text-xs text-muted hover:text-foreground">
               Batal
             </button>
             <button type="submit" className="rounded bg-primary px-3 py-1 text-xs text-white hover:opacity-90">
@@ -383,7 +383,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
                       >
                         <Crown size={12} />
                       </button>
-                      <span className="text-xs font-medium text-gray-900">{c.creative_name}</span>
+                      <span className="text-xs font-medium text-foreground">{c.creative_name}</span>
                       <span className="badge bg-primary/10 text-primary text-[8px] capitalize">{c.creative_type}</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -412,11 +412,11 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
 
                   {/* Metrics inline */}
                   <div className="flex flex-wrap gap-2 text-[9px]">
-                    {m.spend && <span className="text-muted">Spend: <b className="text-gray-900">{formatIDR(m.spend)}</b></span>}
-                    {m.impressions && <span className="text-muted">Imp: <b className="text-gray-900">{formatCompact(m.impressions)}</b></span>}
-                    {m.ctr !== undefined && <span className="text-muted">CTR: <b className="text-gray-900">{m.ctr}%</b></span>}
-                    {m.conversions !== undefined && <span className="text-muted">Conv: <b className="text-gray-900">{m.conversions}</b></span>}
-                    {m.cpr && m.cpr > 0 && <span className="text-muted">CPR: <b className="text-gray-900">{formatIDR(m.cpr)}</b></span>}
+                    {m.spend && <span className="text-muted">Spend: <b className="text-foreground">{formatIDR(m.spend)}</b></span>}
+                    {m.impressions && <span className="text-muted">Imp: <b className="text-foreground">{formatCompact(m.impressions)}</b></span>}
+                    {m.ctr !== undefined && <span className="text-muted">CTR: <b className="text-foreground">{m.ctr}%</b></span>}
+                    {m.conversions !== undefined && <span className="text-muted">Conv: <b className="text-foreground">{m.conversions}</b></span>}
+                    {m.cpr && m.cpr > 0 && <span className="text-muted">CPR: <b className="text-foreground">{formatIDR(m.cpr)}</b></span>}
                     {m.roas !== undefined && (
                       <span className={cn("font-semibold", m.roas >= 3 ? "text-success" : m.roas >= 1 ? "text-warning" : "text-danger")}>
                         ROAS: {m.roas}x

@@ -126,7 +126,7 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900">{isEditing ? "Edit Strategi" : "Strategi Detail"}</h2>
+            <h2 className="text-lg font-bold text-foreground">{isEditing ? "Edit Strategi" : "Strategi Detail"}</h2>
           </div>
           <div className="flex items-center gap-1">
             {!isEditing && (
@@ -138,13 +138,13 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
                   <Trash2 size={16} />
                 </button>
                 {confirmDelete && (
-                  <button onClick={() => setConfirmDelete(false)} className="rounded px-2 py-1 text-xs text-muted hover:text-gray-900">
+                  <button onClick={() => setConfirmDelete(false)} className="rounded px-2 py-1 text-xs text-muted hover:text-foreground">
                     Batal
                   </button>
                 )}
               </>
             )}
-            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-gray-900">
+            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
               <X size={18} />
             </button>
           </div>
@@ -155,19 +155,19 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
           {isEditing ? (
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Judul *</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Judul *</label>
                 <input type="text" required autoFocus value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="input" />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Periode</label>
                 <input type="text" value={editForm.period} onChange={(e) => setEditForm({ ...editForm, period: e.target.value })} placeholder="e.g., Q1 2025, Jan-Maret 2025" className="input" />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
                 <textarea rows={6} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="input resize-none" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">Batal</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
                 <button type="submit" disabled={saving} className="btn-primary">{saving ? "Menyimpan..." : "Simpan Perubahan"}</button>
               </div>
             </form>
@@ -179,7 +179,7 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
                   <Target size={18} className="text-accent" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900">{strategy.title}</h3>
+                  <h3 className="text-lg font-bold text-foreground">{strategy.title}</h3>
                   {strategy.period && (
                     <div className="mt-1 flex items-center gap-1.5 text-xs text-muted">
                       <Calendar size={12} />
@@ -194,7 +194,7 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Deskripsi</p>
                   <div className="rounded-lg border border-border bg-background p-4">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{strategy.description}</p>
+                    <p className="text-sm text-muted whitespace-pre-wrap">{strategy.description}</p>
                   </div>
                 </div>
               ) : (

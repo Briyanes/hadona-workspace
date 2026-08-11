@@ -226,7 +226,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
           </div>
           <p className="mt-1 text-[9px] text-muted">{GOAL_LABELS[newGoal.goal_type].desc}</p>
           <div className="mt-2 flex justify-end gap-1">
-            <button type="button" onClick={() => setShowForm(false)} className="text-[10px] text-muted hover:text-gray-900">
+            <button type="button" onClick={() => setShowForm(false)} className="text-[10px] text-muted hover:text-foreground">
               Batal
             </button>
             <button type="submit" className="rounded bg-primary px-2 py-1 text-[10px] text-white hover:opacity-90">
@@ -251,7 +251,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
             return (
               <div key={g.id} className="group rounded-md border border-border bg-surface p-2">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-gray-700">{meta.label}</span>
+                  <span className="text-[10px] font-medium text-muted">{meta.label}</span>
                   <div className="flex items-center gap-1">
                     <span className="text-[9px] text-muted uppercase">{g.period_type}</span>
                     <button
@@ -286,7 +286,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
                   </>
                 ) : (
                   <div className="flex items-center justify-between rounded bg-background px-2 py-1 text-[10px]">
-                    <span className="text-muted">Target: <b className="text-gray-900">{formatGoal(g.target_value, meta.unit)}</b></span>
+                    <span className="text-muted">Target: <b className="text-foreground">{formatGoal(g.target_value, meta.unit)}</b></span>
                     <span className="text-muted italic">Belum ada aktual</span>
                   </div>
                 )}

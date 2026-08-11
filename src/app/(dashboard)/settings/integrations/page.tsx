@@ -73,7 +73,7 @@ export default function IntegrationsSettingsPage() {
             <path d="M19.5 3h-15A1.5 1.5 0 003 4.5v15A1.5 1.5 0 004.5 21h15a1.5 1.5 0 001.5-1.5v-15A1.5 1.5 0 0019.5 3z" fill="#4285F4"/>
             <path d="M12 6v12m-3-3h6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
           </svg>
-          <h3 className="text-sm font-semibold text-gray-900">Google Calendar & Meet</h3>
+          <h3 className="text-sm font-semibold text-foreground">Google Calendar & Meet</h3>
         </div>
 
         <div className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -86,7 +86,7 @@ export default function IntegrationsSettingsPage() {
               <XCircle size={18} className="text-danger" />
             )}
             <div>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-foreground">
                 {connected ? "Connected" : loading ? "Checking..." : "Not Connected"}
               </p>
               <p className="text-xs text-muted max-w-md">
@@ -135,7 +135,7 @@ export default function IntegrationsSettingsPage() {
       <div className="card p-6 opacity-60">
         <div className="mb-3 flex items-center gap-2">
           <Plug size={18} className="text-muted" />
-          <h3 className="text-sm font-semibold text-gray-900">Email (SMTP)</h3>
+          <h3 className="text-sm font-semibold text-foreground">Email (SMTP)</h3>
           <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
             Coming Soon
           </span>

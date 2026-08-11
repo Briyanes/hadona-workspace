@@ -126,7 +126,7 @@ export function TeamWorkloadWidget() {
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Users size={18} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-900">Team Workload</h3>
+          <h3 className="text-sm font-bold text-foreground">Team Workload</h3>
         </div>
         <div className="flex items-center justify-center py-6">
           <Loader2 size={20} className="animate-spin text-muted" />
@@ -140,7 +140,7 @@ export function TeamWorkloadWidget() {
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Users size={18} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-900">Team Workload</h3>
+          <h3 className="text-sm font-bold text-foreground">Team Workload</h3>
         </div>
         <p className="py-4 text-center text-sm text-muted">Belum ada task yang di-assign</p>
       </div>
@@ -152,7 +152,7 @@ export function TeamWorkloadWidget() {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users size={18} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-900">Team Workload</h3>
+          <h3 className="text-sm font-bold text-foreground">Team Workload</h3>
         </div>
         <span className="text-xs text-muted">{members.length} members</span>
       </div>
@@ -170,7 +170,7 @@ export function TeamWorkloadWidget() {
                 {m.avatar_url ? (
                   <img src={m.avatar_url} alt={m.full_name || ""} className="h-9 w-9 shrink-0 rounded-full object-cover" />
                 ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-xs font-semibold text-gray-900">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-xs font-semibold text-foreground">
                     {getInitials(m.full_name)}
                   </div>
                 )}
@@ -180,7 +180,7 @@ export function TeamWorkloadWidget() {
               {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="truncate text-sm font-medium text-gray-900">{m.full_name}</span>
+                  <span className="truncate text-sm font-medium text-foreground">{m.full_name}</span>
                   <span className="text-xs text-muted">{active} active</span>
                 </div>
                 <div className="mt-1 flex items-center gap-2">

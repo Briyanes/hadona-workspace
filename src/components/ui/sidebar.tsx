@@ -105,7 +105,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-white transition-all duration-200",
+          "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-border bg-surface transition-all duration-200",
           // Desktop: collapse to 64px or expand to 240px
           isCollapsed ? "w-16" : "w-60",
           // Mobile: off-screen by default, slides in when open (below lg breakpoint)
@@ -117,7 +117,7 @@ export function Sidebar() {
         {/* Zone 1: Brand area (fixed, no scroll) */}
         <div
           className={cn(
-            "flex h-16 shrink-0 items-center border-b-0 bg-white",
+            "flex h-16 shrink-0 items-center border-b-0 bg-surface",
             isCollapsed ? "justify-center px-2" : "gap-2 px-5"
           )}
         >
@@ -131,7 +131,7 @@ export function Sidebar() {
           />
           {!isCollapsed && (
             <div>
-              <div className="text-sm font-bold text-gray-900">Hadona</div>
+              <div className="text-sm font-bold text-foreground">Hadona</div>
               <div className="text-[10px] text-muted">Workspace</div>
             </div>
           )}

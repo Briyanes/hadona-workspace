@@ -36,9 +36,7 @@ export async function POST(req: NextRequest) {
   // Rate limit: 3 syncs/hour per IP — operasi sangat berat (60s maxDuration)
   const rateLimited = applyRateLimit(req, "reports-sync", 3, 60 * 60 * 1000);
   if (rateLimited) return rateLimited;
-  console.log("[reports/sync] Manual sync triggered at", new Date().toISOString());
-
-  try {
+    try {
     // ── 1. Auth & permission ───────────────────────────────────────────────
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -88,15 +86,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(
-      "[reports/sync] Syncing from:",
-      sheetUrl,
-      "autoCreateClient:",
-      autoCreateClient,
-      tabGid ? `tabGid=${tabGid}` : "(all tabs)"
-    );
-
-    // ── 3. Run sync ────────────────────────────────────────────────────────
+        // ── 3. Run sync ────────────────────────────────────────────────────────
     // 🆕 v3: Pass tabGid kalau ada → fetchAndParseAllSheets hanya 1 tab (cepat).
     const result = await syncReportsFromSheet(sheetUrl, {
       autoCreateClient,
@@ -104,9 +94,7 @@ export async function POST(req: NextRequest) {
     });
 
     const durationSec = ((Date.now() - startedAt) / 1000).toFixed(2);
-    console.log(`[reports/sync] Done in ${durationSec}s`);
-
-    // ── 4. Log activity ────────────────────────────────────────────────────
+        // ── 4. Log activity ────────────────────────────────────────────────────
     try {
       await supabase.from("activity_logs").insert({
         user_id: user.id,

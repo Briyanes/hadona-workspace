@@ -547,7 +547,7 @@ export default function InvoicesPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Invoices</h1>
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Invoices</h1>
         <div className="skeleton h-64 rounded-lg" />
       </div>
     );
@@ -557,7 +557,7 @@ export default function InvoicesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Invoices</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Invoices</h1>
           <p className="text-sm text-muted">Kelola tagihan & pembayaran client</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -575,7 +575,7 @@ export default function InvoicesPage() {
                 <Icon className={card.color} size={18} />
               </div>
               <p className="text-xs text-muted">{card.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
               <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
             </div>
           );
@@ -648,17 +648,17 @@ export default function InvoicesPage() {
                 const isOverdue = inv.status === "sent" && inv.due_date < todayStr;
                 return (
                   <tr key={inv.id} className="group hover:bg-surface/50">
-                    <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900">
+                    <td className="px-4 py-3 font-mono text-xs font-medium text-foreground">
                       {inv.invoice_number}
                     </td>
-                    <td className="px-4 py-3 text-gray-900">{inv.client?.name || "-"}</td>
+                    <td className="px-4 py-3 text-foreground">{inv.client?.name || "-"}</td>
                     <td className="px-4 py-3 text-muted">{formatDate(inv.issue_date)}</td>
                     <td className="px-4 py-3">
                       <span className={cn("text-muted", isOverdue && "font-medium text-danger")}>
                         {formatDate(inv.due_date)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right font-medium text-foreground">
                       {formatIDR(inv.amount + inv.tax)}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -721,12 +721,12 @@ export default function InvoicesPage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingId ? "Edit Invoice" : "Invoice Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -739,7 +739,7 @@ export default function InvoicesPage() {
                 {/* Invoice Number + Client */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Nomor Invoice *
                     </label>
                     <input
@@ -751,7 +751,7 @@ export default function InvoicesPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Client *</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Client *</label>
                     <select
                       required
                       value={form.is_new_client ? "__new__" : form.client_id}
@@ -818,7 +818,7 @@ export default function InvoicesPage() {
                       <div className="flex items-start gap-2">
                         <FileSignature className="mt-0.5 shrink-0 text-primary" size={16} />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-foreground">
                             Kontrak Aktif: {contractInfo.contract_number || "—"}
                           </p>
                           <p className="text-xs text-muted">
@@ -842,7 +842,7 @@ export default function InvoicesPage() {
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Tanggal Invoice
                     </label>
                     <input
@@ -853,7 +853,7 @@ export default function InvoicesPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Jatuh Tempo *
                     </label>
                     <input
@@ -869,7 +869,7 @@ export default function InvoicesPage() {
                 {/* ── LINE ITEMS BUILDER ── */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="block text-sm font-medium text-gray-900">
+                    <label className="block text-sm font-medium text-foreground">
                       Detail Layanan / Items
                     </label>
                     <button
@@ -934,7 +934,7 @@ export default function InvoicesPage() {
                             className="no-spinner w-full rounded border border-border bg-background px-2 py-1 text-right text-sm focus:border-primary focus:outline-none"
                           />
                         </div>
-                        <div className="col-span-2 px-1 text-right text-sm font-medium text-gray-900">
+                        <div className="col-span-2 px-1 text-right text-sm font-medium text-foreground">
                           {formatIDR((item.quantity || 0) * (item.unit_price || 0))}
                         </div>
                         <div className="col-span-1 flex justify-center">
@@ -955,7 +955,7 @@ export default function InvoicesPage() {
                 {/* Tax + Status */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Pajak/PPh (Rp)
                     </label>
                     <input
@@ -967,7 +967,7 @@ export default function InvoicesPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
                     <select
                       value={form.status}
                       onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -986,21 +986,21 @@ export default function InvoicesPage() {
                 <div className="space-y-1.5 rounded-lg border border-border bg-background p-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted">Subtotal (otomatis dari items)</span>
-                    <span className="font-medium text-gray-900">{formatIDR(itemsSubtotal)}</span>
+                    <span className="font-medium text-foreground">{formatIDR(itemsSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted">Pajak/PPh</span>
-                    <span className="font-medium text-gray-900">{formatIDR(taxAmount)}</span>
+                    <span className="font-medium text-foreground">{formatIDR(taxAmount)}</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-1.5">
-                    <span className="text-sm font-bold text-gray-900">Total</span>
+                    <span className="text-sm font-bold text-foreground">Total</span>
                     <span className="text-lg font-bold text-primary">{formatIDR(grandTotal)}</span>
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Catatan</label>
                   <textarea
                     rows={2}
                     value={form.notes}
@@ -1017,7 +1017,7 @@ export default function InvoicesPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>

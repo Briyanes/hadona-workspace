@@ -35,7 +35,7 @@ export function SpendLogModal({
         {/* Sticky Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Log Spend Harian</h2>
+            <h2 className="text-lg font-bold text-foreground">Log Spend Harian</h2>
             <p className="text-xs text-muted">
               {modalAccount.client?.name} • {modalAccount.platform} •{" "}
               <span className="font-mono">{modalAccount.ad_account_id}</span>
@@ -44,7 +44,7 @@ export function SpendLogModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
           >
             <X size={18} />
           </button>
@@ -56,7 +56,7 @@ export function SpendLogModal({
           <form onSubmit={onSubmit} className="mb-4 space-y-3 rounded-lg bg-background p-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Tanggal</label>
+                <label className="mb-1 block text-xs font-medium text-muted">Tanggal</label>
                 <input
                   type="date"
                   required
@@ -66,7 +66,7 @@ export function SpendLogModal({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
+                <label className="mb-1 block text-xs font-medium text-muted">
                   Spend (Rp) *
                 </label>
                 <input
@@ -81,7 +81,7 @@ export function SpendLogModal({
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
+                <label className="mb-1 block text-xs font-medium text-muted">
                   Impressions
                 </label>
                 <input
@@ -93,7 +93,7 @@ export function SpendLogModal({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Clicks</label>
+                <label className="mb-1 block text-xs font-medium text-muted">Clicks</label>
                 <input
                   type="number"
                   value={spendForm.clicks}
@@ -103,7 +103,7 @@ export function SpendLogModal({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
+                <label className="mb-1 block text-xs font-medium text-muted">
                   Conversions
                 </label>
                 <input
@@ -119,7 +119,7 @@ export function SpendLogModal({
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">
+              <label className="mb-1 block text-xs font-medium text-muted">
                 Revenue / Value (Rp)
               </label>
               <input
@@ -171,7 +171,7 @@ export function SpendLogModal({
                     className="flex items-center justify-between rounded-md bg-background px-3 py-2 text-xs"
                   >
                     <div>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-foreground">
                         {new Date(log.log_date).toLocaleDateString("id-ID", {
                           day: "numeric",
                           month: "short",

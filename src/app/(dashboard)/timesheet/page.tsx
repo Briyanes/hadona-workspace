@@ -323,7 +323,7 @@ export default function TimesheetPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Timesheet</h1>
+        <h1 className="text-2xl font-bold text-foreground">Timesheet</h1>
         <div className="skeleton h-64 rounded-lg" />
       </div>
     );
@@ -333,7 +333,7 @@ export default function TimesheetPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Timesheet</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Timesheet</h1>
           <p className="text-sm text-muted">Track billable hours & aktivitas tim</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -363,7 +363,7 @@ export default function TimesheetPage() {
               />
             </div>
             <div>
-              <div className="font-mono text-3xl font-bold tabular-nums text-gray-900">
+              <div className="font-mono text-3xl font-bold tabular-nums text-foreground">
                 {formatTimerTime(timer.elapsed)}
               </div>
               <div className="text-xs text-muted">
@@ -447,7 +447,7 @@ export default function TimesheetPage() {
                 <Icon className={card.color} size={18} />
               </div>
               <p className="text-xs text-muted">{card.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
               <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
             </div>
           );
@@ -503,7 +503,7 @@ export default function TimesheetPage() {
             return (
               <div key={date}>
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900">
+                  <h3 className="text-sm font-semibold text-foreground">
                     {formatDate(date, { weekday: "long" })}
                   </h3>
                   <span className="badge bg-surface text-muted">
@@ -524,7 +524,7 @@ export default function TimesheetPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium text-gray-900">
+                          <span className="truncate text-sm font-medium text-foreground">
                             {e.user?.full_name || "Unknown"}
                           </span>
                           {e.client && (
@@ -575,12 +575,12 @@ export default function TimesheetPage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingId ? "Edit Entry" : "Log Time Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -590,7 +590,7 @@ export default function TimesheetPage() {
             <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Anggota Tim</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Anggota Tim</label>
                 <select
                   value={form.user_id}
                   onChange={(e) => setForm({ ...form, user_id: e.target.value })}
@@ -607,7 +607,7 @@ export default function TimesheetPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Tanggal</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Tanggal</label>
                   <input
                     type="date"
                     required
@@ -617,7 +617,7 @@ export default function TimesheetPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Jam (hours)</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Jam (hours)</label>
                   <input
                     type="number"
                     step="0.25"
@@ -632,7 +632,7 @@ export default function TimesheetPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
                 <select
                   value={form.client_id}
                   onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -649,7 +649,7 @@ export default function TimesheetPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Tipe Aktivitas</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Tipe Aktivitas</label>
                   <select
                     value={form.activity_type}
                     onChange={(e) => setForm({ ...form, activity_type: e.target.value })}
@@ -663,7 +663,7 @@ export default function TimesheetPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">
                     Hourly Rate (Rp)
                   </label>
                   <input
@@ -677,7 +677,7 @@ export default function TimesheetPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
                 <textarea
                   rows={2}
                   value={form.description}
@@ -694,7 +694,7 @@ export default function TimesheetPage() {
                   onChange={(e) => setForm({ ...form, billable: e.target.checked })}
                   className="h-4 w-4 rounded border-border"
                 />
-                <span className="text-sm text-gray-900">Billable (dikenakan biaya ke client)</span>
+                <span className="text-sm text-foreground">Billable (dikenakan biaya ke client)</span>
               </label>
 
               </div>
@@ -704,7 +704,7 @@ export default function TimesheetPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>

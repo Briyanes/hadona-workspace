@@ -1614,7 +1614,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Weekly Reports</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Weekly Reports</h1>
           <p className="text-sm text-muted">
             Laporan performa klien mingguan — auto-pull dari Ads Spend
           </p>
@@ -1630,7 +1630,7 @@ export default function ReportsPage() {
                 "flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
                 bulkMode
                   ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-surface text-gray-700 hover:bg-background"
+                  : "border-border bg-surface text-muted hover:bg-background"
               )}
               title={bulkMode ? "Buat Multi-Select" : "Bulk Action"}
             >
@@ -1640,7 +1640,7 @@ export default function ReportsPage() {
           )}
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background"
             title="Export CSV"
           >
             <Download size={14} />
@@ -1649,7 +1649,7 @@ export default function ReportsPage() {
           <div className="flex flex-wrap items-center gap-2">
           {/* ⋯ More dropdown: Sync Now + Lihat Sheet (clean header — Opsi B) */}
           <details className="relative">
-            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background [&::-webkit-details-marker]:hidden">
               <MoreHorizontal size={14} />
               <span className="hidden sm:inline">More</span>
               <ChevronDown size={12} className="opacity-60" />
@@ -1661,7 +1661,7 @@ export default function ReportsPage() {
                   handleSyncNow();
                 }}
                 disabled={syncing}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-gray-700 transition-colors hover:bg-background disabled:opacity-50"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-background disabled:opacity-50"
               >
                 {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                 <div className="flex flex-col">
@@ -1674,7 +1674,7 @@ export default function ReportsPage() {
                   (e.currentTarget.closest("details") as HTMLDetailsElement)?.removeAttribute("open");
                   setShowSheetPreview(true);
                 }}
-                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-gray-700 transition-colors hover:bg-background"
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-background"
               >
                 <Eye size={14} />
                 <div className="flex flex-col">
@@ -1706,14 +1706,14 @@ export default function ReportsPage() {
           >
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">🔄 Hasil Sinkronisasi</h2>
+                <h2 className="text-lg font-bold text-foreground">🔄 Hasil Sinkronisasi</h2>
                 <p className="text-xs text-muted">
                   Selesai dalam {syncResult.summary.durationSec}s • {syncResult.summary.totalRows} rows diproses
                 </p>
               </div>
               <button
                 onClick={() => setShowSyncResult(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -1798,28 +1798,28 @@ export default function ReportsPage() {
                   <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
                     <div className="rounded bg-background p-2">
                       <p className="text-[9px] uppercase text-muted">No Metrics</p>
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.noMetrics}
                       </p>
                       <p className="text-[8px] text-muted">Baris naratif (KESIMPULAN, ACTION, dll)</p>
                     </div>
                     <div className="rounded bg-background p-2">
                       <p className="text-[9px] uppercase text-muted">No Client</p>
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.noClient}
                       </p>
                       <p className="text-[8px] text-muted">Baris kosong / separator</p>
                     </div>
                     <div className="rounded bg-background p-2">
                       <p className="text-[9px] uppercase text-muted">No Period</p>
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.noPeriod}
                       </p>
                       <p className="text-[8px] text-muted">Format tanggal tidak terdeteksi</p>
                     </div>
                     <div className="rounded bg-background p-2">
                       <p className="text-[9px] uppercase text-muted">Dedup</p>
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.dedup}
                       </p>
                       <p className="text-[8px] text-muted">Duplikat (sudah ada di sheet sebelumnya)</p>
@@ -1872,7 +1872,7 @@ export default function ReportsPage() {
                         key={s.gid}
                         className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-xs"
                       >
-                        <span className="font-medium text-gray-900">{s.name}</span>
+                        <span className="font-medium text-foreground">{s.name}</span>
                         <div className="flex gap-3 text-muted">
                           <span>{s.raw} rows</span>
                           <span>•</span>
@@ -1957,7 +1957,7 @@ export default function ReportsPage() {
             <div className="flex items-center gap-2">
               <Loader2 size={16} className="animate-spin text-primary" />
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-foreground">
                   Syncing sheet tabs...
                   {syncProgress.total > 0 && (
                     <span className="ml-1 text-primary">
@@ -2010,7 +2010,7 @@ export default function ReportsPage() {
                     key={`${r.tab}-${i}`}
                     className="flex items-center justify-between rounded bg-background px-2 py-1 text-[10px]"
                   >
-                    <span className="truncate font-medium text-gray-900">{r.tab}</span>
+                    <span className="truncate font-medium text-foreground">{r.tab}</span>
                     <span className="flex shrink-0 gap-2 text-muted">
                       {r.imported > 0 && (
                         <span className="text-success">+{r.imported} baru</span>
@@ -2044,7 +2044,7 @@ export default function ReportsPage() {
                 <Icon className={card.color} size={18} />
               </div>
               <p className="text-xs text-muted">{card.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
             </div>
           );
         })}
@@ -2058,7 +2058,7 @@ export default function ReportsPage() {
             "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "list"
               ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
-              : "border-transparent text-muted hover:text-gray-700"
+              : "border-transparent text-muted hover:text-muted"
           )}
         >
           <FileText size={14} /> Daftar Report
@@ -2069,7 +2069,7 @@ export default function ReportsPage() {
             "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "compare"
               ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
-              : "border-transparent text-muted hover:text-gray-700"
+              : "border-transparent text-muted hover:text-muted"
           )}
         >
           <BarChart3 size={14} /> Multi-Week Compare
@@ -2080,7 +2080,7 @@ export default function ReportsPage() {
             "flex shrink-0 items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
             activeTab === "automation"
               ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
-              : "border-transparent text-muted hover:text-gray-700"
+              : "border-transparent text-muted hover:text-muted"
           )}
         >
           <Mail size={14} /> Automation
@@ -2092,7 +2092,7 @@ export default function ReportsPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <EmailScheduleManager clients={clients} />
           <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="mb-3 text-sm font-semibold text-gray-900">📋 Tentang Auto Email</p>
+            <p className="mb-3 text-sm font-semibold text-foreground">📋 Tentang Auto Email</p>
             <div className="space-y-2 text-xs text-muted">
               <p>✅ Email otomatis dikirim setiap minggu sesuai jadwal yang diatur.</p>
               <p>✅ Cron job berjalan setiap jam untuk cek schedule yang aktif.</p>
@@ -2113,7 +2113,7 @@ export default function ReportsPage() {
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-semibold uppercase text-muted">Status:</span>
         {([
-          { key: "all", label: "Semua", count: statusCounts.all, color: "border-border bg-surface text-gray-700" },
+          { key: "all", label: "Semua", count: statusCounts.all, color: "border-border bg-surface text-muted" },
           { key: "draft", label: "Draft", count: statusCounts.draft, color: "border-border bg-surface text-muted" },
           { key: "submitted", label: "Submitted", count: statusCounts.submitted, color: "border-warning/30 bg-warning/10 text-warning" },
           { key: "reviewed", label: "Reviewed", count: statusCounts.reviewed, color: "border-success/30 bg-success/10 text-success" },
@@ -2194,7 +2194,7 @@ export default function ReportsPage() {
               "flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors",
               viewMode === "grid"
                 ? "bg-primary text-white"
-                : "bg-surface text-muted hover:bg-background hover:text-gray-700"
+                : "bg-surface text-muted hover:bg-background hover:text-muted"
             )}
             title="Tampilan Grid (kartu)"
           >
@@ -2207,7 +2207,7 @@ export default function ReportsPage() {
               "flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors",
               viewMode === "table"
                 ? "bg-primary text-white"
-                : "bg-surface text-muted hover:bg-background hover:text-gray-700"
+                : "bg-surface text-muted hover:bg-background hover:text-muted"
             )}
             title="Tampilan Tabel (rapih, sortable)"
           >
@@ -2279,7 +2279,7 @@ export default function ReportsPage() {
                 setBulkStatus("");
               }}
               disabled={bulkProcessing}
-              className="px-3 py-1.5 text-xs text-muted hover:text-gray-900"
+              className="px-3 py-1.5 text-xs text-muted hover:text-foreground"
             >
               Batal
             </button>
@@ -2296,7 +2296,7 @@ export default function ReportsPage() {
       {showSelectAllFilteredBanner && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-accent/30 bg-accent/5 px-3 py-2 text-xs">
           <span className="text-muted">
-            Semua <b className="text-gray-900">{visibleReports.length}</b> report di halaman ini sudah dipilih.
+            Semua <b className="text-foreground">{visibleReports.length}</b> report di halaman ini sudah dipilih.
           </span>
           <button
             onClick={selectAllFiltered}
@@ -2379,7 +2379,7 @@ export default function ReportsPage() {
                       onClick={() => setDetailReport(r)}
                     >
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{r.client?.name || "-"}</div>
+                        <div className="font-medium text-foreground">{r.client?.name || "-"}</div>
                         {r.summary && (
                           <div className="line-clamp-1 text-[10px] text-muted">{r.summary}</div>
                         )}
@@ -2399,7 +2399,7 @@ export default function ReportsPage() {
                           <span className="text-muted">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right text-xs font-medium text-gray-900">
+                      <td className="px-4 py-3 text-right text-xs font-medium text-foreground">
                         {spend > 0 ? formatIDR(spend) : "-"}
                       </td>
                       <td className="px-4 py-3 text-right text-xs tabular-nums">
@@ -2451,7 +2451,7 @@ export default function ReportsPage() {
             <div className="flex flex-col items-center gap-2 border-t border-border py-4">
               <button
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-muted transition-colors hover:bg-background hover:text-primary"
               >
                 <ChevronDown size={14} />
                 Load More
@@ -2523,7 +2523,7 @@ export default function ReportsPage() {
                 )}
                 <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{r.client?.name || "Unknown Client"}</h3>
+                    <h3 className="font-semibold text-foreground">{r.client?.name || "Unknown Client"}</h3>
                     <p className="text-xs text-muted">
                       {formatDate(r.period_start, { day: "numeric", month: "short" })} —{" "}
                       {formatDate(r.period_end, { day: "numeric", month: "short", year: "numeric" })}
@@ -2544,7 +2544,7 @@ export default function ReportsPage() {
                     {getObjectiveCardMetrics(r.objective, metrics).map((card, idx) => (
                       <div key={idx} className="text-center">
                         <p className="text-[9px] text-muted">{card.label}</p>
-                        <p className={cn("text-xs font-bold", card.color || "text-gray-900")}>
+                        <p className={cn("text-xs font-bold", card.color || "text-foreground")}>
                           {card.value}
                         </p>
                       </div>
@@ -2567,7 +2567,7 @@ export default function ReportsPage() {
                         console.log('[reports] open detail via eye button', r.id);
                         setDetailReport(r);
                       }}
-                      className="flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[10px] font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+                      className="flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[10px] font-medium text-muted transition-colors hover:bg-background hover:text-primary"
                       title="Lihat detail"
                       data-testid={`report-detail-btn-${r.id}`}
                     >
@@ -2611,7 +2611,7 @@ export default function ReportsPage() {
           <div className="flex flex-col items-center gap-2 py-6">
             <button
               onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-muted transition-colors hover:bg-background hover:text-primary"
             >
               <ChevronDown size={14} className="animate-bounce" />
               Load More
@@ -2652,14 +2652,14 @@ export default function ReportsPage() {
           >
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-foreground">
                   {editingId ? "Edit Weekly Report" : "Buat Weekly Report"}
                 </h2>
                 <p className="text-xs text-muted">Lengkapi metrik iklan & insight performa</p>
               </div>
               <button
                 onClick={closeModal}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -2672,7 +2672,7 @@ export default function ReportsPage() {
                 <p className="text-xs font-semibold uppercase text-muted">Client & Periode</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">Client *</label>
+                    <label className="mb-1 block text-xs font-medium text-muted">Client *</label>
                     <select
                       required
                       value={form.client_id}
@@ -2688,7 +2688,7 @@ export default function ReportsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">Periode Mulai *</label>
+                    <label className="mb-1 block text-xs font-medium text-muted">Periode Mulai *</label>
                     <input
                       type="date"
                       required
@@ -2698,7 +2698,7 @@ export default function ReportsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-700">Periode Selesai *</label>
+                    <label className="mb-1 block text-xs font-medium text-muted">Periode Selesai *</label>
                     <input
                       type="date"
                       required
@@ -2715,7 +2715,7 @@ export default function ReportsPage() {
 
                 {/* P11: Objective Selector */}
                 <div className="border-t border-border pt-3">
-                  <label className="mb-1 block text-xs font-medium text-gray-700">🎯 Campaign Objective</label>
+                  <label className="mb-1 block text-xs font-medium text-muted">🎯 Campaign Objective</label>
                   <ObjectiveSelector
                     value={form.objective}
                     onChange={(obj) => setForm({ ...form, objective: obj })}
@@ -2765,13 +2765,13 @@ export default function ReportsPage() {
                         </span>
                         <div className="flex gap-4">
                           <span className="text-muted">
-                            Spend: <b className="text-gray-900">{formatIDR(p.spend)}</b>
+                            Spend: <b className="text-foreground">{formatIDR(p.spend)}</b>
                           </span>
                           <span className="text-muted">
-                            CTR: <b className="text-gray-900">{p.ctr.toFixed(2)}%</b>
+                            CTR: <b className="text-foreground">{p.ctr.toFixed(2)}%</b>
                           </span>
                           <span className="text-muted">
-                            CPR: <b className="text-gray-900">{p.cpr > 0 ? formatIDR(p.cpr) : "-"}</b>
+                            CPR: <b className="text-foreground">{p.cpr > 0 ? formatIDR(p.cpr) : "-"}</b>
                           </span>
                           <span className="text-muted">
                             ROAS:{" "}
@@ -2829,7 +2829,7 @@ export default function ReportsPage() {
                         <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
                           <div>
                             <p className="text-muted">Target</p>
-                            <p className="font-bold text-gray-900">{formatIDR(bp.targetSpend)}</p>
+                            <p className="font-bold text-foreground">{formatIDR(bp.targetSpend)}</p>
                           </div>
                           <div>
                             <p className="text-muted">Actual</p>
@@ -2837,7 +2837,7 @@ export default function ReportsPage() {
                           </div>
                           <div>
                             <p className="text-muted">Sisa Budget</p>
-                            <p className="font-bold text-gray-900">{formatIDR(bp.remainingBudget)}</p>
+                            <p className="font-bold text-foreground">{formatIDR(bp.remainingBudget)}</p>
                           </div>
                         </div>
                         {/* Status alert */}
@@ -2903,7 +2903,7 @@ export default function ReportsPage() {
                         {/* Conversion rate summary */}
                         <div className="flex justify-between pt-1 text-[10px]">
                           <span className="text-muted">
-                            CTR: <b className="text-gray-900">{m.ctr.toFixed(2)}%</b>
+                            CTR: <b className="text-foreground">{m.ctr.toFixed(2)}%</b>
                           </span>
                           <span className="text-muted">
                             CVR:{" "}
@@ -2964,7 +2964,7 @@ export default function ReportsPage() {
                             })
                           }
                           placeholder="0"
-                          className="w-full rounded border-border bg-background px-2 py-1 text-xs text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                          className="w-full rounded border-border bg-background px-2 py-1 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         {/* WoW delta */}
                         {delta !== null && (
@@ -2995,7 +2995,7 @@ export default function ReportsPage() {
               {/* ─── P1: AI Generate Button ─── */}
               <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 p-3">
                 <div>
-                  <p className="text-xs font-semibold text-gray-900">⚡ Auto-Generate Naratif</p>
+                  <p className="text-xs font-semibold text-foreground">⚡ Auto-Generate Naratif</p>
                   <p className="text-[10px] text-muted">Buat ringkasan, kesimpulan & action plan otomatis dari metrik</p>
                 </div>
                 <button
@@ -3018,7 +3018,7 @@ export default function ReportsPage() {
 
               {/* Text fields */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Ringkasan</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Ringkasan</label>
                 <textarea
                   rows={2}
                   value={form.summary}
@@ -3029,7 +3029,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Performance Notes</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Performance Notes</label>
                 <textarea
                   rows={2}
                   value={form.performance_text}
@@ -3041,7 +3041,7 @@ export default function ReportsPage() {
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Kesimpulan</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Kesimpulan</label>
                   <textarea
                     rows={2}
                     value={form.conclusion}
@@ -3051,7 +3051,7 @@ export default function ReportsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Action Plan</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Action Plan</label>
                   <textarea
                     rows={2}
                     value={form.action}
@@ -3063,7 +3063,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -3080,7 +3080,7 @@ export default function ReportsPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>
@@ -3124,7 +3124,7 @@ export default function ReportsPage() {
             <div className="no-print flex shrink-0 items-start justify-between border-b border-border bg-surface px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-foreground">
                     {detailReport.client?.name || "Unknown Client"}
                   </h2>
                   <span className={`badge ${statusColors[detailReport.status] || statusColors.draft}`}>
@@ -3140,7 +3140,7 @@ export default function ReportsPage() {
                 <ShareButton report={detailReport} />
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-gray-700 hover:bg-background"
+                  className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:bg-background"
                   title="Print / Save as PDF"
                 >
                   <Download size={12} /> PDF
@@ -3156,7 +3156,7 @@ export default function ReportsPage() {
                 </button>
                 <button
                   onClick={() => setDetailReport(null)}
-                  className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                  className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
                 >
                   <X size={18} />
                 </button>
@@ -3186,7 +3186,7 @@ export default function ReportsPage() {
                           {m.label}
                           {isAnomaly && <span className="ml-0.5 text-warning" title="Anomali: perubahan >30% vs minggu lalu">⚠️</span>}
                         </p>
-                        <p className="text-sm font-bold text-gray-900">{formatMetric(val, m.unit)}</p>
+                        <p className="text-sm font-bold text-foreground">{formatMetric(val, m.unit)}</p>
                         {delta !== null && (
                           <p
                             className={cn(
@@ -3292,25 +3292,25 @@ export default function ReportsPage() {
             {detailReport.summary && (
               <div className="mb-3">
                 <p className="mb-1 text-xs font-semibold uppercase text-muted">Ringkasan</p>
-                <p className="text-sm text-gray-700">{detailReport.summary}</p>
+                <p className="text-sm text-muted">{detailReport.summary}</p>
               </div>
             )}
             {detailReport.performance_text && (
               <div className="mb-3">
                 <p className="mb-1 text-xs font-semibold uppercase text-muted">Performance Notes</p>
-                <p className="text-sm text-gray-700">{detailReport.performance_text}</p>
+                <p className="text-sm text-muted">{detailReport.performance_text}</p>
               </div>
             )}
             {detailReport.conclusion && (
               <div className="mb-3">
                 <p className="mb-1 text-xs font-semibold uppercase text-muted">Kesimpulan</p>
-                <p className="text-sm text-gray-700">{detailReport.conclusion}</p>
+                <p className="text-sm text-muted">{detailReport.conclusion}</p>
               </div>
             )}
             {detailReport.action && (
               <div className="mb-3">
                 <p className="mb-1 text-xs font-semibold uppercase text-muted">Action Plan</p>
-                <p className="text-sm text-gray-700">{detailReport.action}</p>
+                <p className="text-sm text-muted">{detailReport.action}</p>
               </div>
             )}
 

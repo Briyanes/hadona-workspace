@@ -52,8 +52,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log(`[Sheet Import] Fetching: ${sheetUrl}`);
-    console.log(`[Sheet Import] Target column: ${columnLetter}, Platform: ${platform}`);
 
     // Fetch the published HTML
     const res = await fetch(sheetUrl, {
@@ -72,7 +70,6 @@ export async function POST(request: NextRequest) {
     // Parse HTML table to extract ad account names from target column
     const adAccounts = parseSheetHtml(html, columnLetter, platform);
 
-    console.log(`[Sheet Import] Found ${adAccounts.length} ad account names`);
 
     if (adAccounts.length === 0) {
       return NextResponse.json({

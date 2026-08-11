@@ -53,7 +53,7 @@ export function ReportView({ token }: { token: string }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
         <Loader2 className="animate-spin text-primary" size={32} />
         <p className="text-sm text-muted">Memuat weekly report...</p>
       </div>
@@ -62,9 +62,9 @@ export function ReportView({ token }: { token: string }) {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50 p-4">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background p-4">
         <AlertCircle className="text-danger" size={32} />
-        <h1 className="text-lg font-bold text-gray-900">Report Tidak Tersedia</h1>
+        <h1 className="text-lg font-bold text-foreground">Report Tidak Tersedia</h1>
         <p className="text-center text-sm text-muted">{error}</p>
         <p className="text-xs text-muted">Hubungi account manager Anda untuk link baru.</p>
       </div>
@@ -73,7 +73,7 @@ export function ReportView({ token }: { token: string }) {
 
   if (!report) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-50">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
         <FileText className="text-muted" size={32} />
         <p className="text-sm text-muted">Report tidak ditemukan</p>
       </div>
@@ -81,7 +81,7 @@ export function ReportView({ token }: { token: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <SharedReportView report={report} />
     </div>
   );

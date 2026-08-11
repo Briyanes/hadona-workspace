@@ -140,7 +140,7 @@ export function NotificationBell() {
         className="relative rounded-full p-2 transition-colors hover:bg-surface-hover"
         title="Notifications"
       >
-        <Bell size={18} className="text-gray-600" />
+        <Bell size={18} className="text-muted" />
         {unreadCount > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white animate-pulse">
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -150,11 +150,11 @@ export function NotificationBell() {
 
       {/* Dropdown Panel */}
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 origin-top-right animate-slide-up overflow-hidden rounded-lg border border-border bg-white shadow-lg dropdown-panel sm:w-96">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 origin-top-right animate-slide-up overflow-hidden rounded-lg border border-border bg-surface shadow-lg dropdown-panel sm:w-96">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-900">Notifications</span>
+              <span className="text-sm font-semibold text-foreground">Notifications</span>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[10px] font-medium text-danger">
                   {unreadCount} new
@@ -210,7 +210,7 @@ export function NotificationBell() {
                       {/* Content */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-medium text-gray-900">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {n.title}
                           </p>
                           {!n.is_read && (
@@ -218,7 +218,7 @@ export function NotificationBell() {
                           )}
                         </div>
                         {n.body && (
-                          <p className="mt-0.5 line-clamp-2 text-xs text-gray-600">
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted">
                             {n.body}
                           </p>
                         )}
@@ -241,7 +241,7 @@ export function NotificationBell() {
                   setOpen(false);
                   router.push("/settings/notifications");
                 }}
-                className="w-full rounded-md py-1.5 text-center text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-gray-900"
+                className="w-full rounded-md py-1.5 text-center text-xs font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
               >
                 Notification Settings
               </button>

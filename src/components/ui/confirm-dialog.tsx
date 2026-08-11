@@ -57,13 +57,13 @@ export function ConfirmDialog({
             />
           </div>
         </div>
-        <p className="pt-1.5 text-sm text-gray-700">{message}</p>
+        <p className="pt-1.5 text-sm text-muted">{message}</p>
       </div>
       <div className="mt-6 flex justify-end gap-2">
         <button
           onClick={onClose}
           disabled={loading}
-          className="px-4 py-2 text-sm text-muted transition-colors hover:text-gray-900 disabled:opacity-50"
+          className="px-4 py-2 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-50"
         >
           {cancelText}
         </button>

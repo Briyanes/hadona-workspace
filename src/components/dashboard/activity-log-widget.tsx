@@ -76,7 +76,7 @@ export function ActivityLogWidget() {
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Activity size={18} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-900">Aktivitas Tim</h3>
+          <h3 className="text-sm font-bold text-foreground">Aktivitas Tim</h3>
         </div>
         <div className="flex items-center justify-center py-6">
           <Loader2 size={20} className="animate-spin text-muted" />
@@ -89,7 +89,7 @@ export function ActivityLogWidget() {
     <div className="card p-5">
       <div className="mb-4 flex items-center gap-2">
         <Activity size={18} className="text-primary" />
-        <h3 className="text-sm font-bold text-gray-900">Aktivitas Tim</h3>
+        <h3 className="text-sm font-bold text-foreground">Aktivitas Tim</h3>
         <span className="ml-auto flex h-2 w-2 animate-pulse rounded-full bg-success" />
       </div>
 
@@ -108,7 +108,7 @@ export function ActivityLogWidget() {
                   {log.user?.avatar_url ? (
                     <img src={log.user.avatar_url} alt={log.user?.full_name || ""} className="h-7 w-7 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                       {getInitials(log.user?.full_name)}
                     </div>
                   )}
@@ -118,12 +118,12 @@ export function ActivityLogWidget() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px]">{entityIcon}</span>
-                    <span className="truncate text-xs font-medium text-gray-900">
+                    <span className="truncate text-xs font-medium text-foreground">
                       {log.user?.full_name || "Unknown"}
                     </span>
                     <span className="text-[9px] text-muted">{timeUntil(log.created_at)}</span>
                   </div>
-                  <p className="mt-0.5 text-xs text-gray-700 leading-tight">{log.description}</p>
+                  <p className="mt-0.5 text-xs text-muted leading-tight">{log.description}</p>
                   <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium", actionColor)}>
                     {log.action.replace("_", " ")}
                   </span>

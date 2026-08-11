@@ -249,8 +249,7 @@ export async function POST(request: NextRequest) {
           const staleStatus = connAny.token_status === "invalid" ||
             connAny.last_sync_status === "token_invalid";
           if (staleStatus) {
-            console.log(`[Sync] 🧹 Clearing stale token_invalid status for ${conn.id} (token valid until ${conn.token_expires_at})`);
-            await supabase
+                        await supabase
               .from("meta_connections")
               .update({
                 token_status: "active",
@@ -267,8 +266,7 @@ export async function POST(request: NextRequest) {
         let accessToken = conn.access_token;
         if (shouldRefreshToken(conn.token_expires_at)) {
           try {
-            console.log(`[Sync] 🔄 Token expiring soon (${conn.token_expires_at}), refreshing...`);
-            const refreshed = await refreshLongLivedToken(accessToken);
+                        const refreshed = await refreshLongLivedToken(accessToken);
             const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
 
             await supabase
@@ -280,8 +278,7 @@ export async function POST(request: NextRequest) {
               .eq("id", conn.id);
 
             accessToken = refreshed.access_token;
-            console.log(`[Sync] ✅ Token refreshed, new expiry: ${newExpiry}`);
-          } catch (refreshErr) {
+                      } catch (refreshErr) {
             console.warn(`[Sync] ⚠️ Token refresh failed:`, refreshErr instanceof Error ? refreshErr.message : refreshErr);
             // Continue with existing token — it may still work for a few more days
           }
@@ -294,9 +291,7 @@ export async function POST(request: NextRequest) {
         let nameMatchedCount = 0;
 
         try {
-          console.log(`[Sync] Phase 1: Syncing ad accounts from Meta...`);
-
-          // 1a. Fetch ALL accounts from Business Portfolio + personal
+                    // 1a. Fetch ALL accounts from Business Portfolio + personal
           let metaAdAccounts: Array<{
             id: string;
             account_id: string;
@@ -312,10 +307,8 @@ export async function POST(request: NextRequest) {
 
           // Try Business Portfolio (BM) - gets all managed accounts
           try {
-            console.log(`[Sync] Querying Business Portfolio ${HADONA_BM_ID}...`);
-            metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, accessToken);
-            console.log(`[Sync] ✅ Got ${metaAdAccounts.length} accounts from BM`);
-          } catch (bmErr) {
+                        metaAdAccounts = await getBusinessAdAccounts(HADONA_BM_ID, accessToken);
+                      } catch (bmErr) {
             const bmErrMsg = bmErr instanceof Error ? bmErr.message : String(bmErr);
             console.warn(`[Sync] ⚠️ BM query failed, falling back to personal:`, bmErrMsg);
             if (bmErrMsg.includes("[190]") || bmErrMsg.includes("190")) {
@@ -332,8 +325,7 @@ export async function POST(request: NextRequest) {
                 metaAdAccounts.push(pa);
               }
             }
-            console.log(`[Sync] Total unique accounts after merge: ${metaAdAccounts.length}`);
-          } catch (personalErr) {
+                      } catch (personalErr) {
             const personalErrMsg = personalErr instanceof Error ? personalErr.message : String(personalErr);
             console.warn(`[Sync] ⚠️ Personal accounts fetch failed:`, personalErrMsg);
             if (personalErrMsg.includes("[190]") || personalErrMsg.includes("190")) {
@@ -388,11 +380,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          console.log(
-            `[Sync] DB has ${existingAccounts.length} META accounts (${existingByMetaId.size} with real IDs, ${existingAccounts.length - existingByMetaId.size} UNKNOWN)`
-          );
-
-          // 1c. Process each Meta account from BM
+                    // 1c. Process each Meta account from BM
           for (const metaAcc of metaAdAccounts) {
             // FIX: Do NOT skip inactive accounts!
             // Status 1 = ACTIVE, 2 = DISABLED, 3 = UNSETTLED
@@ -425,11 +413,7 @@ export async function POST(request: NextRequest) {
             // Check 2: Exists by NAME? (for accounts imported from Google Sheet with UNKNOWN-XX ID)
             if (metaAcc.name && existingByName.has(metaAcc.name.toLowerCase())) {
               const existing = existingByName.get(metaAcc.name.toLowerCase())!;
-              console.log(
-                `[Sync] 🔄 Name match: "${metaAcc.name}" → updating ${existing.ad_account_id} → ${realId}`
-              );
-
-              // UPDATE: Replace UNKNOWN-XX with real Meta ID
+                            // UPDATE: Replace UNKNOWN-XX with real Meta ID
               const { error: updErr } = await supabase
                 .from("ad_accounts")
                 .update({
@@ -477,10 +461,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          console.log(
-            `[Sync] ✅ Phase 1 done: ${autoImportedCount} new, ${nameMatchedCount} name-matched (UNKNOWN→real ID)`
-          );
-        } catch (e) {
+                  } catch (e) {
           console.error(`[Sync] Failed to sync ad accounts from Meta:`, e);
         }
 
@@ -515,9 +496,7 @@ export async function POST(request: NextRequest) {
         let successCount = 0;
         let rateLimitedCount = 0;
 
-        console.log(`[Sync] Phase 2: Pulling insights for ${adAccounts.length} accounts via Batch API (${dateStart} → ${dateEnd})...`);
-
-        // ──────────────────────────────────────────────────────────────
+                // ──────────────────────────────────────────────────────────────
         // FIX A3: Use Batch API (50 accounts per call) instead of
         //         individual calls with 300ms delays.
         // This reduces sync time from ~30s (10 accounts) to ~2s.
@@ -526,8 +505,7 @@ export async function POST(request: NextRequest) {
         try {
           const batchAccounts = adAccounts.map((a) => ({ id: a.id, adAccountId: a.ad_account_id }));
           batchInsightsMap = await getBatchInsights(accessToken, batchAccounts, dateStart, dateEnd) as Record<string, AdInsightWithActionValues[]>;
-          console.log(`[Sync] ✅ Batch API completed for ${Object.keys(batchInsightsMap).length} accounts`);
-        } catch (batchErr) {
+                  } catch (batchErr) {
           const batchErrMsg = batchErr instanceof Error ? batchErr.message : String(batchErr);
           console.error(`[Sync] ❌ Batch API failed, falling back to individual calls:`, batchErrMsg);
 
@@ -632,11 +610,7 @@ export async function POST(request: NextRequest) {
           } as never);
         }
 
-        console.log(
-          `[Sync] ✅ Phase 2 done: ${successCount} success, ${accountErrors.length} errors (${rateLimitedCount} rate-limited), ${totalRecords} records`
-        );
-
-        // Update connection sync status
+                // Update connection sync status
         const status =
           accountErrors.length === adAccounts.length
             ? "error"

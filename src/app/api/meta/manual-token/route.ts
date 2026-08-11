@@ -50,9 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 1: Check if this is a System User token (permanent, no expiry, no App Review needed)
-    console.log("[Meta Manual] Step 1: Checking token type...");
     const isSystemToken = await isSystemUserToken(token.trim());
-    console.log("[Meta Manual] System User Token:", isSystemToken ? "YES ✅ (permanent)" : "NO (will exchange to long-lived)");
 
     let longLivedToken: string;
     let expiresAt: Date | null;
@@ -65,26 +63,21 @@ export async function POST(request: NextRequest) {
 
       // Get token info for debugging
       const tokenInfo = await getTokenInfo(longLivedToken);
-      console.log("[Meta Manual] ✅ System User token — scopes:", tokenInfo.scopes.join(", "));
 
       // System User tokens may not return /me — use the token debug data for identity
       try {
         metaUser = await getMetaUser(longLivedToken);
-        console.log("[Meta Manual] ✅ User:", metaUser.name, "(" + metaUser.id + ")");
       } catch {
         // Fallback for System User tokens that can't call /me
         metaUser = {
           id: `sys_${Date.now()}`,
           name: "System User (Business Manager)",
         };
-        console.log("[Meta Manual] ✅ Using System User fallback identity");
       }
     } else {
       // Regular user token — must exchange to long-lived
-      console.log("[Meta Manual] Step 1b: Getting user profile...");
       try {
         metaUser = await getMetaUser(token.trim());
-        console.log("[Meta Manual] ✅ User:", metaUser.name, "(" + metaUser.id + ")");
       } catch {
         return NextResponse.json(
           {
@@ -96,7 +89,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Step 2: Exchange for long-lived token (mandatory for regular tokens)
-      console.log("[Meta Manual] Step 2: Exchanging for long-lived token...");
       try {
         const longLived = await getLongLivedToken(token.trim());
         longLivedToken = longLived.access_token;
@@ -108,7 +100,6 @@ export async function POST(request: NextRequest) {
 
         expiresAt = new Date();
         expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
-        console.log("[Meta Manual] ✅ Long-lived token (expires in", expiresInSeconds, "s)");
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : String(e);
         console.error("[Meta Manual] ❌ Long-lived exchange FAILED:", errMsg);
@@ -122,14 +113,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Get ad accounts from BOTH Business Manager AND personal
-    console.log("[Meta Manual] Step 3: Getting ad accounts (BM + personal)...");
     let adAccounts: Array<{ account_id: string; name: string }> = [];
 
     // 3a. Try Business Manager accounts first (critical for System User tokens)
     try {
       const bmAccounts = await getBusinessAdAccounts(HADONA_BM_ID, longLivedToken);
       adAccounts = bmAccounts;
-      console.log("[Meta Manual] ✅ Found", bmAccounts.length, "BM ad accounts");
     } catch (e) {
       console.warn(
         "[Meta Manual] ⚠️ Could not fetch BM ad accounts:",
@@ -146,7 +135,6 @@ export async function POST(request: NextRequest) {
           adAccounts.push(pa);
         }
       }
-      console.log("[Meta Manual] ✅ Total unique ad accounts (BM + personal):", adAccounts.length);
     } catch (e) {
       console.warn(
         "[Meta Manual] ⚠️ Could not fetch personal ad accounts:",
@@ -159,7 +147,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 4: Save to DB
-    console.log("[Meta Manual] Step 4: Saving to database...");
     const { data: connectionDataRaw, error: dbError } = await supabase
       .from("meta_connections")
       .upsert({
@@ -216,7 +203,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log("[Meta Manual] ✅ All done! Linked:", linkedCount);
 
     return NextResponse.json({
       success: true,

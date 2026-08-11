@@ -167,7 +167,7 @@ export default function OnboardingPage() {
       <div className="relative z-10 w-full max-w-2xl">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-black/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface p-2 shadow-lg shadow-black/10">
             <Image
               src="/logo/logo-hadona.png"
               alt="Hadona Digital Media"
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Onboarding Card */}
-        <div className="rounded-2xl bg-white p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <div className="rounded-2xl bg-surface p-6 shadow-2xl shadow-black/20 sm:p-8">
           {/* Division Grid */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {DIVISIONS.map((div) => {
@@ -210,7 +210,7 @@ export default function OnboardingPage() {
                 </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900">{div.label}</span>
+                      <span className="text-sm font-semibold text-foreground">{div.label}</span>
                       {isSelected && (
                         <Check size={14} className="text-primary" />
                       )}

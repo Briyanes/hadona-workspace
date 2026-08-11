@@ -70,7 +70,7 @@ export function PermissionGuard({
         {fallback || (
           <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface py-8 text-center">
             <ShieldAlert className="mb-2 text-danger" size={28} />
-            <p className="text-sm font-medium text-gray-900">Akses Terbatas</p>
+            <p className="text-sm font-medium text-foreground">Akses Terbatas</p>
             <p className="mt-1 text-xs text-muted">
               Anda tidak memiliki izin untuk melihat konten ini
             </p>

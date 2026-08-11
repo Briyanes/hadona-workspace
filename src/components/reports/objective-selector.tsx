@@ -57,7 +57,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
       >
         <span className="flex items-center gap-2">
           <Target size={14} className="text-primary" />
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-foreground">
             {selected?.label || "Select Objective"}
           </span>
           {selected && (
@@ -83,7 +83,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
                 placeholder="Cari objective..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-md border border-border bg-white py-2 sm:py-1.5 pl-8 pr-3 text-sm sm:text-xs outline-none focus:border-primary"
+                className="w-full rounded-md border border-border bg-surface py-2 sm:py-1.5 pl-8 pr-3 text-sm sm:text-xs outline-none focus:border-primary"
                 autoFocus
               />
             </div>
@@ -115,8 +115,8 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs sm:text-xs font-medium text-gray-900 leading-tight">{obj.label}</span>
-                          <span className="badge bg-gray-100 text-muted text-[9px] sm:text-[8px] shrink-0">
+                          <span className="text-xs sm:text-xs font-medium text-foreground leading-tight">{obj.label}</span>
+                          <span className="badge bg-surface text-muted text-[9px] sm:text-[8px] shrink-0">
                             {obj.platform}
                           </span>
                         </div>

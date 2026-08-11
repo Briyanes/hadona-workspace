@@ -141,11 +141,11 @@ export default function SecuritySettingsPage() {
     <div className="space-y-6">
       {/* Auth Provider */}
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Authentication Method</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Authentication Method</h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm border border-border">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface shadow-sm border border-border">
                 {isGoogleAuth ? (
                   <svg className="h-4 w-4" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -158,7 +158,7 @@ export default function SecuritySettingsPage() {
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   {isGoogleAuth ? "Google Account" : "Email & Password"}
                 </p>
                 <p className="text-xs text-muted">
@@ -170,19 +170,19 @@ export default function SecuritySettingsPage() {
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted">Account Created</span>
-            <span className="font-medium text-gray-900">{accountCreated}</span>
+            <span className="font-medium text-foreground">{accountCreated}</span>
           </div>
         </div>
       </div>
 
       {/* Change Password */}
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Change Password</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Change Password</h3>
         {isGoogleAuth ? (
           <div className="flex items-start gap-3 rounded-lg bg-primary/5 p-4">
             <Shield size={16} className="mt-0.5 shrink-0 text-primary" />
             <div className="text-sm">
-              <p className="font-medium text-gray-900">Password dikelola Google</p>
+              <p className="font-medium text-foreground">Password dikelola Google</p>
               <p className="text-xs text-muted">Karena Anda login via Google, password dikelola oleh akun Google Anda. Ubah password di Google Account settings.</p>
             </div>
           </div>
@@ -221,19 +221,19 @@ export default function SecuritySettingsPage() {
 
       {/* Active Sessions Info */}
       <div className="card p-6">
-        <h3 className="mb-4 text-sm font-semibold text-gray-900">Session Info</h3>
+        <h3 className="mb-4 text-sm font-semibold text-foreground">Session Info</h3>
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="flex items-center gap-2">
               <Monitor size={14} className="text-muted" />
-              <span className="text-gray-900">Current Device</span>
+              <span className="text-foreground">Current Device</span>
             </div>
             <span className="text-xs text-success">Active Now</span>
           </div>
           <div className="flex items-center justify-between border-b border-border pb-2">
             <div className="flex items-center gap-2">
               <Globe size={14} className="text-muted" />
-              <span className="text-gray-900">Browser Session</span>
+              <span className="text-foreground">Browser Session</span>
             </div>
             <span className="text-xs text-muted">This browser only</span>
           </div>
@@ -249,7 +249,7 @@ export default function SecuritySettingsPage() {
       {/* Two-Factor Authentication (2FA) */}
       <div className="card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">Two-Factor Authentication</h3>
+          <h3 className="text-sm font-semibold text-foreground">Two-Factor Authentication</h3>
           {twoFactorEnabled && (
             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
               <CheckCircle2 size={12} /> Active
@@ -262,7 +262,7 @@ export default function SecuritySettingsPage() {
             <div className="flex items-start gap-3 rounded-lg bg-primary/5 p-4">
               <Lock size={16} className="mt-0.5 shrink-0 text-primary" />
               <div className="text-sm">
-                <p className="font-medium text-gray-900">Lindungi akun Anda dengan 2FA</p>
+                <p className="font-medium text-foreground">Lindungi akun Anda dengan 2FA</p>
                 <p className="text-xs text-muted">
                   Gunakan Google Authenticator, Authy, atau 1Password. Setiap login akan memerlukan kode dari app.
                 </p>
@@ -281,7 +281,7 @@ export default function SecuritySettingsPage() {
             <div className="flex items-start gap-3 rounded-lg bg-success/5 p-4">
               <Shield size={16} className="mt-0.5 shrink-0 text-success" />
               <div className="text-sm">
-                <p className="font-medium text-gray-900">2FA Aktif</p>
+                <p className="font-medium text-foreground">2FA Aktif</p>
                 <p className="text-xs text-muted">
                   Akun Anda dilindungi dengan TOTP. Setiap login memerlukan kode dari authenticator app.
                 </p>
@@ -316,8 +316,8 @@ export default function SecuritySettingsPage() {
       {/* 2FA Setup Modal */}
       {showSetupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowSetupModal(false)}>
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-bold text-gray-900">Setup 2FA</h3>
+          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-lg font-bold text-foreground">Setup 2FA</h3>
 
             {!showBackupCodes ? (
               <div className="space-y-4">
@@ -328,7 +328,7 @@ export default function SecuritySettingsPage() {
                 <div>
                   <p className="mb-1 text-xs text-muted">Atau masukkan manual:</p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 rounded-lg bg-gray-100 p-2 text-xs text-gray-700 select-all">{setupSecret}</code>
+                    <code className="flex-1 rounded-lg bg-surface p-2 text-xs text-muted select-all">{setupSecret}</code>
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(setupSecret);
@@ -367,7 +367,7 @@ export default function SecuritySettingsPage() {
                 <div className="flex items-start gap-3 rounded-lg bg-success/5 p-4">
                   <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-success" />
                   <div className="text-sm">
-                    <p className="font-medium text-gray-900">2FA Berhasil Diaktifkan!</p>
+                    <p className="font-medium text-foreground">2FA Berhasil Diaktifkan!</p>
                     <p className="text-xs text-muted">Simpan backup codes berikut di tempat aman.</p>
                   </div>
                 </div>

@@ -502,7 +502,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900">{isEditing ? "Edit Task" : "Task Detail"}</h2>
+            <h2 className="text-lg font-bold text-foreground">{isEditing ? "Edit Task" : "Task Detail"}</h2>
             {!isEditing && (
               <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusOptions.find((s) => s.value === task.status)?.color)}>
                 {statusOptions.find((s) => s.value === task.status)?.label}
@@ -524,13 +524,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   <Trash2 size={16} />
                 </button>
                 {confirmDelete && (
-                  <button onClick={() => setConfirmDelete(false)} className="rounded px-2 py-1 text-xs text-muted hover:text-gray-900">
+                  <button onClick={() => setConfirmDelete(false)} className="rounded px-2 py-1 text-xs text-muted hover:text-foreground">
                     Batal
                   </button>
                 )}
               </>
             )}
-            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-gray-900">
+            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
               <X size={18} />
             </button>
           </div>
@@ -542,18 +542,18 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
             /* ==================== EDIT MODE ==================== */
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Judul Task *</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Judul Task *</label>
                 <input type="text" required autoFocus value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="input" />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Deskripsi</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
                 <textarea rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="input resize-none" />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
                   <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="input">
                     {statusOptions.map((s) => (
                       <option key={s.value} value={s.value}>{s.label}</option>
@@ -561,7 +561,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Prioritas</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Prioritas</label>
                   <select value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })} className="input">
                     {priorityOptions.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
@@ -571,7 +571,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Divisi</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Divisi</label>
                 <select value={editForm.division} onChange={(e) => setEditForm({ ...editForm, division: e.target.value })} className="input">
                   <option value="">— Pilih Divisi —</option>
                   {divisionOptions.map((d) => (
@@ -582,22 +582,22 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Start Date</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Start Date</label>
                   <input type="date" value={editForm.start_date} onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })} className="input" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
                   <input type="date" value={editForm.due_date} onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })} className="input" />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Result / Output</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Result / Output</label>
                 <input type="text" value={editForm.result} onChange={(e) => setEditForm({ ...editForm, result: e.target.value })} className="input" />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Notes</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Notes</label>
                 <textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="input resize-none" />
               </div>
 
@@ -615,7 +615,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">Batal</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
                 <button type="submit" disabled={saving} className="btn-primary">{saving ? "Menyimpan..." : "Simpan Perubahan"}</button>
               </div>
             </form>
@@ -624,14 +624,14 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
             <div className="space-y-5">
               {/* Title & Client */}
               <div>
-                <h3 className="text-xl font-bold text-gray-900">{task.title}</h3>
+                <h3 className="text-xl font-bold text-foreground">{task.title}</h3>
                 {task.client && <p className="mt-0.5 text-sm text-muted">{task.client.name}</p>}
               </div>
 
               {task.description && (
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Deskripsi</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
+                  <p className="text-sm text-muted whitespace-pre-wrap">{task.description}</p>
                 </div>
               )}
 
@@ -645,17 +645,17 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 </div>
                 <div>
                   <p className="text-xs text-muted">Divisi</p>
-                  <p className="mt-0.5 text-sm font-medium text-gray-900">{task.division || "—"}</p>
+                  <p className="mt-0.5 text-sm font-medium text-foreground">{task.division || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted">Start Date</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-sm text-gray-900">
+                  <p className="mt-0.5 flex items-center gap-1 text-sm text-foreground">
                     <Calendar size={12} /> {task.start_date ? formatDate(task.start_date, { day: "numeric", month: "short" }) : "—"}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted">Deadline</p>
-                  <p className={cn("mt-0.5 flex items-center gap-1 text-sm font-medium", isOverdue ? "text-danger" : "text-gray-900")}>
+                  <p className={cn("mt-0.5 flex items-center gap-1 text-sm font-medium", isOverdue ? "text-danger" : "text-foreground")}>
                     <Clock size={12} /> {task.due_date ? formatDate(task.due_date, { day: "numeric", month: "short" }) : "—"}
                   </p>
                 </div>
@@ -671,11 +671,11 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                         {a.user?.avatar_url ? (
                           <img src={a.user.avatar_url} alt={a.user?.full_name || "User"} className="h-6 w-6 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                             {getInitials(a.user?.full_name)}
                           </div>
                         )}
-                        <span className="text-xs text-gray-900">{a.user?.full_name}</span>
+                        <span className="text-xs text-foreground">{a.user?.full_name}</span>
                       </div>
                     ))}
                   </div>
@@ -688,13 +688,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   {task.result && (
                     <div className="rounded-lg border border-success/30 bg-success/5 p-3">
                       <p className="mb-1 text-xs font-semibold text-success">Result / Output</p>
-                      <p className="text-sm text-gray-700">{task.result}</p>
+                      <p className="text-sm text-muted">{task.result}</p>
                     </div>
                   )}
                   {task.notes && (
                     <div className="rounded-lg border border-border bg-background p-3">
                       <p className="mb-1 text-xs font-semibold text-muted">Notes</p>
-                      <p className="text-sm text-gray-700">{task.notes}</p>
+                      <p className="text-sm text-muted">{task.notes}</p>
                     </div>
                   )}
                 </div>
@@ -705,7 +705,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <div className="rounded-lg border-2 border-accent/40 bg-accent/5 p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <FileText size={16} className="text-accent" />
-                    <h4 className="text-sm font-semibold text-gray-900">Approval Workflow</h4>
+                    <h4 className="text-sm font-semibold text-foreground">Approval Workflow</h4>
                     {task.approval_status && task.approval_status !== "pending" && (
                       <span className={cn(
                         "ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
@@ -768,7 +768,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   {task.approval_note && (
                     <div className="mt-3 rounded-md border border-border bg-background p-2">
                       <p className="text-xs text-muted">Approval Note:</p>
-                      <p className="mt-0.5 text-sm text-gray-700">{task.approval_note}</p>
+                      <p className="mt-0.5 text-sm text-muted">{task.approval_note}</p>
                     </div>
                   )}
                 </div>
@@ -792,19 +792,19 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <div className="mb-3 flex gap-0.5 overflow-x-auto border-b border-border sm:gap-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <button
                     onClick={() => setActiveTab("comments")}
-                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "comments" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "comments" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-foreground")}
                   >
                     <MessageCircle size={13} /> <span className="hidden xs:inline sm:inline">Comments</span> ({comments.length})
                   </button>
                   <button
                     onClick={() => setActiveTab("subtasks")}
-                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "subtasks" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "subtasks" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-foreground")}
                   >
                     <CheckSquare size={13} /> <span className="hidden xs:inline sm:inline">Subtasks</span> ({subtasks.length})
                   </button>
                   <button
                     onClick={() => setActiveTab("timelog")}
-                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "timelog" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-gray-900")}
+                    className={cn("flex shrink-0 items-center gap-1 border-b-2 px-2.5 py-2 text-xs font-medium transition-colors sm:gap-1.5 sm:px-3 sm:text-sm", activeTab === "timelog" ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]" : "border-transparent text-muted hover:text-foreground")}
                   >
                     <Clock size={13} /> <span className="hidden xs:inline sm:inline">Time</span> ({totalLoggedHours.toFixed(1)}h)
                   </button>
@@ -821,17 +821,17 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                           {c.user?.avatar_url ? (
                             <img src={c.user.avatar_url} alt={c.user?.full_name || "User"} className="h-7 w-7 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                               {getInitials(c.user?.full_name)}
                             </div>
                           )}
                           <div className="flex-1">
                             <div className="rounded-lg border border-border bg-background p-2.5">
                               <div className="mb-0.5 flex items-center gap-2">
-                                <span className="text-xs font-medium text-gray-900">{c.user?.full_name || "Unknown"}</span>
+                                <span className="text-xs font-medium text-foreground">{c.user?.full_name || "Unknown"}</span>
                                 <span className="text-[10px] text-muted">{timeUntil(c.created_at)}</span>
                               </div>
-                              <p className="text-sm text-gray-700">{c.comment}</p>
+                              <p className="text-sm text-muted">{c.comment}</p>
                             </div>
                           </div>
                         </div>
@@ -864,10 +864,10 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                             {s.is_completed ? (
                               <CheckSquare size={16} className="text-success" />
                             ) : (
-                              <Square size={16} className="text-muted hover:text-gray-900" />
+                              <Square size={16} className="text-muted hover:text-foreground" />
                             )}
                           </button>
-                          <span className={cn("flex-1 text-sm", s.is_completed ? "text-muted line-through" : "text-gray-900")}>
+                          <span className={cn("flex-1 text-sm", s.is_completed ? "text-muted line-through" : "text-foreground")}>
                             {s.title}
                           </span>
                           <button onClick={() => deleteSubtask(s.id)} className="opacity-0 transition-opacity group-hover:opacity-100">
@@ -899,7 +899,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                       <Clock size={16} className="text-primary" />
                       <div className="flex-1">
                         <p className="text-xs text-muted">Total Time Logged</p>
-                        <p className="text-sm font-bold text-gray-900">{totalLoggedHours.toFixed(1)} hours</p>
+                        <p className="text-sm font-bold text-foreground">{totalLoggedHours.toFixed(1)} hours</p>
                       </div>
                     </div>
 
@@ -914,7 +914,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-gray-900">{log.user?.full_name || "Unknown"}</span>
+                              <span className="text-xs font-medium text-foreground">{log.user?.full_name || "Unknown"}</span>
                               <span className="text-[10px] text-muted">{formatDate(log.date, { day: "numeric", month: "short" })}</span>
                               {log.billable && <span className="badge bg-success/10 text-success text-[10px]">Billable</span>}
                             </div>

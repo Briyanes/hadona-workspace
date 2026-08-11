@@ -20,7 +20,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Settings</h1>
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Settings</h1>
         <p className="text-sm text-muted">Kelola akun, preferensi, dan workspace</p>
       </div>
 
@@ -37,7 +37,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 "flex shrink-0 items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
                 isActive
                   ? "border-primary text-primary dark:border-[#FFD60A] dark:text-[#FFD60A]"
-                  : "border-transparent text-muted hover:text-gray-900 dark:hover:text-[#FFD60A]"
+                  : "border-transparent text-muted hover:text-foreground dark:hover:text-[#FFD60A]"
               )}
             >
               <Icon size={16} />

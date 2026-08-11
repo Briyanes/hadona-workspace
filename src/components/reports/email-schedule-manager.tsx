@@ -157,7 +157,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Mail size={16} /> Auto Email Scheduler
         </p>
         {!showForm && (
@@ -236,7 +236,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="text-xs text-muted hover:text-gray-900"
+              className="text-xs text-muted hover:text-foreground"
             >
               Batal
             </button>
@@ -272,7 +272,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="truncate text-xs font-medium text-gray-900">
+                  <span className="truncate text-xs font-medium text-foreground">
                     {clientName(s.client_id)}
                   </span>
                   {s.is_active ? (

@@ -194,7 +194,7 @@ export default function StrategyPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Strategy & OKR</h1>
+        <h1 className="text-2xl font-bold text-foreground">Strategy & OKR</h1>
         <div className="skeleton h-32 rounded-lg" />
         <div className="skeleton h-64 rounded-lg" />
       </div>
@@ -221,7 +221,7 @@ export default function StrategyPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Strategy & OKR</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Strategy & OKR</h1>
           <p className="text-sm text-muted">Objectives and Key Results tracker</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -235,7 +235,7 @@ export default function StrategyPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase text-muted">Total Key Results</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">{totalOKRs}</p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{totalOKRs}</p>
             </div>
             <Target className="text-primary" size={24} />
           </div>
@@ -244,7 +244,7 @@ export default function StrategyPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase text-muted">Avg Progress</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">{avgProgress}%</p>
+              <p className="mt-1 text-2xl font-bold text-foreground">{avgProgress}%</p>
             </div>
             <TrendingUp className="text-success" size={24} />
           </div>
@@ -253,7 +253,7 @@ export default function StrategyPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase text-muted">Completed</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">
+              <p className="mt-1 text-2xl font-bold text-foreground">
                 {completedCount}
                 <span className="text-sm text-muted"> / {totalOKRs}</span>
               </p>
@@ -314,7 +314,7 @@ export default function StrategyPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Target className="text-primary" size={16} />
-                      <h3 className="font-semibold text-gray-900">{objective}</h3>
+                      <h3 className="font-semibold text-foreground">{objective}</h3>
                     </div>
                     <p className="mt-1 text-xs text-muted">
                       {krs.length} Key Result{ krs.length > 1 ? "s" : ""} • Avg: {objAvg}%
@@ -327,7 +327,7 @@ export default function StrategyPage() {
                         style={{ width: `${objAvg}%` }}
                       />
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{objAvg}%</span>
+                    <span className="text-sm font-bold text-foreground">{objAvg}%</span>
                   </div>
                 </div>
 
@@ -337,7 +337,7 @@ export default function StrategyPage() {
                     <div key={kr.id} className="group flex items-center gap-4 px-5 py-3 hover:bg-surface/50">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-foreground">
                             {kr.key_result || "No Key Result defined"}
                           </p>
                           <span
@@ -368,7 +368,7 @@ export default function StrategyPage() {
                             style={{ width: `${kr.progress_pct}%` }}
                           />
                         </div>
-                        <span className="w-10 text-right text-sm font-bold text-gray-900">
+                        <span className="w-10 text-right text-sm font-bold text-foreground">
                           {kr.progress_pct}%
                         </span>
                       </div>
@@ -405,12 +405,12 @@ export default function StrategyPage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingId ? "Edit OKR" : "OKR Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -420,7 +420,7 @@ export default function StrategyPage() {
             <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">
                     Objective *
                   </label>
                 <input
@@ -437,7 +437,7 @@ export default function StrategyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
                   Key Result
                 </label>
                 <input
@@ -454,7 +454,7 @@ export default function StrategyPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Quarter</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Quarter</label>
                   <select
                     value={form.quarter}
                     onChange={(e) => setForm({ ...form, quarter: e.target.value })}
@@ -467,7 +467,7 @@ export default function StrategyPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Tahun</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Tahun</label>
                   <input
                     type="number"
                     value={form.year}
@@ -478,7 +478,7 @@ export default function StrategyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Owner (PIC)</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Owner (PIC)</label>
                 <select
                   value={form.owner_id}
                   onChange={(e) => setForm({ ...form, owner_id: e.target.value })}
@@ -495,7 +495,7 @@ export default function StrategyPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Target</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Target</label>
                   <input
                     type="number"
                     step="0.01"
@@ -506,7 +506,7 @@ export default function StrategyPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Actual</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Actual</label>
                   <input
                     type="number"
                     step="0.01"
@@ -517,7 +517,7 @@ export default function StrategyPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Unit</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Unit</label>
                   <input
                     type="text"
                     value={form.unit}
@@ -529,7 +529,7 @@ export default function StrategyPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Catatan</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Catatan</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -546,7 +546,7 @@ export default function StrategyPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>

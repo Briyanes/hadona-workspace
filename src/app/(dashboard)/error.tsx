@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import Link from "next/link";
 
-export default function Error({
+export default function DashboardError({
   error,
   reset,
 }: {
@@ -12,31 +12,22 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("App error:", error);
+    console.error("Dashboard error:", error);
   }, [error]);
 
-  const isNotFound =
-    error?.message?.toLowerCase().includes("not found") ||
-    error?.name === "NotFound";
-
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-danger/10">
-        {isNotFound ? (
-          <Bug className="text-muted" size={32} />
-        ) : (
-          <AlertTriangle className="text-danger" size={32} />
-        )}
+        <AlertTriangle className="text-danger" size={32} />
       </div>
 
       <h1 className="mb-2 text-2xl font-bold text-foreground">
-        {isNotFound ? "Halaman Tidak Ditemukan" : "Terjadi Kesalahan"}
+        Halaman Error
       </h1>
 
       <p className="mb-1 max-w-md text-sm text-muted">
-        {isNotFound
-          ? "Halaman yang Anda cari mungkin telah dipindahkan atau tidak lagi tersedia."
-          : "Maaf, sesuatu tidak berjalan semestinya. Silakan coba lagi."}
+        Terjadi kesalahan saat memuat halaman ini. Tim kami sudah diberi notifikasi.
+        Silakan coba lagi atau kembali ke Dashboard.
       </p>
 
       {error.digest && (
@@ -60,13 +51,6 @@ export default function Error({
           <Home size={14} />
           Dashboard
         </Link>
-        <button
-          onClick={() => window.location.reload()}
-          className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background"
-        >
-          <RefreshCw size={14} />
-          Muat Ulang
-        </button>
       </div>
     </div>
   );

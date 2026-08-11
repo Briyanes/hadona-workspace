@@ -28,7 +28,7 @@ export function Toggle({ checked, onChange, label, description, icon: Icon, show
         "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-200 ease-in-out",
         checked
           ? "border-primary bg-primary"
-          : "border-black/5 bg-gray-300 hover:bg-gray-400 dark:border-white/10 dark:bg-gray-600 dark:hover:bg-gray-500"
+          : "border-black/5 bg-gray-300 hover:bg-gray-400 dark:border-white/10 dark:bg-gray-600 dark:hover:bg-background0"
       )}
     >
       <span
@@ -50,13 +50,13 @@ export function Toggle({ checked, onChange, label, description, icon: Icon, show
         {Icon && (
           <div className={cn(
             "mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-            checked ? "bg-primary/15 text-primary" : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
+            checked ? "bg-primary/15 text-primary" : "bg-surface text-muted/70 dark:bg-gray-800 dark:text-muted"
           )}>
             <Icon size={16} />
           </div>
         )}
         <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</p>
+          <p className="text-sm font-medium text-foreground dark:text-gray-100">{label}</p>
           {description && <p className="text-xs text-muted">{description}</p>}
         </div>
       </div>

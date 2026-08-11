@@ -187,7 +187,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[digest/${period}] Sent: ${sent}, Failed: ${failed}`);
 
     return NextResponse.json({
       success: true,

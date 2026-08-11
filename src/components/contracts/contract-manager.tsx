@@ -741,7 +741,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 sm:text-base">Kontrak & Billing</h3>
+          <h3 className="text-sm font-semibold text-foreground sm:text-base">Kontrak & Billing</h3>
           <p className="hidden text-xs text-muted sm:block">Kelola kontrak, service, dan tagihan bulanan</p>
         </div>
         <button onClick={() => setShowContractModal(true)} className="btn-primary text-xs">
@@ -779,7 +779,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   return (
                     <div key={c.id} className="flex items-center justify-between text-[10px]">
                       <span className="text-muted">{c.contract_number || "Kontrak"}</span>
-                      <span className="font-medium text-gray-900">{formatIDR(prepaidVal)} ({c.total_months_prepaid} bln)</span>
+                      <span className="font-medium text-foreground">{formatIDR(prepaidVal)} ({c.total_months_prepaid} bln)</span>
                     </div>
                   );
                 })}
@@ -790,7 +790,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
             {/* MRR */}
             <div className="card p-3 sm:p-4">
               <TrendingUp className="mb-2 text-primary" size={16} />
-              <p className="text-base font-bold text-gray-900 sm:text-lg">{formatIDR(mrr)}</p>
+              <p className="text-base font-bold text-foreground sm:text-lg">{formatIDR(mrr)}</p>
               <p className="text-xs text-muted">Total MRR</p>
             </div>
 
@@ -895,7 +895,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="truncate text-sm font-semibold text-gray-900 sm:text-base">
+                    <p className="truncate text-sm font-semibold text-foreground sm:text-base">
                       {contract.contract_number || "Kontrak"}
                     </p>
                     <span className={cn("badge text-[10px] capitalize", contractStatusColors[contract.status] || contractStatusColors.draft)}>
@@ -954,7 +954,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                           <div className="flex items-center gap-2">
                             <DollarSign size={14} className="text-success" />
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{svc.service_name}</p>
+                              <p className="text-sm font-medium text-foreground">{svc.service_name}</p>
                               <p className="text-[10px] text-muted">
                                 Dari {formatDate(svc.effective_from, { month: "short", year: "numeric" })}
                                 {svc.effective_to && ` → ${formatDate(svc.effective_to, { month: "short", year: "numeric" })}`}
@@ -963,7 +963,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-gray-900">{formatIDR(svc.monthly_fee)}/bln</p>
+                            <p className="text-sm font-semibold text-foreground">{formatIDR(svc.monthly_fee)}/bln</p>
                             {svc.status === "active" && (
                               <>
                                 <button
@@ -1057,7 +1057,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                             )}
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium text-gray-900">{bil.billing_period}</p>
+                                <p className="text-sm font-medium text-foreground">{bil.billing_period}</p>
                                 <span className={cn("badge text-[9px]", billingStatusColors[bil.status] || billingStatusColors.unpaid)}>
                                   {bil.status}
                                 </span>
@@ -1074,7 +1074,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="text-right">
-                              <p className="text-sm font-bold text-gray-900">{formatIDR(bil.grand_total)}</p>
+                              <p className="text-sm font-bold text-foreground">{formatIDR(bil.grand_total)}</p>
                               <p className="text-[10px] text-muted">
                                 {formatIDR(bil.total_amount)} + PPN {formatIDR(bil.tax_amount)}
                               </p>
@@ -1174,7 +1174,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">Kontrak Baru</h2>
+              <h2 className="text-lg font-bold text-foreground">Kontrak Baru</h2>
               <button onClick={() => setShowContractModal(false)} className="rounded p-1 text-muted hover:bg-background">
                 <X size={18} />
               </button>
@@ -1182,7 +1182,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
             <form onSubmit={handleCreateContract} className="space-y-4 px-6 py-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Mulai Kontrak *</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Mulai Kontrak *</label>
                   <input
                     type="date"
                     required
@@ -1192,7 +1192,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Akhir Kontrak *</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Akhir Kontrak *</label>
                   <input
                     type="date"
                     required
@@ -1204,7 +1204,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Minimum Bulan</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Minimum Bulan</label>
                   <input
                     type="number"
                     min={1}
@@ -1214,7 +1214,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Tipe Kontrak</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Tipe Kontrak</label>
                   <select
                     value={contractForm.contract_type}
                     onChange={(e) => setContractForm({ ...contractForm, contract_type: e.target.value })}
@@ -1232,7 +1232,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-900">Nama PIC</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Nama PIC</label>
                     <input
                       type="text"
                       value={contractForm.pic_name}
@@ -1242,7 +1242,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-900">No. HP / WA</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">No. HP / WA</label>
                     <input
                       type="tel"
                       value={contractForm.pic_phone}
@@ -1253,7 +1253,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </div>
                 </div>
                 <div className="mt-2">
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Email PIC</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Email PIC</label>
                   <input
                     type="email"
                     value={contractForm.pic_email}
@@ -1269,7 +1269,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-900">Skema Bayar</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Skema Bayar</label>
                     <select
                       value={contractForm.payment_schedule}
                       onChange={(e) => setContractForm({ ...contractForm, payment_schedule: e.target.value })}
@@ -1281,7 +1281,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </div>
                   {contractForm.payment_schedule === "prepaid_full" && (
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-900">Jumlah Bulan Prepaid</label>
+                      <label className="mb-1 block text-xs font-medium text-foreground">Jumlah Bulan Prepaid</label>
                       <input
                         type="number"
                         min={1}
@@ -1296,7 +1296,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 {contractForm.payment_schedule === "prepaid_full" && (
                   <>
                     <div className="mt-2">
-                      <label className="mb-1 block text-xs font-medium text-gray-900">Total Pembayaran Prepaid (IDR)</label>
+                      <label className="mb-1 block text-xs font-medium text-foreground">Total Pembayaran Prepaid (IDR)</label>
                       <input
                         type="number"
                         min={0}
@@ -1321,7 +1321,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Section: Sales & Payment */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Sales / AM</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Sales / AM</label>
                   <select
                     value={contractForm.sales_person_id}
                     onChange={(e) => setContractForm({ ...contractForm, sales_person_id: e.target.value })}
@@ -1336,7 +1336,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Jatuh Tempo (tgl)</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Jatuh Tempo (tgl)</label>
                   <input
                     type="number"
                     min={1}
@@ -1350,7 +1350,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Bank</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Bank</label>
                   <select
                     value={contractForm.bank_account}
                     onChange={(e) => setContractForm({ ...contractForm, bank_account: e.target.value })}
@@ -1365,7 +1365,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Diskon (%)</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Diskon (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -1377,7 +1377,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">PPN (%)</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">PPN (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -1479,7 +1479,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                             <span>PPN ({contractForm.tax_rate}%)</span>
                             <span>+{formatIDR(tax)}</span>
                           </div>
-                          <div className="flex justify-between border-t border-border pt-0.5 font-bold text-gray-900">
+                          <div className="flex justify-between border-t border-border pt-0.5 font-bold text-foreground">
                             <span>Total / bulan</span>
                             <span className="text-success">{formatIDR(grandTotal)}</span>
                           </div>
@@ -1491,7 +1491,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-900">Catatan</label>
+                <label className="mb-1 block text-xs font-medium text-foreground">Catatan</label>
                 <textarea
                   rows={2}
                   value={contractForm.notes}
@@ -1501,7 +1501,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 />
               </div>
               <div className="flex justify-end gap-2 border-t border-border pt-4">
-                <button type="button" onClick={() => setShowContractModal(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">
+                <button type="button" onClick={() => setShowContractModal(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">
@@ -1523,7 +1523,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
           <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Edit Kontrak</h2>
+                <h2 className="text-lg font-bold text-foreground">Edit Kontrak</h2>
                 <p className="text-xs text-muted">{editingContract.contract_number || "Kontrak"} • Mulai {formatDate(editingContract.start_date)}</p>
               </div>
               <button onClick={() => { setShowEditModal(false); setEditingContract(null); }} className="rounded p-1 text-muted hover:bg-background">
@@ -1534,7 +1534,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Status & End Date */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Status Kontrak</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Status Kontrak</label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
@@ -1548,7 +1548,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Akhir Kontrak *</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Akhir Kontrak *</label>
                   <input
                     type="date"
                     required
@@ -1560,7 +1560,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Minimum Bulan</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Minimum Bulan</label>
                   <input
                     type="number"
                     min={1}
@@ -1570,7 +1570,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Tipe Kontrak</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Tipe Kontrak</label>
                   <select
                     value={editForm.contract_type}
                     onChange={(e) => setEditForm({ ...editForm, contract_type: e.target.value })}
@@ -1589,7 +1589,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-900">Nama PIC</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Nama PIC</label>
                     <input
                       type="text"
                       value={editForm.pic_name}
@@ -1598,7 +1598,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-900">No. HP / WA</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">No. HP / WA</label>
                     <input
                       type="tel"
                       value={editForm.pic_phone}
@@ -1608,7 +1608,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </div>
                 </div>
                 <div className="mt-2">
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Email PIC</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Email PIC</label>
                   <input
                     type="email"
                     value={editForm.pic_email}
@@ -1623,7 +1623,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-900">Skema Bayar</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Skema Bayar</label>
                     <select
                       value={editForm.payment_schedule}
                       onChange={(e) => setEditForm({ ...editForm, payment_schedule: e.target.value })}
@@ -1635,7 +1635,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </div>
                   {editForm.payment_schedule === "prepaid_full" && (
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-900">Jumlah Bulan Prepaid</label>
+                      <label className="mb-1 block text-xs font-medium text-foreground">Jumlah Bulan Prepaid</label>
                       <input
                         type="number"
                         min={1}
@@ -1649,7 +1649,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 </div>
                 {editForm.payment_schedule === "prepaid_full" && (
                   <div className="mt-2">
-                    <label className="mb-1 block text-xs font-medium text-gray-900">Total Pembayaran Prepaid (IDR)</label>
+                    <label className="mb-1 block text-xs font-medium text-foreground">Total Pembayaran Prepaid (IDR)</label>
                     <input
                       type="number"
                       min={0}
@@ -1667,7 +1667,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Sales & Payment */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Sales / AM</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Sales / AM</label>
                   <select
                     value={editForm.sales_person_id}
                     onChange={(e) => setEditForm({ ...editForm, sales_person_id: e.target.value })}
@@ -1682,7 +1682,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Jatuh Tempo (tgl)</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Jatuh Tempo (tgl)</label>
                   <input
                     type="number"
                     min={1}
@@ -1696,7 +1696,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Bank</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Bank</label>
                   <select
                     value={editForm.bank_account}
                     onChange={(e) => setEditForm({ ...editForm, bank_account: e.target.value })}
@@ -1711,7 +1711,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Diskon (%)</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Diskon (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -1723,7 +1723,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">PPN (%)</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">PPN (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -1737,7 +1737,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-900">Catatan</label>
+                <label className="mb-1 block text-xs font-medium text-foreground">Catatan</label>
                 <textarea
                   rows={2}
                   value={editForm.notes}
@@ -1747,7 +1747,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
 
               <div className="flex justify-end gap-2 border-t border-border pt-4">
-                <button type="button" onClick={() => { setShowEditModal(false); setEditingContract(null); }} className="px-4 py-2 text-sm text-muted hover:text-gray-900">
+                <button type="button" onClick={() => { setShowEditModal(false); setEditingContract(null); }} className="px-4 py-2 text-sm text-muted hover:text-foreground">
                   Batal
                 </button>
                 <button type="submit" disabled={savingEdit} className="btn-primary">
@@ -1768,7 +1768,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
           <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">Tambah Service</h2>
+              <h2 className="text-lg font-bold text-foreground">Tambah Service</h2>
               <button onClick={() => setShowServiceModal(null)} className="rounded p-1 text-muted hover:bg-background">
                 <X size={18} />
               </button>
@@ -1778,7 +1778,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               className="space-y-4 px-6 py-4"
             >
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-900">Service *</label>
+                <label className="mb-1 block text-xs font-medium text-foreground">Service *</label>
                 <div className="flex flex-wrap gap-1.5">
                   {SERVICE_OPTIONS.map((s) => (
                     <button
@@ -1787,7 +1787,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       onClick={() => setServiceForm({ ...serviceForm, service_name: s })}
                       className={cn(
                         "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                        serviceForm.service_name === s ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+                        serviceForm.service_name === s ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
                       )}
                     >
                       {s}
@@ -1804,7 +1804,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Harga / Bulan (IDR) *</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Harga / Bulan (IDR) *</label>
                   <input
                     type="number"
                     required
@@ -1815,7 +1815,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-900">Berlaku Dari</label>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Berlaku Dari</label>
                   <input
                     type="date"
                     value={serviceForm.effective_from}
@@ -1825,7 +1825,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-900">Catatan</label>
+                <label className="mb-1 block text-xs font-medium text-foreground">Catatan</label>
                 <textarea
                   rows={2}
                   value={serviceForm.notes}
@@ -1835,7 +1835,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 />
               </div>
               <div className="flex justify-end gap-2 border-t border-border pt-4">
-                <button type="button" onClick={() => setShowServiceModal(null)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">
+                <button type="button" onClick={() => setShowServiceModal(null)} className="px-4 py-2 text-sm text-muted hover:text-foreground">
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">

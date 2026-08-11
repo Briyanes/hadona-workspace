@@ -34,9 +34,7 @@ export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   const startedAt = Date.now();
-  console.log("[reports/sheets] GET triggered at", new Date().toISOString());
-
-  try {
+    try {
     // ── 1. Auth & permission ───────────────────────────────────────────────
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -81,9 +79,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    console.log("[reports/sheets] Fetching from:", sheetUrl, "preview:", previewLimit);
-
-    // ── 3. Fetch & parse all sheets ────────────────────────────────────────
+        // ── 3. Fetch & parse all sheets ────────────────────────────────────────
     const multi = await fetchAndParseAllSheets(sheetUrl);
 
     // ── 4. Map ke response shape ───────────────────────────────────────────
@@ -121,11 +117,7 @@ export async function GET(req: NextRequest) {
     });
 
     const durationSec = ((Date.now() - startedAt) / 1000).toFixed(2);
-    console.log(
-      `[reports/sheets] Done in ${durationSec}s — ${sheets.length} sheets, ${multi.totalRows} rows`
-    );
-
-    return NextResponse.json({
+        return NextResponse.json({
       url: sheetUrl,
       fetchedAt: new Date().toISOString(),
       durationSec: parseFloat(durationSec),

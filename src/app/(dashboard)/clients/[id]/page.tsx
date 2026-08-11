@@ -274,11 +274,11 @@ export default function ClientDetailPage() {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted">
-        <button onClick={() => router.push("/clients")} className="flex items-center gap-1 hover:text-gray-900">
+        <button onClick={() => router.push("/clients")} className="flex items-center gap-1 hover:text-foreground">
           <ArrowLeft size={14} /> Clients
         </button>
         <span>/</span>
-        <span className="text-gray-900">{client.name}</span>
+        <span className="text-foreground">{client.name}</span>
       </div>
 
       {/* Header */}
@@ -295,7 +295,7 @@ export default function ClientDetailPage() {
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">{client.name}</h1>
+              <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">{client.name}</h1>
               <span className={cn("badge shrink-0 capitalize", statusColors[client.status] || statusColors.inactive)}>
                 {client.status}
               </span>
@@ -319,7 +319,7 @@ export default function ClientDetailPage() {
         <div className="mt-3 flex justify-end gap-2">
           <button
             onClick={() => router.push(`/clients?edit=${client.id}`)}
-            className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-gray-900 sm:text-sm"
+            className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground sm:text-sm"
           >
             <PencilLine size={14} /> <span>Edit</span>
           </button>
@@ -340,13 +340,13 @@ export default function ClientDetailPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <Briefcase size={14} className="shrink-0 text-muted" />
                   <span className="text-muted">AM:</span>
-                  <span className="truncate font-medium text-gray-900">{client.account_manager.full_name}</span>
+                  <span className="truncate font-medium text-foreground">{client.account_manager.full_name}</span>
                 </div>
               )}
               {client.contact_person && (
                 <div className="flex items-center gap-2 text-sm">
                   <User size={14} className="shrink-0 text-muted" />
-                  <span className="truncate text-gray-900">{client.contact_person}</span>
+                  <span className="truncate text-foreground">{client.contact_person}</span>
                 </div>
               )}
               {client.contact_phone && (
@@ -379,7 +379,7 @@ export default function ClientDetailPage() {
               <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-muted" />
-                  <span className="text-gray-900">
+                  <span className="text-foreground">
                     {formatDate(client.contract_start, { day: "numeric", month: "short", year: "numeric" })} — {formatDate(client.contract_end, { day: "numeric", month: "short", year: "numeric" })}
                   </span>
                 </div>
@@ -411,7 +411,7 @@ export default function ClientDetailPage() {
         {client.notes && (
           <div className="mt-3 border-t border-border pt-3">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted">📝 Catatan</p>
-            <p className="text-sm text-gray-700">{client.notes}</p>
+            <p className="text-sm text-muted">{client.notes}</p>
           </div>
         )}
       </div>
@@ -427,8 +427,8 @@ export default function ClientDetailPage() {
               className={cn(
                 "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm",
                 tab === t.id
-                  ? "border-primary text-gray-900"
-                  : "border-transparent text-muted hover:text-gray-900"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted hover:text-foreground"
               )}
             >
               <Icon size={14} />
@@ -473,7 +473,7 @@ export default function ClientDetailPage() {
             </div>
             <div className="card p-3 sm:p-4">
               <Megaphone className="mb-2 text-primary" size={16} />
-              <p className="text-base font-bold text-gray-900 sm:text-xl">
+              <p className="text-base font-bold text-foreground sm:text-xl">
                 {formatIDR(adAccounts.reduce((s, a) => s + (a.daily_budget || 0), 0))}
               </p>
               <p className="text-xs text-muted">Daily Ad Budget</p>
@@ -484,17 +484,17 @@ export default function ClientDetailPage() {
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <div className="card p-3 sm:p-4">
               <CheckSquare className="mb-2 text-primary" size={16} />
-              <p className="text-base font-bold text-gray-900 sm:text-xl">{tasks.length}</p>
+              <p className="text-base font-bold text-foreground sm:text-xl">{tasks.length}</p>
               <p className="text-xs text-muted">Total Tasks</p>
             </div>
             <div className="card p-3 sm:p-4">
               <FileText className="mb-2 text-warning" size={16} />
-              <p className="text-base font-bold text-gray-900 sm:text-xl">{reports.length}</p>
+              <p className="text-base font-bold text-foreground sm:text-xl">{reports.length}</p>
               <p className="text-xs text-muted">Weekly Reports</p>
             </div>
             <div className="card p-3 sm:p-4">
               <Target className="mb-2 text-accent" size={16} />
-              <p className="text-base font-bold text-gray-900 sm:text-xl">{strategies.length}</p>
+              <p className="text-base font-bold text-foreground sm:text-xl">{strategies.length}</p>
               <p className="text-xs text-muted">Strategies</p>
             </div>
           </div>
@@ -518,7 +518,7 @@ export default function ClientDetailPage() {
                 className="flex w-full items-center justify-between rounded-md border border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
               >
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                  <p className="text-sm font-medium text-foreground">{task.title}</p>
                   {task.due_date && (
                     <p className="text-xs text-muted">Deadline: {formatDate(task.due_date)}</p>
                   )}
@@ -554,7 +554,7 @@ export default function ClientDetailPage() {
                 className="block w-full rounded-md border border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     {formatDate(report.period_start, { day: "numeric", month: "short" })} —{" "}
                     {formatDate(report.period_end, { day: "numeric", month: "short", year: "numeric" })}
                   </p>
@@ -585,7 +585,7 @@ export default function ClientDetailPage() {
                 onClick={() => setSelectedStrategyId(strat.id)}
                 className="block w-full rounded-md border border-border bg-surface p-3 text-left transition-colors hover:border-primary hover:bg-primary/5"
               >
-                <p className="text-sm font-medium text-gray-900">{strat.title}</p>
+                <p className="text-sm font-medium text-foreground">{strat.title}</p>
                 {strat.period && <p className="text-xs text-muted">{strat.period}</p>}
                 {strat.description && (
                   <p className="mt-1 line-clamp-2 text-sm text-muted">{strat.description}</p>
@@ -612,7 +612,7 @@ export default function ClientDetailPage() {
                 className="flex items-center justify-between rounded-md border border-border bg-surface p-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     {ad.platform} - {ad.account_name || "Unnamed"}
                   </p>
                   <p className="text-xs text-muted">{formatIDR(ad.daily_budget)}/hari</p>
@@ -657,7 +657,7 @@ export default function ClientDetailPage() {
 
                     {/* Content */}
                     <div className="flex-1 pb-1">
-                      <p className="text-sm text-gray-900">{log.description}</p>
+                      <p className="text-sm text-foreground">{log.description}</p>
                       <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
                         <Clock size={10} />
                         <span>{formatDate(log.created_at, { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}</span>
@@ -687,7 +687,7 @@ export default function ClientDetailPage() {
           onClick={() => !deleting && setShowDeleteConfirm(false)}
         >
           <div
-            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-xl bg-surface p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center gap-3">
@@ -695,19 +695,19 @@ export default function ClientDetailPage() {
                 <Trash size={18} className="text-danger" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900">Hapus Client?</h3>
+                <h3 className="text-base font-bold text-foreground">Hapus Client?</h3>
                 <p className="text-xs text-muted">Tindakan ini tidak dapat dibatalkan</p>
               </div>
             </div>
             <p className="mb-4 text-sm text-muted">
-              Yakin ingin menghapus <strong className="text-gray-900">{client.name}</strong>? Semua data terkait
+              Yakin ingin menghapus <strong className="text-foreground">{client.name}</strong>? Semua data terkait
               (tasks, reports, strategies) mungkin terpengaruh.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-surface disabled:opacity-50"
+                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface disabled:opacity-50"
               >
                 Batal
               </button>

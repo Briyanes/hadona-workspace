@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
 
 async function handleCronSync(req: NextRequest) {
   const startedAt = Date.now();
-  console.log("[cron/sync] Started at", new Date().toISOString());
 
   // ── 1. Auth check (strict, fail-closed) ──────────────────────────────────
   const authError = verifyCronSecret(req);
@@ -50,14 +49,12 @@ async function handleCronSync(req: NextRequest) {
   try {
     // ── 2. Run sync ────────────────────────────────────────────────────────
     const sheetUrl = getDefaultSheetUrl();
-    console.log("[cron/sync] Sheet URL:", sheetUrl);
 
     const result = await syncReportsFromSheet(sheetUrl, {
       autoCreateClient: false, // cron tidak auto-create (manual review)
     });
 
     const durationSec = ((Date.now() - startedAt) / 1000).toFixed(2);
-    console.log(`[cron/sync] Completed in ${durationSec}s`);
 
     // ── 3. (Optional) Log ke activity_logs ─────────────────────────────────
     try {

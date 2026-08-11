@@ -749,7 +749,7 @@ export default function CalendarPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Team Calendar</h1>
+        <h1 className="text-2xl font-bold text-foreground">Team Calendar</h1>
         <div className="skeleton h-[600px] rounded-lg" />
       </div>
     );
@@ -760,7 +760,7 @@ export default function CalendarPage() {
       {/* ─── Header ─── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Team Calendar</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Team Calendar</h1>
           <p className="text-sm text-muted">
             Aggregate deadlines: tasks, reports, invoices, contracts
           </p>
@@ -774,7 +774,7 @@ export default function CalendarPage() {
                 "flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "month"
                   ? "bg-primary text-white"
-                  : "text-muted hover:text-gray-900"
+                  : "text-muted hover:text-foreground"
               )}
               title="Month View"
             >
@@ -787,7 +787,7 @@ export default function CalendarPage() {
                 "flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "week"
                   ? "bg-primary text-white"
-                  : "text-muted hover:text-gray-900"
+                  : "text-muted hover:text-foreground"
               )}
               title="Week View"
             >
@@ -800,7 +800,7 @@ export default function CalendarPage() {
                 "flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "agenda"
                   ? "bg-primary text-white"
-                  : "text-muted hover:text-gray-900"
+                  : "text-muted hover:text-foreground"
               )}
               title="Agenda View"
             >
@@ -824,7 +824,7 @@ export default function CalendarPage() {
             <CalendarIcon className="text-primary" size={16} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-gray-900">{stats.total}</p>
+            <p className="text-lg font-bold text-foreground">{stats.total}</p>
             <p className="truncate text-[10px] text-muted">Total Event</p>
           </div>
         </div>
@@ -833,7 +833,7 @@ export default function CalendarPage() {
             <AlertCircle className="text-danger" size={16} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-gray-900">{stats.urgent}</p>
+            <p className="text-lg font-bold text-foreground">{stats.urgent}</p>
             <p className="truncate text-[10px] text-muted">Urgent (≤2 hari)</p>
           </div>
         </div>
@@ -842,7 +842,7 @@ export default function CalendarPage() {
             <Clock className="text-warning" size={16} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-gray-900">{stats.today}</p>
+            <p className="text-lg font-bold text-foreground">{stats.today}</p>
             <p className="truncate text-[10px] text-muted">Hari Ini</p>
           </div>
         </div>
@@ -851,7 +851,7 @@ export default function CalendarPage() {
             <CheckCircle2 className="text-success" size={16} />
           </div>
           <div className="min-w-0">
-            <p className="text-lg font-bold text-gray-900">{stats.thisMonth}</p>
+            <p className="text-lg font-bold text-foreground">{stats.thisMonth}</p>
             <p className="truncate text-[10px] text-muted">Bulan Ini</p>
           </div>
         </div>
@@ -899,7 +899,7 @@ export default function CalendarPage() {
         <div className="card p-4">
           <div className="mb-4 flex items-center gap-2">
             <List className="text-primary" size={18} />
-            <h2 className="text-sm font-semibold text-gray-900">Agenda Mendatang</h2>
+            <h2 className="text-sm font-semibold text-foreground">Agenda Mendatang</h2>
             <span className="badge bg-surface text-muted">{agendaEvents.length} items</span>
           </div>
           {agendaEvents.length === 0 ? (
@@ -955,8 +955,8 @@ export default function CalendarPage() {
                     {/* Content */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <Icon size={12} className="shrink-0 text-gray-600" />
-                        <p className="truncate text-sm font-medium text-gray-900">{e.title}</p>
+                        <Icon size={12} className="shrink-0 text-muted" />
+                        <p className="truncate text-sm font-medium text-foreground">{e.title}</p>
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted">
                         <span className="rounded bg-surface px-1 capitalize">{cfg.label}</span>
@@ -1001,7 +1001,7 @@ export default function CalendarPage() {
           <div className="card lg:col-span-2">
             {/* Toolbar */}
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-900 sm:text-lg">
+              <h2 className="text-base font-bold text-foreground sm:text-lg">
                 {viewMode === "month" ? (
                   <span className="capitalize">{monthLabel}</span>
                 ) : (
@@ -1011,14 +1011,14 @@ export default function CalendarPage() {
               <div className="flex gap-1">
                 <button
                   onClick={viewMode === "month" ? prevMonth : prevWeek}
-                  className="rounded-md border border-border p-1.5 text-muted transition-colors hover:bg-background hover:text-gray-900"
+                  className="rounded-md border border-border p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground"
                   title={viewMode === "month" ? "Bulan sebelumnya" : "Minggu sebelumnya"}
                 >
                   <ChevronLeft size={16} />
                 </button>
                 <button
                   onClick={viewMode === "month" ? nextMonth : nextWeek}
-                  className="rounded-md border border-border p-1.5 text-muted transition-colors hover:bg-background hover:text-gray-900"
+                  className="rounded-md border border-border p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground"
                   title={viewMode === "month" ? "Bulan berikutnya" : "Minggu berikutnya"}
                 >
                   <ChevronRight size={16} />
@@ -1074,7 +1074,7 @@ export default function CalendarPage() {
                                   ? "rounded-full bg-primary text-white"
                                   : isWeekend
                                     ? "text-muted"
-                                    : "text-gray-900"
+                                    : "text-foreground"
                               )}
                             >
                               {day.getDate()}
@@ -1098,7 +1098,7 @@ export default function CalendarPage() {
                                 )}
                               >
                                 <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", typeConfig[e.type].dot)} />
-                                <span className="truncate text-gray-900">{e.title}</span>
+                                <span className="truncate text-foreground">{e.title}</span>
                               </div>
                             ))}
                             {dayEvents.length > 3 && (
@@ -1137,7 +1137,7 @@ export default function CalendarPage() {
                       {/* Date Block */}
                       <div className={cn(
                         "flex w-12 shrink-0 flex-col items-center rounded-md py-1.5",
-                        isTodayCell ? "bg-primary text-white" : "bg-surface text-gray-900"
+                        isTodayCell ? "bg-primary text-white" : "bg-surface text-foreground"
                       )}>
                         <span className="text-[9px] font-medium uppercase opacity-80">
                           {WEEKDAYS[dayOfWeek]}
@@ -1163,8 +1163,8 @@ export default function CalendarPage() {
                                     cfg.bg
                                   )}
                                 >
-                                  <Icon size={10} className="shrink-0 text-gray-700" />
-                                  <span className="truncate text-gray-900">{e.title}</span>
+                                  <Icon size={10} className="shrink-0 text-muted" />
+                                  <span className="truncate text-foreground">{e.title}</span>
                                   {e.clientName && (
                                     <span className="ml-auto shrink-0 text-[9px] text-muted">
                                       {e.clientName}
@@ -1187,7 +1187,7 @@ export default function CalendarPage() {
           <div className="space-y-4">
             {/* Selected Date Detail */}
             <div className="card">
-              <h3 className="mb-3 border-b border-border pb-2 text-sm font-semibold text-gray-900">
+              <h3 className="mb-3 border-b border-border pb-2 text-sm font-semibold text-foreground">
                 {selectedDate
                   ? new Intl.DateTimeFormat("id-ID", {
                       weekday: "long",
@@ -1231,7 +1231,7 @@ export default function CalendarPage() {
                           <Icon size={12} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium text-gray-900">{e.title}</p>
+                          <p className="truncate text-xs font-medium text-foreground">{e.title}</p>
                           <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-muted">
                             {e.clientName && <span className="truncate">{e.clientName}</span>}
                             {e.meta && <span>• {e.meta}</span>}
@@ -1253,7 +1253,7 @@ export default function CalendarPage() {
             <div className="card">
               <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
                 <CalendarIcon className="text-primary" size={16} />
-                <h3 className="text-sm font-semibold text-gray-900">Deadline Mendatang</h3>
+                <h3 className="text-sm font-semibold text-foreground">Deadline Mendatang</h3>
               </div>
               {upcomingByGroup.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -1308,7 +1308,7 @@ export default function CalendarPage() {
                                 <Icon size={9} />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs text-gray-900">{e.title}</p>
+                                <p className="truncate text-xs text-foreground">{e.title}</p>
                                 <p className="truncate text-[10px] text-muted">{e.clientName}</p>
                               </div>
                               {isUrgent && (
@@ -1334,11 +1334,11 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setMeetSuccess(null)}>
           <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <CheckCircle2 size={20} className="text-success" />
                 Meeting Berhasil Dibuat!
               </h2>
-              <button onClick={() => setMeetSuccess(null)} className="text-muted hover:text-gray-900">
+              <button onClick={() => setMeetSuccess(null)} className="text-muted hover:text-foreground">
                 <X size={20} />
               </button>
             </div>
@@ -1346,7 +1346,7 @@ export default function CalendarPage() {
               {/* Meet Link */}
               {meetSuccess.link && (
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">🔗 Google Meet Link</label>
+                  <label className="mb-1 block text-xs font-medium text-muted">🔗 Google Meet Link</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
@@ -1409,18 +1409,18 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowEventModal(false)}>
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Users size={20} className="text-purple-500" />
                 Buat Event / Meeting
               </h2>
-              <button onClick={() => setShowEventModal(false)} className="text-muted hover:text-gray-900">
+              <button onClick={() => setShowEventModal(false)} className="text-muted hover:text-foreground">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleSaveEvent} className="space-y-3 p-4">
               {/* Title */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Judul Event <span className="text-danger">*</span></label>
+                <label className="mb-1 block text-xs font-medium text-muted">Judul Event <span className="text-danger">*</span></label>
                 <input
                   type="text"
                   required
@@ -1433,7 +1433,7 @@ export default function CalendarPage() {
 
               {/* Type */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Tipe Event</label>
+                <label className="mb-1 block text-xs font-medium text-muted">Tipe Event</label>
                 <select
                   value={eventForm.event_type}
                   onChange={e => setEventForm({ ...eventForm, event_type: e.target.value as typeof eventForm.event_type })}
@@ -1449,7 +1449,7 @@ export default function CalendarPage() {
 
               {/* Client */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Client (opsional)</label>
+                <label className="mb-1 block text-xs font-medium text-muted">Client (opsional)</label>
                 <select
                   value={eventForm.client_id}
                   onChange={e => setEventForm({ ...eventForm, client_id: e.target.value })}
@@ -1465,7 +1465,7 @@ export default function CalendarPage() {
               {/* Date & Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">Mulai <span className="text-danger">*</span></label>
+                  <label className="mb-1 block text-xs font-medium text-muted">Mulai <span className="text-danger">*</span></label>
                   <input
                     type="datetime-local"
                     required
@@ -1475,7 +1475,7 @@ export default function CalendarPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700">Selesai</label>
+                  <label className="mb-1 block text-xs font-medium text-muted">Selesai</label>
                   <input
                     type="datetime-local"
                     value={eventForm.end_datetime}
@@ -1493,13 +1493,13 @@ export default function CalendarPage() {
                   onChange={e => setEventForm({ ...eventForm, all_day: e.target.checked })}
                   className="rounded"
                 />
-                <span className="text-gray-700">Sepanjang hari</span>
+                <span className="text-muted">Sepanjang hari</span>
               </label>
 
               {/* Location & Link */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700 flex items-center gap-1">
+                  <label className="mb-1 block text-xs font-medium text-muted flex items-center gap-1">
                     <MapPin size={12} /> Lokasi
                   </label>
                   <input
@@ -1511,7 +1511,7 @@ export default function CalendarPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-700 flex items-center gap-1">
+                  <label className="mb-1 block text-xs font-medium text-muted flex items-center gap-1">
                     <Video size={12} /> Meeting Link
                   </label>
                   <input
@@ -1545,7 +1545,7 @@ export default function CalendarPage() {
 
               {/* Description */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Deskripsi / Agenda</label>
+                <label className="mb-1 block text-xs font-medium text-muted">Deskripsi / Agenda</label>
                 <textarea
                   value={eventForm.description}
                   onChange={e => setEventForm({ ...eventForm, description: e.target.value })}
@@ -1613,18 +1613,18 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailEvent(null)}>
           <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Users size={20} className="text-purple-500" />
                 Detail Meeting
               </h2>
-              <button onClick={() => setDetailEvent(null)} className="text-muted hover:text-gray-900">
+              <button onClick={() => setDetailEvent(null)} className="text-muted hover:text-foreground">
                 <X size={20} />
               </button>
             </div>
             <div className="space-y-3 p-4">
               {/* Title */}
               <div>
-                <p className="text-sm font-bold text-gray-900">{detailEvent.title}</p>
+                <p className="text-sm font-bold text-foreground">{detailEvent.title}</p>
                 {detailEvent.status && (
                   <span className="mt-0.5 inline-block rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium capitalize text-purple-700">
                     {detailEvent.status.replace("_", " ")}
@@ -1636,7 +1636,7 @@ export default function CalendarPage() {
               {detailEvent.clientName && (
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-muted">Client:</span>
-                  <span className="font-medium text-gray-900">{detailEvent.clientName}</span>
+                  <span className="font-medium text-foreground">{detailEvent.clientName}</span>
                 </div>
               )}
 
@@ -1644,7 +1644,7 @@ export default function CalendarPage() {
               {detailEvent.startDatetime && (
                 <div className="flex items-center gap-2 text-xs">
                   <Clock size={14} className="text-muted" />
-                  <span className="text-gray-700">
+                  <span className="text-muted">
                     {new Date(detailEvent.startDatetime).toLocaleString("id-ID", {
                       weekday: "long", day: "numeric", month: "long", year: "numeric",
                       hour: "2-digit", minute: "2-digit",
@@ -1660,7 +1660,7 @@ export default function CalendarPage() {
               {detailEvent.location && (
                 <div className="flex items-center gap-2 text-xs">
                   <MapPin size={14} className="text-muted" />
-                  <span className="text-gray-700">{detailEvent.location}</span>
+                  <span className="text-muted">{detailEvent.location}</span>
                 </div>
               )}
 
@@ -1681,8 +1681,8 @@ export default function CalendarPage() {
 
               {/* Description */}
               {detailEvent.description && (
-                <div className="rounded-md bg-background p-2.5 text-xs text-gray-700">
-                  <p className="mb-1 font-medium text-gray-900">Agenda:</p>
+                <div className="rounded-md bg-background p-2.5 text-xs text-muted">
+                  <p className="mb-1 font-medium text-foreground">Agenda:</p>
                   {detailEvent.description}
                 </div>
               )}
@@ -1722,11 +1722,11 @@ export default function CalendarPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { setShowReschedule(false); setDetailEvent(null); }}>
           <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Pencil size={20} className="text-warning" />
                 Reschedule Meeting
               </h2>
-              <button onClick={() => { setShowReschedule(false); setDetailEvent(null); }} className="text-muted hover:text-gray-900">
+              <button onClick={() => { setShowReschedule(false); setDetailEvent(null); }} className="text-muted hover:text-foreground">
                 <X size={20} />
               </button>
             </div>
@@ -1737,7 +1737,7 @@ export default function CalendarPage() {
                   : "Jadwal meeting akan diupdate."}
               </p>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Waktu Mulai Baru <span className="text-danger">*</span></label>
+                <label className="mb-1 block text-xs font-medium text-muted">Waktu Mulai Baru <span className="text-danger">*</span></label>
                 <input
                   type="datetime-local"
                   required
@@ -1747,7 +1747,7 @@ export default function CalendarPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">Waktu Selesai Baru</label>
+                <label className="mb-1 block text-xs font-medium text-muted">Waktu Selesai Baru</label>
                 <input
                   type="datetime-local"
                   value={rescheduleForm.end_datetime}
@@ -1780,7 +1780,7 @@ export default function CalendarPage() {
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-danger/10">
                 <CalendarX size={24} className="text-danger" />
               </div>
-              <h3 className="text-base font-bold text-gray-900">Batalkan Meeting?</h3>
+              <h3 className="text-base font-bold text-foreground">Batalkan Meeting?</h3>
               <p className="mt-1.5 text-xs text-muted">
                 Yakin ingin membatalkan <strong>"{detailEvent.title}"</strong>?
                 {detailEvent.googleEventId && (

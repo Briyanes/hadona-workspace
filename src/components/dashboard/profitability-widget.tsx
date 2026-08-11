@@ -173,7 +173,7 @@ export function ProfitabilityWidget() {
     <div className="card p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Client Profitability</h2>
+          <h2 className="text-lg font-bold text-foreground">Client Profitability</h2>
           <p className="text-xs text-muted">Revenue vs Cost per client (monthly)</p>
         </div>
       </div>
@@ -212,9 +212,9 @@ export function ProfitabilityWidget() {
             {data.slice(0, 8).map((c) => (
               <tr key={c.id} className="border-b border-border/50 last:border-0">
                 <td className="py-2 pr-3">
-                  <span className="font-medium text-gray-900">{c.name}</span>
+                  <span className="font-medium text-foreground">{c.name}</span>
                 </td>
-                <td className="py-2 pr-3 text-right text-gray-700">{formatIDR(c.contractValue)}</td>
+                <td className="py-2 pr-3 text-right text-muted">{formatIDR(c.contractValue)}</td>
                 <td className="py-2 pr-3 text-right text-muted">{c.laborCost > 0 ? formatIDR(c.laborCost) : "—"}</td>
                 <td className="py-2 pr-3 text-right text-muted">{c.adSpend > 0 ? formatIDR(c.adSpend) : "—"}</td>
                 <td className={cn("py-2 pr-3 text-right font-semibold", c.profit >= 0 ? "text-success" : "text-danger")}>

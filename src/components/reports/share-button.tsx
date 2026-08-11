@@ -116,8 +116,8 @@ export function ShareButton({ report }: { report: Report }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900">🔗 Share Link Aktif</h3>
-              <button onClick={() => setShareUrl(null)} className="text-muted hover:text-gray-900">
+              <h3 className="font-bold text-foreground">🔗 Share Link Aktif</h3>
+              <button onClick={() => setShareUrl(null)} className="text-muted hover:text-foreground">
                 <X size={18} />
               </button>
             </div>
@@ -164,7 +164,7 @@ export function SharedReportView({ report }: { report: Report }) {
       {/* Header */}
       <div className="border-b border-border pb-4">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-gray-900">{report.client?.name}</h1>
+          <h1 className="text-xl font-bold text-foreground">{report.client?.name}</h1>
           <span className="badge bg-primary/10 text-primary">Weekly Report</span>
         </div>
         <p className="text-sm text-muted">
@@ -191,7 +191,7 @@ export function SharedReportView({ report }: { report: Report }) {
               return (
                 <div key={m.key} className="rounded-lg border border-border bg-background p-3">
                   <p className="text-xs text-muted">{m.label}</p>
-                  <p className="text-lg font-bold text-gray-900">{formatMetric(val, m.unit)}</p>
+                  <p className="text-lg font-bold text-foreground">{formatMetric(val, m.unit)}</p>
                   {delta !== null && (
                     <p
                       className={`flex items-center gap-0.5 text-xs ${
@@ -214,25 +214,25 @@ export function SharedReportView({ report }: { report: Report }) {
       {report.summary && (
         <div>
           <h2 className="mb-2 text-sm font-semibold uppercase text-muted">📝 Ringkasan</h2>
-          <p className="text-sm text-gray-700">{report.summary}</p>
+          <p className="text-sm text-muted">{report.summary}</p>
         </div>
       )}
       {report.performance_text && (
         <div>
           <h2 className="mb-2 text-sm font-semibold uppercase text-muted">⚡ Performance Notes</h2>
-          <p className="text-sm text-gray-700">{report.performance_text}</p>
+          <p className="text-sm text-muted">{report.performance_text}</p>
         </div>
       )}
       {report.conclusion && (
         <div>
           <h2 className="mb-2 text-sm font-semibold uppercase text-muted">🎯 Kesimpulan</h2>
-          <p className="text-sm text-gray-700">{report.conclusion}</p>
+          <p className="text-sm text-muted">{report.conclusion}</p>
         </div>
       )}
       {report.action && (
         <div>
           <h2 className="mb-2 text-sm font-semibold uppercase text-muted">📋 Action Plan</h2>
-          <p className="text-sm text-gray-700">{report.action}</p>
+          <p className="text-sm text-muted">{report.action}</p>
         </div>
       )}
 

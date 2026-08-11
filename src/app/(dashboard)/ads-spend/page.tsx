@@ -1098,7 +1098,7 @@ export default function AdsSpendPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Ads Spend Tracker</h1>
+        <h1 className="text-2xl font-bold text-foreground">Ads Spend Tracker</h1>
         <div className="skeleton h-64 rounded-lg" />
       </div>
     );
@@ -1120,7 +1120,7 @@ export default function AdsSpendPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Ads Spend Tracker</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Ads Spend Tracker</h1>
           <p className="text-sm text-muted">
             Pantau budget, spending harian & ROAS semua ad account
           </p>
@@ -1128,14 +1128,14 @@ export default function AdsSpendPage() {
           <div className="flex gap-2">
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center justify-center rounded-md border border-border bg-surface px-2.5 py-2 text-gray-700 transition-colors hover:bg-background"
+            className="flex items-center justify-center rounded-md border border-border bg-surface px-2.5 py-2 text-muted transition-colors hover:bg-background"
             title="Import Sheet"
           >
             <Download size={14} className="rotate-180" />
           </button>
           <button
             onClick={handleExportCSV}
-            className="flex items-center justify-center rounded-md border border-border bg-surface px-2.5 py-2 text-gray-700 transition-colors hover:bg-background"
+            className="flex items-center justify-center rounded-md border border-border bg-surface px-2.5 py-2 text-muted transition-colors hover:bg-background"
             title="Export"
           >
             <Download size={14} />
@@ -1182,7 +1182,7 @@ export default function AdsSpendPage() {
                   <StatusIcon className={iconColor} size={20} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     Meta Ads Terhubung: {metaConnection.fb_user_name || "Facebook User"}
                     {isTokenInvalid && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
@@ -1238,7 +1238,7 @@ export default function AdsSpendPage() {
                 <button
                   onClick={handleSyncNow}
                   disabled={syncing || isTokenInvalid}
-                  className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background disabled:opacity-50"
                   title={isTokenInvalid ? "Token invalid — reconnect dulu" : undefined}
                 >
                   {syncing ? (
@@ -1268,7 +1268,7 @@ export default function AdsSpendPage() {
               <Link2 className="text-primary" size={20} />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Hubungkan Meta Ads Account</p>
+              <p className="text-sm font-medium text-foreground">Hubungkan Meta Ads Account</p>
               <p className="text-[11px] text-muted">
                 Auto-sync spend harian dari Facebook/Meta Marketing API (tidak perlu input manual)
               </p>
@@ -1280,7 +1280,7 @@ export default function AdsSpendPage() {
             </a>
             <button
               onClick={() => setShowTokenModal(true)}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background"
+              className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-background"
               title="Connect pakai System User Token — permanent, alternatif jika OAuth tidak memungkinkan"
             >
               <KeyRound size={14} /> Connect dengan Token
@@ -1321,7 +1321,7 @@ export default function AdsSpendPage() {
                 <Icon className={card.color} size={18} />
               </div>
               <p className="text-xs text-muted">{card.label}</p>
-              <p className="mt-0.5 text-lg font-bold text-gray-900">{card.value}</p>
+              <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
               <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
             </div>
           );
@@ -1338,7 +1338,7 @@ export default function AdsSpendPage() {
             const pct = totalDaily > 0 ? (p.budget / totalDaily) * 100 : 0;
             return (
               <div key={p.name} className="flex items-center gap-3">
-                <span className="w-16 text-xs font-medium text-gray-900">{p.name}</span>
+                <span className="w-16 text-xs font-medium text-foreground">{p.name}</span>
                 <div className="h-6 flex-1 overflow-hidden rounded-md bg-background">
                   <div
                     className={cn(
@@ -1375,7 +1375,7 @@ export default function AdsSpendPage() {
                 "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                 chartRange === 7
                   ? "bg-primary text-white"
-                  : "bg-background text-muted hover:text-gray-900"
+                  : "bg-background text-muted hover:text-foreground"
               )}
             >
               7D
@@ -1386,7 +1386,7 @@ export default function AdsSpendPage() {
                 "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                 chartRange === 30
                   ? "bg-primary text-white"
-                  : "bg-background text-muted hover:text-gray-900"
+                  : "bg-background text-muted hover:text-foreground"
               )}
             >
               30D
@@ -1685,14 +1685,14 @@ export default function AdsSpendPage() {
                     </td>
                     <td className="px-4 py-3">
                       {a.client?.name ? (
-                        <div className="font-medium text-gray-900">{a.client.name}</div>
+                        <div className="font-medium text-foreground">{a.client.name}</div>
                       ) : (
                         <div className="font-medium text-warning flex items-center gap-1">
                           <AlertTriangle size={12} /> Unassigned
                         </div>
                       )}
                       {a.account_name ? (
-                        <div className="text-[10px] text-gray-600">{a.account_name}</div>
+                        <div className="text-[10px] text-muted">{a.account_name}</div>
                       ) : null}
                       <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
                     </td>
@@ -1708,7 +1708,7 @@ export default function AdsSpendPage() {
                     </td>
                     <td className="px-4 py-3">
                       {a.pic?.full_name ? (
-                        <span className="flex items-center gap-1 text-xs text-gray-700">
+                        <span className="flex items-center gap-1 text-xs text-muted">
                           <User size={12} className="text-muted" />
                           {a.pic.full_name}
                         </span>
@@ -1716,7 +1716,7 @@ export default function AdsSpendPage() {
                         <span className="text-muted">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right font-medium text-foreground">
                       {formatIDR(a.daily_budget)}
                     </td>
                     <td className="px-4 py-3 text-right text-muted">
@@ -1776,7 +1776,7 @@ export default function AdsSpendPage() {
                     {/* FASE 3: CPC */}
                     <td className="px-4 py-3 text-center">
                       {todayStats.cpc > 0 ? (
-                        <span className="text-xs text-gray-700">
+                        <span className="text-xs text-muted">
                           {formatIDR(todayStats.cpc)}
                         </span>
                       ) : (
@@ -1887,17 +1887,17 @@ export default function AdsSpendPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-background disabled:opacity-50"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted hover:bg-background disabled:opacity-50"
             >
               ← Prev
             </button>
-            <span className="text-xs font-medium text-gray-900">
+            <span className="text-xs font-medium text-foreground">
               {currentPage} / {totalPages}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-background disabled:opacity-50"
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted hover:bg-background disabled:opacity-50"
             >
               Next →
             </button>

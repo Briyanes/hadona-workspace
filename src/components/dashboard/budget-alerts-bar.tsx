@@ -114,7 +114,7 @@ export function BudgetAlertsBar() {
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-foreground">
                   {alert.client?.name || "Unknown Client"}
                 </span>
                 <span className={cn("text-xs font-bold", config.text)}>
@@ -141,7 +141,7 @@ export function BudgetAlertsBar() {
 
             <button
               onClick={() => acknowledge(alert.id)}
-              className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-background hover:text-gray-900"
+              className="shrink-0 rounded p-1 text-muted transition-colors hover:bg-background hover:text-foreground"
               title="Acknowledge"
             >
               <X size={14} />

@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { InvoicePDFDocument, type InvoicePDFData } from "@/lib/invoice-pdf";
+import { createClient } from "@/lib/supabase/server";
 
 // ============================================
 // GET /api/invoices/[id]/pdf
@@ -66,6 +67,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // 🔒 AUTH CHECK: Verify user is authenticated before generating PDF
+    const authSupabase = createClient();
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     // Use service-role client to bypass RLS — ensures client data is always fetched
     const supabase = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -97,7 +97,7 @@ export function AssigneePicker({
 
   return (
     <div ref={ref} className="relative">
-      <label className="mb-1.5 block text-sm font-medium text-gray-900">
+      <label className="mb-1.5 block text-sm font-medium text-foreground">
         {label}
         {divisionFilter && (
           <span className="ml-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
@@ -120,7 +120,7 @@ export function AssigneePicker({
                 {getInitials(u.full_name)}
               </span>
             )}
-            <span className="text-gray-700">{u.full_name}</span>
+            <span className="text-muted">{u.full_name}</span>
             <button
               type="button"
               onClick={() => remove(u.id)}
@@ -157,7 +157,7 @@ export function AssigneePicker({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1.5 w-full min-w-[240px] rounded-lg border border-border bg-white shadow-lg">
+        <div className="absolute z-50 mt-1.5 w-full min-w-[240px] rounded-lg border border-border bg-surface shadow-lg">
           {/* Search */}
           <div className="border-b border-border p-2">
             <input
@@ -208,12 +208,12 @@ export function AssigneePicker({
                     {u.avatar_url ? (
                       <img src={u.avatar_url} alt={u.full_name} className="h-6 w-6 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-gray-900">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
                         {getInitials(u.full_name)}
                       </span>
                     )}
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{u.full_name}</p>
+                      <p className="font-medium text-foreground">{u.full_name}</p>
                       <div className="flex items-center gap-1.5">
                         <p className="text-[10px] text-muted">{u.role.replace(/_/g, " ")}</p>
                         {u.division && u.division.length > 0 && (

@@ -416,7 +416,7 @@ export default function ClientsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+        <h1 className="text-2xl font-bold text-foreground">Clients</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="skeleton h-32 rounded-lg" />
@@ -443,7 +443,7 @@ export default function ClientsPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Clients</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Clients</h1>
           <p className="text-sm text-muted">Daftar klien Hadona Digital Media</p>
         </div>
         <button onClick={openCreate} className="btn-primary">
@@ -456,7 +456,7 @@ export default function ClientsPage() {
         {/* Total Clients */}
         <div className="card p-4">
           <Building2 className="mb-2 text-muted" size={18} />
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
           <p className="text-xs text-muted">Total Client</p>
           <div className="mt-1 flex gap-2 text-[10px] text-muted">
             <span className="text-success">{stats.active} active</span>
@@ -517,7 +517,7 @@ export default function ClientsPage() {
             className="input py-1.5 pl-8 text-xs"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-gray-900">
+            <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground">
               <X size={14} />
             </button>
           )}
@@ -526,7 +526,7 @@ export default function ClientsPage() {
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
             "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-            showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-gray-900"
+            showFilters || activeFilterCount > 0 ? "border-primary bg-primary/10 text-primary" : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <Filter size={12} />
@@ -542,7 +542,7 @@ export default function ClientsPage() {
             onClick={() => setViewMode("grid")}
             className={cn(
               "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
-              viewMode === "grid" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+              viewMode === "grid" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
             )}
           >
             <LayoutGrid size={14} /> Grid
@@ -551,7 +551,7 @@ export default function ClientsPage() {
             onClick={() => setViewMode("table")}
             className={cn(
               "flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors",
-              viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+              viewMode === "table" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
             )}
           >
             <List size={14} /> Table
@@ -636,7 +636,7 @@ export default function ClientsPage() {
             "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             filterStatus === "active"
               ? "border-success bg-success/10 text-success"
-              : "border-border bg-surface text-muted hover:text-gray-900"
+              : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-success" />
@@ -651,7 +651,7 @@ export default function ClientsPage() {
             "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             filterStatus === "all"
               ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-surface text-muted hover:text-gray-900"
+              : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           All
@@ -665,7 +665,7 @@ export default function ClientsPage() {
             "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             filterStatus === "onboarding"
               ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-surface text-muted hover:text-gray-900"
+              : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -680,7 +680,7 @@ export default function ClientsPage() {
             "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             filterStatus === "hold"
               ? "border-warning bg-warning/10 text-warning"
-              : "border-border bg-surface text-muted hover:text-gray-900"
+              : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-warning" />
@@ -694,8 +694,8 @@ export default function ClientsPage() {
           className={cn(
             "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             filterStatus === "inactive"
-              ? "border-muted bg-surface text-gray-900"
-              : "border-border bg-surface text-muted hover:text-gray-900"
+              ? "border-muted bg-surface text-foreground"
+              : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-muted" />
@@ -710,7 +710,7 @@ export default function ClientsPage() {
             "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             filterStatus === "churned"
               ? "border-danger bg-danger/10 text-danger"
-              : "border-border bg-surface text-muted hover:text-gray-900"
+              : "border-border bg-surface text-muted hover:text-foreground"
           )}
         >
           <span className="h-1.5 w-1.5 rounded-full bg-danger" />
@@ -747,7 +747,7 @@ export default function ClientsPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-gray-900 hover:text-primary">{c.name}</h3>
+                        <h3 className="font-semibold text-foreground hover:text-primary">{c.name}</h3>
                         <p className="text-xs text-muted">{c.industry || "-"}</p>
                       </div>
                     </Link>
@@ -838,7 +838,7 @@ export default function ClientsPage() {
             <div className="mt-6 flex flex-col items-center gap-2">
               <button
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-2 text-xs font-medium text-muted transition-colors hover:bg-background hover:text-primary"
               >
                 <ChevronDown size={14} className="animate-bounce" />
                 Load More
@@ -896,7 +896,7 @@ export default function ClientsPage() {
                             {getInitials(c.name)}
                           </div>
                         )}
-                        <span className="truncate font-medium text-gray-900">{c.name}</span>
+                        <span className="truncate font-medium text-foreground">{c.name}</span>
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted">
@@ -977,7 +977,7 @@ export default function ClientsPage() {
             <div className="flex flex-col items-center gap-2 border-t border-border bg-surface px-4 py-3">
               <button
                 onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-background hover:text-primary"
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-4 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-background hover:text-primary"
               >
                 <ChevronDown size={14} className="animate-bounce" />
                 Load More
@@ -999,12 +999,12 @@ export default function ClientsPage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* ── Sticky Header ── */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingId ? "Edit Client" : "Client Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -1054,16 +1054,16 @@ export default function ClientsPage() {
 
                     <div className="space-y-3">
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">Nama Client *</label>
+                        <label className="mb-1 block text-xs font-medium text-foreground">Nama Client *</label>
                         <input type="text" required autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: PT Maju Jaya" className="input" />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="mb-1 block text-xs font-medium text-gray-900">Industri</label>
+                          <label className="mb-1 block text-xs font-medium text-foreground">Industri</label>
                           <input type="text" value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} placeholder="F&B, Fashion" className="input" />
                         </div>
                         <div>
-                          <label className="mb-1 block text-xs font-medium text-gray-900">Status</label>
+                          <label className="mb-1 block text-xs font-medium text-foreground">Status</label>
                           <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input">
                             {STATUS_OPTIONS.map((s) => (
                               <option key={s} value={s}>
@@ -1089,11 +1089,11 @@ export default function ClientsPage() {
                     </div>
                     <div className="space-y-2">
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">Nilai Kontrak (Estimasi IDR/bulan)</label>
+                        <label className="mb-1 block text-xs font-medium text-foreground">Nilai Kontrak (Estimasi IDR/bulan)</label>
                         <input type="number" value={form.contract_value} onChange={(e) => setForm({ ...form, contract_value: e.target.value })} placeholder="Contoh: 5000000" className="input" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">Account Manager</label>
+                        <label className="mb-1 block text-xs font-medium text-foreground">Account Manager</label>
                         <select value={form.account_manager_id} onChange={(e) => setForm({ ...form, account_manager_id: e.target.value })} className="input">
                           <option value="">— Pilih AM —</option>
                           {accountManagers.map((am) => (
@@ -1103,11 +1103,11 @@ export default function ClientsPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="mb-1 block text-xs font-medium text-gray-900">Mulai Kontrak</label>
+                          <label className="mb-1 block text-xs font-medium text-foreground">Mulai Kontrak</label>
                           <input type="date" value={form.contract_start} onChange={(e) => setForm({ ...form, contract_start: e.target.value })} className="input" />
                         </div>
                         <div>
-                          <label className="mb-1 block text-xs font-medium text-gray-900">Akhir Kontrak</label>
+                          <label className="mb-1 block text-xs font-medium text-foreground">Akhir Kontrak</label>
                           <input type="date" value={form.contract_end} onChange={(e) => setForm({ ...form, contract_end: e.target.value })} className="input" />
                         </div>
                       </div>
@@ -1124,7 +1124,7 @@ export default function ClientsPage() {
                       {SERVICE_OPTIONS.map((s) => (
                         <button key={s} type="button" onClick={() => toggleService(s)} className={cn(
                           "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-                          form.services.includes(s) ? "bg-primary text-white" : "bg-surface text-muted hover:text-gray-900"
+                          form.services.includes(s) ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
                         )}>
                           {s}
                         </button>
@@ -1137,15 +1137,15 @@ export default function ClientsPage() {
                     <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">Kontak</p>
                     <div className="space-y-2">
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">Contact Person</label>
+                        <label className="mb-1 block text-xs font-medium text-foreground">Contact Person</label>
                         <input type="text" value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} placeholder="Nama PIC" className="input" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">No. Telepon</label>
+                        <label className="mb-1 block text-xs font-medium text-foreground">No. Telepon</label>
                         <input type="tel" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} placeholder="08xxx" className="input" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-900">Email</label>
+                        <label className="mb-1 block text-xs font-medium text-foreground">Email</label>
                         <input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="pic@client.com" className="input" />
                       </div>
                     </div>
@@ -1161,7 +1161,7 @@ export default function ClientsPage() {
 
               {/* ── Sticky Footer ── */}
               <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">
                   Batal
                 </button>
                 <button type="submit" disabled={saving} className="btn-primary">

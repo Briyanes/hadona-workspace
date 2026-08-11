@@ -143,7 +143,7 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900">{isEditing ? "Edit Report" : "Report Detail"}</h2>
+            <h2 className="text-lg font-bold text-foreground">{isEditing ? "Edit Report" : "Report Detail"}</h2>
             {!isEditing && (
               <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", status.color)}>
                 {status.label}
@@ -160,13 +160,13 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
                   <Trash2 size={16} />
                 </button>
                 {confirmDelete && (
-                  <button onClick={() => setConfirmDelete(false)} className="rounded px-2 py-1 text-xs text-muted hover:text-gray-900">
+                  <button onClick={() => setConfirmDelete(false)} className="rounded px-2 py-1 text-xs text-muted hover:text-foreground">
                     Batal
                   </button>
                 )}
               </>
             )}
-            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-gray-900">
+            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
               <X size={18} />
             </button>
           </div>
@@ -178,16 +178,16 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Mulai</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Periode Mulai</label>
                   <input type="date" value={editForm.period_start} onChange={(e) => setEditForm({ ...editForm, period_start: e.target.value })} className="input" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Periode Akhir</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Periode Akhir</label>
                   <input type="date" value={editForm.period_end} onChange={(e) => setEditForm({ ...editForm, period_end: e.target.value })} className="input" />
                 </div>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Status</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
                 <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="input">
                   <option value="draft">Draft</option>
                   <option value="submitted">Submitted</option>
@@ -196,11 +196,11 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">Summary</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Summary</label>
                 <textarea rows={5} value={editForm.summary} onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })} className="input resize-none" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-gray-900">Batal</button>
+                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
                 <button type="submit" disabled={saving} className="btn-primary">{saving ? "Menyimpan..." : "Simpan Perubahan"}</button>
               </div>
             </form>
@@ -209,7 +209,7 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
               {/* Period */}
               <div className="flex items-center gap-2 text-sm">
                 <Calendar size={14} className="text-muted" />
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-foreground">
                   {formatDate(report.period_start, { day: "numeric", month: "long", year: "numeric" })} — {" "}
                   {formatDate(report.period_end, { day: "numeric", month: "long", year: "numeric" })}
                 </span>
@@ -235,7 +235,7 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Summary</p>
                   <div className="rounded-lg border border-border bg-background p-4">
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{report.summary}</p>
+                    <p className="text-sm text-muted whitespace-pre-wrap">{report.summary}</p>
                   </div>
                 </div>
               ) : (
@@ -279,13 +279,13 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
                   <div className="space-y-1 text-xs text-muted">
                     {report.sheet_source && (
                       <p>
-                        <span className="font-medium text-gray-700">Sheet Tab:</span> {report.sheet_source}
+                        <span className="font-medium text-muted">Sheet Tab:</span> {report.sheet_source}
                         {report.sheet_gid && <span className="ml-1 font-mono text-muted/70">(gid: {report.sheet_gid})</span>}
                       </p>
                     )}
                     {report.data_source_kind && (
                       <p>
-                        <span className="font-medium text-gray-700">Metode Import:</span>{" "}
+                        <span className="font-medium text-muted">Metode Import:</span>{" "}
                         {report.data_source_kind === "sheet_auto" && "Auto-sync dari Google Sheet"}
                         {report.data_source_kind === "sheet_manual" && "Manual import via tombol Import Sheet"}
                         {report.data_source_kind === "manual_entry" && "Input manual user"}

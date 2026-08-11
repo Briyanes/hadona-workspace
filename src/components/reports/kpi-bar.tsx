@@ -22,7 +22,7 @@ const HEALTH_COLORS = {
   good: "text-success border-success/20 bg-success/5",
   warning: "text-warning border-warning/20 bg-warning/5",
   danger: "text-danger border-danger/20 bg-danger/5",
-  neutral: "text-gray-900 border-border bg-surface",
+  neutral: "text-foreground border-border bg-surface",
 };
 
 function HealthBadge({ health }: { health: keyof typeof HEALTH_COLORS }) {
@@ -98,7 +98,7 @@ export function KPICard({ metric, value, previousValue, objectiveId, size = "com
         </p>
         <HealthBadge health={health} />
       </div>
-      <p className={cn("font-bold text-gray-900", isHero ? "text-lg" : "text-sm")}>
+      <p className={cn("font-bold text-foreground", isHero ? "text-lg" : "text-sm")}>
         {formatMetricValue(metric, value)}
       </p>
       {/* 🆕 Sprint 4.8: Tampilkan hint kecil di bawah value kalau metric derived kosong */}
@@ -134,12 +134,12 @@ function FunnelBar({ step, maxValue }: { step: FunnelStep; maxValue: number }) {
   return (
     <div className="flex items-center gap-2">
       <div className="w-28 truncate text-right text-[9px] text-muted">{step.label}</div>
-      <div className="relative h-6 flex-1 rounded bg-gray-100">
+      <div className="relative h-6 flex-1 rounded bg-surface">
         <div
           className="absolute inset-y-0 left-0 rounded bg-primary/70 transition-all"
           style={{ width: `${percent}%` }}
         />
-        <span className="absolute inset-y-0 right-2 flex items-center text-[9px] font-semibold text-gray-900">
+        <span className="absolute inset-y-0 right-2 flex items-center text-[9px] font-semibold text-foreground">
           {displayValue}
         </span>
       </div>
@@ -169,7 +169,7 @@ export function FunnelVisualization({
 
   return (
     <div className="rounded-lg border border-border bg-surface p-3">
-      <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-gray-900">
+      <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-foreground">
         <Filter size={12} /> Conversion Funnel
       </p>
       <div className="space-y-1.5">

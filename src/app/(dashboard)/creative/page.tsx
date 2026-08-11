@@ -315,7 +315,7 @@ export default function CreativePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Creative Requests</h1>
+          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Creative Requests</h1>
           <p className="text-sm text-muted">Request kreatif untuk tim design/copy</p>
         </div>
         <button
@@ -337,28 +337,28 @@ export default function CreativePage() {
             <Palette className="text-primary" size={16} />
             <p className="text-xs uppercase text-muted">Total</p>
           </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{totalCount}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{totalCount}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2">
             <Clock className="text-warning" size={16} />
             <p className="text-xs uppercase text-muted">In Progress</p>
           </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{pendingCount}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{pendingCount}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="text-success" size={16} />
             <p className="text-xs uppercase text-muted">Approved</p>
           </div>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{approvedCount}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{approvedCount}</p>
         </div>
         <div className={cn("card p-4", overdueCount > 0 && "ring-2 ring-danger/30")}>
           <div className="flex items-center gap-2">
             <AlertCircle className={overdueCount > 0 ? "text-danger" : "text-muted"} size={16} />
             <p className="text-xs uppercase text-muted">Overdue</p>
           </div>
-          <p className={cn("mt-1 text-2xl font-bold", overdueCount > 0 ? "text-danger" : "text-gray-900")}>
+          <p className={cn("mt-1 text-2xl font-bold", overdueCount > 0 ? "text-danger" : "text-foreground")}>
             {overdueCount}
           </p>
         </div>
@@ -430,7 +430,7 @@ export default function CreativePage() {
             <div key={r.id} className="card">
               <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{r.client?.name || "No Client"}</h3>
+                  <h3 className="font-semibold text-foreground">{r.client?.name || "No Client"}</h3>
                   <p className="text-xs text-muted">{formatDate(r.request_date)}</p>
                 </div>
                 <select
@@ -448,7 +448,7 @@ export default function CreativePage() {
 
               <div className="space-y-1.5 text-sm">
                 {r.objective_campaign && (
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     <span className="text-muted">Objective:</span> {r.objective_campaign}
                   </p>
                 )}
@@ -459,22 +459,22 @@ export default function CreativePage() {
                   </p>
                 )}
                 {r.format && (
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     <span className="text-muted">Format:</span> {r.format}
                   </p>
                 )}
                 {r.angle && (
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     <span className="text-muted">Angle:</span> {r.angle}
                   </p>
                 )}
                 {r.assignee?.full_name && (
-                  <p className="text-gray-900">
+                  <p className="text-foreground">
                     <span className="text-muted">Assignee:</span> {r.assignee.full_name}
                   </p>
                 )}
                 {r.due_date && (
-                  <p className={cn("text-gray-900", r.due_date < todayStr && "text-danger")}>
+                  <p className={cn("text-foreground", r.due_date < todayStr && "text-danger")}>
                     <span className="text-muted">Deadline:</span> {formatDate(r.due_date)}
                   </p>
                 )}
@@ -483,7 +483,7 @@ export default function CreativePage() {
               {r.caption && (
                 <div className="mt-3 rounded-md border border-border bg-background p-2">
                   <p className="text-xs text-muted">Caption:</p>
-                  <p className="text-sm text-gray-900">{r.caption}</p>
+                  <p className="text-sm text-foreground">{r.caption}</p>
                 </div>
               )}
 
@@ -569,7 +569,7 @@ export default function CreativePage() {
               {/* Revision Panel (expandable) */}
               {showRevisionPanel === r.id && (
                 <div className="mt-3 space-y-3 rounded-lg border border-border bg-background p-3">
-                  <p className="text-xs font-semibold text-gray-900">Revision History</p>
+                  <p className="text-xs font-semibold text-foreground">Revision History</p>
 
                   {/* Existing revisions */}
                   {revisions[r.id]?.length === 0 && (
@@ -584,7 +584,7 @@ export default function CreativePage() {
                       )}
                     >
                       <div className="mb-1 flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-gray-900">Round {rev.revision_round}</span>
+                        <span className="text-[11px] font-bold text-foreground">Round {rev.revision_round}</span>
                         <span
                           className={cn(
                             "text-[10px] font-medium",
@@ -594,7 +594,7 @@ export default function CreativePage() {
                           {rev.status === "resolved" ? "✓ Resolved" : "⏳ Pending"}
                         </span>
                       </div>
-                      {rev.feedback && <p className="text-xs text-gray-700">{rev.feedback}</p>}
+                      {rev.feedback && <p className="text-xs text-muted">{rev.feedback}</p>}
                       {rev.status !== "resolved" && (
                         <button
                           onClick={() => resolveRevision(rev.id, r.id)}
@@ -637,12 +637,12 @@ export default function CreativePage() {
           <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
             {/* Sticky Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 {editingId ? "Edit Creative Request" : "Creative Request Baru"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
               >
                 <X size={18} />
               </button>
@@ -652,7 +652,7 @@ export default function CreativePage() {
             <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Client</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
                   <select
                     value={form.client_id}
                     onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -669,7 +669,7 @@ export default function CreativePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Objective/Campaign</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Objective/Campaign</label>
                     <input
                       type="text"
                       value={form.objective_campaign}
@@ -679,7 +679,7 @@ export default function CreativePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Funnel Stage</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Funnel Stage</label>
                     <select
                       value={form.funnel}
                       onChange={(e) => setForm({ ...form, funnel: e.target.value })}
@@ -695,7 +695,7 @@ export default function CreativePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Format</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Format</label>
                     <input
                       type="text"
                       value={form.format}
@@ -705,7 +705,7 @@ export default function CreativePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Angle</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Angle</label>
                     <input
                       type="text"
                       value={form.angle}
@@ -717,7 +717,7 @@ export default function CreativePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Content URL</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Content URL</label>
                   <input
                     type="url"
                     value={form.content_url}
@@ -728,7 +728,7 @@ export default function CreativePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Caption</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Caption</label>
                   <textarea
                     rows={2}
                     value={form.caption}
@@ -739,7 +739,7 @@ export default function CreativePage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-900">Prefilled Message (WA/Link)</label>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Prefilled Message (WA/Link)</label>
                   <textarea
                     rows={2}
                     value={form.prefilled_message}
@@ -751,7 +751,7 @@ export default function CreativePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Assign To</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Assign To</label>
                     <select
                       value={form.assigned_to}
                       onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
@@ -766,7 +766,7 @@ export default function CreativePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-900">Deadline</label>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
                     <input
                       type="date"
                       value={form.due_date}
@@ -782,7 +782,7 @@ export default function CreativePage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-gray-900"
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
                 >
                   Batal
                 </button>

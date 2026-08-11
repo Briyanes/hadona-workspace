@@ -73,7 +73,7 @@ export default function PreferencesSettingsPage() {
       <div className="card p-6">
         <div className="mb-1 flex items-center gap-2">
           <Sun size={16} className="text-primary" />
-          <h3 className="text-sm font-semibold text-gray-900">Theme</h3>
+          <h3 className="text-sm font-semibold text-foreground">Theme</h3>
           <span className="badge bg-success/10 text-success text-[10px]">Live</span>
         </div>
         <p className="mb-4 text-xs text-muted">Pilih tampilan yang Anda sukai. Perubahan langsung aktif.</p>
@@ -108,7 +108,7 @@ export default function PreferencesSettingsPage() {
       <div className="card p-6">
         <div className="mb-1 flex items-center gap-2">
           <Globe size={16} className="text-primary" />
-          <h3 className="text-sm font-semibold text-gray-900">Language</h3>
+          <h3 className="text-sm font-semibold text-foreground">Language</h3>
           <span className="badge bg-warning/10 text-warning text-[10px]">Coming Soon</span>
         </div>
         <p className="mb-4 text-xs text-muted">Bahasa yang digunakan di aplikasi.</p>
@@ -142,7 +142,7 @@ export default function PreferencesSettingsPage() {
       <div className="card p-6">
         <div className="mb-1 flex items-center gap-2">
           <Clock size={16} className="text-primary" />
-          <h3 className="text-sm font-semibold text-gray-900">Timezone</h3>
+          <h3 className="text-sm font-semibold text-foreground">Timezone</h3>
         </div>
         <p className="mb-4 text-xs text-muted">Zona waktu untuk jadwal dan notifikasi.</p>
         <select

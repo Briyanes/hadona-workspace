@@ -337,7 +337,7 @@ export function ImportSheetModal({
               <FileSpreadsheet className="text-primary" size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-foreground">
                 Import Weekly Report dari Google Sheet
               </h2>
               <p className="text-xs text-muted">
@@ -348,7 +348,7 @@ export function ImportSheetModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-gray-900"
+            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
           >
             <X size={18} />
           </button>
@@ -368,7 +368,7 @@ export function ImportSheetModal({
           {step === "url" && (
             <form onSubmit={handlePreview} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-900">
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
                   Google Sheet URL (Publish to Web)
                 </label>
                 <div className="relative">
@@ -389,7 +389,7 @@ export function ImportSheetModal({
 
               {/* Helper card */}
               <div className="rounded-md border border-border bg-background/50 p-3 text-xs text-muted">
-                <p className="mb-1.5 font-semibold text-gray-900">📋 Format sheet yang didukung:</p>
+                <p className="mb-1.5 font-semibold text-foreground">📋 Format sheet yang didukung:</p>
                 <ul className="list-inside list-disc space-y-1">
                   <li>Kolom: <code className="rounded bg-surface px-1">No | Input Date | Client | PIC | Divisi | Performance | Analisa | Status</code></li>
                   <li>Kolom "Performance" multi-line: <code className="rounded bg-surface px-1">Spend: Rp1.234.567</code>, <code className="rounded bg-surface px-1">CTR: 1.35%</code>, dll</li>
@@ -409,7 +409,7 @@ export function ImportSheetModal({
                     className="mt-0.5"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">Skip duplicate report</div>
+                    <div className="font-medium text-foreground">Skip duplicate report</div>
                     <div className="text-xs text-muted">Skip jika client + period_start sudah ada</div>
                   </div>
                 </label>
@@ -421,7 +421,7 @@ export function ImportSheetModal({
                     className="mt-0.5"
                   />
                   <div>
-                    <div className="font-medium text-gray-900">Auto-create client baru</div>
+                    <div className="font-medium text-foreground">Auto-create client baru</div>
                     <div className="text-xs text-muted">
                       Buat client baru otomatis kalau tidak ketemu match (dipakai untuk client pertama kali)
                     </div>
@@ -487,7 +487,7 @@ export function ImportSheetModal({
         {step === "preview" && (
           <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-background/50 p-3">
             <div className="text-xs text-muted">
-              <strong className="text-gray-900">{selectedRowIndexes.size}</strong> baris dipilih
+              <strong className="text-foreground">{selectedRowIndexes.size}</strong> baris dipilih
               {previewStats && (
                 <> • Match rate: {Math.round((previewStats.matched / Math.max(previewStats.total, 1)) * 100)}%</>
               )}
@@ -695,7 +695,7 @@ function PreviewRowCard({
     },
     "no-metric": {
       label: "No Metric",
-      color: "bg-gray-200 text-gray-700",
+      color: "bg-border text-muted",
       icon: <AlertTriangle size={11} />,
     },
   };
@@ -723,7 +723,7 @@ function PreviewRowCard({
         />
         <button
           onClick={onToggleCollapse}
-          className="shrink-0 text-muted hover:text-gray-900"
+          className="shrink-0 text-muted hover:text-foreground"
           aria-label="Toggle detail"
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
@@ -731,7 +731,7 @@ function PreviewRowCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-gray-900">
+            <span className="truncate text-sm font-semibold text-foreground">
               {row.clientName || <em className="text-muted">(no name)</em>}
             </span>
             <span
@@ -766,19 +766,19 @@ function PreviewRowCard({
           {spend !== undefined && (
             <div className="text-right">
               <div className="text-muted">Spend</div>
-              <div className="font-semibold text-gray-900">{formatIDR(spend)}</div>
+              <div className="font-semibold text-foreground">{formatIDR(spend)}</div>
             </div>
           )}
           {purchases !== undefined && (
             <div className="text-right">
               <div className="text-muted">Result</div>
-              <div className="font-semibold text-gray-900">{formatCompact(purchases)}</div>
+              <div className="font-semibold text-foreground">{formatCompact(purchases)}</div>
             </div>
           )}
           {ctr !== undefined && (
             <div className="text-right">
               <div className="text-muted">CTR</div>
-              <div className="font-semibold text-gray-900">{ctr.toFixed(2)}%</div>
+              <div className="font-semibold text-foreground">{ctr.toFixed(2)}%</div>
             </div>
           )}
         </div>
@@ -839,7 +839,7 @@ function PreviewRowCard({
                     title={m.rawLabel}
                   >
                     <span className="text-muted">{m.rawLabel}:</span>
-                    <span className="font-semibold text-gray-900">{formatMetric(m.value, m.unit)}</span>
+                    <span className="font-semibold text-foreground">{formatMetric(m.value, m.unit)}</span>
                   </span>
                 ))}
               </div>
@@ -854,7 +854,7 @@ function PreviewRowCard({
           {row.analysisText && (
             <div>
               <p className="mb-1 text-xs font-medium text-muted">Analisa:</p>
-              <p className="rounded bg-surface p-2 text-xs text-gray-700 whitespace-pre-wrap">
+              <p className="rounded bg-surface p-2 text-xs text-muted whitespace-pre-wrap">
                 {row.analysisText}
               </p>
             </div>
@@ -862,7 +862,7 @@ function PreviewRowCard({
 
           {/* Raw performance (collapsible) */}
           <details className="mt-2 text-xs">
-            <summary className="cursor-pointer text-muted hover:text-gray-900">
+            <summary className="cursor-pointer text-muted hover:text-foreground">
               Lihat raw performance text
             </summary>
             <pre className="mt-1 max-h-40 overflow-auto rounded bg-surface p-2 text-[10px] text-muted whitespace-pre-wrap">
@@ -1142,7 +1142,7 @@ function ResultStep({
             <AlertTriangle className="text-warning" size={28} />
           )}
           <div>
-            <p className="text-base font-bold text-gray-900">
+            <p className="text-base font-bold text-foreground">
               {success ? "Import Berhasil!" : "Import Selesai"}
             </p>
             <p className="text-xs text-muted">
@@ -1294,7 +1294,7 @@ function ResultStep({
 
       {/* Per-row results */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-900">Detail per baris:</p>
+        <p className="text-sm font-medium text-foreground">Detail per baris:</p>
         {results.map((r) => {
           const config = {
             imported: { color: "text-success", icon: <CheckCircle2 size={12} />, label: "Imported" },
@@ -1407,13 +1407,13 @@ function UnmatchedResolverCard({
                 <button
                   type="button"
                   onClick={() => toggleCollapse(r.rowIndex)}
-                  className="shrink-0 text-muted hover:text-gray-900"
+                  className="shrink-0 text-muted hover:text-foreground"
                   aria-label="Toggle detail"
                 >
                   {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                 </button>
                 <span className="font-mono text-[10px] text-muted">#{r.rowIndex}</span>
-                <span className="truncate text-xs font-semibold text-gray-900">"{sheetName}"</span>
+                <span className="truncate text-xs font-semibold text-foreground">"{sheetName}"</span>
                 {currentOverride && (
                   <span className="ml-auto inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[9px] font-medium text-success">
                     <CheckCircle2 size={10} /> Resolved
@@ -1537,7 +1537,7 @@ function BreakdownTile({
       <p className={cn("text-[9px] uppercase", tone === "warning" && value > 0 ? "text-warning" : "text-muted")}>
         {label}
       </p>
-      <p className={cn("text-sm font-bold", tone === "warning" && value > 0 ? "text-warning" : "text-gray-900")}>
+      <p className={cn("text-sm font-bold", tone === "warning" && value > 0 ? "text-warning" : "text-foreground")}>
         {value}
       </p>
       <p className="text-[8px] text-muted">{description}</p>

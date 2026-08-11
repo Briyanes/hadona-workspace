@@ -72,7 +72,7 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Users size={18} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-900">Analytics per Divisi</h3>
+          <h3 className="text-sm font-bold text-foreground">Analytics per Divisi</h3>
         </div>
         <div className="flex items-center justify-center py-6">
           <Loader2 size={20} className="animate-spin text-muted" />
@@ -86,7 +86,7 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
           <Users size={18} className="text-primary" />
-          <h3 className="text-sm font-bold text-gray-900">Analytics per Divisi</h3>
+          <h3 className="text-sm font-bold text-foreground">Analytics per Divisi</h3>
         </div>
         <p className="py-4 text-center text-sm text-muted">Belum ada data divisi</p>
       </div>
@@ -99,7 +99,7 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
     <div className="card p-5">
       <div className="mb-4 flex items-center gap-2">
         <Users size={18} className="text-primary" />
-        <h3 className="text-sm font-bold text-gray-900">Analytics per Divisi</h3>
+        <h3 className="text-sm font-bold text-foreground">Analytics per Divisi</h3>
       </div>
 
       <div className="space-y-3">
@@ -114,7 +114,7 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
               {/* Header */}
               <div className="mb-1 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-gray-900">{label}</span>
+                  <span className="text-xs font-semibold text-foreground">{label}</span>
                   <span className="rounded-full bg-surface px-1.5 py-0.5 text-[9px] text-muted">
                     {div.members} member
                   </span>
@@ -141,8 +141,8 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
 
               {/* Stats breakdown */}
               <div className="mt-1 flex gap-2 text-[9px] text-muted">
-                <span className="text-gray-500">📋 {div.todo} todo</span>
-                <span className="text-gray-500">⚡ {div.in_progress} in progress</span>
+                <span className="text-muted">📋 {div.todo} todo</span>
+                <span className="text-muted">⚡ {div.in_progress} in progress</span>
                 <span className="text-success">✅ {div.done} done</span>
               </div>
             </div>

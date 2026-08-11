@@ -73,8 +73,8 @@ export function AEAnalyticsWidget({ userId }: { userId?: string }) {
       label: "Expiring Contracts",
       value: stats.expiringContracts.toString(),
       sub: stats.expiringContracts > 0 ? "Action needed!" : "All good",
-      color: stats.expiringContracts > 0 ? "text-red-600" : "text-gray-600",
-      bg: stats.expiringContracts > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-gray-50 dark:bg-gray-900/30",
+      color: stats.expiringContracts > 0 ? "text-red-600" : "text-muted",
+      bg: stats.expiringContracts > 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-background dark:bg-gray-900/30",
     },
   ];
 

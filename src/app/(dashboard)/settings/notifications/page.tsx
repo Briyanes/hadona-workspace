@@ -65,7 +65,7 @@ export default function NotificationsSettingsPage() {
 
       {/* Email Notifications */}
       <div className="card p-6">
-        <h3 className="mb-2 text-sm font-semibold text-gray-900">Email Notifications</h3>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Email Notifications</h3>
         <p className="mb-2 text-xs text-muted">Atur email apa yang ingin Anda terima.</p>
         <Toggle
           showRow
@@ -103,7 +103,7 @@ export default function NotificationsSettingsPage() {
 
       {/* Telegram Integration */}
       <div className="card p-6">
-        <h3 className="mb-2 text-sm font-semibold text-gray-900">Telegram Integration</h3>
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Telegram Integration</h3>
         <p className="mb-2 text-xs text-muted">Hubungkan bot Telegram untuk notifikasi real-time.</p>
         <Toggle
           showRow

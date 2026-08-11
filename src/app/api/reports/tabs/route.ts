@@ -34,9 +34,7 @@ export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   const startedAt = Date.now();
-  console.log("[reports/tabs] GET triggered at", new Date().toISOString());
-
-  try {
+    try {
     // ── 1. Auth & permission ───────────────────────────────────────────────
     const supabase = createClient();
     const {
@@ -77,15 +75,9 @@ export async function GET(req: NextRequest) {
     }
 
     // ── 3. Discover tabs ───────────────────────────────────────────────────
-    console.log("[reports/tabs] Discovering tabs from:", sheetUrl);
-    const tabs = await discoverSheets(sheetUrl);
+        const tabs = await discoverSheets(sheetUrl);
     const durationMs = Date.now() - startedAt;
-    console.log(
-      `[reports/tabs] ✅ Found ${tabs.length} tabs in ${durationMs}ms:`,
-      tabs.map((t) => `${t.name} (gid=${t.gid})`).join(", ")
-    );
-
-    return NextResponse.json({
+        return NextResponse.json({
       url: sheetUrl,
       fetchedAt: new Date().toISOString(),
       durationMs,
