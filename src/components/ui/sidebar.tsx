@@ -175,10 +175,12 @@ export function Sidebar() {
                 >
                   <div className="relative shrink-0">
                     <Icon size={iconSize} />
-                    <Lock
-                      size={10}
-                      className="absolute -bottom-1 -right-1 rounded-full bg-white text-muted"
-                    />
+                    {isCollapsed && (
+                      <Lock
+                        size={10}
+                        className="absolute -bottom-1 -right-1 rounded-full bg-white text-muted"
+                      />
+                    )}
                   </div>
                   {!isCollapsed && (
                     <span className="flex items-center gap-1.5">
