@@ -474,7 +474,8 @@ async function importTaskSheet(
   clientMap: ClientMap,
   userId: string,
   supabase: ReturnType<typeof createClient>,
-  dryRun: boolean
+  dryRun: boolean,
+  divisionMembers: Map<string, string>
 ): Promise<ImportSummary> {
   const summary: ImportSummary = {
     sheet: sheetName,
@@ -585,7 +586,7 @@ async function importTaskSheet(
 
     const dueDate = parseSheetDate(endDate || rawDate);
 
-    const { error } = await supabase.from("tasks").insert({
+    const { data: newTask, error } = await supabase.from("tasks").insert({
       title: title.length > 200 ? title.substring(0, 200) : title,
       description: title,
       result: result || null,
@@ -597,7 +598,7 @@ async function importTaskSheet(
       due_date: dueDate,
       notes: notes || null,
       created_by: userId,
-    } as never);
+    } as never).select("id").single();
 
     if (error) {
       summary.errors++;
@@ -605,6 +606,16 @@ async function importTaskSheet(
         summary.details.push(`❌ Error: ${error.message}`);
     } else {
       summary.inserted++;
+
+      // Auto-assign to a team member of the same division
+      const taskId = (newTask as { id: string } | null)?.id;
+      const assigneeId = divisionMembers.get(division.toLowerCase());
+      if (taskId && assigneeId) {
+        await supabase.from("task_assignees").insert({
+          task_id: taskId,
+          user_id: assigneeId,
+        } as never);
+      }
     }
   }
 
@@ -955,6 +966,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch team members grouped by division for auto-assignment
+    const divisionMembers = new Map<string, string>();
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, division")
+      .eq("status", "active");
+
+    for (const p of (profiles || []) as unknown as Array<{ id: string; division: string | null }>) {
+      if (p.division) {
+        const key = p.division.toLowerCase();
+        if (!divisionMembers.has(key)) {
+          divisionMembers.set(key, p.id);
+        }
+      }
+    }
+
     // Step 4: Import task sheets
     const taskSheetMappings: Array<{
       namePattern: string;
@@ -981,7 +1008,8 @@ export async function POST(request: NextRequest) {
           clientMap,
           userId,
           supabase,
-          dryRun
+          dryRun,
+          divisionMembers
         );
         allSummaries.push(taskSummary);
       }

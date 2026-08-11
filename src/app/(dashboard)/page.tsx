@@ -32,6 +32,7 @@ import { DivisionAnalyticsWidget } from "@/components/dashboard/division-analyti
 import { ProfitabilityWidget } from "@/components/dashboard/profitability-widget";
 import { AEAnalyticsWidget } from "@/components/dashboard/ae-analytics-widget";
 import { DashboardSheetImportModal } from "@/components/dashboard/dashboard-sheet-import-modal";
+import { ContentStudioWidget } from "@/components/dashboard/content-studio-widget";
 
 // ── Types ──
 interface Stats {
@@ -545,6 +546,9 @@ function DashboardContent() {
           <DivisionAnalyticsWidget />
         </div>
       </div>
+
+      {/* ════ Content Studio: Upload Tracker + Caption Bank ════ */}
+      <ContentStudioWidget />
 
       {/* ════ Client Profitability (Full Width) ════ */}
       <ProfitabilityWidget />
