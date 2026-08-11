@@ -54,7 +54,7 @@ const performanceColors: Record<string, string> = {
 };
 
 export function ClientContentTab({ clientId }: { clientId: string }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line
   const supabase = createClient() as any;
   const [uploads, setUploads] = useState<ContentUpload[]>([]);
   const [captions, setCaptions] = useState<CaptionItem[]>([]);

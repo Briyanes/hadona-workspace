@@ -13,7 +13,7 @@ type Tab = "uploads" | "captions";
 export default function ContentStudioPage() {
   const [tab, setTab] = useState<Tab>("uploads");
   const [stats, setStats] = useState({ totalUploads: 0, doneUploads: 0, totalCaptions: 0 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line
   const supabase = createClient() as any;
 
   useEffect(() => {

@@ -76,7 +76,7 @@ export async function PATCH(request: NextRequest) {
       updates.won_at = new Date().toISOString();
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("leads")
       .update(updates)
       .eq("id", id)

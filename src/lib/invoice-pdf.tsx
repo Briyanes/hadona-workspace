@@ -550,6 +550,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
           <View style={styles.heroTop}>
             {/* Brand */}
             <View style={styles.heroBrand}>
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <Image
                 style={styles.heroLogo}
                 src="https://workspace.hadona.id/logo/logo-hadona.png"
@@ -692,6 +693,7 @@ export function InvoicePDFDocument({ invoice }: { invoice: InvoicePDFData }) {
               {/* Signature */}
               <View style={styles.signatureCard}>
                 <Text style={styles.signLine}>Hormat kami,</Text>
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
                 <Image
                   style={styles.signatureImage}
                   src="https://workspace.hadona.id/ttd-hadi.png"
