@@ -104,7 +104,7 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", handleTabKey);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
       // Restore focus to the element that opened the modal
       previouslyFocused.current?.focus();
