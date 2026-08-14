@@ -15,8 +15,10 @@ import {
   Clock,
   Loader2,
   FileText,
+  ChevronRight,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { PlanDetailModal } from "@/components/content-plans/plan-detail-modal";
 
 interface ContentPlan {
   id: string;
@@ -118,6 +120,9 @@ export default function ContentPlansPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
 
+  // Detail Modal
+  const [selectedPlan, setSelectedPlan] = useState<ContentPlan | null>(null);
+
   useEffect(() => {
     loadPlans();
     loadClients();
@@ -179,6 +184,10 @@ export default function ContentPlansPage() {
       status: plan.status || "draft",
     });
     setShowModal(true);
+  }
+
+  function openDetail(plan: ContentPlan) {
+    setSelectedPlan(plan);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -417,7 +426,11 @@ export default function ContentPlansPage() {
                 {filtered.map((p, idx) => {
                   const pKey = getProgressKey(p.progress);
                   return (
-                    <tr key={p.id} className="border-b border-border/50 hover:bg-surface/50">
+                    <tr
+                      key={p.id}
+                      onClick={() => openDetail(p)}
+                      className="cursor-pointer border-b border-border/50 transition-colors hover:bg-surface/50"
+                    >
                       <td className="px-3 py-2.5 text-muted">{idx + 1}</td>
                       <td className="px-3 py-2.5 font-medium text-foreground">{p.client?.name || "-"}</td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-muted">
@@ -489,21 +502,8 @@ export default function ContentPlansPage() {
                         </select>
                       </td>
                       <td className="px-3 py-2.5">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            onClick={() => openEdit(p)}
-                            className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(p.id)}
-                            className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                            title="Hapus"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        <div className="flex justify-end">
+                          <ChevronRight size={16} className="text-muted" />
                         </div>
                       </td>
                     </tr>
@@ -518,7 +518,11 @@ export default function ContentPlansPage() {
             {filtered.map((p) => {
               const pKey = getProgressKey(p.progress);
               return (
-                <div key={p.id} className="card p-4">
+                <div
+                  key={p.id}
+                  onClick={() => openDetail(p)}
+                  className="card cursor-pointer p-4 transition-colors active:bg-surface/50"
+                >
                   <div className="mb-2 flex items-start justify-between">
                     <div>
                       <h3 className="font-semibold text-foreground">{p.client?.name || "-"}</h3>
@@ -563,6 +567,7 @@ export default function ContentPlansPage() {
                         href={p.link_hasil}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                       >
                         <ExternalLink size={12} /> Hasil
@@ -573,31 +578,32 @@ export default function ContentPlansPage() {
                         href={p.reference}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                       >
                         <ExternalLink size={12} /> Reference
                       </a>
                     )}
-                    <div className="ml-auto flex gap-1">
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        className="rounded p-1.5 text-muted hover:bg-background hover:text-danger"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    <ChevronRight size={16} className="ml-auto text-muted" />
                   </div>
                 </div>
               );
             })}
           </div>
         </>
+      )}
+
+      {/* ── Detail Modal ─────────────────────────────────── */}
+      {selectedPlan && (
+        <PlanDetailModal
+          plan={selectedPlan}
+          onClose={() => setSelectedPlan(null)}
+          onUpdated={() => {
+            loadPlans();
+            setSelectedPlan(null);
+          }}
+          onDeleted={() => loadPlans()}
+        />
       )}
 
       {/* ── Create/Edit Modal ──────────────────────────────── */}
