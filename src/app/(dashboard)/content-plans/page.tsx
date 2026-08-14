@@ -132,7 +132,8 @@ export default function ContentPlansPage() {
       if (error) throw error;
       setPlans((data as unknown as ContentPlan[]) || []);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = err instanceof Error ? err.message : (err as Record<string, unknown>)?.message as string || "Unknown error";
+      console.error("Load plans error:", err);
       toast.error("Gagal memuat content plans: " + msg);
     } finally {
       setLoading(false);
@@ -205,7 +206,6 @@ export default function ContentPlansPage() {
         plan_url: form.plan_url || null,
         notes: form.notes.trim() || null,
         services: form.services,
-        status: form.status,
       };
 
       if (editingId) {
@@ -226,7 +226,8 @@ export default function ContentPlansPage() {
       setShowModal(false);
       loadPlans();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = err instanceof Error ? err.message : (err as Record<string, unknown>)?.message as string || "Unknown error";
+      console.error("Save plan error:", err);
       toast.error("Gagal menyimpan: " + msg);
     } finally {
       setSaving(false);
@@ -241,7 +242,8 @@ export default function ContentPlansPage() {
       toast.success("Plan dihapus");
       loadPlans();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message || "Unknown error";
+      console.error("Delete plan error:", err);
       toast.error("Gagal hapus: " + msg);
     }
   }
@@ -257,7 +259,8 @@ export default function ContentPlansPage() {
       toast.success("Progress diperbarui");
       loadPlans();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
+      const msg = err instanceof Error ? err.message : (err as { message?: string })?.message || "Unknown error";
+      console.error("Quick update error:", err);
       toast.error("Gagal update progress: " + msg);
     }
   }

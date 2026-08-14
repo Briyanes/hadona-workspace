@@ -1,0 +1,69 @@
+{
+  "metrics": {
+    "bodyScrollHeight": 900,
+    "bodyClientHeight": 900,
+    "htmlScrollHeight": 900,
+    "viewportHeight": 900,
+    "columnCount": 5,
+    "cardCount": 878,
+    "columnHeights": [
+      {
+        "offsetHeight": 580,
+        "scrollHeight": 575
+      },
+      {
+        "offsetHeight": 580,
+        "scrollHeight": 575
+      },
+      {
+        "offsetHeight": 580,
+        "scrollHeight": 575
+      },
+      {
+        "offsetHeight": 580,
+        "scrollHeight": 575
+      },
+      {
+        "offsetHeight": 580,
+        "scrollHeight": 575
+      }
+    ]
+  },
+  "cardData": [
+    {
+      "label": "To Do",
+      "badge": "62",
+      "cardCount": 62,
+      "colHeight": 506,
+      "colScrollHeight": 501
+    },
+    {
+      "label": "In Progress",
+      "badge": "20",
+      "cardCount": 20,
+      "colHeight": 506,
+      "colScrollHeight": 501
+    },
+    {
+      "label": "Review",
+      "badge": "1",
+      "cardCount": 1,
+      "colHeight": 506,
+      "colScrollHeight": 501
+    },
+    {
+      "label": "Blocked",
+      "badge": "0",
+      "cardCount": 0,
+      "colHeight": 506,
+      "colScrollHeight": 501
+    },
+    {
+      "label": "Done",
+      "badge": "795",
+      "cardCount": 795,
+      "colHeight": 506,
+      "colScrollHeight": 501
+    }
+  ]
+}
