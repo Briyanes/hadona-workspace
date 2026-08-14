@@ -10,7 +10,7 @@ import type { DropResult } from "@hello-pangea/dnd";
 const DragDropContext = dynamic(() => import("@hello-pangea/dnd").then((m) => m.DragDropContext), { ssr: false });
 const Droppable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Droppable), { ssr: false });
 const Draggable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Draggable), { ssr: false });
-import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User, CheckSquare, Trash2, Layers } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User, CheckSquare, Trash2, Layers, BarChart3, TrendingUp, CheckCircle2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDate, getInitials, cn } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -93,8 +93,14 @@ export function TaskBoard({
   const [showFilters, setShowFilters] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
 
-  // View mode: board or table
-  const [viewMode, setViewMode] = useState<"board" | "table">("board");
+  // View mode: board, table, or analytics
+  const [viewMode, setViewMode] = useState<"board" | "table" | "analytics">("board");
+
+  // Analytics month picker state ([year, month 0-11])
+  const now = new Date();
+  const [analyticsMonth, setAnalyticsMonth] = useState<[number, number]>([now.getFullYear(), now.getMonth()]);
+
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -368,6 +374,53 @@ export function TaskBoard({
   // Sortable table data
   const { sortedData: sortedTasks, sortState, toggleSort } = useSortable<Task>({ data: visibleTasks });
 
+  // ==================== ANALYTICS CALCULATIONS ====================
+  // Analytics: tasks for selected month
+  const monthTasks = useMemo(() => {
+    const [year, month] = analyticsMonth;
+    return visibleTasks.filter((t) => {
+      if (!t.due_date) return false;
+      const d = new Date(t.due_date);
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+  }, [visibleTasks, analyticsMonth]);
+
+  // Analytics: tasks from previous month (for carry-over)
+  const prevMonthTasks = useMemo(() => {
+    const [year, month] = analyticsMonth;
+    const prevDate = new Date(year, month - 1, 1);
+    return visibleTasks.filter((t) => {
+      if (!t.due_date) return false;
+      const d = new Date(t.due_date);
+      return d.getFullYear() === prevDate.getFullYear() && d.getMonth() === prevDate.getMonth();
+    });
+  }, [visibleTasks, analyticsMonth]);
+
+  // Analytics KPIs
+  const totalTasks = monthTasks.length;
+  const doneTasks = monthTasks.filter((t) => t.status === "done").length;
+  const inProgressTasks = monthTasks.filter((t) => t.status === "in_progress" || t.status === "review").length;
+  const overdueTasks = monthTasks.filter((t) => t.due_date && t.due_date < today && t.status !== "done" && t.status !== "blocked").length;
+  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const carryOver = prevMonthTasks.filter((t) => t.status !== "done");
+
+  // Analytics: division breakdown
+  const divisionBreakdown = useMemo(() => {
+    const map: Record<string, number> = {};
+    monthTasks.forEach((t) => {
+      const div = t.division || "Unassigned";
+      map[div] = (map[div] || 0) + 1;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+  }, [monthTasks]);
+
+  // Analytics: status distribution
+  const statusDist = COLUMNS.map((col) => ({
+    ...col,
+    count: monthTasks.filter((t) => t.status === col.id).length,
+  }));
+  const maxStatusCount = Math.max(...statusDist.map((s) => s.count), 1);
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -420,6 +473,15 @@ export function TaskBoard({
               )}
             >
               <List size={14} /> Table
+            </button>
+            <button
+              onClick={() => setViewMode("analytics")}
+              className={cn(
+                "flex min-h-[44px] items-center gap-1 px-3 py-2.5 text-xs font-medium transition-colors",
+                viewMode === "analytics" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground"
+              )}
+            >
+              <BarChart3 size={14} /> Analytics
             </button>
           </div>
           <button
@@ -532,11 +594,161 @@ export function TaskBoard({
         </div>
       )}
 
+      {/* ==================== ANALYTICS VIEW ==================== */}
+      {viewMode === "analytics" && (
+        <div className="space-y-6">
+          {/* Month Picker */}
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => {
+                const [y, m] = analyticsMonth;
+                const d = new Date(y, m - 1, 1);
+                setAnalyticsMonth([d.getFullYear(), d.getMonth()]);
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface hover:bg-background"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <h2 className="min-w-[200px] text-center text-lg font-bold text-foreground">
+              {monthNames[analyticsMonth[1]]} {analyticsMonth[0]}
+            </h2>
+            <button
+              onClick={() => {
+                const [y, m] = analyticsMonth;
+                const d = new Date(y, m + 1, 1);
+                setAnalyticsMonth([d.getFullYear(), d.getMonth()]);
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface hover:bg-background"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            {/* Total */}
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="mb-1 flex items-center gap-2 text-muted">
+                <Layers size={16} />
+                <span className="text-xs font-medium">Total Tasks</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{totalTasks}</p>
+            </div>
+            {/* Done */}
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="mb-1 flex items-center gap-2 text-success">
+                <CheckCircle2 size={16} />
+                <span className="text-xs font-medium">Completed</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{doneTasks}</p>
+            </div>
+            {/* In Progress */}
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="mb-1 flex items-center gap-2 text-warning">
+                <Clock size={16} />
+                <span className="text-xs font-medium">In Progress</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{inProgressTasks}</p>
+            </div>
+            {/* Overdue */}
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="mb-1 flex items-center gap-2 text-danger">
+                <AlertTriangle size={16} />
+                <span className="text-xs font-medium">Overdue</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{overdueTasks}</p>
+            </div>
+            {/* Completion Rate */}
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <div className="mb-1 flex items-center gap-2 text-primary">
+                <TrendingUp size={16} />
+                <span className="text-xs font-medium">Completion Rate</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{completionRate}%</p>
+            </div>
+          </div>
+
+          {/* Status Bar Chart */}
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <h3 className="mb-4 text-sm font-semibold text-foreground">Distribusi Status</h3>
+            <div className="space-y-3">
+              {statusDist.map((s) => (
+                <div key={s.id} className="flex items-center gap-3">
+                  <span className="w-20 shrink-0 text-xs text-muted">{s.label}</span>
+                  <div className="h-6 flex-1 overflow-hidden rounded-md bg-background">
+                    <div
+                      className="flex h-full items-center justify-end rounded-md bg-primary px-2 text-[10px] font-medium text-white transition-all"
+                      style={{ width: `${(s.count / maxStatusCount) * 100}%`, minWidth: s.count > 0 ? "2rem" : "0" }}
+                    >
+                      {s.count > 0 && s.count}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Carry-Over Alert */}
+          {carryOver.length > 0 && (
+            <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-warning">
+                <AlertCircle size={16} /> Carry-Over dari {monthNames[(analyticsMonth[1] + 11) % 12]} ({carryOver.length} task)
+              </h3>
+              <div className="space-y-2">
+                {carryOver.slice(0, 5).map((t) => (
+                  <div key={t.id} className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
+                    <span className="truncate text-sm text-foreground">{t.title}</span>
+                    <span className="ml-2 shrink-0 rounded-full bg-danger/10 px-2 py-0.5 text-xs text-danger">
+                      {COLUMNS.find((c) => c.id === t.status)?.label || t.status}
+                    </span>
+                  </div>
+                ))}
+                {carryOver.length > 5 && (
+                  <p className="pt-1 text-center text-xs text-muted">+ {carryOver.length - 5} task lainnya...</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Division Breakdown Table */}
+          {divisionBreakdown.length > 0 && (
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Breakdown per Divisi</h3>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted">
+                    <th className="pb-2">Divisi</th>
+                    <th className="pb-2 text-right">Jumlah Task</th>
+                    <th className="pb-2 text-right">Persentase</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {divisionBreakdown.map(([div, count]) => (
+                    <tr key={div} className="border-b border-border/50 last:border-0">
+                      <td className="py-2 text-foreground">{div}</td>
+                      <td className="py-2 text-right font-medium text-foreground">{count}</td>
+                      <td className="py-2 text-right text-muted">{Math.round((count / totalTasks) * 100)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {totalTasks === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <BarChart3 size={40} className="mb-3 text-muted/40" />
+              <p className="text-sm text-muted">Tidak ada task untuk bulan {monthNames[analyticsMonth[1]]} {analyticsMonth[0]}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ==================== BOARD VIEW ==================== */}
       {viewMode === "board" && (
       <DragDropContext onDragEnd={handleDragEnd}>
-        {/* Mobile: horizontal scroll Kanban; Desktop: CSS grid */}
-        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-x-visible xl:grid-cols-5">
+        {/* Mobile: horizontal scroll Kanban; Desktop: CSS grid with max-height */}
+        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2 lg:max-h-[calc(100vh-16rem)] lg:grid lg:grid-cols-3 lg:overflow-x-visible xl:grid-cols-5">
           {COLUMNS.map((col) => {
             const colTasks = visibleTasks.filter((t) => t.status === col.id);
             return (
@@ -546,8 +758,8 @@ export function TaskBoard({
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={cn(
-                      // Mobile: fixed width for horizontal scroll; Desktop: full width in grid
-                      "flex min-h-[300px] w-[280px] shrink-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors lg:w-auto lg:shrink",
+                      // Mobile: fixed width for horizontal scroll; Desktop: full width in grid, capped height
+                      "flex max-h-[60vh] min-h-[200px] w-[280px] shrink-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors lg:max-h-full lg:w-auto lg:shrink",
                       col.color,
                       snapshot.isDraggingOver && "bg-primary/5"
                     )}
