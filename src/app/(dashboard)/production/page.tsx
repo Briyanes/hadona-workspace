@@ -73,6 +73,13 @@ export default function ProductionPage() {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [detailProduction, setDetailProduction] = useState<Production | null>(null);
 
+  // Crew & Deliverables state for modal
+  const [modalCrew, setModalCrew] = useState<{ name: string; role: string }[]>([]);
+  const [modalDeliverables, setModalDeliverables] = useState<string[]>([]);
+  const [newCrewName, setNewCrewName] = useState("");
+  const [newCrewRole, setNewCrewRole] = useState("");
+  const [newDeliverable, setNewDeliverable] = useState("");
+
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
@@ -122,7 +129,16 @@ export default function ProductionPage() {
     return { total, counts, upcoming };
   }, [productions]);
 
-  function openCreate() { setForm(emptyForm); setEditingId(null); setShowModal(true); }
+  function openCreate() {
+    setForm(emptyForm);
+    setEditingId(null);
+    setModalCrew([]);
+    setModalDeliverables([]);
+    setNewCrewName("");
+    setNewCrewRole("");
+    setNewDeliverable("");
+    setShowModal(true);
+  }
 
   function openEdit(p: Production) {
     setForm({
@@ -135,8 +151,39 @@ export default function ProductionPage() {
       assigned_to: p.assigned_to || "",
       notes: p.notes || "",
     });
+    // Normalize crew to { name, role } objects
+    const normalizedCrew = (Array.isArray(p.crew) ? p.crew : []).map((c: any) => {
+      if (typeof c === "string") return { name: c, role: "" };
+      return { name: c?.name || "", role: c?.role || "" };
+    });
+    setModalCrew(normalizedCrew);
+    setModalDeliverables(Array.isArray(p.deliverables) ? p.deliverables : []);
+    setNewCrewName("");
+    setNewCrewRole("");
+    setNewDeliverable("");
     setEditingId(p.id);
     setShowModal(true);
+  }
+
+  function addModalCrew() {
+    if (!newCrewName.trim()) return;
+    setModalCrew([...modalCrew, { name: newCrewName.trim(), role: newCrewRole.trim() }]);
+    setNewCrewName("");
+    setNewCrewRole("");
+  }
+
+  function removeModalCrew(idx: number) {
+    setModalCrew(modalCrew.filter((_, i) => i !== idx));
+  }
+
+  function addModalDeliverable() {
+    if (!newDeliverable.trim()) return;
+    setModalDeliverables([...modalDeliverables, newDeliverable.trim()]);
+    setNewDeliverable("");
+  }
+
+  function removeModalDeliverable(idx: number) {
+    setModalDeliverables(modalDeliverables.filter((_, i) => i !== idx));
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -154,6 +201,8 @@ export default function ProductionPage() {
         shoot_location: form.shoot_location.trim() || null,
         assigned_to: form.assigned_to || null,
         notes: form.notes.trim() || null,
+        crew: modalCrew,
+        deliverables: modalDeliverables,
         ...(editingId ? {} : { created_by: user?.id }),
       };
 
@@ -422,6 +471,61 @@ export default function ProductionPage() {
                   <label className="mb-1 block text-xs font-medium text-muted">Description</label>
                   <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input py-2 text-sm" placeholder="Detail produksi..." />
                 </div>
+
+                {/* Crew Editor */}
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-xs font-medium text-muted">Crew Members</label>
+                  <div className="space-y-1.5">
+                    {modalCrew.map((c, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input value={c.name} readOnly className="input flex-1 py-1.5 text-xs" />
+                        {c.role && <span className="text-xs text-muted">{c.role}</span>}
+                        <button type="button" onClick={() => removeModalCrew(i)} className="rounded p-1 text-danger hover:bg-danger/10"><X size={14} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex gap-1.5">
+                    <input
+                      value={newCrewName}
+                      onChange={(e) => setNewCrewName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addModalCrew())}
+                      className="input flex-1 py-1.5 text-xs"
+                      placeholder="Nama crew..."
+                    />
+                    <input
+                      value={newCrewRole}
+                      onChange={(e) => setNewCrewRole(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addModalCrew())}
+                      className="input flex-1 py-1.5 text-xs"
+                      placeholder="Role (Videographer, Editor, dll)..."
+                    />
+                    <button type="button" onClick={addModalCrew} className="btn-primary flex items-center gap-1 px-3 py-1.5 text-xs whitespace-nowrap"><Plus size={12} /> Add</button>
+                  </div>
+                </div>
+
+                {/* Deliverables Editor */}
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-xs font-medium text-muted">Deliverables</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {modalDeliverables.map((d, i) => (
+                      <span key={i} className="flex items-center gap-1 rounded bg-background px-2 py-1 text-xs">
+                        {d}
+                        <button type="button" onClick={() => removeModalDeliverable(i)} className="text-danger hover:text-danger/80"><X size={10} /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex gap-1.5">
+                    <input
+                      value={newDeliverable}
+                      onChange={(e) => setNewDeliverable(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addModalDeliverable())}
+                      className="input flex-1 py-1.5 text-xs"
+                      placeholder="Contoh: 3 Video Reels 30s, 10 Foto Produk..."
+                    />
+                    <button type="button" onClick={addModalDeliverable} className="btn-primary flex items-center gap-1 px-3 py-1.5 text-xs whitespace-nowrap"><Plus size={12} /> Add</button>
+                  </div>
+                </div>
+
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium text-muted">Notes</label>
                   <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input py-2 text-sm" placeholder="Catatan tambahan..." />
