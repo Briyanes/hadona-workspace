@@ -747,8 +747,8 @@ export function TaskBoard({
       {/* ==================== BOARD VIEW ==================== */}
       {viewMode === "board" && (
       <DragDropContext onDragEnd={handleDragEnd}>
-        {/* Mobile: horizontal scroll Kanban; Desktop: CSS grid with max-height */}
-        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2 lg:max-h-[calc(100vh-16rem)] lg:grid lg:grid-cols-3 lg:overflow-x-visible xl:grid-cols-5">
+        {/* Mobile: horizontal scroll Kanban; Desktop: CSS grid with constrained height */}
+        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 xl:grid-cols-5">
           {COLUMNS.map((col) => {
             const colTasks = visibleTasks.filter((t) => t.status === col.id);
             return (
@@ -758,8 +758,8 @@ export function TaskBoard({
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={cn(
-                      // Mobile: fixed width for horizontal scroll; Desktop: full width in grid, capped height
-                      "flex max-h-[60vh] min-h-[200px] w-[280px] shrink-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors lg:max-h-full lg:w-auto lg:shrink",
+                      // Mobile: fixed width for horizontal scroll; Desktop: full width with constrained height + inner scroll
+                      "flex max-h-[60vh] min-h-[200px] w-[280px] shrink-0 flex-col rounded-lg border border-border border-t-4 bg-surface/50 transition-colors lg:max-h-[calc(100vh-20rem)] lg:w-auto lg:shrink",
                       col.color,
                       snapshot.isDraggingOver && "bg-primary/5"
                     )}
@@ -768,7 +768,7 @@ export function TaskBoard({
                       <span className="text-sm font-semibold text-foreground">{col.label}</span>
                       <span className="badge bg-background text-muted">{colTasks.length}</span>
                     </div>
-                    <div className="flex-1 space-y-2 overflow-y-auto p-2">
+                    <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
                       {colTasks.map((task, index) => {
                         const isOverdue = task.due_date && task.due_date < today && task.status !== "done" && task.status !== "blocked";
                         return (
