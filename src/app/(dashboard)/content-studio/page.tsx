@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/page-header";
 import UploadTracker from "@/components/content-studio/upload-tracker";
 import CaptionBank from "@/components/content-studio/caption-bank";
-import { Upload, FileText } from "lucide-react";
+import AdsManager from "@/components/content-studio/ads-manager";
+import { Upload, FileText, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tab = "uploads" | "captions";
+type Tab = "uploads" | "captions" | "ads";
 
 export default function ContentStudioPage() {
   const [tab, setTab] = useState<Tab>("uploads");
@@ -40,7 +41,7 @@ export default function ContentStudioPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Content Studio" subtitle="Kelola content uploads & caption bank" />
+      <PageHeader title="Content Studio" subtitle="Kelola content uploads, caption bank & ads manager" />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -86,11 +87,22 @@ export default function ContentStudioPage() {
           >
             <FileText size={16} /> Caption Bank
           </button>
+          <button
+            onClick={() => setTab("ads")}
+            className={cn(
+              "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+              tab === "ads"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted hover:text-foreground"
+            )}
+          >
+            <Megaphone size={16} /> Ads Manager
+          </button>
         </div>
       </div>
 
       {/* Content */}
-      {tab === "uploads" ? <UploadTracker /> : <CaptionBank />}
+      {tab === "uploads" ? <UploadTracker /> : tab === "captions" ? <CaptionBank /> : <AdsManager />}
     </div>
   );
 }

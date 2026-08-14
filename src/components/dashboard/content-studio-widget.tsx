@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { Upload, MessageSquare, Loader2, TrendingUp, CheckCircle2, Clock } from "lucide-react";
+import { Upload, MessageSquare, Loader2, TrendingUp, CheckCircle2, Clock, Megaphone, Power } from "lucide-react";
 import Link from "next/link";
 
 interface UploadStats {
@@ -20,9 +20,11 @@ interface CaptionStats {
 }
 
 export function ContentStudioWidget() {
-  const supabase = createClient();
+  // eslint-disable-next-line
+  const supabase = createClient() as any;
   const [uploads, setUploads] = useState<UploadStats | null>(null);
   const [captions, setCaptions] = useState<CaptionStats | null>(null);
+  const [ads, setAds] = useState<{ total: number; active: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +60,21 @@ export function ContentStudioWidget() {
         else capStats.untested++;
       });
       setCaptions(capStats);
+
+      // Fetch ads stats (v84 columns; ignore if migration not applied yet)
+      try {
+        const { data: adData } = await supabase
+          .from("content_uploads")
+          .select("ad_status")
+          .not("sheet_name", "is", null);
+        const adRows: { ad_status: string | null }[] = adData || [];
+        setAds({
+          total: adRows.length,
+          active: adRows.filter((a) => a.ad_status === "active").length,
+        });
+      } catch {
+        setAds(null);
+      }
     } catch (err) {
       console.error("Content Studio widget error:", err);
     } finally {
@@ -87,7 +104,7 @@ export function ContentStudioWidget() {
     : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Upload Tracker Widget */}
       <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -95,7 +112,7 @@ export function ContentStudioWidget() {
             <Upload size={18} className="text-primary" />
             <h3 className="text-sm font-bold text-foreground">SMM Upload Tracker</h3>
           </div>
-          <Link href="/creative" className="text-xs text-primary hover:underline">
+          <Link href="/content-studio" className="text-xs text-primary hover:underline">
             Detail
           </Link>
         </div>
@@ -148,7 +165,7 @@ export function ContentStudioWidget() {
             <MessageSquare size={18} className="text-accent" />
             <h3 className="text-sm font-bold text-foreground">Caption Bank Performance</h3>
           </div>
-          <Link href="/creative" className="text-xs text-primary hover:underline">
+          <Link href="/content-studio" className="text-xs text-primary hover:underline">
             Detail
           </Link>
         </div>
@@ -228,6 +245,54 @@ export function ContentStudioWidget() {
           </>
         ) : (
           <p className="py-4 text-center text-sm text-muted">Belum ada data caption bank</p>
+        )}
+      </div>
+
+      {/* Ads Manager Widget */}
+      <div className="card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Megaphone size={18} className="text-warning" />
+            <h3 className="text-sm font-bold text-foreground">Ads Manager</h3>
+          </div>
+          <Link href="/content-studio" className="text-xs text-primary hover:underline">
+            Detail
+          </Link>
+        </div>
+
+        {ads && ads.total > 0 ? (
+          <>
+            <div className="mb-3">
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-muted">Active Ads</span>
+                <span className="font-bold text-success">
+                  {Math.round((ads.active / ads.total) * 100)}%
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-surface">
+                <div
+                  className="h-full rounded-full bg-success transition-all"
+                  style={{ width: `${(ads.active / ads.total) * 100}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1">
+                <Power size={12} className="text-success" />
+                <span className="text-xs font-medium text-success">{ads.active} Active</span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-md bg-muted/10 px-2 py-1">
+                <Megaphone size={12} className="text-muted" />
+                <span className="text-xs font-medium text-muted">{ads.total - ads.active} Off</span>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1">
+                <Megaphone size={12} className="text-primary" />
+                <span className="text-xs font-medium text-primary">{ads.total} Total</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="py-4 text-center text-sm text-muted">Belum ada data ads</p>
         )}
       </div>
     </div>

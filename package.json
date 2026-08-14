@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "import:sheets": "tsx src/scripts/import-google-sheets.ts"
+    "import:sheets": "tsx src/scripts/import-google-sheets.ts",
+    "migrate:v84": "node scripts/run-migration-v84.mjs",
+    "import:content-ads": "node scripts/import-content-ads.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.654.0",
