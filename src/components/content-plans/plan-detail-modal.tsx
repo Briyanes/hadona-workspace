@@ -516,34 +516,56 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               {(plan.reference || plan.link_hasil) && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {plan.reference && (
-                    <a
-                      href={plan.reference}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
-                    >
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary/40">
                       <Link2 size={16} className="shrink-0 text-primary" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted">Reference</p>
-                        <p className="truncate text-sm font-medium text-primary">{plan.reference}</p>
-                      </div>
-                      <ExternalLink size={12} className="ml-auto shrink-0 text-muted" />
-                    </a>
+                      <a
+                        href={plan.reference}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-w-0 flex-1 items-center gap-1"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted">Reference</p>
+                          <p className="truncate text-sm font-medium text-primary hover:underline">
+                            {plan.reference}
+                          </p>
+                        </div>
+                        <ExternalLink size={12} className="ml-auto shrink-0 text-muted" />
+                      </a>
+                      <button
+                        onClick={() => copyText(plan.reference, "Reference")}
+                        className="shrink-0 rounded p-1 text-muted hover:bg-surface hover:text-primary"
+                        title="Copy Reference"
+                      >
+                        <CopyIcon size={12} />
+                      </button>
+                    </div>
                   )}
                   {plan.link_hasil && (
-                    <a
-                      href={plan.link_hasil}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 p-3 transition-colors hover:border-success/40 hover:bg-success/10"
-                    >
+                    <div className="flex items-center gap-2 rounded-lg border border-success/20 bg-success/5 p-3 transition-colors hover:border-success/40">
                       <Link2 size={16} className="shrink-0 text-success" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted">Link Hasil</p>
-                        <p className="truncate text-sm font-medium text-success">{plan.link_hasil}</p>
-                      </div>
-                      <ExternalLink size={12} className="ml-auto shrink-0 text-muted" />
-                    </a>
+                      <a
+                        href={plan.link_hasil}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex min-w-0 flex-1 items-center gap-1"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted">Link Hasil</p>
+                          <p className="truncate text-sm font-medium text-success hover:underline">
+                            {plan.link_hasil}
+                          </p>
+                        </div>
+                        <ExternalLink size={12} className="ml-auto shrink-0 text-muted" />
+                      </a>
+                      <button
+                        onClick={() => copyText(plan.link_hasil, "Link Hasil")}
+                        className="shrink-0 rounded p-1 text-muted hover:bg-surface hover:text-success"
+                        title="Copy Link Hasil"
+                      >
+                        <CopyIcon size={12} />
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
