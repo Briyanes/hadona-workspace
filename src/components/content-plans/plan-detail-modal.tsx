@@ -101,6 +101,23 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // ── Copy helper ──
+  function copyText(text: string | null, label: string) {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(label + " disalin!");
+  }
+
+  function copyAll() {
+    const parts: string[] = [];
+    if (plan.copy) parts.push(plan.copy);
+    if (plan.details) parts.push(plan.details);
+    if (plan.caption) parts.push(plan.caption);
+    if (parts.length === 0) return;
+    navigator.clipboard.writeText(parts.join("\n\n"));
+    toast.success("Semua teks disalin!");
+  }
   const [editForm, setEditForm] = useState({
     pilar: plan.pilar || "",
     konten: plan.konten || "",
@@ -425,12 +442,30 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
                 </div>
               </div>
 
+              {/* Copy All Button */}
+              {(plan.copy || plan.details || plan.caption) && (
+                <button
+                  onClick={copyAll}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+                >
+                  <CopyIcon size={14} /> Copy Semua Teks
+                </button>
+              )}
+
               {/* Copy */}
               {plan.copy && (
                 <div>
-                  <p className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted">
-                    <CopyIcon size={11} /> Copy
-                  </p>
+                  <div className="mb-1 flex items-center justify-between">
+                    <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted">
+                      <CopyIcon size={11} /> Copy
+                    </p>
+                    <button
+                      onClick={() => copyText(plan.copy, "Copy")}
+                      className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-primary hover:bg-primary/10"
+                    >
+                      <CopyIcon size={10} /> Copy
+                    </button>
+                  </div>
                   <div className="rounded-lg border border-border bg-background p-3">
                     <p className="whitespace-pre-wrap text-sm text-muted">{plan.copy}</p>
                   </div>
@@ -440,9 +475,17 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               {/* Details */}
               {plan.details && (
                 <div>
-                  <p className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted">
-                    <AlignLeft size={11} /> Details
-                  </p>
+                  <div className="mb-1 flex items-center justify-between">
+                    <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted">
+                      <AlignLeft size={11} /> Details
+                    </p>
+                    <button
+                      onClick={() => copyText(plan.details, "Details")}
+                      className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-primary hover:bg-primary/10"
+                    >
+                      <CopyIcon size={10} /> Copy
+                    </button>
+                  </div>
                   <div className="rounded-lg border border-border bg-background p-3">
                     <p className="whitespace-pre-wrap text-sm text-muted">{plan.details}</p>
                   </div>
@@ -452,9 +495,17 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               {/* Caption */}
               {plan.caption && (
                 <div>
-                  <p className="mb-1 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted">
-                    <FileText size={11} /> Caption
-                  </p>
+                  <div className="mb-1 flex items-center justify-between">
+                    <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted">
+                      <FileText size={11} /> Caption
+                    </p>
+                    <button
+                      onClick={() => copyText(plan.caption, "Caption")}
+                      className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-primary hover:bg-primary/10"
+                    >
+                      <CopyIcon size={10} /> Copy
+                    </button>
+                  </div>
                   <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                     <p className="whitespace-pre-wrap text-sm text-muted">{plan.caption}</p>
                   </div>

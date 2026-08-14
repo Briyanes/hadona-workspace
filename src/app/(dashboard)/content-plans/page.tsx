@@ -16,6 +16,7 @@ import {
   Loader2,
   FileText,
   ChevronRight,
+  Copy,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { PlanDetailModal } from "@/components/content-plans/plan-detail-modal";
@@ -272,6 +273,23 @@ export default function ContentPlansPage() {
       console.error("Quick update error:", err);
       toast.error("Gagal update progress: " + msg);
     }
+  }
+
+  // ── Copy helper (sama seperti Content Studio CaptionBank) ──
+  function copyText(text: string | null, label: string) {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(label + " disalin!");
+  }
+
+  function copyAll(plan: ContentPlan) {
+    const parts: string[] = [];
+    if (plan.copy) parts.push(plan.copy);
+    if (plan.details) parts.push(plan.details);
+    if (plan.caption) parts.push(plan.caption);
+    if (parts.length === 0) return;
+    navigator.clipboard.writeText(parts.join("\n\n"));
+    toast.success("Semua teks disalin!");
   }
 
   // ── Filter Logic ─────────────────────────────────────────
@@ -554,14 +572,65 @@ export default function ContentPlansPage() {
                       </div>
                     )}
                   </div>
-                  {p.copy && <p className="mt-2 text-sm text-foreground">{p.copy}</p>}
-                  {p.details && <p className="mt-1 text-xs text-muted">{p.details}</p>}
+                  {p.copy && (
+                    <div className="mt-2 flex items-start justify-between gap-2">
+                      <p className="flex-1 text-sm text-foreground">{p.copy}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyText(p.copy, "Copy");
+                        }}
+                        className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
+                        title="Copy Copy"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {p.details && (
+                    <div className="mt-1 flex items-start justify-between gap-2">
+                      <p className="flex-1 text-xs text-muted">{p.details}</p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyText(p.details, "Details");
+                        }}
+                        className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
+                        title="Copy Details"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
+                  )}
                   {p.caption && (
-                    <p className="mt-1 line-clamp-2 text-xs text-muted" title={p.caption}>
-                      {p.caption}
-                    </p>
+                    <div className="mt-1 flex items-start justify-between gap-2">
+                      <p className="line-clamp-2 flex-1 text-xs text-muted" title={p.caption}>
+                        {p.caption}
+                      </p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyText(p.caption, "Caption");
+                        }}
+                        className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
+                        title="Copy Caption"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
                   )}
                   <div className="mt-2 flex items-center gap-3">
+                    {(p.copy || p.details || p.caption) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyAll(p);
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        <Copy size={12} /> Copy All
+                      </button>
+                    )}
                     {p.link_hasil && (
                       <a
                         href={p.link_hasil}
