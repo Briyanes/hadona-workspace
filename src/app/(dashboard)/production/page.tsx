@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ProductionDetailModal } from "@/components/production/production-detail-modal";
 
 interface Production {
   id: string;
@@ -70,6 +71,7 @@ export default function ProductionPage() {
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [detailProduction, setDetailProduction] = useState<Production | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -302,15 +304,16 @@ export default function ProductionPage() {
             const Icon = status?.icon || Clapperboard;
             const isUpcoming = p.shoot_date && new Date(p.shoot_date) > new Date();
             return (
-              <div key={p.id} className="card p-4">
-                <div className="flex items-start justify-between gap-4">
+            <div key={p.id} className="card cursor-pointer p-4 transition-shadow hover:ring-1 hover:ring-primary/20" onClick={() => setDetailProduction(p)}>
+                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <Icon className="text-muted" size={16} />
                       <h3 className="font-semibold text-foreground">{p.title}</h3>
                       <select
                         value={p.status}
-                        onChange={(e) => handleStatusChange(p.id, e.target.value)}
+                        onChange={(e) => { e.stopPropagation(); handleStatusChange(p.id, e.target.value); }}
+                        onClick={(e) => e.stopPropagation()}
                         className={cn("cursor-pointer border-0 text-xs font-medium outline-none", status?.color)}
                       >
                         {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -348,7 +351,7 @@ export default function ProductionPage() {
                     )}
                     {p.notes && <div className="mt-2 rounded-md bg-background p-2 text-xs text-muted">{p.notes}</div>}
                   </div>
-                  <div className="relative">
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => setMenuOpenId(menuOpenId === p.id ? null : p.id)} className="rounded p-1.5 text-muted hover:bg-background hover:text-primary">
                       <MoreVertical size={14} />
                     </button>
@@ -356,8 +359,8 @@ export default function ProductionPage() {
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
                         <div className="absolute right-0 top-8 z-20 w-36 rounded-lg border border-border bg-surface py-1 shadow-lg">
-                          <button onClick={() => { openEdit(p); setMenuOpenId(null); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-primary/5">
-                            <Pencil size={12} /> Edit
+                          <button onClick={() => { setDetailProduction(p); setMenuOpenId(null); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-primary/5">
+                            <Pencil size={12} /> Detail / Edit
                           </button>
                           <button onClick={() => { setDeleteTarget({ id: p.id, title: p.title }); setMenuOpenId(null); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-danger hover:bg-danger/5">
                             <Trash2 size={12} /> Delete
@@ -434,6 +437,18 @@ export default function ProductionPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailProduction && (
+        <ProductionDetailModal
+          production={detailProduction}
+          onClose={() => setDetailProduction(null)}
+          onUpdated={() => { loadData(); }}
+          onDeleted={() => { setDetailProduction(null); loadData(); }}
+          clients={clients}
+          team={team}
+        />
       )}
 
       <ConfirmDialog
