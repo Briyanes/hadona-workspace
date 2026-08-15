@@ -34,6 +34,8 @@ export function getOAuthClient() {
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/calendar.events",
+  // Drive scope: hanya file yang dibuat oleh aplikasi ini (aman, tidak bisa baca seluruh Drive)
+  "https://www.googleapis.com/auth/drive.file",
 ];
 
 /**

@@ -3,10 +3,11 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Send, Upload, BookMarked } from "lucide-react";
+import { Palette, Plus, X, ExternalLink, Trash2, MessageSquare, Search, Pencil, AlertCircle, CheckCircle2, Clock, Loader2, RotateCcw, Send, Upload, BookMarked, HardDriveUpload } from "lucide-react";
 import { formatDate, cn, extractError } from "@/lib/utils";
 import UploadTracker from "@/components/content-studio/upload-tracker";
 import CaptionBank from "@/components/content-studio/caption-bank";
+import DeliverablesTab from "@/components/creative/deliverables-tab";
 
 interface CreativeRequest {
   id: string;
@@ -98,7 +99,7 @@ export default function CreativePage() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
-  const [activeTab, setActiveTab] = useState<"requests" | "uploads" | "captions">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "uploads" | "captions" | "deliverables">("requests");
 
   // Revisions
   const [revisions, setRevisions] = useState<Record<string, Revision[]>>({});
@@ -317,8 +318,8 @@ export default function CreativePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Content Studio</h1>
-        <p className="text-sm text-muted">Kelola creative request, upload tracker, dan bank caption</p>
+        <h1 className="text-xl font-bold text-foreground sm:text-2xl">Creative</h1>
+        <p className="text-sm text-muted">Kelola creative request dari tim & client</p>
       </div>
 
       {/* Tabs */}
@@ -350,7 +351,19 @@ export default function CreativePage() {
         >
           <BookMarked size={15} /> Bank Caption
         </button>
+        <button
+          onClick={() => setActiveTab("deliverables")}
+          className={cn(
+            "flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+            activeTab === "deliverables" ? "border-primary text-primary" : "border-transparent text-muted hover:text-foreground"
+          )}
+        >
+          <HardDriveUpload size={15} /> Hasil Edit
+        </button>
       </div>
+
+      {/* Deliverables (Google Drive) Tab */}
+      {activeTab === "deliverables" && <DeliverablesTab />}
 
       {/* Upload Tracker Tab */}
       {activeTab === "uploads" && <UploadTracker />}
