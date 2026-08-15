@@ -92,6 +92,11 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
+    href: "/monthly-reports",
+    allowedDivisions: ["Advertiser", "Account Executive", "Project Manager", "Developer"],
+    allowedRoles: ["super_admin", "project_manager"],
+  },
+  {
     href: "/strategy",
     allowedDivisions: ["Account Executive", "Project Manager", "Advertiser", "Developer"],
     allowedRoles: ["super_admin", "project_manager"],

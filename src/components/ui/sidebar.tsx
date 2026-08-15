@@ -10,6 +10,7 @@ import {
   UserCog,
   Megaphone,
   BarChart3,
+  PieChart,
   Target,
   Palette,
   Calendar,
@@ -67,6 +68,7 @@ const navSections: NavSection[] = [
     items: [
       { label: "Ads Spend", href: "/ads-spend", icon: Megaphone },
       { label: "Weekly Report", href: "/reports", icon: BarChart3 },
+      { label: "Monthly Report", href: "/monthly-reports", icon: PieChart },
       { label: "Strategy (OKR)", href: "/strategy", icon: Target },
     ],
   },

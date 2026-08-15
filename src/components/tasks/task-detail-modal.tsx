@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   XCircle,
   FileText,
+  Download,
+  BarChart3,
 } from "lucide-react";
 import { formatDate, timeUntil, getInitials, cn } from "@/lib/utils";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -149,6 +151,27 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   const [loggingTime, setLoggingTime] = useState(false);
   const [totalLoggedHours, setTotalLoggedHours] = useState(0);
 
+  // Linked monthly report state
+  const [linkedReport, setLinkedReport] = useState<{
+    id: string;
+    file_url: string;
+    file_name: string | null;
+    period_month: number;
+    period_year: number;
+  } | null>(null);
+
+  // Load monthly report yang terlink dengan task ini (jika ada)
+  const loadLinkedReport = async () => {
+    if (!taskId) return;
+    const { data } = await supabase
+      .from("monthly_reports")
+      .select("id, file_url, file_name, period_month, period_year")
+      .eq("task_id", taskId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    setLinkedReport((data && data[0]) || null);
+  };
+
   useEffect(() => {
     loadTask();
     loadComments();
@@ -156,6 +179,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     loadClients();
     loadCurrentUser();
     loadTimeLogs();
+    loadLinkedReport();
 
     // Realtime subscriptions
     const commentChannel = supabase
@@ -698,6 +722,37 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                       <p className="text-sm text-muted">{task.notes}</p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Linked Monthly Report */}
+              {linkedReport && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 size={16} className="text-primary" />
+                      <div>
+                        <p className="text-xs font-semibold text-primary">Monthly Report Terlampir</p>
+                        <p className="text-xs text-muted">
+                          Periode{" "}
+                          {new Date(linkedReport.period_year, linkedReport.period_month - 1).toLocaleDateString(
+                            "id-ID",
+                            { month: "long", year: "numeric" }
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <a
+                      href={linkedReport.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={linkedReport.file_name || undefined}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+                    >
+                      <Download size={13} />
+                      Download Report
+                    </a>
+                  </div>
                 </div>
               )}
 

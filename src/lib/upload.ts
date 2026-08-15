@@ -13,6 +13,7 @@ export interface UploadResult {
 const ALLOWED_FOLDERS = [
   "client-attachments",
   "weekly-report-pdfs",
+  "monthly-reports",
   "creative-assets",
   "avatar-assets",
   "client-logos",
@@ -26,6 +27,7 @@ export type UploadFolder = (typeof ALLOWED_FOLDERS)[number];
 const BUCKET_MAP: Record<UploadFolder, string> = {
   "client-attachments": "client-attachments",
   "weekly-report-pdfs": "weekly-report-pdfs",
+  "monthly-reports": "monthly-reports",
   "creative-assets": "creative-assets",
   "avatar-assets": "avatar-assets",
   "client-logos": "client-logos",
