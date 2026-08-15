@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { uploadFile } from "@/lib/upload";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -20,6 +21,8 @@ import {
   FileText,
   Download,
   BarChart3,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { formatDate, timeUntil, getInitials, cn } from "@/lib/utils";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
@@ -40,6 +43,7 @@ interface Task {
   approved_by: string | null;
   approved_at: string | null;
   approval_note: string | null;
+  client_id?: string | null;
   client?: { name: string };
   task_assignees?: { user_id: string; user: { full_name: string; avatar_url: string | null } }[];
 }
@@ -99,6 +103,11 @@ const divisionOptions = [
   "Account Executive",
   "Copywriter",
   "Developer",
+];
+
+const monthNames = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
 interface TaskDetailModalProps {
@@ -171,6 +180,63 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       .limit(1);
     setLinkedReport((data && data[0]) || null);
   };
+
+  // Upload monthly report langsung dari task detail
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportPeriod, setReportPeriod] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+  });
+  const [uploadingReport, setUploadingReport] = useState(false);
+
+  async function handleUploadReport() {
+    if (!reportFile) {
+      toast.error("Pilih file report terlebih dahulu");
+      return;
+    }
+    if (reportFile.size > 50 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 50MB");
+      return;
+    }
+    setUploadingReport(true);
+    try {
+      // 1. Upload file ke Supabase Storage (bucket monthly-reports)
+      const result = await uploadFile(reportFile, "monthly-reports");
+
+      // 2. Simpan metadata + auto-link ke task ini
+      const res = await fetch("/api/monthly-reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: task?.client_id || null,
+          task_id: taskId,
+          period_month: reportPeriod.month,
+          period_year: reportPeriod.year,
+          file_url: result.publicUrl,
+          file_key: result.key,
+          file_name: reportFile.name,
+          file_size: reportFile.size,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        // Rollback: hapus file yang sudah terupload
+        await supabase.storage.from("monthly-reports").remove([result.key]);
+        throw new Error(json.error || "Gagal menyimpan report");
+      }
+
+      toast.success("Monthly report terupload & task otomatis diselesaikan ✅");
+      setReportFile(null);
+      await loadLinkedReport();
+      await loadTask();
+      onUpdated();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setUploadingReport(false);
+    }
+  }
 
   useEffect(() => {
     loadTask();
@@ -275,6 +341,15 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       client_id: (coreData as Record<string, unknown>).client_id as string || "",
     });
     setEditAssignees(taskData.task_assignees?.map((a) => a.user_id) || []);
+
+    // Smart default: periode report mengikuti deadline task
+    if (taskData.due_date) {
+      const y = Number(taskData.due_date.slice(0, 4));
+      const m = Number(taskData.due_date.slice(5, 7));
+      if (y >= 2020 && m >= 1 && m <= 12) {
+        setReportPeriod({ month: m, year: y });
+      }
+    }
     setLoading(false);
   }
 
@@ -725,8 +800,8 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 </div>
               )}
 
-              {/* Linked Monthly Report */}
-              {linkedReport && (
+              {/* Monthly Report: download jika sudah ada, upload jika belum */}
+              {linkedReport ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -753,6 +828,62 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                       Download Report
                     </a>
                   </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-background p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <BarChart3 size={16} className="text-primary" />
+                    <p className="text-xs font-semibold text-foreground">Upload Monthly Report</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={reportPeriod.month}
+                      onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}
+                      className="input text-xs"
+                      disabled={uploadingReport}
+                    >
+                      {monthNames.map((name, idx) => (
+                        <option key={name} value={idx + 1}>{name}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={reportPeriod.year}
+                      onChange={(e) => setReportPeriod({ ...reportPeriod, year: Number(e.target.value) })}
+                      className="input text-xs"
+                      disabled={uploadingReport}
+                    >
+                      {Array.from({ length: 4 }, (_, i) => new Date().getFullYear() - 1 + i).map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="file"
+                      accept=".pdf,.xlsx,.xls,.doc,.docx,.ppt,.pptx,.csv"
+                      onChange={(e) => setReportFile(e.target.files?.[0] || null)}
+                      className="input flex-1 p-1.5 text-xs"
+                      disabled={uploadingReport}
+                    />
+                    <button
+                      onClick={handleUploadReport}
+                      disabled={uploadingReport || !reportFile}
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      {uploadingReport ? (
+                        <>
+                          <Loader2 size={13} className="animate-spin" /> Mengupload…
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={13} /> Upload
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted">
+                    Setelah upload, task otomatis diselesaikan (done) dan report bisa di-download dari sini & menu Monthly Report.
+                  </p>
                 </div>
               )}
 
