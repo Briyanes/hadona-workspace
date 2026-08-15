@@ -131,11 +131,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Auto-complete task jika task_id diisi dan task belum done
+  // Auto-move task ke Review agar PM/AE bisa setup meeting & presentasi ke client
   if (task_id) {
     await supabase
       .from("tasks")
-      .update({ status: "done", result: "Monthly report uploaded" } as never)
+      .update({ status: "review", result: "Monthly report uploaded - menunggu review presentasi ke client" } as never)
       .eq("id", task_id)
       .neq("status", "done");
   }

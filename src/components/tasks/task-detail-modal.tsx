@@ -226,7 +226,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         throw new Error(json.error || "Gagal menyimpan report");
       }
 
-      toast.success("Monthly report terupload & task otomatis diselesaikan ✅");
+      toast.success("Monthly report terupload — task dipindah ke Review untuk presentasi ke client ✅");
       setReportFile(null);
       await loadLinkedReport();
       await loadTask();
@@ -882,7 +882,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     </button>
                   </div>
                   <p className="mt-1.5 text-[11px] text-muted">
-                    Setelah upload, task otomatis diselesaikan (done) dan report bisa di-download dari sini & menu Monthly Report.
+                    Setelah upload, task pindah ke Review. PM/AE bisa download report dari sini, setup meeting ke client, lalu tandai Done setelah presentasi.
                   </p>
                 </div>
               )}
