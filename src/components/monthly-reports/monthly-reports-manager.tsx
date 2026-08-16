@@ -238,6 +238,9 @@ export function MonthlyReportsManager() {
   const inputCls =
     "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30";
 
+  // Select: hilangkan arrow default browser, ganti chevron rapi via .select-chevron (globals.css)
+  const selectCls = `${inputCls} select-chevron`;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -260,7 +263,7 @@ export function MonthlyReportsManager() {
           <select
             value={filterClient}
             onChange={(e) => setFilterClient(e.target.value)}
-            className={`${inputCls} max-w-xs`}
+            className={`${selectCls} max-w-xs`}
           >
             <option value="all">Semua Client</option>
             {clients.map((c) => (
@@ -272,7 +275,7 @@ export function MonthlyReportsManager() {
           <select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className={`${inputCls} max-w-[160px]`}
+            className={`${selectCls} max-w-[160px]`}
           >
             <option value="all">Semua Tahun</option>
             {YEARS.map((y) => (
@@ -458,7 +461,7 @@ export function MonthlyReportsManager() {
             <select
               value={form.client_id}
               onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value, task_id: "" }))}
-              className={inputCls}
+              className={selectCls}
               disabled={uploading}
             >
               <option value="">— Tanpa client —</option>
@@ -477,7 +480,7 @@ export function MonthlyReportsManager() {
               <select
                 value={form.period_month}
                 onChange={(e) => setForm((f) => ({ ...f, period_month: e.target.value }))}
-                className={inputCls}
+                className={selectCls}
                 disabled={uploading}
               >
                 {MONTHS.map((m, i) => (
@@ -492,7 +495,7 @@ export function MonthlyReportsManager() {
               <select
                 value={form.period_year}
                 onChange={(e) => setForm((f) => ({ ...f, period_year: e.target.value }))}
-                className={inputCls}
+                className={selectCls}
                 disabled={uploading}
               >
                 {YEARS.map((y) => (
@@ -512,7 +515,7 @@ export function MonthlyReportsManager() {
             <select
               value={form.task_id}
               onChange={(e) => setForm((f) => ({ ...f, task_id: e.target.value }))}
-              className={inputCls}
+              className={selectCls}
               disabled={uploading}
             >
               <option value="">— Tidak dilink ke task —</option>
