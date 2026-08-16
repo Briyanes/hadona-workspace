@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ...data, task_update_ok: taskUpdateOk }, { status: 201 });
 }
 
-// PATCH /api/monthly-reports — update status/notes
+// PATCH /api/monthly-reports — update metadata report (client, periode, task, file, status, notes)
 export async function PATCH(request: NextRequest) {
   const supabase = getSupabase();
   const {
@@ -175,25 +175,110 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { id, status, notes } = body;
+  const {
+    id, status, notes,
+    client_id, task_id, period_month, period_year,
+    file_url, file_key, file_name, file_size,
+  } = body;
 
   if (!id) {
     return NextResponse.json({ error: "id wajib diisi" }, { status: 400 });
   }
 
+  // Ambil data lama (untuk validasi duplikat & cleanup file)
+  const { data: existing } = await supabase
+    .from("monthly_reports")
+    .select("id, client_id, task_id, period_month, period_year, file_key")
+    .eq("id", id)
+    .single();
+
+  if (!existing) {
+    return NextResponse.json({ error: "Report tidak ditemukan" }, { status: 404 });
+  }
+
+  const old = existing as {
+    client_id: string | null;
+    task_id: string | null;
+    period_month: number;
+    period_year: number;
+    file_key: string | null;
+  };
+
+  const newClientId = client_id !== undefined ? (client_id || null) : old.client_id;
+  const newMonth = period_month !== undefined ? Number(period_month) : old.period_month;
+  const newYear = period_year !== undefined ? Number(period_year) : old.period_year;
+
+  // Validasi duplikat jika client/periode berubah (exclude row ini sendiri)
+  if (
+    newClientId !== old.client_id ||
+    newMonth !== old.period_month ||
+    newYear !== old.period_year
+  ) {
+    let dupQuery = supabase
+      .from("monthly_reports")
+      .select("id")
+      .eq("period_month", newMonth)
+      .eq("period_year", newYear)
+      .neq("id", id);
+    if (newClientId) {
+      dupQuery = dupQuery.eq("client_id", newClientId);
+    } else {
+      dupQuery = dupQuery.is("client_id", null);
+    }
+    const { data: dup } = await dupQuery.maybeSingle();
+    if (dup) {
+      return NextResponse.json(
+        { error: "Report untuk client & periode ini sudah ada. Hapus dulu jika ingin upload ulang." },
+        { status: 409 }
+      );
+    }
+  }
+
   const update: Record<string, unknown> = {};
+  if (client_id !== undefined) update.client_id = client_id || null;
+  if (task_id !== undefined) update.task_id = task_id || null;
+  if (period_month !== undefined) update.period_month = Number(period_month);
+  if (period_year !== undefined) update.period_year = Number(period_year);
+  if (file_url !== undefined) update.file_url = file_url;
+  if (file_key !== undefined) update.file_key = file_key || null;
+  if (file_name !== undefined) update.file_name = file_name || null;
+  if (file_size !== undefined) update.file_size = file_size || null;
   if (status) update.status = status;
-  if (notes !== undefined) update.notes = notes;
+  if (notes !== undefined) update.notes = notes || null;
 
   const { data, error } = await supabase
     .from("monthly_reports")
     .update(update as never)
     .eq("id", id)
-    .select()
+    .select(
+      `*,
+      client:clients(id, name),
+      task:tasks(id, title, status),
+      creator:profiles!monthly_reports_created_by_fkey(id, full_name)`
+    )
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Auto-move task ke review jika task link berubah ke task lain
+  const newTaskId = task_id !== undefined ? (task_id || null) : old.task_id;
+  if (newTaskId && newTaskId !== old.task_id) {
+    const admin = getAdminClient();
+    const { error: taskError } = await admin
+      .from("tasks")
+      .update({ status: "review", result: "Monthly report uploaded - menunggu review presentasi ke client" } as never)
+      .eq("id", newTaskId)
+      .neq("status", "done");
+    if (taskError) {
+      console.error("[monthly-reports] gagal update task ke review:", taskError.message);
+    }
+  }
+
+  // Hapus file lama dari storage jika file diganti (best-effort, setelah DB sukses)
+  if (file_key !== undefined && old.file_key && old.file_key !== file_key) {
+    await supabase.storage.from("monthly-reports").remove([old.file_key]);
   }
 
   return NextResponse.json(data);

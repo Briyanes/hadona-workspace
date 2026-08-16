@@ -11,6 +11,7 @@ import {
   FileText,
   Loader2,
   Paperclip,
+  Pencil,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -109,6 +110,18 @@ export function MonthlyReportsManager() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Edit modal state
+  const [editReport, setEditReport] = useState<MonthlyReport | null>(null);
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editForm, setEditForm] = useState({
+    client_id: "",
+    task_id: "",
+    period_month: "",
+    period_year: "",
+    notes: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
   // ===== Data loading =====
   const loadReports = useCallback(async () => {
     const { data, error } = await supabase
@@ -160,6 +173,39 @@ export function MonthlyReportsManager() {
     return tasks.filter((t) => t.client_id === form.client_id || t.client_id === null);
   }, [tasks, form.client_id]);
 
+  // Opsi untuk modal edit: pastikan client/task terlink saat ini tetap muncul
+  // walau sudah non-aktif/done (list utama hanya memuat data aktif)
+  const editClientOptions = useMemo(() => {
+    const linkedId = editReport?.client_id;
+    if (linkedId && !clients.some((c) => c.id === linkedId)) {
+      return [{ id: linkedId, name: editReport?.client?.name || "Client (non-aktif)" }, ...clients];
+    }
+    return clients;
+  }, [clients, editReport]);
+
+  const editTaskOptions = useMemo(() => {
+    let list = tasks;
+    if (editForm.client_id) {
+      list = list.filter((t) => t.client_id === editForm.client_id || t.client_id === null);
+    }
+    const linkedId = editReport?.task_id;
+    if (linkedId && !list.some((t) => t.id === linkedId)) {
+      const linked: TaskOption = {
+        id: linkedId,
+        title: editReport?.task?.title || "Task terlink",
+        client_id: editReport?.client_id || null,
+        status: editReport?.task?.status || "done",
+      };
+      return [linked, ...list];
+    }
+    return list;
+  }, [tasks, editForm.client_id, editReport]);
+
+  const editYearOptions = useMemo(() => {
+    const y = Number(editReport?.period_year);
+    return y && !YEARS.includes(y) ? [y, ...YEARS] : YEARS;
+  }, [editReport]);
+
   // ===== Upload =====
   const handleUpload = async () => {
     if (!file) {
@@ -196,7 +242,7 @@ export function MonthlyReportsManager() {
 
       toast.success(
         form.task_id
-          ? "Monthly report berhasil diupload & task otomatis diselesaikan ✅"
+          ? "Monthly report berhasil diupload & task dipindah ke Review ✅"
           : "Monthly report berhasil diupload ✅"
       );
       setUploadOpen(false);
@@ -213,6 +259,76 @@ export function MonthlyReportsManager() {
       toast.error(err instanceof Error ? err.message : "Upload gagal");
     } finally {
       setUploading(false);
+    }
+  };
+
+  // ===== Edit =====
+  const openEdit = (r: MonthlyReport) => {
+    setEditReport(r);
+    setEditFile(null);
+    setEditForm({
+      client_id: r.client_id || "",
+      task_id: r.task_id || "",
+      period_month: String(r.period_month),
+      period_year: String(r.period_year),
+      notes: r.notes || "",
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editReport) return;
+    if (!editForm.period_month || !editForm.period_year) {
+      toast.error("Bulan & tahun wajib dipilih");
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      // Upload file baru hanya jika user memilih pengganti
+      let newFile: {
+        file_url: string;
+        file_key: string;
+        file_name: string;
+        file_size: number;
+      } | null = null;
+      if (editFile) {
+        const result = await uploadFile(editFile, "monthly-reports");
+        newFile = {
+          file_url: result.publicUrl,
+          file_key: result.key,
+          file_name: editFile.name,
+          file_size: editFile.size,
+        };
+      }
+
+      const res = await fetch("/api/monthly-reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editReport.id,
+          client_id: editForm.client_id || null,
+          task_id: editForm.task_id || null,
+          period_month: Number(editForm.period_month),
+          period_year: Number(editForm.period_year),
+          notes: editForm.notes || null,
+          ...(newFile || {}),
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        // Rollback: hapus file baru yang sudah terupload (file lama tidak tersentuh)
+        if (newFile) await supabase.storage.from("monthly-reports").remove([newFile.file_key]);
+        throw new Error(json.error || "Gagal mengupdate report");
+      }
+
+      toast.success("Report berhasil diupdate ✅");
+      setEditReport(null);
+      await loadReports();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengupdate");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -372,6 +488,13 @@ export function MonthlyReportsManager() {
                             <Download className="h-4 w-4" />
                           </a>
                           <button
+                            onClick={() => openEdit(r)}
+                            title="Edit"
+                            className="rounded-lg p-2 text-primary hover:bg-primary/10"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => setDeleteId(r.id)}
                             title="Hapus"
                             className="rounded-lg p-2 text-destructive hover:bg-destructive/10"
@@ -526,7 +649,7 @@ export function MonthlyReportsManager() {
               ))}
             </select>
             <p className="mt-1 text-xs text-muted-foreground">
-              Task yang dilink akan otomatis diselesaikan (status: done) setelah report diupload.
+              Task yang dilink akan otomatis pindah ke Review setelah report diupload.
             </p>
           </div>
 
@@ -539,6 +662,170 @@ export function MonthlyReportsManager() {
               className={`${inputCls} min-h-[72px]`}
               placeholder="Catatan opsional untuk report ini…"
               disabled={uploading}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===== Edit Modal ===== */}
+      <Modal
+        open={!!editReport}
+        onClose={() => !savingEdit && setEditReport(null)}
+        title="Edit Monthly Report"
+        subtitle={editReport ? `Periode saat ini: ${MONTHS[editReport.period_month - 1]} ${editReport.period_year}` : ""}
+        size="md"
+        footer={
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setEditReport(null)}
+              disabled={savingEdit}
+              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleEditSave}
+              disabled={savingEdit}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {savingEdit ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Menyimpan…
+                </>
+              ) : (
+                <>
+                  <Pencil className="h-4 w-4" /> Simpan Perubahan
+                </>
+              )}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {/* File saat ini (opsional diganti) */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">File Report</label>
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+              <FileText className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate" title={editReport?.file_name || ""}>
+                {editReport?.file_name || "report"}
+              </span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                ({formatFileSize(editReport?.file_size ?? null)}) — file saat ini
+              </span>
+            </div>
+            <label
+              className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center transition-colors ${
+                editFile ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+              }`}
+            >
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.ppt,.pptx"
+                onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                disabled={savingEdit}
+              />
+              {editFile ? (
+                <>
+                  <FileText className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-medium">{editFile.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatFileSize(editFile.size)} — klik untuk ganti
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm font-medium">Klik untuk ganti file (opsional)</span>
+                  <span className="text-xs text-muted-foreground">Biarkan kosong jika file tidak berubah</span>
+                </>
+              )}
+            </label>
+          </div>
+
+          {/* Client */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Client</label>
+            <select
+              value={editForm.client_id}
+              onChange={(e) => setEditForm((f) => ({ ...f, client_id: e.target.value, task_id: "" }))}
+              className={selectCls}
+              disabled={savingEdit}
+            >
+              <option value="">— Tanpa client —</option>
+              {editClientOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Periode */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Bulan *</label>
+              <select
+                value={editForm.period_month}
+                onChange={(e) => setEditForm((f) => ({ ...f, period_month: e.target.value }))}
+                className={selectCls}
+                disabled={savingEdit}
+              >
+                {MONTHS.map((m, i) => (
+                  <option key={m} value={String(i + 1)}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Tahun *</label>
+              <select
+                value={editForm.period_year}
+                onChange={(e) => setEditForm((f) => ({ ...f, period_year: e.target.value }))}
+                className={selectCls}
+                disabled={savingEdit}
+              >
+                {editYearOptions.map((y) => (
+                  <option key={y} value={String(y)}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Task link */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Link ke Task (opsional)</label>
+            <select
+              value={editForm.task_id}
+              onChange={(e) => setEditForm((f) => ({ ...f, task_id: e.target.value }))}
+              className={selectCls}
+              disabled={savingEdit}
+            >
+              <option value="">— Tidak dilink ke task —</option>
+              {editTaskOptions.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Jika diganti ke task lain, task baru akan otomatis pindah ke Review.
+            </p>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Catatan</label>
+            <textarea
+              value={editForm.notes}
+              onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+              className={`${inputCls} min-h-[72px]`}
+              placeholder="Catatan opsional untuk report ini…"
+              disabled={savingEdit}
             />
           </div>
         </div>
