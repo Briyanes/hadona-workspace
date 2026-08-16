@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 function getSupabase() {
@@ -15,6 +16,17 @@ function getSupabase() {
         setAll() {},
       },
     }
+  );
+}
+
+// Client service-role untuk operasi lintas-user (bypass RLS, khusus server-side).
+// Digunakan untuk auto-update task karena uploader report belum tentu
+// creator/assignee task (RLS tasks membatasi UPDATE ke pihak tersebut).
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
   );
 }
 
@@ -131,16 +143,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Auto-move task ke Review agar PM/AE bisa setup meeting & presentasi ke client
+  // Auto-move task ke Review agar PM/AE bisa setup meeting & presentasi ke client.
+  // Pakai service-role agar tidak ter-block RLS (uploader bisa saja bukan assignee/creator task).
+  let taskUpdateOk = false;
   if (task_id) {
-    await supabase
+    const admin = getAdminClient();
+    const { error: taskError } = await admin
       .from("tasks")
       .update({ status: "review", result: "Monthly report uploaded - menunggu review presentasi ke client" } as never)
       .eq("id", task_id)
       .neq("status", "done");
+    if (taskError) {
+      console.error("[monthly-reports] gagal update task ke review:", taskError.message);
+    } else {
+      taskUpdateOk = true;
+    }
   }
 
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json({ ...data, task_update_ok: taskUpdateOk }, { status: 201 });
 }
 
 // PATCH /api/monthly-reports — update status/notes
