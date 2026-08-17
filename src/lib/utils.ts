@@ -93,6 +93,34 @@ export function getInitials(name: string | null | undefined): string {
 }
 
 /**
+ * Remove URLs (http/https/www/bare-domain links) from a string for compact display.
+ * Display-only transformation — original data is never modified.
+ *
+ * @example
+ * stripUrls("Monthly Report - https://drive.google.com/file/d/xyz") → "Monthly Report"
+ * stripUrls("Reels www.instagram.com/reel/abc") → "Reels"
+ */
+export function stripUrls(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    // Full URLs with protocol (http, https, ftp)
+    .replace(/\b(?:https?|ftp):\/\/\S+/gi, "")
+    // www.* links
+    .replace(/\bwww\.\S+/gi, "")
+    // Bare domain links (drive.google.com/xyz, bit.ly/abc, hadona.id, dst.)
+    .replace(
+      /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|id|co|io|me|gg|link|xyz|site|info|biz|tv|ai|app|dev)\b(?:\/\S*)?/gi,
+      ""
+    )
+    // Collapse whitespace left behind
+    .replace(/\s{2,}/g, " ")
+    // Trim leftover separators (e.g. "Judul - " / ": Judul") at the edges
+    .replace(/\s*[-–—:|,·]\s*$/g, "")
+    .replace(/^\s*[-–—:|,·]\s*/g, "")
+    .trim();
+}
+
+/**
  * Parse a currency string like "Rp3.363.724" or "IDR351,911" to a number.
  */
 export function parseIDR(value: string | null | undefined): number | null {

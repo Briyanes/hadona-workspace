@@ -24,7 +24,7 @@ import {
   Upload,
   Loader2,
 } from "lucide-react";
-import { formatDate, timeUntil, getInitials, cn } from "@/lib/utils";
+import { formatDate, timeUntil, getInitials, cn, stripUrls } from "@/lib/utils";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { Avatar } from "@/components/ui/avatar";
 
@@ -724,7 +724,9 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
             <div className="space-y-5">
               {/* Title & Client */}
               <div>
-                <h3 className="text-xl font-bold text-foreground">{task.title}</h3>
+                <h3 className="break-words text-xl font-bold text-foreground" title={task.title}>
+                  {stripUrls(task.title) || "(Link)"}
+                </h3>
                 {task.client && <p className="mt-0.5 text-sm text-muted">{task.client.name}</p>}
               </div>
 

@@ -11,7 +11,7 @@ const DragDropContext = dynamic(() => import("@hello-pangea/dnd").then((m) => m.
 const Droppable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Droppable), { ssr: false });
 const Draggable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Draggable), { ssr: false });
 import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User, CheckSquare, Trash2, Layers, BarChart3, TrendingUp, CheckCircle2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
-import { formatDate, getInitials, cn } from "@/lib/utils";
+import { formatDate, getInitials, cn, stripUrls } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { useSortable } from "@/hooks/use-sortable-table";
@@ -697,7 +697,7 @@ export function TaskBoard({
               <div className="space-y-2">
                 {carryOver.slice(0, 5).map((t) => (
                   <div key={t.id} className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
-                    <span className="truncate text-sm text-foreground">{t.title}</span>
+                    <span className="truncate text-sm text-foreground" title={t.title}>{stripUrls(t.title) || "(Link)"}</span>
                     <span className="ml-2 shrink-0 rounded-full bg-danger/10 px-2 py-0.5 text-xs text-danger">
                       {COLUMNS.find((c) => c.id === t.status)?.label || t.status}
                     </span>
@@ -780,13 +780,15 @@ export function TaskBoard({
                                 {...dragProvided.dragHandleProps}
                                 onClick={() => setDetailTaskId(task.id)}
                                 className={cn(
-                                  "cursor-pointer rounded-md border border-border bg-background p-3 transition-all hover:border-primary hover:shadow-md active:cursor-grabbing",
+                                  "cursor-pointer overflow-hidden rounded-md border border-border bg-background p-2.5 transition-all hover:border-primary hover:shadow-md active:cursor-grabbing",
                                   dragSnapshot.isDragging && "shadow-lg ring-2 ring-primary/50"
                                 )}
                               >
-                                <div className="mb-1.5 flex items-start justify-between gap-2">
-                                  <p className="text-sm font-medium text-foreground">{task.title}</p>
-                                  <div className="flex items-center gap-1">
+                                <div className="mb-1 flex items-start justify-between gap-2">
+                                  <p className="line-clamp-2 min-w-0 flex-1 break-words text-sm font-medium text-foreground" title={task.title}>
+                                    {stripUrls(task.title) || "(Link)"}
+                                  </p>
+                                  <div className="flex shrink-0 items-center gap-1">
                                     {isOverdue && <AlertTriangle size={12} className="text-danger" />}
                                     <Flag size={12} className={priorityColors[task.priority] || "text-muted"} />
                                   </div>
@@ -794,14 +796,14 @@ export function TaskBoard({
 
                                 {/* Description preview */}
                                 {task.description && (
-                                  <p className="mb-1.5 line-clamp-2 text-xs text-muted">
+                                  <p className="mb-1 line-clamp-2 break-words text-xs text-muted">
                                     {task.description}
                                   </p>
                                 )}
 
-                                {task.client && <p className="mb-1 text-xs text-muted">{task.client.name}</p>}
+                                {task.client && <p className="mb-1 truncate text-xs text-muted" title={task.client.name}>{task.client.name}</p>}
                                 {task.division && (
-                                  <span className="mb-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                  <span className="mb-1.5 inline-block max-w-full truncate rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary" title={task.division}>
                                     {task.division}
                                   </span>
                                 )}
@@ -958,7 +960,7 @@ export function TaskBoard({
                       <td className="px-4 py-3" title={task.title}>
                         <div className="flex items-center gap-1.5 overflow-hidden">
                           {isOverdue && <AlertTriangle size={12} className="shrink-0 text-danger" />}
-                          <span className="truncate font-medium text-foreground">{task.title}</span>
+                          <span className="truncate font-medium text-foreground">{stripUrls(task.title) || "(Link)"}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted">
