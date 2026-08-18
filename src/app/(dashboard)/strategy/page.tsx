@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Target, Plus, X, Pencil, Trash2, Loader2, TrendingUp, AlertCircle,
-  Building2, Share2, Swords, Layers, Zap, Users2, ChevronDown,
+  Building2, Share2, Swords, Layers, Zap, Users2, ChevronDown, FileSpreadsheet,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
 import ClientStrategyWizard from "@/components/strategy/client-strategy-wizard";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface OKR {
   id: string;
@@ -94,6 +96,35 @@ export default function StrategyPage() {
   const [checkinKr, setCheckinKr] = useState<OKR | null>(null);
   const [checkinValue, setCheckinValue] = useState("");
   const [checkinSaving, setCheckinSaving] = useState(false);
+
+  // import dari sheet
+  const [showImport, setShowImport] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importDryRun, setImportDryRun] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  async function runImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!importUrl.includes("docs.google.com")) { toast.error("URL Google Sheet tidak valid"); return; }
+    setImporting(true);
+    try {
+      const res = await fetch("/api/import/strategy-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheetUrl: importUrl, dryRun: importDryRun }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Import gagal");
+      const s = (json.summaries || []) as Array<{ sheet: string; imported: number; skipped?: number; error?: string }>;
+      const lines = s.map((x) => `• ${x.sheet}: ${x.imported} masuk${x.skipped ? `, ${x.skipped} skip` : ""}${x.error ? ` (${x.error})` : ""}`);
+      toast.success(importDryRun ? `Dry-run selesai:\n${lines.join("\n")}` : `Import selesai:\n${lines.join("\n")}`, { duration: 8000 });
+      if (!importDryRun) { setShowImport(false); setImportUrl(""); if (selectedClientId) loadCanvas(selectedClientId); loadClients(); }
+    } catch (err) {
+      toast.error(extractError(err));
+    } finally {
+      setImporting(false);
+    }
+  }
 
   useEffect(() => {
     loadClients();
@@ -342,7 +373,7 @@ export default function StrategyPage() {
   if (loading && !okrs.length && !clients.length) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Strategy & OKR</h1>
+        <PageHeader title="Strategy & OKR" subtitle="Client strategy canvas & agency OKR tracker" />
         <div className="skeleton h-32 rounded-lg" />
         <div className="skeleton h-64 rounded-lg" />
       </div>
@@ -352,22 +383,25 @@ export default function StrategyPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground sm:text-2xl">Strategy & OKR</h1>
-          <p className="text-sm text-muted">Client strategy canvas & agency OKR tracker</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowWizard(true)} className="btn-primary">
-            <Plus size={16} /> Client Baru
-          </button>
-          {tab === "agency" && (
-            <button onClick={openCreate} className="btn-ghost border border-border">
-              <Target size={16} /> OKR Agency
+      <PageHeader
+        title="Strategy & OKR"
+        subtitle="Client strategy canvas & agency OKR tracker"
+        actions={
+          <>
+            <button onClick={() => setShowImport(true)} className="btn-ghost border border-border">
+              <FileSpreadsheet size={16} /> Import dari Sheet
             </button>
-          )}
-        </div>
-      </div>
+            <button onClick={() => setShowWizard(true)} className="btn-primary">
+              <Plus size={16} /> Client Baru
+            </button>
+            {tab === "agency" && (
+              <button onClick={openCreate} className="btn-ghost border border-border">
+                <Target size={16} /> OKR Agency
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Tab switch */}
       <div className="flex gap-2">
@@ -506,10 +540,11 @@ export default function StrategyPage() {
                   <span className="text-xs text-muted">{totalOKRs} KR · avg {avgProgress}% · {completedCount} selesai</span>
                 </div>
                 {totalOKRs === 0 ? (
-                  <div className="card flex flex-col items-center justify-center py-10 text-center">
-                    <Target className="mb-3 text-muted" size={28} />
-                    <p className="text-sm text-muted">Client ini belum punya OKR. Gunakan wizard "Client Baru" atau tambah via OKR Agency.</p>
-                  </div>
+                  <EmptyState
+                    icon={Target}
+                    title="Client ini belum punya OKR"
+                    description='Gunakan wizard "Client Baru", tombol "Import dari Sheet", atau tambah via OKR Agency.'
+                  />
                 ) : (
                   Object.entries(grouped).map(([objective, krs]) => {
                     const objAvg = krs.length > 0 ? Math.round(krs.reduce((s, k) => s + k.progress_pct, 0) / krs.length) : 0;
@@ -584,11 +619,11 @@ export default function StrategyPage() {
 
           {/* OKR List */}
           {totalOKRs === 0 ? (
-            <div className="card flex flex-col items-center justify-center py-12 text-center">
-              <Target className="mb-3 text-muted" size={32} />
-              <p className="text-muted">Belum ada OKR internal agency</p>
-              <button onClick={openCreate} className="btn-primary mt-4"><Plus size={16} /> Buat OKR</button>
-            </div>
+            <EmptyState
+              icon={Target}
+              title="Belum ada OKR internal agency"
+              action={<button onClick={openCreate} className="btn-primary"><Plus size={16} /> Buat OKR</button>}
+            />
           ) : (
             <div className="space-y-6">
               {Object.entries(grouped).map(([objective, krs]) => {
@@ -625,6 +660,38 @@ export default function StrategyPage() {
         onClose={() => setShowWizard(false)}
         onCreated={() => { loadClients(); }}
       />
+
+      {/* Modal Import dari Sheet */}
+      {showImport && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
+          <form onSubmit={runImport} className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-base font-bold text-foreground">Import Strategy dari Sheet</h2>
+              <button type="button" onClick={() => setShowImport(false)} className="rounded p-1 text-muted hover:bg-background hover:text-foreground"><X size={18} /></button>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">URL Google Sheet (Published)</label>
+                <input type="url" required value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml" className="input" />
+                <p className="mt-1 text-xs text-muted">Sheet harus sudah di-publish (File → Share → Publish to web). Tab dikenali otomatis: Sosmed, Kompetitor, 4M/Principles, Initiatives/Strategy, OKR.</p>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input type="checkbox" checked={importDryRun} onChange={(e) => setImportDryRun(e.target.checked)} className="h-4 w-4 rounded border-border" />
+                Dry run (validasi tanpa menulis data)
+              </label>
+              <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted">
+                Data lama per-client akan diganti dengan data sheet (replace). Pastikan tab pertama sheet berisi kolom <b>Client</b> untuk pemetaan.
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+              <button type="button" onClick={() => setShowImport(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
+              <button type="submit" disabled={importing} className="btn-primary">
+                {importing ? <><Loader2 size={14} className="animate-spin" /> Mengimpor...</> : <><FileSpreadsheet size={14} /> {importDryRun ? "Dry Run" : "Import"}</>}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Check-in Modal */}
       {checkinKr && (
