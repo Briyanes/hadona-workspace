@@ -5,10 +5,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Target, Plus, X, Pencil, Trash2, Loader2, TrendingUp, AlertCircle,
-  Building2, Share2, Swords, Layers, Zap, Users2, ChevronDown, FileSpreadsheet,
+  Building2, Share2, Swords, Layers, Zap, FileSpreadsheet, Palette,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
 import ClientStrategyWizard from "@/components/strategy/client-strategy-wizard";
+import { ClientPicker } from "@/components/strategy/client-picker";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -76,6 +77,7 @@ export default function StrategyPage() {
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [canvasIds, setCanvasIds] = useState<Set<string>>(new Set());
   const [showWizard, setShowWizard] = useState(false);
 
   // canvas data (client mode)
@@ -118,7 +120,7 @@ export default function StrategyPage() {
       const s = (json.summaries || []) as Array<{ sheet: string; imported: number; skipped?: number; error?: string }>;
       const lines = s.map((x) => `• ${x.sheet}: ${x.imported} masuk${x.skipped ? `, ${x.skipped} skip` : ""}${x.error ? ` (${x.error})` : ""}`);
       toast.success(importDryRun ? `Dry-run selesai:\n${lines.join("\n")}` : `Import selesai:\n${lines.join("\n")}`, { duration: 8000 });
-      if (!importDryRun) { setShowImport(false); setImportUrl(""); if (selectedClientId) loadCanvas(selectedClientId); loadClients(); }
+      if (!importDryRun) { setShowImport(false); setImportUrl(""); if (selectedClientId) loadCanvas(selectedClientId); loadClients(); loadCanvasIds(); }
     } catch (err) {
       toast.error(extractError(err));
     } finally {
@@ -129,6 +131,7 @@ export default function StrategyPage() {
   useEffect(() => {
     loadClients();
     loadTeam();
+    loadCanvasIds();
   }, []);
 
   useEffect(() => {
@@ -142,11 +145,31 @@ export default function StrategyPage() {
       if (error) throw error;
       const list = (data as unknown as Client[]) || [];
       setClients(list);
-      if (list.length && !selectedClientId) setSelectedClientId(list[0].id);
     } catch (err) {
       setError("Gagal memuat client: " + extractError(err));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadCanvasIds() {
+    try {
+      const [okrR, socR, compR, prinR, initR] = await Promise.all([
+        supabase.from("okrs").select("client_id").not("client_id", "is", null),
+        supabase.from("client_social_accounts").select("client_id"),
+        supabase.from("client_competitors").select("client_id"),
+        supabase.from("client_principles").select("client_id"),
+        supabase.from("client_initiatives").select("client_id"),
+      ]);
+      const ids = new Set<string>();
+      [okrR, socR, compR, prinR, initR].forEach((r) => {
+        ((r.data as unknown as { client_id: string | null }[]) || []).forEach((row) => {
+          if (row?.client_id) ids.add(row.client_id);
+        });
+      });
+      setCanvasIds(ids);
+    } catch {
+      // indikator canvas opsional — abaikan error
     }
   }
 
@@ -405,11 +428,11 @@ export default function StrategyPage() {
 
       {/* Tab switch */}
       <div className="flex gap-2">
-        <button onClick={() => setTab("client")} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", tab === "client" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>
-          🎨 Client Strategy Canvas
+        <button onClick={() => setTab("client")} className={cn("flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium", tab === "client" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>
+          <Palette size={13} /> Client Strategy Canvas
         </button>
-        <button onClick={() => setTab("agency")} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", tab === "agency" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>
-          🏢 Agency OKR
+        <button onClick={() => setTab("agency")} className={cn("flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium", tab === "agency" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>
+          <Building2 size={13} /> Agency OKR
         </button>
       </div>
 
@@ -426,15 +449,21 @@ export default function StrategyPage() {
       {tab === "client" ? (
         <>
           {/* Client selector */}
-          <div className="card flex flex-wrap items-center gap-2 p-3">
-            <span className="ml-1 text-xs font-medium text-muted">Client:</span>
-            {clients.length === 0 && <span className="text-xs text-muted">Belum ada client — klik "Client Baru" untuk membuat canvas pertama.</span>}
-            {clients.map((c) => (
-              <button key={c.id} onClick={() => setSelectedClientId(c.id)}
-                className={cn("rounded-full px-3 py-1.5 text-xs font-medium", selectedClientId === c.id ? "bg-primary text-white" : "bg-background text-muted hover:text-foreground")}>
-                {c.name}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-3">
+            <ClientPicker
+              clients={clients}
+              selectedId={selectedClientId}
+              onChange={setSelectedClientId}
+              canvasIds={canvasIds}
+            />
+            {clients.length > 0 && (
+              <span className="text-xs text-muted">
+                {canvasIds.size} dari {clients.length} client punya canvas
+              </span>
+            )}
+            {clients.length === 0 && (
+              <span className="text-xs text-muted">Belum ada client — klik "Client Baru" untuk membuat canvas pertama.</span>
+            )}
           </div>
 
           {selectedClient && (
@@ -573,6 +602,13 @@ export default function StrategyPage() {
               </div>
             </>
           )}
+          {!selectedClient && clients.length > 0 && (
+            <EmptyState
+              icon={Building2}
+              title="Pilih client untuk melihat strategy canvas"
+              description="Gunakan dropdown di atas — titik hijau menandakan client yang sudah punya data canvas, atau aktifkan filter “Hanya yang punya canvas”."
+            />
+          )}
         </>
       ) : (
         <>
@@ -611,9 +647,9 @@ export default function StrategyPage() {
 
           {/* Quarter Filter */}
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setQuarterFilter("all")} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", quarterFilter === "all" ? "bg-primary text-white" : "bg-surface text-muted hover:text-white")}>Semua Periode</button>
+            <button onClick={() => setQuarterFilter("all")} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", quarterFilter === "all" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>Semua Periode</button>
             {quarters.map((q) => (
-              <button key={q} onClick={() => setQuarterFilter(q)} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", quarterFilter === q ? "bg-primary text-white" : "bg-surface text-muted hover:text-white")}>{q}</button>
+              <button key={q} onClick={() => setQuarterFilter(q)} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", quarterFilter === q ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>{q}</button>
             ))}
           </div>
 
