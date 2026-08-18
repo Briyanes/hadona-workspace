@@ -183,7 +183,7 @@ if (iI >= 0) await importTab("Initiatives", csvs[iI], async (cid, rows) => {
   let n = 0, order = 0;
   for (const r of rows) {
     const desc = pick(r, "initiative", "inisiatif", "description", "deskripsi", "strategy", "strategi");
-    if (!desc) continue;
+    if (!desc || /^(description|deskripsi|initiative|inisiatif|strategy|strategi|no|tag|tipe|type)$/i.test(desc.trim())) continue;
     const tag = (pick(r, "tag", "tipe", "type") || "ADS").toUpperCase();
     const { error } = await supabase.from("client_initiatives").insert({
       client_id: cid, description: desc, tag: tag.includes("SM") ? "SM" : "ADS", status: "planned", sort_order: order++,

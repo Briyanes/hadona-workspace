@@ -335,7 +335,7 @@ export async function POST(request: NextRequest) {
       let order = 0;
       for (const r of rows) {
         const desc = pick(r, "initiative", "inisiatif", "description", "deskripsi", "strategy", "strategi");
-        if (!desc) continue;
+        if (!desc || /^(description|deskripsi|initiative|inisiatif|strategy|strategi|no|tag|tipe|type)$/i.test(desc.trim())) continue;
         const rawTag = (pick(r, "tag", "tipe", "type") || "ADS").toUpperCase();
         const { error } = await supabase.from("client_initiatives").insert({
           client_id: clientId,
