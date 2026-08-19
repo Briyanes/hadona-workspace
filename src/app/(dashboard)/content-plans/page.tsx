@@ -727,14 +727,14 @@ export default function ContentPlansPage() {
         </select>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center overflow-hidden rounded-lg border border-border">
+        <div className="flex h-9 items-stretch overflow-hidden rounded-md border border-border">
           <button
             onClick={() => switchView("card")}
             title="Tampilan Card"
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors",
+              "flex items-center gap-1 px-3 text-xs font-medium transition-colors",
               viewMode === "card"
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-white"
                 : "bg-surface text-muted hover:text-foreground"
             )}
           >
@@ -744,9 +744,9 @@ export default function ContentPlansPage() {
             onClick={() => switchView("table")}
             title="Tampilan Tabel"
             className={cn(
-              "flex items-center gap-1.5 border-l border-border px-3 py-2 text-xs font-medium transition-colors",
+              "flex items-center gap-1 px-3 text-xs font-medium transition-colors",
               viewMode === "table"
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-white"
                 : "bg-surface text-muted hover:text-foreground"
             )}
           >
