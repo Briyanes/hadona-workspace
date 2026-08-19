@@ -1,7 +1,15 @@
+/**
+ * Plan Detail Modal — dengan UX improvements:
+ * 1. View mode: konten panjang ("Slide N: ...") di-render sebagai accordion per-slide
+ * 2. View mode: teks panjang di-clamp dengan tombol "Lihat selengkapnya"
+ * 3. Edit mode: Pilar = multi-select chips (data sheet sering multi-value, mis. "Education, Emotional/Pain Point")
+ * 4. Edit mode: Konten = case-insensitive match + dukung nilai custom
+ * 5. Edit mode: textarea auto-grow + char counter (brief bisa 1000+ karakter)
+ */
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   X,
@@ -16,6 +24,7 @@ import {
   AlignLeft,
   Image as ImageIcon,
   Tag,
+  ChevronDown,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -76,18 +85,148 @@ function getProgressKey(value: string | null): string {
   return value.toLowerCase().replace(/\s+/g, "_");
 }
 
-// ── Empty Edit Form ───────────────────────────────────────
-const emptyEditForm = {
-  pilar: "",
-  konten: "",
-  copy: "",
-  details: "",
-  reference: "",
-  caption: "",
-  link_hasil: "",
-  tanggal_upload: "",
-  progress: "Proses Edit",
-};
+// ── Parse "Slide N: ..." menjadi segmen ────────────────────
+interface SlideSegment {
+  num: string;
+  body: string;
+}
+
+function parseSlides(text: string): { intro: string | null; items: SlideSegment[] } | null {
+  const regex = /\bslide\s*(\d+)\s*[:.]/gi;
+  const matches: RegExpExecArray[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) matches.push(m);
+  if (matches.length < 2) return null;
+  const intro = text.slice(0, matches[0].index ?? 0).trim();
+  const items = matches.map((m, i) => ({
+    num: m[1],
+    body: text
+      .slice(m.index + m[0].length, i + 1 < matches.length ? matches[i + 1].index : text.length)
+      .trim(),
+  }));
+  return { intro: intro || null, items };
+}
+
+// ── Expandable Text (clamp + "Lihat selengkapnya") ─────────
+function ExpandableText({ text, clampPx = 130 }: { text: string; clampPx?: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setOverflowing(el.scrollHeight > clampPx + 8);
+  }, [text, clampPx]);
+
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <p
+        ref={ref}
+        style={!expanded ? { maxHeight: clampPx, overflow: "hidden" } : undefined}
+        className="whitespace-pre-wrap break-words text-sm text-muted"
+      >
+        {text}
+      </p>
+      {overflowing && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-2 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          <ChevronDown size={12} className={cn("transition-transform", expanded && "rotate-180")} />
+          {expanded ? "Sembunyikan" : "Lihat selengkapnya"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Slide Breakdown (accordion per slide) ──────────────────
+function SlideBreakdown({ text }: { text: string }) {
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
+  const parsed = useMemo(() => parseSlides(text), [text]);
+
+  if (!parsed) return <ExpandableText text={text} />;
+
+  return (
+    <div data-slide className="space-y-2">
+      {parsed.intro && <ExpandableText text={parsed.intro} clampPx={80} />}
+      {parsed.items.map((s, i) => (
+        <div key={i} className="overflow-hidden rounded-lg border border-border bg-background">
+          <button
+            type="button"
+            onClick={() => setOpenIdx(openIdx === i ? null : i)}
+            className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-surface"
+          >
+            <span className="shrink-0 rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              Slide {s.num}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-xs text-muted">
+              {s.body.split("\n").find((l) => l.trim()) || "—"}
+            </span>
+            <ChevronDown
+              size={14}
+              className={cn("shrink-0 text-muted transition-transform", openIdx === i && "rotate-180")}
+            />
+          </button>
+          {openIdx === i && (
+            <div className="border-t border-border px-3 py-2.5">
+              <p className="whitespace-pre-wrap break-words text-sm text-muted">{s.body}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(s.body);
+                  toast.success(`Slide ${s.num} disalin!`);
+                }}
+                className="mt-2 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                <CopyIcon size={10} /> Copy slide ini
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Auto-grow Textarea + char counter ──────────────────────
+function AutoGrowTextarea({
+  value,
+  onChange,
+  placeholder,
+  maxPx = 340,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  maxPx?: number;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, maxPx) + "px";
+  }, [value, maxPx]);
+
+  return (
+    <div>
+      <textarea
+        ref={ref}
+        rows={3}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="input resize-y overflow-y-auto"
+      />
+      {value.length > 200 && (
+        <p className="mt-1 text-right text-xs text-muted">{value.length} karakter</p>
+      )}
+    </div>
+  );
+}
 
 interface PlanDetailModalProps {
   plan: ContentPlan;
@@ -129,6 +268,39 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
     tanggal_upload: plan.tanggal_upload || "",
     progress: plan.progress || "Proses Edit",
   });
+
+  // ── Pilar multi-select (data sheet sering multi-value) ──
+  const selectedPilars = useMemo(
+    () =>
+      editForm.pilar
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [editForm.pilar]
+  );
+
+  const pilarChoices = useMemo(() => {
+    const extras = selectedPilars.filter(
+      (p) => !PILAR_OPTIONS.some((o) => o.toLowerCase() === p.toLowerCase())
+    );
+    return [...PILAR_OPTIONS, ...extras];
+  }, [selectedPilars]);
+
+  function togglePilar(p: string) {
+    const exists = selectedPilars.find((x) => x.toLowerCase() === p.toLowerCase());
+    const next = exists
+      ? selectedPilars.filter((x) => x.toLowerCase() !== p.toLowerCase())
+      : [...selectedPilars, p];
+    setEditForm({ ...editForm, pilar: next.join(", ") });
+  }
+
+  // ── Konten: case-insensitive match + nilai custom ──
+  const kontenChoices = useMemo(() => {
+    const v = editForm.konten.trim();
+    const canonical = KONTEN_OPTIONS.find((k) => k.toLowerCase() === v.toLowerCase());
+    if (v && !canonical) return [v, ...KONTEN_OPTIONS];
+    return KONTEN_OPTIONS;
+  }, [editForm.konten]);
 
   async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault();
@@ -249,38 +421,51 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
           {isEditing ? (
             /* ==================== EDIT MODE ==================== */
             <form onSubmit={handleSaveEdit} className="space-y-4">
-              {/* Pilar + Konten */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Pilar</label>
-                  <select
-                    value={editForm.pilar}
-                    onChange={(e) => setEditForm({ ...editForm, pilar: e.target.value })}
-                    className="input"
-                  >
-                    <option value="">— Pilih Pilar —</option>
-                    {PILAR_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
+              {/* Pilar: multi-select chips */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Pilar <span className="text-xs font-normal text-muted">(bisa pilih lebih dari satu)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {pilarChoices.map((p) => {
+                    const active = selectedPilars.some((x) => x.toLowerCase() === p.toLowerCase());
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => togglePilar(p)}
+                        className={cn(
+                          "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                          active
+                            ? "bg-primary/15 text-primary ring-1 ring-primary/40"
+                            : "bg-background text-muted hover:text-foreground"
+                        )}
+                      >
                         {p}
-                      </option>
-                    ))}
-                  </select>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Konten</label>
-                  <select
-                    value={editForm.konten}
-                    onChange={(e) => setEditForm({ ...editForm, konten: e.target.value })}
-                    className="input"
-                  >
-                    <option value="">— Pilih Konten —</option>
-                    {KONTEN_OPTIONS.map((k) => (
-                      <option key={k} value={k}>
-                        {k}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {selectedPilars.length > 0 && (
+                  <p className="mt-1.5 text-xs text-muted">Tersimpan sebagai: {selectedPilars.join(", ")}</p>
+                )}
+              </div>
+
+              {/* Konten */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Konten</label>
+                <select
+                  value={editForm.konten}
+                  onChange={(e) => setEditForm({ ...editForm, konten: e.target.value })}
+                  className="input"
+                >
+                  <option value="">— Pilih Konten —</option>
+                  {kontenChoices.map((k) => (
+                    <option key={k} value={k}>
+                      {k}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Copy */}
@@ -298,12 +483,10 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               {/* Details */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Details</label>
-                <textarea
-                  rows={2}
+                <AutoGrowTextarea
                   value={editForm.details}
-                  onChange={(e) => setEditForm({ ...editForm, details: e.target.value })}
+                  onChange={(v) => setEditForm({ ...editForm, details: v })}
                   placeholder="Detail konten, brief, atau instruksi..."
-                  className="input resize-none"
                 />
               </div>
 
@@ -322,12 +505,10 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               {/* Caption */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Caption</label>
-                <textarea
-                  rows={3}
+                <AutoGrowTextarea
                   value={editForm.caption}
-                  onChange={(e) => setEditForm({ ...editForm, caption: e.target.value })}
+                  onChange={(v) => setEditForm({ ...editForm, caption: v })}
                   placeholder="Caption untuk konten..."
-                  className="input resize-none"
                 />
               </div>
 
@@ -412,13 +593,13 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
 
               {/* Meta Info Grid */}
               <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-background p-3 sm:gap-3 sm:p-4 md:grid-cols-4">
-                <div>
+                <div className="min-w-0">
                   <p className="flex items-center gap-1 text-xs text-muted">
                     <Tag size={11} /> Pilar
                   </p>
-                  <p className="mt-0.5 text-sm font-medium text-foreground">{plan.pilar || "—"}</p>
+                  <p className="mt-0.5 break-words text-sm font-medium text-foreground">{plan.pilar || "—"}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="flex items-center gap-1 text-xs text-muted">
                     <ImageIcon size={11} /> Konten
                   </p>
@@ -466,13 +647,11 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
                       <CopyIcon size={10} /> Copy
                     </button>
                   </div>
-                  <div className="rounded-lg border border-border bg-background p-3">
-                    <p className="whitespace-pre-wrap text-sm text-muted">{plan.copy}</p>
-                  </div>
+                  <ExpandableText text={plan.copy} clampPx={100} />
                 </div>
               )}
 
-              {/* Details */}
+              {/* Details — accordion per slide jika format "Slide N: ..." */}
               {plan.details && (
                 <div>
                   <div className="mb-1 flex items-center justify-between">
@@ -486,9 +665,7 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
                       <CopyIcon size={10} /> Copy
                     </button>
                   </div>
-                  <div className="rounded-lg border border-border bg-background p-3">
-                    <p className="whitespace-pre-wrap text-sm text-muted">{plan.details}</p>
-                  </div>
+                  <SlideBreakdown text={plan.details} />
                 </div>
               )}
 
@@ -506,9 +683,7 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
                       <CopyIcon size={10} /> Copy
                     </button>
                   </div>
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                    <p className="whitespace-pre-wrap text-sm text-muted">{plan.caption}</p>
-                  </div>
+                  <ExpandableText text={plan.caption} clampPx={100} />
                 </div>
               )}
 
