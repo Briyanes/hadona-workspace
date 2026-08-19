@@ -68,6 +68,7 @@ const DIVISION_TABS = [
   { label: "Editor", value: "Editor" },
   { label: "Production", value: "Production" },
   { label: "Social Media", value: "Social Media Manager" },
+  { label: "Advertiser", value: "Advertiser" },
 ];
 
 export function TaskBoard({
