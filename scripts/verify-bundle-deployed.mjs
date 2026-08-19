@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 const BASE_URL = "https://workspace.hadona.id";
 const EMAIL = "admin@hadona.id";
 const PASSWORD = "@Yogyakarta2026";
-const MARKERS = ["Lihat selengkapnya", "Detail Content Plan", "content-plans-view", "Tampilan Card"];
+const MARKERS = ["appearance-none rounded-full border-0 py-1 pl-2.5 pr-7", "rounded-full px-3 py-1 text-xs font-medium transition-colors"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
@@ -28,15 +28,33 @@ async function main() {
   await sleep(4000);
   await page.goto(`${BASE_URL}/content-plans`, { waitUntil: "networkidle", timeout: 30000 });
   await sleep(4000);
+  console.log(`🌐 URL sekarang: ${page.url()}`);
+  if (page.url().includes("/login")) {
+    console.error("💥 LOGIN GAGAL — chunk content-plans tidak dimuat. Password salah / auth berubah.");
+    await page.screenshot({ path: "scripts/screenshots/verify-login-fail.png" });
+    await browser.close();
+    process.exit(1);
+  }
+  const title = await page.locator("h1, h2").first().textContent().catch(() => "-");
+  console.log(`📄 Judul halaman: ${title}`);
 
   // buka modal supaya lazy chunk modal ikut dimuat
   const row = page.locator("tr", { hasText: /SHUMI|Problem Aware/i }).first();
   if (await row.count()) {
     await row.click();
     await sleep(2500);
+    console.log("✅ Modal dibuka (row ditemukan)");
+  } else {
+    console.log("⚠️ Row tidak ditemukan (mungkin view Card default / data beda)");
   }
 
+  // DOM check langsung: badge pill select di table
+  const domPill = await page.locator("select[title='Ubah progress']").count();
+  console.log(`🖱️ select 'Ubah progress' di DOM: ${domPill}`);
+
   console.log(`📦 Chunk JS dimuat: ${scripts.size}`);
+  const cpChunks = [...scripts].filter((u) => /content-plans|page|layout/.test(u)).slice(0, 8);
+  console.log("🎯 Chunk kandidat:", cpChunks.map((u) => u.split("/").pop()).join(", "));
   let found = {};
   for (const url of scripts) {
     try {
@@ -50,7 +68,10 @@ async function main() {
   for (const m of MARKERS) {
     console.log(`  "${m}": ${found[m] ? `DITEMUKAN di ${found[m]} chunk ✅` : "TIDAK ADA ❌"}`);
   }
-  const verdict = found["content-plans-view"] ? "DEPLOY CARD/TABLE TOGGLE SUDAH LIVE ✅" : (found["Lihat selengkapnya"] ? "Deploy sebelumnya live, toggle Card/Table BELUM (deploy baru masih jalan) ⏳" : "PRODUKSI MASIH KODE LAMA ⏳");
+  const allFound = MARKERS.every((m) => found[m]);
+  const verdict = allFound
+    ? "DEPLOY c32af26 (badge pill select + card badge) SUDAH LIVE DI PRODUCTION ✅"
+    : "SEBAGIAN MARKER TIDAK ADA — cek chunk lazy yang belum dimuat ⚠️";
   console.log(`\n🏁 VERDICT: ${verdict}`);
   await browser.close();
 }
