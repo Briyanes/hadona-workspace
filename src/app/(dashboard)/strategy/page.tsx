@@ -67,6 +67,20 @@ const fmtNum = (n: number | null | undefined) => {
   return n.toString();
 };
 
+// Render text dengan URL (mis. link deck Canva/Drive di notes) menjadi hyperlink clickable
+function renderWithLinks(text: string) {
+  const parts = text.split(/(https?:\/\/[^\s)]+)/gi);
+  return parts.map((p, i) =>
+    /^https?:\/\//i.test(p) ? (
+      <a key={i} href={p} target="_blank" rel="noopener noreferrer" className="break-all font-medium text-primary underline underline-offset-2 hover:text-primary/80">
+        {p}
+      </a>
+    ) : (
+      <span key={i}>{p}</span>
+    )
+  );
+}
+
 export default function StrategyPage() {
   const supabase = createClient();
   const [tab, setTab] = useState<"client" | "agency">("client");
@@ -474,7 +488,7 @@ export default function StrategyPage() {
                   <div className="flex items-center gap-2 text-muted"><Building2 size={14} /><span className="text-xs font-semibold uppercase">Profil</span></div>
                   <h3 className="mt-2 font-bold text-foreground">{selectedClient.name}</h3>
                   {selectedClient.location && <p className="mt-1 text-xs text-muted">📍 {selectedClient.location}</p>}
-                  {selectedClient.notes && <p className="mt-2 text-xs leading-relaxed text-muted">{selectedClient.notes}</p>}
+                  {selectedClient.notes && <p className="mt-2 text-xs leading-relaxed text-muted">{renderWithLinks(selectedClient.notes)}</p>}
                   {selectedClient.services?.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {selectedClient.services.map((s) => <span key={s} className="badge bg-primary/10 text-primary text-[10px]">{s}</span>)}

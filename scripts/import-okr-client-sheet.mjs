@@ -340,11 +340,16 @@ for (const tab of tabs) {
       );
       if (error) console.error(`    ❌ competitors: ${error.message}`);
     }
+    // Update clients: services + notes (Client Profile description, termasuk link deck Canva/Drive)
     const svcRaw = parsed.services || parsed.profile?.services || "";
     const svcArr = svcRaw.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
-    if (svcArr.length) {
-      const { error } = await supabase.from("clients").update({ services: svcArr }).eq("id", client.id);
-      if (error) console.error(`    ❌ services: ${error.message}`);
+    const profileDesc = (parsed.profile?.description || "").trim();
+    const clientUpdate = {};
+    if (svcArr.length) clientUpdate.services = svcArr;
+    if (profileDesc) clientUpdate.notes = profileDesc;
+    if (Object.keys(clientUpdate).length) {
+      const { error } = await supabase.from("clients").update(clientUpdate).eq("id", client.id);
+      if (error) console.error(`    ❌ clients update (services/notes): ${error.message}`);
     }
   } else if (!dryRun && client && dup) {
     console.log(`    ⏭️  Skip (duplikat match ke client yang sama dengan tab sebelumnya)`);
