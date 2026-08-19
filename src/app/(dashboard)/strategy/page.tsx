@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Target, Plus, X, Pencil, Trash2, Loader2, TrendingUp, AlertCircle,
-  Building2, Share2, Swords, Layers, Zap, FileSpreadsheet, Palette,
+  Building2, Share2, Swords, Layers, Zap, FileSpreadsheet, Palette, ExternalLink,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
 import ClientStrategyWizard from "@/components/strategy/client-strategy-wizard";
@@ -36,9 +36,21 @@ interface OKR {
 interface TeamMember { id: string; full_name: string | null }
 interface Client { id: string; name: string; notes: string | null; location: string | null; services: string[] }
 interface SocialAcc { id: string; platform: string; handle: string | null; url: string | null; followers: number; ads_connected: boolean }
-interface Competitor { id: string; name: string; platform: string | null; followers: number; engagement_rate: number | null; posting_freq: string | null; positioning: string | null; weakness: string | null }
+interface Competitor { id: string; name: string; platform: string | null; handle: string | null; followers: number; engagement_rate: number | null; posting_freq: string | null; positioning: string | null; weakness: string | null }
 interface Principle { id: string; category: string; description: string }
 interface Initiative { id: string; description: string; tag: string; status: string; okr_id: string | null }
+
+const competitorUrl = (platform: string | null, handle: string | null): string | null => {
+  if (!handle) return null;
+  switch (platform) {
+    case "instagram": return `https://instagram.com/${handle}`;
+    case "tiktok": return `https://tiktok.com/@${handle}`;
+    case "facebook": return `https://facebook.com/${handle}`;
+    case "youtube": return `https://youtube.com/@${handle}`;
+    case "x": return `https://x.com/${handle}`;
+    default: return null;
+  }
+};
 
 const emptyForm = {
   objective: "", key_result: "", quarter: "Q1", year: new Date().getFullYear(),
@@ -544,8 +556,14 @@ export default function StrategyPage() {
                         <div key={c.id} className="rounded-md border border-border bg-background px-3 py-2">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold text-foreground">{c.name}</p>
-                            <span className="text-[10px] text-muted capitalize">{c.platform || "—"} · {fmtNum(c.followers)} foll {c.engagement_rate ? `· ER ${c.engagement_rate}%` : ""}</span>
+                            {competitorUrl(c.platform, c.handle) && (
+                              <a href={competitorUrl(c.platform, c.handle)!} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted transition-colors hover:border-primary hover:text-primary">
+                                <ExternalLink size={10} />
+                                Profil
+                              </a>
+                            )}
                           </div>
+                          <p className="mt-1 text-[10px] text-muted capitalize">{c.platform || "—"}{c.followers > 0 ? ` · ${fmtNum(c.followers)} foll` : ""}{c.engagement_rate ? ` · ER ${c.engagement_rate}%` : ""}</p>
                           {(c.positioning || c.weakness) && (
                             <p className="mt-1 text-[11px] text-muted">
                               {c.positioning && <span className="text-success">+ {c.positioning}</span>}
