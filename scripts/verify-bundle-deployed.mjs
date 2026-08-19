@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 const BASE_URL = "https://workspace.hadona.id";
 const EMAIL = "admin@hadona.id";
 const PASSWORD = "@Yogyakarta2026";
-const MARKERS = ["Lihat selengkapnya", "data-slide", "Detail Content Plan"];
+const MARKERS = ["Lihat selengkapnya", "Detail Content Plan", "content-plans-view", "Tampilan Card"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
@@ -50,7 +50,7 @@ async function main() {
   for (const m of MARKERS) {
     console.log(`  "${m}": ${found[m] ? `DITEMUKAN di ${found[m]} chunk ✅` : "TIDAK ADA ❌"}`);
   }
-  const verdict = found["Lihat selengkapnya"] ? "DEPLOY BARU SUDAH LIVE ✅" : "PRODUKSI MASIH KODE LAMA (deploy belum selesai/gagal) ⏳";
+  const verdict = found["content-plans-view"] ? "DEPLOY CARD/TABLE TOGGLE SUDAH LIVE ✅" : (found["Lihat selengkapnya"] ? "Deploy sebelumnya live, toggle Card/Table BELUM (deploy baru masih jalan) ⏳" : "PRODUKSI MASIH KODE LAMA ⏳");
   console.log(`\n🏁 VERDICT: ${verdict}`);
   await browser.close();
 }
