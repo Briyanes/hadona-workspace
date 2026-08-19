@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClientIP, checkRateLimit } from "@/lib/rate-limit";
+import { stripUrls } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
       ...tasks.map((t) => ({
         type: "task" as const,
         id: t.id,
-        title: t.title,
+        title: stripUrls(t.title) || "(Link)",
         subtitle: `${t.status}${t.priority ? ` · ${t.priority}` : ""}`,
         href: `/tasks`,
       })),

@@ -93,6 +93,29 @@ export function TaskBoard({
   // Active division filter (internal state, initialized from prop)
   const [activeDivision, setActiveDivision] = useState<string | null>(division);
 
+  // Sync active division with URL (?division=...) — shareable links + refresh-safe.
+  // Only on the main board (division prop unset); division-specific pages hide the tabs.
+  useEffect(() => {
+    if (division) return;
+    const syncFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const div = params.get("division");
+      setActiveDivision(div && DIVISION_TABS.some((t) => t.value === div) ? div : null);
+    };
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, [division]);
+
+  // Update URL when division tab changes (pushState keeps browser history working)
+  function handleDivisionTabClick(value: string | null) {
+    setActiveDivision(value);
+    const url = new URL(window.location.href);
+    if (value) url.searchParams.set("division", value);
+    else url.searchParams.delete("division");
+    window.history.pushState(null, "", url.toString());
+  }
+
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterClient, setFilterClient] = useState("all");
@@ -508,13 +531,13 @@ export function TaskBoard({
 
       {/* Division Filter Tabs */}
       {!division && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-border pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {DIVISION_TABS.map((tab) => (
             <button
               key={tab.label}
-              onClick={() => setActiveDivision(tab.value)}
+              onClick={() => handleDivisionTabClick(tab.value)}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                "flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 activeDivision === tab.value
                   ? "bg-primary text-white"
                   : "bg-surface text-muted hover:bg-background hover:text-foreground"

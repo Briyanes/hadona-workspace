@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { cn, formatIDR } from "@/lib/utils";
+import { cn, formatIDR, stripUrls } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface CalendarEvent {
@@ -234,7 +234,7 @@ export default function CalendarPage() {
         evts.push({
           id: `task-${t.id}`,
           date: t.due_date,
-          title: t.title,
+          title: stripUrls(t.title) || "(Link)",
           type: "task",
           status: t.status,
           clientName: t.client?.name,

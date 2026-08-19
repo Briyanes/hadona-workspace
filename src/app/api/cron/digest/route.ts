@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { digestEmailTemplate, sendEmail } from "@/lib/email-templates";
 import { verifyCronSecret } from "@/lib/cron-auth";
+import { stripUrls } from "@/lib/utils";
 
 /**
  * POST /api/cron/digest
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
         }>) || [];
 
         const myTasks = userTasks.map((t) => ({
-          title: t.title,
+          title: stripUrls(t.title) || "(Link)",
           client: t.client?.name || undefined,
           dueDate: t.due_date || undefined,
           priority: t.priority,
