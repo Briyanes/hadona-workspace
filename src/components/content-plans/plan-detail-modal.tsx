@@ -40,6 +40,7 @@ interface ContentPlan {
   client?: { name: string };
   pilar: string | null;
   konten: string | null;
+  tema: string | null;
   copy: string | null;
   details: string | null;
   reference: string | null;
@@ -65,24 +66,31 @@ const PILAR_OPTIONS = [
 
 const KONTEN_OPTIONS = ["Reels", "Single Image", "Carousel", "Mix Type"];
 
-const PROGRESS_OPTIONS = ["Done", "Proses Edit", "Cancel"];
+const PROGRESS_OPTIONS = ["Draft", "Proses Edit", "Done", "Cancel"];
 
 // ── Progress Badge Colors ─────────────────────────────────
 const progressColors: Record<string, string> = {
+  draft: "bg-muted/20 text-muted",
   done: "bg-success/20 text-success",
   proses_edit: "bg-warning/20 text-warning",
   cancel: "bg-danger/20 text-danger",
 };
 
 const progressLabels: Record<string, string> = {
+  draft: "Draft",
   done: "Done",
   proses_edit: "Proses Edit",
   cancel: "Cancel",
 };
 
 function getProgressKey(value: string | null): string {
-  if (!value) return "proses_edit";
-  return value.toLowerCase().replace(/\s+/g, "_");
+  if (!value) return "draft";
+  const lower = value.toLowerCase().trim().replace(/\s+/g, "_");
+  if (["done", "selesai", "wrapped", "terpublish", "published"].includes(lower)) return "done";
+  if (["cancel", "cancelled", "canceled", "dibatalkan"].includes(lower)) return "cancel";
+  if (["proses_edit", "editing", "on_edit"].includes(lower)) return "proses_edit";
+  if (["draft", "idea", "planning", "rencana"].includes(lower)) return "draft";
+  return lower;
 }
 
 // ── Parse "Slide N: ..." menjadi segmen ────────────────────
@@ -266,7 +274,7 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
     caption: plan.caption || "",
     link_hasil: plan.link_hasil || "",
     tanggal_upload: plan.tanggal_upload || "",
-    progress: plan.progress || "Proses Edit",
+    progress: plan.progress || "Draft",
   });
 
   // ── Pilar multi-select (data sheet sering multi-value) ──
@@ -317,11 +325,57 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
           caption: editForm.caption.trim() || null,
           link_hasil: editForm.link_hasil.trim() || null,
           tanggal_upload: editForm.tanggal_upload || null,
-          progress: editForm.progress,
+          progress: getProgressKey(editForm.progress),
         } as never)
         .eq("id", plan.id);
 
       if (error) throw error;
+
+      // Workflow trigger: Proses Edit = buat task editor; Done = selesaikan task
+      // Link plan ↔ task via tasks.sheet_row_id (tanpa migration tambahan)
+      const newKey = getProgressKey(editForm.progress);
+      const linkKey = `content_plan:${plan.id}`;
+      if (newKey === "proses_edit") {
+        const { data: existing } = await supabase
+          .from("tasks")
+          .select("id")
+          .eq("sheet_row_id", linkKey)
+          .limit(1)
+          .maybeSingle();
+        if (!existing) {
+          const { data: userData } = await supabase.auth.getUser();
+          const descParts: string[] = [];
+          if (plan.pilar) descParts.push(`Pilar: ${plan.pilar}`);
+          if (plan.konten) descParts.push(`Konten: ${plan.konten}`);
+          if (plan.tema) descParts.push(`Tema: ${plan.tema}`);
+          if (editForm.details) descParts.push("", "Details:", editForm.details);
+          if (editForm.reference) descParts.push("", `Reference: ${editForm.reference}`);
+          const { data: task, error: taskError } = await supabase
+            .from("tasks")
+            .insert({
+              title: `[Content] ${plan.client?.name || "Client"} — ${plan.tema || editForm.konten || "Content Plan"}`,
+              description: descParts.join("\n") || null,
+              client_id: plan.client_id || null,
+              priority: "medium",
+              status: "todo",
+              division: "Content Production",
+              due_date: editForm.tanggal_upload || null,
+              created_by: userData.user?.id,
+              sheet_row_id: linkKey,
+            } as never)
+            .select("id")
+            .single();
+          if (!taskError && task) {
+            toast.success("Task editor dibuat di Task Manager (Content Production)");
+          }
+        }
+      } else if (newKey === "done") {
+        const { error: taskError } = await supabase
+          .from("tasks")
+          .update({ status: "done" } as never)
+          .eq("sheet_row_id", linkKey);
+        if (!taskError) toast.success("Task editor ditandai selesai");
+      }
 
       toast.success("Content plan diupdate!");
       setIsEditing(false);

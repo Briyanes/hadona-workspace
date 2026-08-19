@@ -70,28 +70,31 @@ const PILAR_OPTIONS = [
 
 const KONTEN_OPTIONS = ["Reels", "Single Image", "Carousel", "Mix Type"];
 
-const PROGRESS_OPTIONS = ["Done", "Proses Edit", "Cancel"];
+const PROGRESS_OPTIONS = ["Draft", "Proses Edit", "Done", "Cancel"];
 
 // ── Progress Badge Colors ─────────────────────────────────
 const progressColors: Record<string, string> = {
+  draft: "bg-muted/20 text-muted",
   done: "bg-success/20 text-success",
   proses_edit: "bg-warning/20 text-warning",
   cancel: "bg-danger/20 text-danger",
 };
 
 const progressLabels: Record<string, string> = {
+  draft: "Draft",
   done: "Done",
   proses_edit: "Proses Edit",
   cancel: "Cancel",
 };
 
 function getProgressKey(value: string | null): string {
-  if (!value) return "proses_edit";
+  if (!value) return "draft";
   const lower = value.toLowerCase().trim().replace(/\s+/g, "_");
   // Normalize legacy / sheet labels (Done, Wrapped, Published, etc.)
   if (["done", "selesai", "wrapped", "terpublish", "published"].includes(lower)) return "done";
   if (["cancel", "cancelled", "canceled", "dibatalkan"].includes(lower)) return "cancel";
   if (["proses_edit", "editing", "on_edit"].includes(lower)) return "proses_edit";
+  if (["draft", "idea", "planning", "rencana"].includes(lower)) return "draft";
   return lower;
 }
 
@@ -127,7 +130,7 @@ const emptyForm = {
   thumbnail: "",
   link_hasil: "",
   tanggal_upload: "",
-  progress: "Proses Edit",
+  progress: "Draft",
   // Keep old fields for backward compat
   plan_url: "",
   notes: "",
@@ -231,7 +234,7 @@ export default function ContentPlansPage() {
       thumbnail: plan.thumbnail || "",
       link_hasil: plan.link_hasil || "",
       tanggal_upload: plan.tanggal_upload || "",
-      progress: plan.progress || "Proses Edit",
+      progress: plan.progress || "Draft",
       plan_url: plan.plan_url || "",
       notes: plan.notes || "",
       services: plan.services || [],
@@ -283,14 +286,18 @@ export default function ContentPlansPage() {
 
       // Fallback: strip columns that don't exist in DB yet (pre-migration-v88)
       // PostgREST error: "Could not find the 'tema' column of 'content_plans'..."
-      const persist = async (): Promise<{ error: string | null; skipped: string[] }> => {
+      const persist = async (): Promise<{ error: string | null; skipped: string[]; id?: string }> => {
         const current: Record<string, unknown> = { ...payload };
         const skipped: string[] = [];
         for (let i = 0; i <= Object.keys(payload).length; i++) {
           const res = editingId
             ? await supabase.from("content_plans").update(current as never).eq("id", editingId)
-            : await supabase.from("content_plans").insert(current as never);
-          if (!res.error) return { error: null, skipped };
+            : await supabase.from("content_plans").insert(current as never).select("id");
+          if (!res.error) {
+            const rows = (res.data as unknown as { id?: string }[]) || [];
+            const inserted = !editingId && rows.length > 0 ? rows[0] : null;
+            return { error: null, skipped, id: editingId || inserted?.id };
+          }
           const m = res.error.message.match(/Could not find the '([^']+)' column/);
           if (m && m[1] in current) {
             skipped.push(m[1]);
@@ -302,12 +309,48 @@ export default function ContentPlansPage() {
         return { error: "Gagal menyimpan setelah beberapa percobaan", skipped };
       };
 
-      const { error: saveError, skipped } = await persist();
+      const { error: saveError, skipped, id: savedId } = await persist();
       if (saveError) throw new Error(saveError);
       toast.success(editingId ? "Content plan diupdate!" : "Content plan dibuat!");
       if (skipped.length > 0) {
         toast.warning(
           `Tersimpan, tapi kolom "${skipped.join(", ")}" dilewati (belum ada di database). Jalankan supabase/migration-v88.sql di Supabase SQL Editor agar tersimpan penuh.`
+        );
+      }
+
+      // Workflow trigger: Proses Edit = buat task editor; Done = selesaikan task
+      const newKey = getProgressKey(form.progress);
+      const clientName = clients.find((c) => c.id === form.client_id)?.name;
+      const oldPlan = editingId ? plans.find((p) => p.id === editingId) : null;
+      if (newKey === "proses_edit") {
+        await syncTaskForPlan(
+          {
+            id: editingId || savedId || "",
+            client_id: form.client_id,
+            client_name: clientName,
+            pilar: payload.pilar,
+            konten: payload.konten,
+            tema: payload.tema,
+            details: payload.details,
+            reference: payload.reference,
+            tanggal_upload: payload.tanggal_upload,
+          },
+          newKey
+        );
+      } else if (oldPlan) {
+        await syncTaskForPlan(
+          {
+            id: oldPlan.id,
+            client_id: oldPlan.client_id,
+            client_name: oldPlan.client?.name,
+            pilar: oldPlan.pilar,
+            konten: oldPlan.konten,
+            tema: oldPlan.tema,
+            details: oldPlan.details,
+            reference: oldPlan.reference,
+            tanggal_upload: oldPlan.tanggal_upload,
+          },
+          newKey
         );
       }
 
@@ -339,19 +382,90 @@ export default function ContentPlansPage() {
   }
 
   // ── Quick inline progress update ─────────────────────────
-  async function quickUpdateProgress(id: string, progress: string) {
+  async function quickUpdateProgress(plan: ContentPlan, progress: string) {
+    const key = getProgressKey(progress);
     try {
       const { error } = await supabase
         .from("content_plans")
-        .update({ progress } as never)
-        .eq("id", id);
+        .update({ progress: key } as never)
+        .eq("id", plan.id);
       if (error) throw error;
       toast.success("Progress diperbarui");
+      // Workflow: Proses Edit → buat task editor; Done → selesaikan task
+      await syncTaskForPlan(plan, key);
       loadPlans();
     } catch (err) {
       const msg = err instanceof Error ? err.message : (err as { message?: string })?.message || "Unknown error";
       console.error("Quick update error:", err);
       toast.error("Gagal update progress: " + msg);
+    }
+  }
+
+  // ── Workflow trigger: sinkronisasi plan → Task Manager ──
+  // Proses Edit → buat task editor (division: Content Production)
+  // Done → task editor ikut selesai
+  async function syncTaskForPlan(
+    plan: {
+      id: string;
+      client_id: string;
+      client_name?: string;
+      pilar?: string | null;
+      konten?: string | null;
+      tema?: string | null;
+      details?: string | null;
+      reference?: string | null;
+      tanggal_upload?: string | null;
+    },
+    newKey: string
+  ) {
+    try {
+      if (!plan.id) return;
+      // Link plan ↔ task via tasks.sheet_row_id (kolom sudah ada — tanpa migration)
+      const linkKey = `content_plan:${plan.id}`;
+      if (newKey === "proses_edit") {
+        // Hindari duplikat task editor untuk plan yang sama
+        const { data: existing } = await supabase
+          .from("tasks")
+          .select("id")
+          .eq("sheet_row_id", linkKey)
+          .limit(1)
+          .maybeSingle();
+        if (existing) return;
+        const { data: userData } = await supabase.auth.getUser();
+        const descParts: string[] = [];
+        if (plan.pilar) descParts.push(`Pilar: ${plan.pilar}`);
+        if (plan.konten) descParts.push(`Konten: ${plan.konten}`);
+        if (plan.tema) descParts.push(`Tema: ${plan.tema}`);
+        if (plan.details) descParts.push("", "Details:", plan.details);
+        if (plan.reference) descParts.push("", `Reference: ${plan.reference}`);
+        const { data: task, error } = await supabase
+          .from("tasks")
+          .insert({
+            title: `[Content] ${plan.client_name || "Client"} — ${plan.tema || plan.konten || "Content Plan"}`,
+            description: descParts.join("\n") || null,
+            client_id: plan.client_id || null,
+            priority: "medium",
+            status: "todo",
+            division: "Content Production",
+            due_date: plan.tanggal_upload || null,
+            created_by: userData.user?.id,
+            sheet_row_id: linkKey,
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (task) toast.success("Task editor dibuat di Task Manager (Content Production)");
+      } else if (newKey === "done") {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ status: "done" } as never)
+          .eq("sheet_row_id", linkKey);
+        if (!error) toast.success("Task editor ditandai selesai");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("Sync task error:", err);
+      toast.warning("Plan tersimpan, tapi sinkronisasi task editor gagal: " + msg);
     }
   }
 
@@ -397,12 +511,14 @@ export default function ContentPlansPage() {
   const doneCount = plans.filter((p) => getProgressKey(p.progress) === "done").length;
   const prosesCount = plans.filter((p) => getProgressKey(p.progress) === "proses_edit").length;
   const cancelCount = plans.filter((p) => getProgressKey(p.progress) === "cancel").length;
+  const draftCount = plans.filter((p) => getProgressKey(p.progress) === "draft").length;
 
   const statCards = [
     { label: "Total Plans", value: totalPlans, icon: CalendarDays, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Done", value: doneCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+    { label: "Draft", value: draftCount, icon: FileText, color: "text-muted", bg: "bg-muted/10" },
     { label: "Proses Edit", value: prosesCount, icon: Clock, color: "text-warning", bg: "bg-warning/10" },
-    { label: "Cancel", value: cancelCount, icon: FileText, color: "text-danger", bg: "bg-danger/10" },
+    { label: "Done", value: doneCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
+    { label: "Cancel", value: cancelCount, icon: X, color: "text-danger", bg: "bg-danger/10" },
   ];
 
   // ── Plan Card (dipakai bersama: desktop card grid + mobile list) ──
@@ -421,13 +537,14 @@ export default function ContentPlansPage() {
               {formatDate(p.month + "-01", { month: "long", year: "numeric" })}
             </p>
           </div>
-          <span className={cn("badge", progressColors[pKey] || progressColors.proses_edit)}>
-            {progressLabels[pKey] || p.progress || "Proses Edit"}
+          <span className={cn("badge", progressColors[pKey] || progressColors.draft)}>
+            {progressLabels[pKey] || p.progress || "Draft"}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        {/* Info inti: stack vertikal rata kiri (Pilar → Konten → Tema → Tgl Upload) */}
+        <div className="space-y-1.5 text-xs">
           {p.pilar && (
-            <div className="col-span-2">
+            <div>
               <span className="text-muted">Pilar:</span>{" "}
               <span className="font-medium text-foreground">{p.pilar}</span>
             </div>
@@ -557,7 +674,7 @@ export default function ContentPlansPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -602,8 +719,9 @@ export default function ContentPlansPage() {
         </select>
         <select value={progressFilter} onChange={(e) => setProgressFilter(e.target.value)} className="input w-auto">
           <option value="all">Semua Progress</option>
-          <option value="done">Done</option>
+          <option value="draft">Draft</option>
           <option value="proses_edit">Proses Edit</option>
+          <option value="done">Done</option>
           <option value="cancel">Cancel</option>
         </select>
 
@@ -674,6 +792,7 @@ export default function ContentPlansPage() {
           <div className="hidden max-h-[70dvh] overflow-auto rounded-lg border border-border lg:block">
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 z-10 bg-surface">
+                {/* Table ringkas — detail lengkap (Copy/Details/Caption/Reference/Link) ada di modal klik baris */}
                 <tr className="border-b border-border text-xs text-muted">
                   <th className="px-3 py-3 font-medium">No</th>
                   <th className="px-3 py-3 font-medium">Client</th>
@@ -681,11 +800,6 @@ export default function ContentPlansPage() {
                   <th className="px-3 py-3 font-medium">Pilar</th>
                   <th className="px-3 py-3 font-medium">Konten</th>
                   <th className="px-3 py-3 font-medium">Tema</th>
-                  <th className="px-3 py-3 font-medium">Copy</th>
-                  <th className="px-3 py-3 font-medium">Details</th>
-                  <th className="px-3 py-3 font-medium">Reference</th>
-                  <th className="px-3 py-3 font-medium">Caption</th>
-                  <th className="px-3 py-3 font-medium">Link Hasil</th>
                   <th className="px-3 py-3 font-medium">Tgl Upload</th>
                   <th className="px-3 py-3 font-medium">Progress</th>
                   <th className="px-3 py-3 font-medium text-right">Aksi</th>
@@ -701,13 +815,15 @@ export default function ContentPlansPage() {
                       className="cursor-pointer border-b border-border/50 transition-colors hover:bg-surface/50"
                     >
                       <td className="px-3 py-2.5 text-muted">{idx + 1}</td>
-                      <td className="px-3 py-2.5 font-medium text-foreground">{p.client?.name || "-"}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-foreground">
+                        {p.client?.name || "-"}
+                      </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-muted">
                         {formatDate(p.month + "-01", { month: "short", year: "numeric" })}
                       </td>
                       <td className="px-3 py-2.5">
-                        {p.pilar ? (
-                          <div className="flex max-w-[160px] flex-wrap gap-1">
+                        {parsePilars(p.pilar).length > 0 ? (
+                          <div className="flex max-w-[200px] flex-wrap gap-1">
                             {parsePilars(p.pilar).map((pl) => (
                               <span key={pl} className="badge bg-background text-muted">
                                 {pl}
@@ -715,62 +831,39 @@ export default function ContentPlansPage() {
                             ))}
                           </div>
                         ) : (
-                          "-"
+                          <span className="text-muted/50">—</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5">
-                        {p.konten ? <span className="badge bg-background text-muted">{p.konten}</span> : "-"}
-                      </td>
-                      <td className="max-w-[140px] truncate px-3 py-2.5 text-muted" title={p.tema || ""}>
-                        {p.tema || "-"}
-                      </td>
-                      <td className="max-w-[150px] truncate px-3 py-2.5 text-muted" title={p.copy || ""}>
-                        {p.copy || "-"}
-                      </td>
-                      <td className="max-w-[150px] truncate px-3 py-2.5 text-muted" title={p.details || ""}>
-                        {p.details || "-"}
-                      </td>
-                      <td className="max-w-[120px] truncate px-3 py-2.5 text-muted" title={p.reference || ""}>
-                        {p.reference ? (
-                          <a
-                            href={p.reference}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {p.reference}
-                          </a>
+                        {p.konten ? (
+                          <span className="badge bg-background text-muted">{p.konten}</span>
                         ) : (
-                          "-"
+                          <span className="text-muted/50">—</span>
                         )}
                       </td>
-                      <td className="max-w-[200px] truncate px-3 py-2.5 text-muted" title={p.caption || ""}>
-                        {p.caption || "-"}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {p.link_hasil ? (
-                          <a
-                            href={p.link_hasil}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                          >
-                            <ExternalLink size={12} /> Link
-                          </a>
+                      <td className="max-w-[260px] px-3 py-2.5">
+                        {p.tema ? (
+                          <span className="block truncate text-foreground" title={p.tema}>
+                            {p.tema}
+                          </span>
                         ) : (
-                          "-"
+                          <span className="text-muted/50">—</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-muted">
-                        {p.tanggal_upload ? formatDate(p.tanggal_upload) : "-"}
+                        {p.tanggal_upload ? (
+                          formatDate(p.tanggal_upload)
+                        ) : (
+                          <span className="text-muted/50">—</span>
+                        )}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={pKey}
-                          onChange={(e) => quickUpdateProgress(p.id, e.target.value)}
+                          onChange={(e) => quickUpdateProgress(p, e.target.value)}
                           className={cn(
                             "cursor-pointer rounded border-0 px-2 py-1 text-xs font-medium outline-none",
-                            progressColors[pKey] || progressColors.proses_edit
+                            progressColors[pKey] || progressColors.draft
                           )}
                         >
                           {PROGRESS_OPTIONS.map((opt) => {
@@ -784,7 +877,19 @@ export default function ContentPlansPage() {
                         </select>
                       </td>
                       <td className="px-3 py-2.5">
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-end gap-1">
+                          {(p.copy || p.details || p.caption) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyAll(p);
+                              }}
+                              className="rounded p-1 text-muted hover:bg-background hover:text-primary"
+                              title="Copy All"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          )}
                           <ChevronRight size={16} className="text-muted" />
                         </div>
                       </td>
