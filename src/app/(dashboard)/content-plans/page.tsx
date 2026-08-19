@@ -17,9 +17,11 @@ import {
   FileText,
   ChevronRight,
   Copy,
+  Download,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { PlanDetailModal } from "@/components/content-plans/plan-detail-modal";
+import { ImportSheetModal } from "@/components/content-plans/import-sheet-modal";
 
 interface ContentPlan {
   id: string;
@@ -34,10 +36,12 @@ interface ContentPlan {
   // New columns
   pilar: string | null;
   konten: string | null;
+  tema: string | null;
   copy: string | null;
   details: string | null;
   reference: string | null;
   caption: string | null;
+  thumbnail: string | null;
   link_hasil: string | null;
   tanggal_upload: string | null;
   progress: string | null;
@@ -81,8 +85,30 @@ const progressLabels: Record<string, string> = {
 
 function getProgressKey(value: string | null): string {
   if (!value) return "proses_edit";
-  const lower = value.toLowerCase().replace(/\s+/g, "_");
+  const lower = value.toLowerCase().trim().replace(/\s+/g, "_");
+  // Normalize legacy / sheet labels (Done, Wrapped, Published, etc.)
+  if (["done", "selesai", "wrapped", "terpublish", "published"].includes(lower)) return "done";
+  if (["cancel", "cancelled", "canceled", "dibatalkan"].includes(lower)) return "cancel";
+  if (["proses_edit", "editing", "on_edit"].includes(lower)) return "proses_edit";
   return lower;
+}
+
+// Parse comma-separated pilar (e.g. "Education, Awareness") into trimmed array
+function parsePilars(pilar: string | null | undefined): string[] {
+  if (!pilar) return [];
+  return pilar
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// Toggle a pilar option in a comma-separated string (multi-select)
+function togglePilarValue(current: string, option: string): string {
+  const list = parsePilars(current);
+  const idx = list.findIndex((p) => p.toLowerCase() === option.toLowerCase());
+  if (idx >= 0) list.splice(idx, 1);
+  else list.push(option);
+  return list.join(", ");
 }
 
 // ── Empty Form ────────────────────────────────────────────
@@ -91,10 +117,12 @@ const emptyForm = {
   month: "",
   pilar: "",
   konten: "",
+  tema: "",
   copy: "",
   details: "",
   reference: "",
   caption: "",
+  thumbnail: "",
   link_hasil: "",
   tanggal_upload: "",
   progress: "Proses Edit",
@@ -116,6 +144,7 @@ export default function ContentPlansPage() {
 
   // Modal
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -172,10 +201,12 @@ export default function ContentPlansPage() {
       month: plan.month,
       pilar: plan.pilar || "",
       konten: plan.konten || "",
+      tema: plan.tema || "",
       copy: plan.copy || "",
       details: plan.details || "",
       reference: plan.reference || "",
       caption: plan.caption || "",
+      thumbnail: plan.thumbnail || "",
       link_hasil: plan.link_hasil || "",
       tanggal_upload: plan.tanggal_upload || "",
       progress: plan.progress || "Proses Edit",
@@ -200,35 +231,62 @@ export default function ContentPlansPage() {
 
     setSaving(true);
     try {
+      // Auto-prepend https:// if user forgot protocol (fixes silent type="url" validation block)
+      const fixUrl = (u: string): string | null => {
+        const t = u.trim();
+        if (!t) return null;
+        return /^https?:\/\//i.test(t) ? t : "https://" + t;
+      };
+
       const payload = {
         client_id: form.client_id,
         month: form.month,
-        pilar: form.pilar || null,
+        pilar: parsePilars(form.pilar).join(", ") || null,
         konten: form.konten || null,
+        tema: form.tema.trim() || null,
         copy: form.copy.trim() || null,
         details: form.details.trim() || null,
-        reference: form.reference.trim() || null,
+        reference: fixUrl(form.reference),
         caption: form.caption.trim() || null,
-        link_hasil: form.link_hasil.trim() || null,
+        thumbnail: form.thumbnail.trim() || null,
+        link_hasil: fixUrl(form.link_hasil),
         tanggal_upload: form.tanggal_upload || null,
-        progress: form.progress,
+        progress: getProgressKey(form.progress),
+        status: form.status || "draft",
         // Keep old fields
-        plan_url: form.plan_url || null,
+        plan_url: fixUrl(form.plan_url),
         notes: form.notes.trim() || null,
         services: form.services,
       };
 
-      if (editingId) {
-        const { error } = await supabase
-          .from("content_plans")
-          .update(payload as never)
-          .eq("id", editingId);
-        if (error) throw error;
-        toast.success("Content plan diupdate!");
-      } else {
-        const { error } = await supabase.from("content_plans").insert(payload as never);
-        if (error) throw error;
-        toast.success("Content plan dibuat!");
+      // Fallback: strip columns that don't exist in DB yet (pre-migration-v88)
+      // PostgREST error: "Could not find the 'tema' column of 'content_plans'..."
+      const persist = async (): Promise<{ error: string | null; skipped: string[] }> => {
+        const current: Record<string, unknown> = { ...payload };
+        const skipped: string[] = [];
+        for (let i = 0; i <= Object.keys(payload).length; i++) {
+          const res = editingId
+            ? await supabase.from("content_plans").update(current as never).eq("id", editingId)
+            : await supabase.from("content_plans").insert(current as never);
+          if (!res.error) return { error: null, skipped };
+          const m = res.error.message.match(/Could not find the '([^']+)' column/);
+          if (m && m[1] in current) {
+            skipped.push(m[1]);
+            delete current[m[1]];
+            continue;
+          }
+          return { error: res.error.message, skipped };
+        }
+        return { error: "Gagal menyimpan setelah beberapa percobaan", skipped };
+      };
+
+      const { error: saveError, skipped } = await persist();
+      if (saveError) throw new Error(saveError);
+      toast.success(editingId ? "Content plan diupdate!" : "Content plan dibuat!");
+      if (skipped.length > 0) {
+        toast.warning(
+          `Tersimpan, tapi kolom "${skipped.join(", ")}" dilewati (belum ada di database). Jalankan supabase/migration-v88.sql di Supabase SQL Editor agar tersimpan penuh.`
+        );
       }
 
       setForm(emptyForm);
@@ -301,10 +359,13 @@ export default function ContentPlansPage() {
       p.details?.toLowerCase().includes(search.toLowerCase()) ||
       p.caption?.toLowerCase().includes(search.toLowerCase()) ||
       p.pilar?.toLowerCase().includes(search.toLowerCase()) ||
+      p.tema?.toLowerCase().includes(search.toLowerCase()) ||
       p.month.includes(search);
     const pKey = getProgressKey(p.progress);
     const matchProgress = progressFilter === "all" || pKey === progressFilter;
-    const matchPilar = pilarFilter === "all" || p.pilar === pilarFilter;
+    const matchPilar =
+      pilarFilter === "all" ||
+      parsePilars(p.pilar).some((pl) => pl.toLowerCase() === pilarFilter.toLowerCase());
     const matchClient = clientFilter === "all" || p.client_id === clientFilter;
     return matchSearch && matchProgress && matchPilar && matchClient;
   });
@@ -330,9 +391,14 @@ export default function ContentPlansPage() {
           <h1 className="text-xl font-bold text-foreground sm:text-2xl">Content Plans</h1>
           <p className="text-sm text-muted">Content production tracker per klien</p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> New Plan
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowImport(true)} className="btn-secondary">
+            <Download size={16} /> Import Sheet
+          </button>
+          <button onClick={openCreate} className="btn-primary">
+            <Plus size={16} /> New Plan
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -357,7 +423,7 @@ export default function ContentPlansPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
           <input
             type="text"
-            placeholder="Cari client, pilar, copy, caption..."
+            placeholder="Cari client, pilar, tema, copy, caption..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input pl-9"
@@ -430,6 +496,7 @@ export default function ContentPlansPage() {
                   <th className="px-3 py-3 font-medium">Bulan</th>
                   <th className="px-3 py-3 font-medium">Pilar</th>
                   <th className="px-3 py-3 font-medium">Konten</th>
+                  <th className="px-3 py-3 font-medium">Tema</th>
                   <th className="px-3 py-3 font-medium">Copy</th>
                   <th className="px-3 py-3 font-medium">Details</th>
                   <th className="px-3 py-3 font-medium">Reference</th>
@@ -455,10 +522,23 @@ export default function ContentPlansPage() {
                         {formatDate(p.month + "-01", { month: "short", year: "numeric" })}
                       </td>
                       <td className="px-3 py-2.5">
-                        {p.pilar ? <span className="badge bg-background text-muted">{p.pilar}</span> : "-"}
+                        {p.pilar ? (
+                          <div className="flex max-w-[160px] flex-wrap gap-1">
+                            {parsePilars(p.pilar).map((pl) => (
+                              <span key={pl} className="badge bg-background text-muted">
+                                {pl}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
                       </td>
                       <td className="px-3 py-2.5">
                         {p.konten ? <span className="badge bg-background text-muted">{p.konten}</span> : "-"}
+                      </td>
+                      <td className="max-w-[140px] truncate px-3 py-2.5 text-muted" title={p.tema || ""}>
+                        {p.tema || "-"}
                       </td>
                       <td className="max-w-[150px] truncate px-3 py-2.5 text-muted" title={p.copy || ""}>
                         {p.copy || "-"}
@@ -510,7 +590,7 @@ export default function ContentPlansPage() {
                           )}
                         >
                           {PROGRESS_OPTIONS.map((opt) => {
-                            const key = opt.toLowerCase().replace(/\s+/g, "_");
+                            const key = getProgressKey(opt);
                             return (
                               <option key={opt} value={key}>
                                 {opt}
@@ -554,7 +634,7 @@ export default function ContentPlansPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {p.pilar && (
-                      <div>
+                      <div className="col-span-2">
                         <span className="text-muted">Pilar:</span>{" "}
                         <span className="font-medium text-foreground">{p.pilar}</span>
                       </div>
@@ -563,6 +643,12 @@ export default function ContentPlansPage() {
                       <div>
                         <span className="text-muted">Konten:</span>{" "}
                         <span className="font-medium text-foreground">{p.konten}</span>
+                      </div>
+                    )}
+                    {p.tema && (
+                      <div>
+                        <span className="text-muted">Tema:</span>{" "}
+                        <span className="font-medium text-foreground">{p.tema}</span>
                       </div>
                     )}
                     {p.tanggal_upload && (
@@ -675,6 +761,18 @@ export default function ContentPlansPage() {
         />
       )}
 
+      {/* ── Import Sheet Modal ─────────────────────────────── */}
+      {showImport && (
+        <ImportSheetModal
+          clients={clients}
+          onClose={() => setShowImport(false)}
+          onImported={() => {
+            loadPlans();
+            setShowImport(false);
+          }}
+        />
+      )}
+
       {/* ── Create/Edit Modal ──────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
@@ -725,23 +823,37 @@ export default function ContentPlansPage() {
                   </div>
                 </div>
 
-                {/* Row 2: Pilar + Konten */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Pilar</label>
-                    <select
-                      value={form.pilar}
-                      onChange={(e) => setForm({ ...form, pilar: e.target.value })}
-                      className="input"
-                    >
-                      <option value="">— Pilih Pilar —</option>
-                      {PILAR_OPTIONS.map((p) => (
-                        <option key={p} value={p}>
+                {/* Row 2: Pilar (multi-select chips) */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">
+                    Pilar <span className="text-xs font-normal text-muted">(bisa pilih lebih dari 1)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2 rounded-lg border border-border bg-background p-2.5">
+                    {PILAR_OPTIONS.map((p) => {
+                      const selected = parsePilars(form.pilar).some(
+                        (x) => x.toLowerCase() === p.toLowerCase()
+                      );
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setForm({ ...form, pilar: togglePilarValue(form.pilar, p) })}
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                            selected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-surface text-muted hover:text-foreground"
+                          )}
+                        >
                           {p}
-                        </option>
-                      ))}
-                    </select>
+                        </button>
+                      );
+                    })}
                   </div>
+                </div>
+
+                {/* Row 2b: Konten + Tema */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Konten</label>
                     <select
@@ -756,6 +868,16 @@ export default function ContentPlansPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">Tema</label>
+                    <input
+                      type="text"
+                      value={form.tema}
+                      onChange={(e) => setForm({ ...form, tema: e.target.value })}
+                      placeholder="Tema / angle konten..."
+                      className="input"
+                    />
                   </div>
                 </div>
 
@@ -790,7 +912,7 @@ export default function ContentPlansPage() {
                     type="text"
                     value={form.reference}
                     onChange={(e) => setForm({ ...form, reference: e.target.value })}
-                    placeholder="URL atau referensi konten..."
+                    placeholder="URL atau referensi konten... (https:// otomatis)"
                     className="input"
                   />
                 </div>
@@ -807,15 +929,27 @@ export default function ContentPlansPage() {
                   />
                 </div>
 
+                {/* Row 6b: Thumbnail */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-foreground">Thumbnail</label>
+                  <textarea
+                    rows={2}
+                    value={form.thumbnail}
+                    onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
+                    placeholder="Copy / naskah thumbnail..."
+                    className="input resize-none"
+                  />
+                </div>
+
                 {/* Row 7: Link Hasil + Tgl Upload */}
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Link Hasil</label>
                     <input
-                      type="url"
+                      type="text"
                       value={form.link_hasil}
                       onChange={(e) => setForm({ ...form, link_hasil: e.target.value })}
-                      placeholder="https://..."
+                      placeholder="https://... (otomatis ditambah https://)"
                       className="input"
                     />
                   </div>
@@ -835,7 +969,7 @@ export default function ContentPlansPage() {
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Progress</label>
                   <div className="flex gap-2">
                     {PROGRESS_OPTIONS.map((opt) => {
-                      const key = opt.toLowerCase().replace(/\s+/g, "_");
+                      const key = getProgressKey(opt);
                       return (
                         <button
                           key={opt}
@@ -843,7 +977,7 @@ export default function ContentPlansPage() {
                           onClick={() => setForm({ ...form, progress: opt })}
                           className={cn(
                             "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                            form.progress === opt
+                            getProgressKey(form.progress) === key
                               ? cn(progressColors[key], "ring-2 ring-offset-1 ring-offset-surface")
                               : "bg-background text-muted hover:text-foreground"
                           )}
