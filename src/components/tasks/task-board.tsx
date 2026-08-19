@@ -61,14 +61,20 @@ export interface TaskBoardProps {
   defaultDivision?: string;
 }
 
-// Division tab options for filter
+// Division tab options for filter (order matches form Divisi dropdown)
 const DIVISION_TABS = [
   { label: "All Tasks", value: null },
   { label: "Creative", value: "Creative Director" },
+  { label: "Content Creator", value: "Content Creator" },
   { label: "Editor", value: "Editor" },
+  { label: "Content Production", value: "Content Production" },
   { label: "Production", value: "Production" },
   { label: "Social Media", value: "Social Media Manager" },
+  { label: "Project Manager", value: "Project Manager" },
   { label: "Advertiser", value: "Advertiser" },
+  { label: "Account Executive", value: "Account Executive" },
+  { label: "Copywriter", value: "Copywriter" },
+  { label: "Developer", value: "Developer" },
 ];
 
 export function TaskBoard({
