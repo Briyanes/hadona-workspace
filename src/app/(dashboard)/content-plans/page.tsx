@@ -660,7 +660,7 @@ export default function ContentPlansPage() {
                   </div>
                   {p.copy && (
                     <div className="mt-2 flex items-start justify-between gap-2">
-                      <p className="flex-1 text-sm text-foreground">{p.copy}</p>
+                      <p className="line-clamp-3 flex-1 whitespace-pre-line text-sm text-foreground">{p.copy}</p>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -884,12 +884,12 @@ export default function ContentPlansPage() {
                 {/* Row 3: Copy */}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Copy</label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={2}
                     value={form.copy}
                     onChange={(e) => setForm({ ...form, copy: e.target.value })}
                     placeholder="Copy / headline konten..."
-                    className="input"
+                    className="input resize-y"
                   />
                 </div>
 

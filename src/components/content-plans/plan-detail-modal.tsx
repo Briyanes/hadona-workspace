@@ -471,12 +471,10 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               {/* Copy */}
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Copy</label>
-                <input
-                  type="text"
+                <AutoGrowTextarea
                   value={editForm.copy}
-                  onChange={(e) => setEditForm({ ...editForm, copy: e.target.value })}
+                  onChange={(v) => setEditForm({ ...editForm, copy: v })}
                   placeholder="Copy / headline konten..."
-                  className="input"
                 />
               </div>
 
