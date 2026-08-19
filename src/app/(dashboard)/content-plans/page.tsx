@@ -16,6 +16,7 @@ import {
   Loader2,
   FileText,
   ChevronRight,
+  ChevronDown,
   Copy,
   Download,
   LayoutGrid,
@@ -858,23 +859,27 @@ export default function ContentPlansPage() {
                         )}
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                        <select
-                          value={pKey}
-                          onChange={(e) => quickUpdateProgress(p, e.target.value)}
-                          className={cn(
-                            "cursor-pointer rounded border-0 px-2 py-1 text-xs font-medium outline-none",
-                            progressColors[pKey] || progressColors.draft
-                          )}
-                        >
-                          {PROGRESS_OPTIONS.map((opt) => {
-                            const key = getProgressKey(opt);
-                            return (
-                              <option key={opt} value={key}>
-                                {opt}
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <div className="relative inline-flex">
+                          <select
+                            value={pKey}
+                            onChange={(e) => quickUpdateProgress(p, e.target.value)}
+                            title="Ubah progress"
+                            className={cn(
+                              "cursor-pointer appearance-none rounded-full border-0 py-1 pl-2.5 pr-7 text-xs font-medium outline-none transition-opacity hover:opacity-80",
+                              progressColors[pKey] || progressColors.draft
+                            )}
+                          >
+                            {PROGRESS_OPTIONS.map((opt) => {
+                              const key = getProgressKey(opt);
+                              return (
+                                <option key={opt} value={key}>
+                                  {opt}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 opacity-70" />
+                        </div>
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center justify-end gap-1">
