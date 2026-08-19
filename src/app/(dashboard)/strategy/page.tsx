@@ -42,12 +42,15 @@ interface Initiative { id: string; description: string; tag: string; status: str
 
 const competitorUrl = (platform: string | null, handle: string | null): string | null => {
   if (!handle) return null;
+  // Normalisasi handle: buang "@" di awal & "/" di akhir (input wizard/import bisa mengandung keduanya)
+  const h = handle.trim().replace(/^@+/, "").replace(/\/+$/, "");
+  if (!h) return null;
   switch (platform) {
-    case "instagram": return `https://instagram.com/${handle}`;
-    case "tiktok": return `https://tiktok.com/@${handle}`;
-    case "facebook": return `https://facebook.com/${handle}`;
-    case "youtube": return `https://youtube.com/@${handle}`;
-    case "x": return `https://x.com/${handle}`;
+    case "instagram": return `https://instagram.com/${h}`;
+    case "tiktok": return `https://tiktok.com/@${h}`;
+    case "facebook": return `https://facebook.com/${h}`;
+    case "youtube": return `https://youtube.com/@${h}`;
+    case "x": return `https://x.com/${h}`;
     default: return null;
   }
 };
@@ -161,6 +164,7 @@ export default function StrategyPage() {
   }, []);
 
   useEffect(() => {
+    setQuarterFilter("all");
     if (selectedClientId) loadCanvas(selectedClientId);
     else if (tab === "agency") loadAgencyOkrs();
   }, [selectedClientId, tab]);
@@ -355,10 +359,10 @@ export default function StrategyPage() {
 
   const selectedClient = clients.find((c) => c.id === selectedClientId);
 
-  // Group OKRs by objective
-  const filtered = tab === "agency"
-    ? okrs.filter((o) => quarterFilter === "all" || `${o.quarter}-${o.year}` === quarterFilter)
-    : okrs;
+  // Group OKRs by objective (filter periode berlaku di kedua tab)
+  const filtered = quarterFilter === "all"
+    ? okrs
+    : okrs.filter((o) => `${o.quarter}-${o.year}` === quarterFilter);
 
   const grouped = filtered.reduce((acc, okr) => {
     const key = `${okr.objective} [${okr.quarter} ${okr.year}]`;
@@ -518,7 +522,7 @@ export default function StrategyPage() {
                         <div key={s.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2">
                           <div className="min-w-0">
                             <p className="truncate text-xs font-medium text-foreground capitalize">{s.platform} {s.handle ? `· ${s.handle}` : ""}</p>
-                            <p className="text-[10px] text-muted">{fmtNum(s.followers)} followers</p>
+                            {s.followers > 0 && <p className="text-[10px] text-muted">{fmtNum(s.followers)} followers</p>}
                           </div>
                           {s.ads_connected && <span className="badge bg-success/15 text-success text-[10px]">Ads ✓</span>}
                         </div>
@@ -600,6 +604,14 @@ export default function StrategyPage() {
                   <h2 className="flex items-center gap-2 text-sm font-bold uppercase text-muted"><Target size={14} /> OKR Client</h2>
                   <span className="text-xs text-muted">{totalOKRs} KR · avg {avgProgress}% · {completedCount} selesai</span>
                 </div>
+                {quarters.length > 1 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setQuarterFilter("all")} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", quarterFilter === "all" ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>Semua Periode</button>
+                    {quarters.map((q) => (
+                      <button key={q} onClick={() => setQuarterFilter(q)} className={cn("rounded-md px-3 py-1.5 text-xs font-medium", quarterFilter === q ? "bg-primary text-white" : "bg-surface text-muted hover:text-foreground")}>{q}</button>
+                    ))}
+                  </div>
+                )}
                 {totalOKRs === 0 ? (
                   <EmptyState
                     icon={Target}
