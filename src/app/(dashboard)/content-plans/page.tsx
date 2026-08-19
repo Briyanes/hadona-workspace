@@ -18,6 +18,8 @@ import {
   ChevronRight,
   Copy,
   Download,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { PlanDetailModal } from "@/components/content-plans/plan-detail-modal";
@@ -141,6 +143,7 @@ export default function ContentPlansPage() {
   const [progressFilter, setProgressFilter] = useState("all");
   const [pilarFilter, setPilarFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "card">("card");
 
   // Modal
   const [showModal, setShowModal] = useState(false);
@@ -157,6 +160,25 @@ export default function ContentPlansPage() {
     loadPlans();
     loadClients();
   }, [supabase]);
+
+  // Restore view preference (persisted)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("content-plans-view");
+      if (saved === "table" || saved === "card") setViewMode(saved);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  function switchView(v: "table" | "card") {
+    setViewMode(v);
+    try {
+      localStorage.setItem("content-plans-view", v);
+    } catch {
+      // ignore
+    }
+  }
 
   async function loadPlans() {
     try {
@@ -383,6 +405,139 @@ export default function ContentPlansPage() {
     { label: "Cancel", value: cancelCount, icon: FileText, color: "text-danger", bg: "bg-danger/10" },
   ];
 
+  // ── Plan Card (dipakai bersama: desktop card grid + mobile list) ──
+  function renderPlanCard(p: ContentPlan) {
+    const pKey = getProgressKey(p.progress);
+    return (
+      <div
+        key={p.id}
+        onClick={() => openDetail(p)}
+        className="card cursor-pointer p-4 transition-colors hover:border-primary/40 active:bg-surface/50"
+      >
+        <div className="mb-2 flex items-start justify-between">
+          <div>
+            <h3 className="font-semibold text-foreground">{p.client?.name || "-"}</h3>
+            <p className="text-xs text-muted">
+              {formatDate(p.month + "-01", { month: "long", year: "numeric" })}
+            </p>
+          </div>
+          <span className={cn("badge", progressColors[pKey] || progressColors.proses_edit)}>
+            {progressLabels[pKey] || p.progress || "Proses Edit"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {p.pilar && (
+            <div className="col-span-2">
+              <span className="text-muted">Pilar:</span>{" "}
+              <span className="font-medium text-foreground">{p.pilar}</span>
+            </div>
+          )}
+          {p.konten && (
+            <div>
+              <span className="text-muted">Konten:</span>{" "}
+              <span className="font-medium text-foreground">{p.konten}</span>
+            </div>
+          )}
+          {p.tema && (
+            <div>
+              <span className="text-muted">Tema:</span>{" "}
+              <span className="font-medium text-foreground">{p.tema}</span>
+            </div>
+          )}
+          {p.tanggal_upload && (
+            <div>
+              <span className="text-muted">Tgl Upload:</span>{" "}
+              <span className="font-medium text-foreground">{formatDate(p.tanggal_upload)}</span>
+            </div>
+          )}
+        </div>
+        {p.copy && (
+          <div className="mt-2 flex items-start justify-between gap-2">
+            <p className="line-clamp-3 flex-1 whitespace-pre-line text-sm text-foreground">{p.copy}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyText(p.copy, "Copy");
+              }}
+              className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
+              title="Copy Copy"
+            >
+              <Copy size={12} />
+            </button>
+          </div>
+        )}
+        {p.details && (
+          <div className="mt-1 flex items-start justify-between gap-2">
+            <p className="flex-1 text-xs text-muted">{p.details}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyText(p.details, "Details");
+              }}
+              className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
+              title="Copy Details"
+            >
+              <Copy size={12} />
+            </button>
+          </div>
+        )}
+        {p.caption && (
+          <div className="mt-1 flex items-start justify-between gap-2">
+            <p className="line-clamp-2 flex-1 text-xs text-muted" title={p.caption}>
+              {p.caption}
+            </p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyText(p.caption, "Caption");
+              }}
+              className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
+              title="Copy Caption"
+            >
+              <Copy size={12} />
+            </button>
+          </div>
+        )}
+        <div className="mt-2 flex items-center gap-3">
+          {(p.copy || p.details || p.caption) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyAll(p);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              <Copy size={12} /> Copy All
+            </button>
+          )}
+          {p.link_hasil && (
+            <a
+              href={p.link_hasil}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ExternalLink size={12} /> Hasil
+            </a>
+          )}
+          {p.reference && (
+            <a
+              href={p.reference}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ExternalLink size={12} /> Reference
+            </a>
+          )}
+          <ChevronRight size={16} className="ml-auto text-muted" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -451,6 +606,34 @@ export default function ContentPlansPage() {
           <option value="proses_edit">Proses Edit</option>
           <option value="cancel">Cancel</option>
         </select>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center overflow-hidden rounded-lg border border-border">
+          <button
+            onClick={() => switchView("card")}
+            title="Tampilan Card"
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors",
+              viewMode === "card"
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface text-muted hover:text-foreground"
+            )}
+          >
+            <LayoutGrid size={14} /> Card
+          </button>
+          <button
+            onClick={() => switchView("table")}
+            title="Tampilan Tabel"
+            className={cn(
+              "flex items-center gap-1.5 border-l border-border px-3 py-2 text-xs font-medium transition-colors",
+              viewMode === "table"
+                ? "bg-primary text-primary-foreground"
+                : "bg-surface text-muted hover:text-foreground"
+            )}
+          >
+            <TableIcon size={14} /> Table
+          </button>
+        </div>
       </div>
 
       {/* Table View */}
@@ -486,10 +669,11 @@ export default function ContentPlansPage() {
         </div>
       ) : (
         <>
-          {/* Desktop Table */}
-          <div className="hidden overflow-x-auto rounded-lg border border-border lg:block">
+          {/* Desktop: Table / Card sesuai viewMode */}
+          {viewMode === "table" ? (
+          <div className="hidden max-h-[70dvh] overflow-auto rounded-lg border border-border lg:block">
             <table className="w-full text-left text-sm">
-              <thead className="bg-surface">
+              <thead className="sticky top-0 z-10 bg-surface">
                 <tr className="border-b border-border text-xs text-muted">
                   <th className="px-3 py-3 font-medium">No</th>
                   <th className="px-3 py-3 font-medium">Client</th>
@@ -610,141 +794,14 @@ export default function ContentPlansPage() {
               </tbody>
             </table>
           </div>
+          ) : (
+            <div className="hidden gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3">
+              {filtered.map(renderPlanCard)}
+            </div>
+          )}
 
           {/* Mobile Cards */}
-          <div className="space-y-3 lg:hidden">
-            {filtered.map((p) => {
-              const pKey = getProgressKey(p.progress);
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => openDetail(p)}
-                  className="card cursor-pointer p-4 transition-colors active:bg-surface/50"
-                >
-                  <div className="mb-2 flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{p.client?.name || "-"}</h3>
-                      <p className="text-xs text-muted">
-                        {formatDate(p.month + "-01", { month: "long", year: "numeric" })}
-                      </p>
-                    </div>
-                    <span className={cn("badge", progressColors[pKey] || progressColors.proses_edit)}>
-                      {progressLabels[pKey] || p.progress || "Proses Edit"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {p.pilar && (
-                      <div className="col-span-2">
-                        <span className="text-muted">Pilar:</span>{" "}
-                        <span className="font-medium text-foreground">{p.pilar}</span>
-                      </div>
-                    )}
-                    {p.konten && (
-                      <div>
-                        <span className="text-muted">Konten:</span>{" "}
-                        <span className="font-medium text-foreground">{p.konten}</span>
-                      </div>
-                    )}
-                    {p.tema && (
-                      <div>
-                        <span className="text-muted">Tema:</span>{" "}
-                        <span className="font-medium text-foreground">{p.tema}</span>
-                      </div>
-                    )}
-                    {p.tanggal_upload && (
-                      <div>
-                        <span className="text-muted">Tgl Upload:</span>{" "}
-                        <span className="font-medium text-foreground">{formatDate(p.tanggal_upload)}</span>
-                      </div>
-                    )}
-                  </div>
-                  {p.copy && (
-                    <div className="mt-2 flex items-start justify-between gap-2">
-                      <p className="line-clamp-3 flex-1 whitespace-pre-line text-sm text-foreground">{p.copy}</p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyText(p.copy, "Copy");
-                        }}
-                        className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
-                        title="Copy Copy"
-                      >
-                        <Copy size={12} />
-                      </button>
-                    </div>
-                  )}
-                  {p.details && (
-                    <div className="mt-1 flex items-start justify-between gap-2">
-                      <p className="flex-1 text-xs text-muted">{p.details}</p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyText(p.details, "Details");
-                        }}
-                        className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
-                        title="Copy Details"
-                      >
-                        <Copy size={12} />
-                      </button>
-                    </div>
-                  )}
-                  {p.caption && (
-                    <div className="mt-1 flex items-start justify-between gap-2">
-                      <p className="line-clamp-2 flex-1 text-xs text-muted" title={p.caption}>
-                        {p.caption}
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyText(p.caption, "Caption");
-                        }}
-                        className="shrink-0 rounded p-1 text-muted hover:bg-background hover:text-primary"
-                        title="Copy Caption"
-                      >
-                        <Copy size={12} />
-                      </button>
-                    </div>
-                  )}
-                  <div className="mt-2 flex items-center gap-3">
-                    {(p.copy || p.details || p.caption) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyAll(p);
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      >
-                        <Copy size={12} /> Copy All
-                      </button>
-                    )}
-                    {p.link_hasil && (
-                      <a
-                        href={p.link_hasil}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <ExternalLink size={12} /> Hasil
-                      </a>
-                    )}
-                    {p.reference && (
-                      <a
-                        href={p.reference}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        <ExternalLink size={12} /> Reference
-                      </a>
-                    )}
-                    <ChevronRight size={16} className="ml-auto text-muted" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <div className="space-y-3 lg:hidden">{filtered.map(renderPlanCard)}</div>
         </>
       )}
 
