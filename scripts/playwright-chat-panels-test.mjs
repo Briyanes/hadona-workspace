@@ -9,8 +9,9 @@
 import { chromium } from "playwright";
 
 const BASE = process.argv[2] || "https://workspace.hadona.id";
-const EMAIL = process.env.TEST_EMAIL || "hadi@hadona.id";
-const PASSWORD = process.env.TEST_PASSWORD || "Hadona2024!";
+const EMAIL = process.env.TEST_EMAIL || "admin@hadona.id";
+const PASSWORD = process.env.TEST_PASSWORD || "@Yogyakarta2026";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const results = [];
 const log = (name, pass, extra = "") => {
@@ -19,11 +20,15 @@ const log = (name, pass, extra = "") => {
 };
 
 async function login(page) {
-  await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 30000 });
+  await sleep(1500);
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/dashboard|chat|tasks|content|reports|clients/, { timeout: 30000 });
+  await page.locator('button[type="submit"]').first().click();
+  await sleep(4000);
+  if (page.url().includes("/login")) {
+    throw new Error("LOGIN GAGAL — masih di /login");
+  }
 }
 
 async function main() {
@@ -34,9 +39,8 @@ async function main() {
   const mp = await mCtx.newPage();
   try {
     await login(mp);
-    await mp.goto(`${BASE}/chat`, { waitUntil: "domcontentloaded" });
-    await mp.waitForSelector("h2, .font-semibold", { timeout: 20000 });
-    await mp.waitForTimeout(2500);
+    await mp.goto(`${BASE}/chat`, { waitUntil: "networkidle", timeout: 30000 });
+    await sleep(5000);
 
     // Sidebar inline kiri harus hidden di mobile
     const inlineSidebar = mp.locator("div.w-64.border-r").first();
@@ -53,8 +57,8 @@ async function main() {
       const drawer = mp.locator('div[role="dialog"][aria-modal="true"]');
       log("[Mobile] Drawer channel terbuka", await drawer.isVisible().catch(() => false));
 
-      // Klik backdrop untuk tutup
-      await mp.locator('div[role="dialog"] .absolute.inset-0.bg-black\\/50').first().click({ force: true });
+      // Klik backdrop untuk tutup (klik di kanan layar x=370 — di luar panel drawer w-64=256px)
+      await mp.mouse.click(370, 400);
       await mp.waitForTimeout(500);
       log("[Mobile] Drawer tertutup via backdrop", !(await drawer.isVisible().catch(() => false)));
 
@@ -72,9 +76,8 @@ async function main() {
   const dp = await dCtx.newPage();
   try {
     await login(dp);
-    await dp.goto(`${BASE}/chat`, { waitUntil: "domcontentloaded" });
-    await dp.waitForSelector("h2, .font-semibold", { timeout: 20000 });
-    await dp.waitForTimeout(2500);
+    await dp.goto(`${BASE}/chat`, { waitUntil: "networkidle", timeout: 30000 });
+    await sleep(5000);
 
     // Sidebar inline harus tampil
     const sidebarVisible = await dp.locator("div.w-64.border-r").first().isVisible().catch(() => false);
