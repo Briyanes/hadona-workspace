@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 // Force dynamic rendering — this route reads request.headers at runtime
 export const dynamic = "force-dynamic";
@@ -27,12 +28,24 @@ async function verifyUser(request: NextRequest) {
     token = authHeader.replace("Bearer ", "");
   }
 
-  if (!token) return null;
+  if (token) {
+    const admin = getAdminClient();
+    const { data, error } = await admin.auth.getUser(token);
+    if (error || !data.user) return null;
+    return data.user;
+  }
 
-  const admin = getAdminClient();
-  const { data, error } = await admin.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
+  // Fallback: cookie-based session (browser fetch() tanpa Authorization header,
+  // contoh: modal Grup/Invite/DM di halaman chat). Pola sama dengan /api/chat/*.
+  try {
+    const supabase = createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(request: NextRequest) {
