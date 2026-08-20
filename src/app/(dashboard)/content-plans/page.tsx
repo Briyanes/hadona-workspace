@@ -515,6 +515,11 @@ export default function ContentPlansPage() {
   }
 
   // ── Filter Logic ─────────────────────────────────────────
+  const monthName = (m: string, withYear = false) =>
+    new Intl.DateTimeFormat(
+      "id-ID",
+      withYear ? { month: "long", year: "numeric" } : { month: "long" }
+    ).format(new Date(m + "-01T00:00:00"));
   const monthOptions = Array.from(new Set(plans.map((pl) => pl.month).filter(Boolean))).sort((a, b) => b.localeCompare(a));
   const filtered = plans.filter((p) => {
     const matchSearch =
@@ -564,7 +569,7 @@ export default function ContentPlansPage() {
           <div>
             <h3 className="font-semibold text-foreground">{p.client?.name || "-"}</h3>
             <p className="text-xs text-muted">
-              {formatDate(p.month + "-01", { month: "long" })}
+              {monthName(p.month)}
             </p>
           </div>
           <span className={cn("badge", progressColors[pKey] || progressColors.draft)}>
@@ -743,7 +748,7 @@ export default function ContentPlansPage() {
           <option value="all">Semua Bulan</option>
           {monthOptions.map((m) => (
             <option key={m} value={m}>
-              {formatDate(m + "-01", { month: "long", year: "numeric" })}
+              {monthName(m, true)}
             </option>
           ))}
         </select>
@@ -857,7 +862,7 @@ export default function ContentPlansPage() {
                         {p.client?.name || "-"}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-muted">
-                        {formatDate(p.month + "-01", { month: "long" })}
+                        {monthName(p.month)}
                       </td>
                       <td className="px-3 py-2.5">
                         {parsePilars(p.pilar).length > 0 ? (
