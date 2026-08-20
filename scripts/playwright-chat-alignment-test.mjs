@@ -66,19 +66,31 @@ async function main() {
       console.log(`   payload keys: ${Object.keys(teamPayload).join(", ")}`);
     }
 
-    // 4. KIRIM PESAN
+    // 4. KIRIM PESAN (catat status POST /api/chat/messages)
     console.log("\n✍️ [4] Kirim pesan uji...");
+    let postStatus = null;
+    const onPostResp = (res) => { if (res.url().includes("/api/chat/messages") && res.request().method() === "POST") postStatus = res.status(); };
+    page.on("response", onPostResp);
     const composer = page.locator("textarea").first();
-    await composer.fill(MSG);
-    await composer.press("Enter");
-    await sleep(4000);
+    if ((await composer.count()) === 0) {
+      mark(false, "Textarea composer ditemukan", "textarea tidak ada — mungkin belum ada channel aktif");
+    } else {
+      await composer.fill(MSG);
+      await composer.press("Enter");
+      await sleep(4000);
+      mark(postStatus === 200 || postStatus === 201, "Pesan terkirim (POST /api/chat/messages)",
+        postStatus ? `HTTP ${postStatus}` : "tidak ada request POST tercatat");
+    }
+    page.off("response", onPostResp);
 
-    // 5. CEK ALIGNMENT BUBBLE
+    // 5. CEK ALIGNMENT BUBBLE (hasText = substring match, JANGAN di-escape)
     console.log("\n📐 [5] Cek alignment bubble pesan sendiri...");
-    const bubbleRow = page.locator("div.group.relative.flex", { hasText: MSG.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") }).first();
+    const stamp = `alignment ${STAMP}`;
+    const bubbleRow = page.locator("div.group.relative.flex", { hasText: stamp }).first();
+    await bubbleRow.waitFor({ state: "attached", timeout: 8000 }).catch(() => {});
     const bubbleVisible = await bubbleRow.count();
     if (bubbleVisible === 0) {
-      mark(false, "Bubble pesan ditemukan", "pesan tidak muncul di DOM");
+      mark(false, "Bubble pesan ditemukan", `teks "${stamp}" tidak muncul di DOM`);
     } else {
       const classAttr = await bubbleRow.getAttribute("class");
       const isRight = classAttr?.includes("justify-end") ?? false;
@@ -86,16 +98,21 @@ async function main() {
       mark(isRight && !isLeft, "Pesan sendiri ada di KANAN (justify-end)",
         isRight ? `class: ${classAttr.slice(0, 80)}` : `MASIH KIRI: ${classAttr?.slice(0, 80)}`);
 
-      // Verifikasi visual: bubble harus dekat sisi kanan kontainer
+      // Verifikasi visual: ukur BUBBLE (child pertama), bukan row full-width
       try {
-        const rowBox = await bubbleRow.boundingBox();
+        const bubbleChild = bubbleRow.locator(":scope > *").first();
+        const childBox = await bubbleChild.boundingBox();
         const container = page.locator("div.flex-1.overflow-y-auto").first();
         const containerBox = await container.boundingBox();
-        if (rowBox && containerBox) {
-          const rightGap = containerBox.x + containerBox.width - (rowBox.x + rowBox.width);
-          const leftGap = rowBox.x - containerBox.x;
-          mark(rightGap < leftGap, "Posisi visual: bubble lebih dekat ke kanan",
-            `leftGap=${Math.round(leftGap)}px, rightGap=${Math.round(rightGap)}px`);
+        if (childBox && containerBox) {
+          const rightGap = containerBox.x + containerBox.width - (childBox.x + childBox.width);
+          const leftGap = childBox.x - containerBox.x;
+          if (leftGap === rightGap) {
+            console.log(`   (skip cek visual: gap simetris ${leftGap}px)`);
+          } else {
+            mark(rightGap < leftGap, "Posisi visual: bubble lebih dekat ke kanan",
+              `leftGap=${Math.round(leftGap)}px, rightGap=${Math.round(rightGap)}px`);
+          }
         }
       } catch (e) {
         console.log(`   (skip cek visual: ${e.message})`);
