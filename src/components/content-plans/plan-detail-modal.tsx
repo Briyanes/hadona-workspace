@@ -200,17 +200,42 @@ function SlideBreakdown({ text }: { text: string }) {
   );
 }
 
+// ===== Helpers toolbar format (B/I/bullet) — sama seperti form New Plan =====
+function applyWrap(el: HTMLTextAreaElement, wrap: string, setVal: (v: string) => void) {
+  const { selectionStart: s, selectionEnd: e, value } = el;
+  const sel = value.slice(s, e) || "teks";
+  const next = value.slice(0, s) + wrap + sel + wrap + value.slice(e);
+  setVal(next);
+  requestAnimationFrame(() => {
+    el.focus();
+    el.setSelectionRange(s + wrap.length, s + wrap.length + sel.length);
+  });
+}
+
+function applyBullet(el: HTMLTextAreaElement, setVal: (v: string) => void) {
+  const { selectionStart: s, value } = el;
+  const lineStart = value.lastIndexOf("\n", s - 1) + 1;
+  const next = value.slice(0, lineStart) + "- " + value.slice(lineStart);
+  setVal(next);
+  requestAnimationFrame(() => {
+    el.focus();
+    el.setSelectionRange(s + 2, s + 2);
+  });
+}
+
 // ── Auto-grow Textarea + char counter ──────────────────────
 function AutoGrowTextarea({
   value,
   onChange,
   placeholder,
   maxPx = 340,
+  textareaId,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   maxPx?: number;
+  textareaId?: string;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -225,6 +250,7 @@ function AutoGrowTextarea({
     <div>
       <textarea
         ref={ref}
+        id={textareaId}
         rows={3}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -526,11 +552,49 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
 
               {/* Copy */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Copy</label>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-foreground">Copy</label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      title="Bold (**teks**)"
+                      onClick={() => {
+                        const ta = document.getElementById("edit-copy-textarea") as HTMLTextAreaElement | null;
+                        if (ta) applyWrap(ta, "**", (v) => setEditForm((f) => ({ ...f, copy: v })));
+                      }}
+                      className="h-6 w-7 rounded border border-border bg-background text-xs font-bold hover:bg-muted"
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      title="Italic (*teks*)"
+                      onClick={() => {
+                        const ta = document.getElementById("edit-copy-textarea") as HTMLTextAreaElement | null;
+                        if (ta) applyWrap(ta, "*", (v) => setEditForm((f) => ({ ...f, copy: v })));
+                      }}
+                      className="h-6 w-7 rounded border border-border bg-background text-xs italic hover:bg-muted"
+                    >
+                      I
+                    </button>
+                    <button
+                      type="button"
+                      title="Bullet list"
+                      onClick={() => {
+                        const ta = document.getElementById("edit-copy-textarea") as HTMLTextAreaElement | null;
+                        if (ta) applyBullet(ta, (v) => setEditForm((f) => ({ ...f, copy: v })));
+                      }}
+                      className="h-6 w-7 rounded border border-border bg-background text-xs hover:bg-muted"
+                    >
+                      •
+                    </button>
+                  </div>
+                </div>
                 <AutoGrowTextarea
                   value={editForm.copy}
                   onChange={(v) => setEditForm({ ...editForm, copy: v })}
                   placeholder="Copy / headline konten..."
+                  textareaId="edit-copy-textarea"
                 />
               </div>
 
