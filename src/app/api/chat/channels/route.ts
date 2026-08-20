@@ -31,6 +31,41 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Ambil membership user (untuk grup private) + semua members (untuk label grup)
+  let myMemberChannelIds: string[] = [];
+  try {
+    const { data: myMemberships } = await supabase
+      .from("chat_channel_members")
+      .select("channel_id, role")
+      .eq("user_id", user.id);
+    myMemberChannelIds = (myMemberships || []).map((m: any) => m.channel_id);
+  } catch {
+    // table might not exist yet
+  }
+
+  let memberCountMap = new Map<string, number>();
+  let channelMembersMap = new Map<string, any[]>();
+  try {
+    const { data: allMembers } = await supabase
+      .from("chat_channel_members")
+      .select("channel_id, user_id, role");
+    (allMembers || []).forEach((m: any) => {
+      memberCountMap.set(m.channel_id, (memberCountMap.get(m.channel_id) || 0) + 1);
+      if (!channelMembersMap.has(m.channel_id)) channelMembersMap.set(m.channel_id, []);
+      channelMembersMap.get(m.channel_id)!.push({ user_id: m.user_id, role: m.role });
+    });
+  } catch {
+    // graceful
+  }
+
+  // Filter: grup private hanya terlihat oleh member
+  const visibleChannels = (channels || []).filter((ch: any) => {
+    if (ch.is_private && ch.type === "group") {
+      return myMemberChannelIds.includes(ch.id);
+    }
+    return true;
+  });
+
   // Get unread counts for each channel
   const { data: receipts } = await supabase
     .from("chat_read_receipts")
@@ -45,7 +80,7 @@ export async function GET() {
   );
 
   const channelsWithUnread = await Promise.all(
-    (channels || []).map(async (ch: { id: string; name: string; type: string; division: string | null; created_by: string | null; created_at: string }) => {
+    visibleChannels.map(async (ch: { id: string; name: string; type: string; division: string | null; created_by: string | null; created_at: string }) => {
       const lastRead = receiptMap.get(ch.id);
       let unreadCount = 0;
 
@@ -64,6 +99,12 @@ export async function GET() {
       return {
         ...ch,
         unread_count: unreadCount,
+        member_count: memberCountMap.get(ch.id) || 0,
+        members: channelMembersMap.get(ch.id) || [],
+        is_owner: ch.created_by === user.id,
+        my_role: myMemberChannelIds.includes(ch.id)
+          ? ((channelMembersMap.get(ch.id) || []).find((m: any) => m.user_id === user.id)?.role || null)
+          : null,
       };
     })
   );
@@ -80,7 +121,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, type = "general", division = null, dm_with } = body;
+  const { name, type = "general", division = null, dm_with, member_ids = [], is_private = true } = body;
 
   // DM channel creation — any user can create DMs (bypass role check)
   if (type === "dm" && dm_with) {
@@ -114,7 +155,69 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ channel: dmChannel });
   }
 
-  // Non-DM channel creation: admin/PM only
+  // GROUP channel creation — SEMUA USER BOLEH (fitur Discord/Slack-like)
+  if (type === "group") {
+    if (!name?.trim()) {
+      return NextResponse.json({ error: "Nama grup wajib diisi" }, { status: 400 });
+    }
+
+    const cleanName = sanitizePlainText(name).trim().slice(0, 60);
+    const slug = cleanName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+    const { data: group, error: groupError } = await supabase
+      .from("chat_channels")
+      .insert({
+        name: slug || `grup-${Date.now()}`,
+        type: "group",
+        division,
+        is_private: is_private !== false,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (groupError) {
+      return NextResponse.json({ error: groupError.message }, { status: 500 });
+    }
+
+    // Tambahkan creator sebagai owner
+    const memberRows = [
+      { channel_id: group.id, user_id: user.id, role: "owner" },
+      ...((member_ids || [])
+        .filter((id: string) => id && id !== user.id)
+        .map((id: string) => ({ channel_id: group.id, user_id: id, role: "member" }))),
+    ];
+
+    const { error: membersError } = await supabase
+      .from("chat_channel_members")
+      .insert(memberRows);
+
+    if (membersError) {
+      console.error("[chat/channels POST] members insert error:", membersError.message);
+      // Channel tetap dibuat, tapi report error
+      return NextResponse.json({
+        channel: group,
+        warning: "Grup dibuat tapi sebagian anggota gagal ditambahkan",
+      });
+    }
+
+    // System message: grup dibuat
+    try {
+      await supabase.from("chat_messages").insert({
+        channel_id: group.id,
+        user_id: user.id,
+        content: `🎉 Grup "${cleanName}" dibuat`,
+        message_type: "system",
+        metadata: { system: true, action: "group_created" },
+      });
+    } catch {
+      // non-critical
+    }
+
+    return NextResponse.json({ channel: group });
+  }
+
+  // Non-DM/non-group channel creation: admin/PM only
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
