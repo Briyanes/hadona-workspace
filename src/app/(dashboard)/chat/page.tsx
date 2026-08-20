@@ -26,6 +26,12 @@ interface Channel {
   members?: { user_id: string; role: string }[];
   is_owner?: boolean;
   my_role?: string | null;
+  dm_partner?: {
+    user_id: string;
+    full_name: string;
+    avatar_url: string | null;
+    role: string;
+  } | null;
 }
 
 interface UserProfile {
@@ -48,17 +54,6 @@ interface ActiveCall {
 }
 
 const EMOJI_LIST = ["👍", "❤️", "😂", "🎉", "🔥", "👀", "🙏", "💪"];
-
-// Warna nama unik per user (ala WhatsApp)
-const NAME_COLORS = [
-  "text-blue-500", "text-green-600", "text-purple-500", "text-orange-500",
-  "text-pink-500", "text-teal-600", "text-indigo-500", "text-red-500",
-];
-function nameColor(userId: string) {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0;
-  return NAME_COLORS[hash % NAME_COLORS.length];
-}
 
 function initialsOf(name?: string | null) {
   return (name || "?")
@@ -110,7 +105,7 @@ function ChannelSidebar({
   const dmChannels = channels.filter((c) => c.type === "dm");
 
   const getDisplayName = (ch: Channel) => {
-    if (ch.type === "dm") return ch.name.replace(/__/g, " · ");
+    if (ch.type === "dm") return ch.dm_partner?.full_name || ch.name.replace(/__/g, " · ");
     return ch.name;
   };
 
@@ -414,14 +409,14 @@ function MessageBubble({
             "rounded-2xl px-3 py-1.5 shadow-sm animate-in fade-in slide-in-from-bottom-1 duration-150",
             isMine
               ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-muted text-foreground rounded-tl-sm",
+              : "bg-blue-500 text-white rounded-tl-sm",
             isGrouped && (isMine ? "rounded-tr-2xl" : "rounded-tl-2xl"),
             highlight && "ring-2 ring-yellow-400 ring-offset-1"
           )}
         >
           {/* Nama pengirim (hanya pesan orang lain di grup chat) */}
           {!isMine && showName && (
-            <p className={cn("text-xs font-bold mb-0.5", nameColor(msg.user_id))}>
+            <p className="text-xs font-bold mb-0.5 text-white/90">
               {msg.profiles?.full_name || "Unknown"}
             </p>
           )}
@@ -434,14 +429,14 @@ function MessageBubble({
                 "block w-full text-left text-xs mb-1 px-2 py-1 rounded-md border-l-2 truncate",
                 isMine
                   ? "bg-primary-foreground/15 border-primary-foreground/50 text-primary-foreground/90"
-                  : "bg-background/60 border-primary text-muted-foreground"
+                  : "bg-white/20 border-white/60 text-white/90"
               )}
             >
               <span className="font-semibold block truncate">
                 ↩ {replyToMsg.profiles?.full_name || "Pesan"}
               </span>
               <span className="block truncate opacity-80">
-                {replyToMsg.content.slice(0, 80)}
+                {stripMentions(replyToMsg.content).slice(0, 80)}
               </span>
             </button>
           )}
@@ -452,18 +447,15 @@ function MessageBubble({
               🗑️ Pesan ini telah dihapus
             </p>
           ) : (
-            <div className={cn(
-              "text-sm break-words",
-              isMine ? "prose prose-sm prose-invert max-w-none prose-p:my-0 prose-pre:my-1" : "prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-pre:my-1"
-            )}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            <div className="text-sm break-words prose prose-sm prose-invert max-w-none prose-p:my-0 prose-pre:my-1">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{renderMentions(msg.content)}</ReactMarkdown>
             </div>
           )}
 
           {/* Timestamp + edited — dalam bubble */}
           <div className={cn(
             "flex items-center justify-end gap-1 text-[10px] mt-0.5",
-            isMine ? "text-primary-foreground/70" : "text-muted-foreground"
+            isMine ? "text-primary-foreground/70" : "text-white/70"
           )}>
             {isEdited && <span className="italic">diedit</span>}
             <span>{timeStr}</span>
@@ -498,6 +490,20 @@ function MessageBubble({
       </div>
     </div>
   );
+}
+
+// Ubah sintaks mention @[Nama](uuid) → **@Nama** agar tampil bold-highlight
+// (dan tidak dirender jadi link rusak oleh markdown)
+function renderMentions(content: string): string {
+  return content.replace(/@\[([^\]]*)\]\([0-9a-f-]{36}\)/g, (_m, name) => `**@${name}**`);
+}
+
+// Ubah sintaks mention @[Nama](uuid) → @Nama untuk preview plain-text
+// (reply preview, reply indicator — tanpa pipeline markdown)
+function stripMentions(content: string): string {
+  return content
+    .replace(/@\[([^\]]*)\]\([0-9a-f-]{36}\)/g, (_m, name) => `@${name}`)
+    .replace(/@\[([0-9a-f-]{36})\]/g, "@user");
 }
 
 // ============================
@@ -735,6 +741,13 @@ function ChatArea({
   const [showMembers, setShowMembers] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
+  // @mention autocomplete state
+  const [mentionUsers, setMentionUsers] = useState<{ id: string; full_name: string }[]>([]);
+  const [mentionState, setMentionState] = useState<{ query: string; start: number } | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  // Discord-style new message counter
+  const [newCount, setNewCount] = useState(0);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -747,13 +760,101 @@ function ChatArea({
     }
   }, [channelId, currentUserId, currentUserName, joinPresence]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = useCallback((smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
   }, []);
 
+  // Discord-style: auto-scroll hanya saat ganti channel / load pertama,
+  // atau saat user memang berada di dekat bottom.
+  // Pesan lama yang di-prepend (pagination) tidak menggeser posisi baca.
+  const firstLoadRef = useRef(true);
+  const lastMsgIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    scrollToBottom();
+    firstLoadRef.current = true;
+    lastMsgIdRef.current = null;
+    setNewCount(0);
+  }, [channelId]);
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    const lastId = last?.id ?? null;
+    const hadPrevious = lastMsgIdRef.current !== null;
+    const isNewMessage = hadPrevious && lastId !== null && lastId !== lastMsgIdRef.current;
+    lastMsgIdRef.current = lastId;
+
+    if (firstLoadRef.current || !hadPrevious) {
+      firstLoadRef.current = false;
+      scrollToBottom(false);
+      return;
+    }
+    if (!isNewMessage) return; // prepend pesan lama — pertahankan posisi scroll
+
+    const container = messagesContainerRef.current;
+    const isNearBottom = container
+      ? container.scrollHeight - container.scrollTop - container.clientHeight < 120
+      : true;
+    if (isNearBottom) {
+      setNewCount(0);
+      scrollToBottom();
+    } else {
+      setNewCount((c) => c + 1);
+    }
   }, [messages, scrollToBottom]);
+
+  // Daftar anggota tim untuk autocomplete @mention
+  useEffect(() => {
+    fetch("/api/team")
+      .then((r) => r.json())
+      .then((data) => setMentionUsers(data.team || []))
+      .catch(() => {});
+  }, []);
+
+  const mentionSuggestions = useMemo(() => {
+    if (!mentionState) return [];
+    const q = mentionState.query.toLowerCase();
+    return mentionUsers
+      .filter((u) => u.id !== currentUserId)
+      .filter((u) => u.full_name?.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [mentionState, mentionUsers, currentUserId]);
+
+  // Konversi "@Nama" → markup @[Nama](uuid) saat kirim — kebalikan stripMentions().
+  // Matcher dibangun dari daftar anggota; nama terpanjang dulu agar tidak terpotong.
+  const encodeMentions = useCallback((text: string): string => {
+    if (mentionUsers.length === 0) return text;
+    const names = mentionUsers
+      .map((u) => u.full_name?.trim())
+      .filter((n): n is string => !!n)
+      .sort((a, b) => b.length - a.length);
+    if (names.length === 0) return text;
+    const pattern = names
+      .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+    const re = new RegExp(`@(${pattern})(?![\\w.])`, "g");
+    return text.replace(re, (m, name: string) => {
+      const u = mentionUsers.find((x) => x.full_name?.trim() === name);
+      return u ? `@[${u.full_name}](${u.id})` : m;
+    });
+  }, [mentionUsers]);
+
+  const applyMention = (user: { id: string; full_name: string }) => {
+    if (!mentionState || !textareaRef.current) return;
+    const el = textareaRef.current;
+    const caret = el.selectionStart ?? input.length;
+    const before = input.slice(0, mentionState.start);
+    const after = input.slice(caret);
+    // Insert tampilan bersih "@Nama" — markup @[Nama](uuid) dibentuk saat kirim via encodeMentions.
+    const insert = `@${user.full_name} `;
+    setInput(before + insert + after.replace(/^\s+/, ""));
+    setMentionState(null);
+    setMentionIndex(0);
+    requestAnimationFrame(() => {
+      const pos = (before + insert).length;
+      el.focus();
+      el.setSelectionRange(pos, pos);
+    });
+  };
 
   const handleScroll = () => {
     const container = messagesContainerRef.current;
@@ -841,7 +942,8 @@ function ChatArea({
   };
 
   const handleSend = async () => {
-    const text = input.trim();
+    // Encode mention "@Nama" → markup @[Nama](uuid) sebelum dikirim ke API
+    const text = encodeMentions(input.trim());
     if (!text || sending) return;
     setSending(true);
     try {
@@ -874,6 +976,7 @@ function ChatArea({
         if (replyTo) setReplyTo(null);
       }
       setInput("");
+      setMentionState(null);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengirim pesan");
@@ -883,6 +986,29 @@ function ChatArea({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Navigasi autocomplete @mention
+    if (mentionState && mentionSuggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMentionIndex((i) => (i - 1 + mentionSuggestions.length) % mentionSuggestions.length);
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        applyMention(mentionSuggestions[Math.min(mentionIndex, mentionSuggestions.length - 1)]);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMentionState(null);
+        return;
+      }
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -891,6 +1017,7 @@ function ChatArea({
       setEditingMsg(null);
       setReplyTo(null);
       setInput("");
+      setMentionState(null);
     }
   };
 
@@ -901,6 +1028,15 @@ function ChatArea({
       el.style.height = "auto";
       el.style.height = Math.min(el.scrollHeight, 120) + "px";
     }
+
+    // Deteksi sedang mengetik @mention (token terakhir sebelum kursor: @query)
+    const caret = e.target.selectionStart ?? e.target.value.length;
+    const match = e.target.value.slice(0, caret).match(/@([\w.]*)$/);
+    setMentionState(
+      match && mentionUsers.length > 0 ? { query: match[1], start: caret - match[0].length } : null
+    );
+    setMentionIndex(0);
+
     if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
     typingDebounceRef.current = setTimeout(() => {
       broadcastTyping(currentUserName, currentUserId);
@@ -931,7 +1067,8 @@ function ChatArea({
 
   const handleEdit = (msg: ChatMessage) => {
     setEditingMsg(msg);
-    setInput(msg.content);
+    // Tampilkan teks bersih "@Nama" saat edit — dikonversi ulang saat disimpan
+    setInput(stripMentions(msg.content));
     textareaRef.current?.focus();
   };
 
@@ -1046,13 +1183,18 @@ function ChatArea({
           )}
         </div>
 
-        {/* Scroll to bottom button */}
-        {showScrollButton && (
+        {/* Scroll to bottom / pesan baru (Discord-style) */}
+        {(showScrollButton || newCount > 0) && (
           <button
-            onClick={scrollToBottom}
-            className="absolute bottom-24 right-8 w-9 h-9 rounded-full bg-popover border shadow-lg flex items-center justify-center hover:bg-muted transition-colors z-10"
+            onClick={() => { setNewCount(0); scrollToBottom(); }}
+            className={cn(
+              "absolute bottom-24 right-8 rounded-full border shadow-lg flex items-center justify-center gap-1 transition-colors z-10",
+              newCount > 0
+                ? "px-3 h-9 bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90"
+                : "w-9 h-9 bg-popover hover:bg-muted"
+            )}
           >
-            ↓
+            {newCount > 0 ? `↓ ${newCount} pesan baru` : "↓"}
           </button>
         )}
 
@@ -1065,7 +1207,7 @@ function ChatArea({
               ) : (
                 <>
                   ↩ <span className="font-semibold">{replyTo?.profiles?.full_name || "pesan"}:</span>
-                  <span className="truncate opacity-70">{replyTo?.content.slice(0, 60)}</span>
+                  <span className="truncate opacity-70">{stripMentions(replyTo?.content || "").slice(0, 60)}</span>
                 </>
               )}
             </span>
@@ -1082,6 +1224,31 @@ function ChatArea({
         <div className="border-t p-3 md:p-4 bg-background">
           <div className="flex items-end gap-2">
             <div className="flex-1 relative">
+              {mentionState && mentionSuggestions.length > 0 && (
+                <div className="absolute bottom-full left-0 mb-2 w-64 max-h-56 overflow-y-auto bg-popover border rounded-xl shadow-lg z-30 py-1">
+                  <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Menyebut anggota
+                  </p>
+                  {mentionSuggestions.map((u, i) => (
+                    <button
+                      key={u.id}
+                      onMouseDown={(e) => { e.preventDefault(); applyMention(u); }}
+                      onMouseEnter={() => setMentionIndex(i)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left",
+                        i === Math.min(mentionIndex, mentionSuggestions.length - 1)
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted"
+                      )}
+                    >
+                      <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0 overflow-hidden">
+                        {initialsOf(u.full_name)}
+                      </span>
+                      <span className="truncate">{u.full_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -1109,7 +1276,7 @@ function ChatArea({
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 text-center hidden sm:block">
-            Enter kirim · Shift+Enter baris baru · Esc batal · Markdown didukung
+            Enter kirim · Shift+Enter baris baru · @mention anggota · Markdown didukung
           </p>
           {isGroup && !isGroupOwner && (
             <button
@@ -1731,7 +1898,7 @@ export default function ChatPage() {
               <div className={cn("flex-1 min-w-0", inCallRoom && !callMinimized && "hidden md:flex")}>
                 <ChatArea
                   channelId={activeChannel.id}
-                  channelName={activeChannel.type === "dm" ? activeChannel.name.replace(/__/g, " · ") : activeChannel.name}
+                  channelName={activeChannel.type === "dm" ? (activeChannel.dm_partner?.full_name || activeChannel.name.replace(/__/g, " · ")) : activeChannel.name}
                   channelType={activeChannel.type}
                   channelIsPrivate={!!activeChannel.is_private}
                   isGroupOwner={!!isGroupOwner}
