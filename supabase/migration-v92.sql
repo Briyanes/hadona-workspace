@@ -44,7 +44,7 @@ CREATE POLICY "channels_select_policy" ON public.chat_channels
     )
     OR (
       type = 'dm'
-      AND auth.uid() = ANY(string_to_array(name, '__'))
+      AND auth.uid()::text = ANY(string_to_array(name, '__'))
     )
   );
 
@@ -97,7 +97,7 @@ CREATE POLICY "messages_select_policy" ON public.chat_messages
         )
         OR (
           c.type = 'dm'
-          AND auth.uid() = ANY(string_to_array(c.name, '__'))
+          AND auth.uid()::text = ANY(string_to_array(c.name, '__'))
         )
       )
     )
@@ -131,7 +131,7 @@ CREATE POLICY "messages_insert_policy" ON public.chat_messages
         )
         OR (
           c.type = 'dm'
-          AND auth.uid() = ANY(string_to_array(c.name, '__'))
+          AND auth.uid()::text = ANY(string_to_array(c.name, '__'))
         )
       )
     )

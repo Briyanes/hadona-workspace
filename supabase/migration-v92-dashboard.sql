@@ -5,6 +5,10 @@
 --    URL browser harus mengandung: rsxqjjcuixdsmijhgdyl
 --    (Supabase Dashboard → project "Team Work Hadona" / workspace.hadona.id)
 --
+-- FIX v2: error "operator does not exist: uuid = text" terjadi karena
+-- auth.uid() (uuid) dibandingkan dengan string_to_array() (text[]).
+-- Solusi: cast auth.uid()::text pada semua klausa DM.
+--
 -- Cara pakai:
 --   1. Buka https://supabase.com/dashboard/project/rsxqjjcuixdsmijhgdyl/sql/new
 --   2. Paste SEMUA isi file ini (Ctrl/Cmd+A di editor SQL lalu paste)
@@ -43,7 +47,7 @@ CREATE POLICY "channels_select_policy" ON public.chat_channels
     )
     OR (
       type = 'dm'
-      AND auth.uid() = ANY(string_to_array(name, '__'))
+      AND auth.uid()::text = ANY(string_to_array(name, '__'))
     )
   );
 
@@ -89,7 +93,7 @@ CREATE POLICY "messages_select_policy" ON public.chat_messages
         )
         OR (
           c.type = 'dm'
-          AND auth.uid() = ANY(string_to_array(c.name, '__'))
+          AND auth.uid()::text = ANY(string_to_array(c.name, '__'))
         )
       )
     )
@@ -120,7 +124,7 @@ CREATE POLICY "messages_insert_policy" ON public.chat_messages
         )
         OR (
           c.type = 'dm'
-          AND auth.uid() = ANY(string_to_array(c.name, '__'))
+          AND auth.uid()::text = ANY(string_to_array(c.name, '__'))
         )
       )
     )
