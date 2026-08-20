@@ -173,6 +173,7 @@ export default function ContentPlansPage() {
   const [progressFilter, setProgressFilter] = useState("all");
   const [pilarFilter, setPilarFilter] = useState("all");
   const [clientFilter, setClientFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "card">("card");
 
   // Modal
@@ -514,6 +515,7 @@ export default function ContentPlansPage() {
   }
 
   // ── Filter Logic ─────────────────────────────────────────
+  const monthOptions = Array.from(new Set(plans.map((pl) => pl.month).filter(Boolean))).sort((a, b) => b.localeCompare(a));
   const filtered = plans.filter((p) => {
     const matchSearch =
       !search ||
@@ -530,7 +532,8 @@ export default function ContentPlansPage() {
       pilarFilter === "all" ||
       parsePilars(p.pilar).some((pl) => pl.toLowerCase() === pilarFilter.toLowerCase());
     const matchClient = clientFilter === "all" || p.client_id === clientFilter;
-    return matchSearch && matchProgress && matchPilar && matchClient;
+    const matchMonth = monthFilter === "all" || p.month === monthFilter;
+    return matchSearch && matchProgress && matchPilar && matchClient && matchMonth;
   });
 
   // ── Stats ────────────────────────────────────────────────
@@ -561,7 +564,7 @@ export default function ContentPlansPage() {
           <div>
             <h3 className="font-semibold text-foreground">{p.client?.name || "-"}</h3>
             <p className="text-xs text-muted">
-              {formatDate(p.month + "-01", { month: "long", year: "numeric" })}
+              {formatDate(p.month + "-01", { month: "long" })}
             </p>
           </div>
           <span className={cn("badge", progressColors[pKey] || progressColors.draft)}>
@@ -736,6 +739,14 @@ export default function ContentPlansPage() {
             </option>
           ))}
         </select>
+        <select value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Bulan</option>
+          {monthOptions.map((m) => (
+            <option key={m} value={m}>
+              {formatDate(m + "-01", { month: "long", year: "numeric" })}
+            </option>
+          ))}
+        </select>
         <select value={pilarFilter} onChange={(e) => setPilarFilter(e.target.value)} className="input w-auto">
           <option value="all">Semua Pilar</option>
           {PILAR_OPTIONS.map((p) => (
@@ -846,7 +857,7 @@ export default function ContentPlansPage() {
                         {p.client?.name || "-"}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-muted">
-                        {formatDate(p.month + "-01", { month: "short", year: "numeric" })}
+                        {formatDate(p.month + "-01", { month: "long" })}
                       </td>
                       <td className="px-3 py-2.5">
                         {parsePilars(p.pilar).length > 0 ? (
