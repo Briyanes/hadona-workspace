@@ -58,13 +58,45 @@ export async function GET() {
     // graceful
   }
 
-  // Filter: grup private hanya terlihat oleh member
+  // Filter: grup private hanya terlihat oleh member; DM hanya terlihat kedua pesertanya
   const visibleChannels = (channels || []).filter((ch: any) => {
     if (ch.is_private && ch.type === "group") {
       return myMemberChannelIds.includes(ch.id);
     }
+    if (ch.type === "dm") {
+      return String(ch.name || "").split("__").includes(user.id);
+    }
     return true;
   });
+
+  // Enrich DM: resolusi profil partner (nama/avatar) — nama channel DM = "uuid1__uuid2"
+  const dmPartnerMap = new Map<
+    string,
+    { user_id: string; full_name: string; avatar_url: string | null; role: string }
+  >();
+  const dmChannels = visibleChannels.filter((ch: any) => ch.type === "dm");
+  if (dmChannels.length > 0) {
+    const partnerIds = new Set<string>();
+    dmChannels.forEach((ch: any) => {
+      String(ch.name || "").split("__").forEach((id: string) => {
+        if (id && id !== user.id) partnerIds.add(id);
+      });
+    });
+    if (partnerIds.size > 0) {
+      const { data: partnerProfiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, role")
+        .in("id", Array.from(partnerIds));
+      (partnerProfiles || []).forEach((p: any) => {
+        dmPartnerMap.set(p.id, {
+          user_id: p.id,
+          full_name: p.full_name || "Unknown",
+          avatar_url: p.avatar_url || null,
+          role: p.role || "user",
+        });
+      });
+    }
+  }
 
   // Get unread counts for each channel
   const { data: receipts } = await supabase
@@ -96,6 +128,11 @@ export async function GET() {
       const { count } = await countQuery;
       unreadCount = count || 0;
 
+      const otherId =
+        ch.type === "dm"
+          ? String(ch.name || "").split("__").find((id: string) => id !== user.id)
+          : undefined;
+
       return {
         ...ch,
         unread_count: unreadCount,
@@ -105,6 +142,7 @@ export async function GET() {
         my_role: myMemberChannelIds.includes(ch.id)
           ? ((channelMembersMap.get(ch.id) || []).find((m: any) => m.user_id === user.id)?.role || null)
           : null,
+        dm_partner: otherId ? dmPartnerMap.get(otherId) || null : null,
       };
     })
   );

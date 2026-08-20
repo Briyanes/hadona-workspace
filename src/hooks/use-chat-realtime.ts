@@ -111,9 +111,11 @@ export function useChatRealtime(channelId: string | null) {
           filter: `channel_id=eq.${channelId}`,
         },
         async (payload: any) => {
-          // Fetch full message with relations
+          // Fetch the exact new message with relations (author profile, etc.)
           try {
-            const res = await fetch(`/api/chat/messages?channelId=${channelId}&limit=1`);
+            const res = await fetch(
+              `/api/chat/messages?channelId=${channelId}&messageId=${payload.new.id}`
+            );
             if (res.ok) {
               const data = await res.json();
               const newMsg = data.messages?.find((m: ChatMessage) => m.id === payload.new.id);
@@ -122,10 +124,12 @@ export function useChatRealtime(channelId: string | null) {
                   if (prev.some((m) => m.id === newMsg.id)) return prev;
                   return [...prev, newMsg];
                 });
+                return;
               }
             }
+            throw new Error("enrich failed");
           } catch {
-            // Fallback: use payload directly
+            // Fallback: use payload directly (author name may be missing but message still shows)
             setMessages((prev) => {
               if (prev.some((m) => m.id === payload.new.id)) return prev;
               return [...prev, payload.new as ChatMessage];

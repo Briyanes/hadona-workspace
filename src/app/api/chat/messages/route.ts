@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     const channelId = req.nextUrl.searchParams.get("channelId");
     const limit = parseInt(req.nextUrl.searchParams.get("limit") || "50");
     const before = req.nextUrl.searchParams.get("before"); // for pagination
+    const messageId = req.nextUrl.searchParams.get("messageId"); // fetch single message (realtime enrich)
 
     if (!channelId) {
       return NextResponse.json({ error: "channelId required" }, { status: 400 });
@@ -43,7 +44,9 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (before) {
+    if (messageId) {
+      query = query.eq("id", messageId);
+    } else if (before) {
       query = query.lt("created_at", before);
     }
 
@@ -58,31 +61,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ messages: [] });
     }
 
-    // Step 2: Fetch profiles for message authors (separate query for reliability)
+    // Step 2 & 3: Fetch profiles + reactions in parallel (graceful — reactions table may not exist)
     const userIds = Array.from(new Set(messages.map((m: any) => m.user_id)));
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url, role")
-      .in("id", userIds);
-
-    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
-
-    // Step 3: Fetch reactions for these messages (graceful - table may not exist yet)
     const messageIds = messages.map((m: any) => m.id);
-    const reactionsMap = new Map<string, any[]>();
-    try {
-      const { data: reactions } = await supabase
+
+    const [profilesRes, reactionsRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, role")
+        .in("id", userIds),
+      supabase
         .from("chat_reactions")
         .select("id, message_id, user_id, emoji")
-        .in("message_id", messageIds);
+        .in("message_id", messageIds),
+    ]);
 
-      (reactions || []).forEach((r: any) => {
-        if (!reactionsMap.has(r.message_id)) reactionsMap.set(r.message_id, []);
-        reactionsMap.get(r.message_id)!.push(r);
-      });
-    } catch {
-      // chat_reactions table might not exist yet — skip gracefully
-    }
+    const profileMap = new Map((profilesRes.data || []).map((p: any) => [p.id, p]));
+    const reactionsMap = new Map<string, any[]>();
+    ((reactionsRes.data || []) as any[]).forEach((r) => {
+      if (!reactionsMap.has(r.message_id)) reactionsMap.set(r.message_id, []);
+      reactionsMap.get(r.message_id)!.push(r);
+    });
 
     // Step 4: Merge data
     const enrichedMessages = messages.map((m: any) => ({
@@ -130,12 +129,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rate limit: too many messages" }, { status: 429 });
     }
 
-    // Extract valid mention UUIDs from content (@<uuid> pattern or explicit mentions array)
-    const mentionRegex = /@\[([a-f0-9-]+)\]/g;
+    // Extract valid mention UUIDs from content:
+    // - @[uuid] (legacy)
+    // - @[Display Name](uuid) (rich format used by the mention autocomplete)
+    const mentionRegex = /@\[([0-9a-f-]{36})\]|@\[([^\]]*)\]\(([0-9a-f-]{36})\)/g;
     const extractedMentions: string[] = [];
     let match;
     while ((match = mentionRegex.exec(content)) !== null) {
-      extractedMentions.push(match[1]);
+      extractedMentions.push(match[1] || match[3]);
     }
     const allMentions = Array.from(new Set([...extractedMentions, ...(mentions || [])]));
 
@@ -178,6 +179,29 @@ export async function POST(req: NextRequest) {
       .select("full_name, avatar_url, role")
       .eq("id", user.id)
       .single();
+
+    // Mention notifications (graceful — requires service role key; never blocks the message)
+    try {
+      const targetIds = allMentions.filter((id: string) => id !== user.id);
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (targetIds.length > 0 && serviceKey) {
+        const { createClient: createServiceClient } = await import("@supabase/supabase-js");
+        const service = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        await service.from("notifications").insert(
+          targetIds.map((mentionedId: string) => ({
+            user_id: mentionedId,
+            type: "chat_mention",
+            title: `💬 ${profile?.full_name || "Seseorang"} menyebut Anda di chat`,
+            body: `${sanitizePlainText(content).slice(0, 100)} — buka chat untuk membalas.`,
+            link: "/chat",
+          }))
+        );
+      }
+    } catch (notifErr: any) {
+      console.warn("[chat/messages POST] Mention notification skipped:", notifErr?.message || notifErr);
+    }
 
     return NextResponse.json({
       message: {
@@ -233,12 +257,21 @@ export async function PATCH(req: NextRequest) {
       // edit history table might not exist — non-critical
     }
 
+    // Re-extract mention UUIDs dari konten hasil edit (sinkron dengan POST)
+    const mentionRegex = /@\[([0-9a-f-]{36})\]|@\[([^\]]*)\]\(([0-9a-f-]{36})\)/g;
+    const editedMentions: string[] = [];
+    let m;
+    while ((m = mentionRegex.exec(content)) !== null) {
+      editedMentions.push(m[1] || m[3]);
+    }
+
     // Update message
     const { data: msg, error } = await supabase
       .from("chat_messages")
       .update({
         content: sanitizePlainText(content).slice(0, 5000),
         edited_at: new Date().toISOString(),
+        mentions: editedMentions.length > 0 ? Array.from(new Set(editedMentions)) : null,
       })
       .eq("id", message_id)
       .eq("user_id", user.id)
