@@ -361,7 +361,7 @@ function MessageBubble({
       )}
 
       {/* Bubble */}
-      <div className={cn("relative max-w-[70%] md:max-w-[60%]", showActions && "z-10")}>
+      <div className={cn("relative flex flex-col max-w-[70%] md:max-w-[60%]", showActions && "z-10")}>
         {/* Hover actions */}
         {showActions && !msg.deleted_at && (
           <div className={cn(
@@ -469,32 +469,32 @@ function MessageBubble({
             <span>{timeStr}</span>
             {isMine && <span className="text-primary-foreground/90">✓</span>}
           </div>
-
-          {/* Reactions — nempel di bawah bubble */}
-          {!msg.deleted_at && Object.keys(reactionsByEmoji).length > 0 && (
-            <div className="flex flex-wrap gap-1 -mb-1.5 mt-1">
-              {Object.entries(reactionsByEmoji).map(([emoji, info]) => (
-                <button
-                  key={emoji}
-                  onClick={() => onReact(msg.id, emoji)}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border shadow-sm transition-colors",
-                    isMine
-                      ? info.mine
-                        ? "bg-primary-foreground/25 border-primary-foreground/50 text-primary-foreground"
-                        : "bg-background border-border text-foreground"
-                      : info.mine
-                      ? "bg-primary/15 border-primary/40 text-primary"
-                      : "bg-background border-border text-foreground"
-                  )}
-                >
-                  <span>{emoji}</span>
-                  <span className="font-semibold">{info.users.length}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Reactions — di luar bubble, mengambang di bawahnya (gaya WhatsApp) */}
+        {!msg.deleted_at && Object.keys(reactionsByEmoji).length > 0 && (
+          <div className={cn("flex flex-wrap gap-1 mt-1", isMine ? "justify-end" : "justify-start")}>
+            {Object.entries(reactionsByEmoji).map(([emoji, info]) => (
+              <button
+                key={emoji}
+                onClick={() => onReact(msg.id, emoji)}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border shadow-sm transition-colors",
+                  isMine
+                    ? info.mine
+                      ? "bg-primary-foreground/25 border-primary-foreground/50 text-primary-foreground"
+                      : "bg-background border-border text-foreground"
+                    : info.mine
+                    ? "bg-primary/15 border-primary/40 text-primary"
+                    : "bg-background border-border text-foreground"
+                )}
+              >
+                <span>{emoji}</span>
+                <span className="font-semibold">{info.users.length}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
