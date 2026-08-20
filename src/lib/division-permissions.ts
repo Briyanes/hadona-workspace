@@ -28,6 +28,8 @@ export interface MenuAccessConfig {
 export const DIVISIONS = [
   "Creative Director",
   "Content Creator",
+  "Editor",
+  "Social Media Manager",
   "Production",
   "Project Manager",
   "Advertiser",
@@ -103,16 +105,31 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   },
   {
     href: "/creative",
-    allowedDivisions: ["Content Creator", "Production", "Creative Director", "Copywriter"],
+    allowedDivisions: ["Content Creator", "Production", "Creative Director", "Copywriter", "Editor"],
   },
   {
     href: "/content-plans",
-    allowedDivisions: ["Content Creator", "Project Manager", "Creative Director", "Copywriter"],
+    allowedDivisions: [
+      "Content Creator",
+      "Project Manager",
+      "Creative Director",
+      "Copywriter",
+      "Editor",
+      "Social Media Manager",
+    ],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
     href: "/content-studio",
-    allowedDivisions: ["Content Creator", "Project Manager", "Creative Director", "Copywriter", "Production"],
+    allowedDivisions: [
+      "Content Creator",
+      "Project Manager",
+      "Creative Director",
+      "Copywriter",
+      "Production",
+      "Editor",
+      "Social Media Manager",
+    ],
     allowedRoles: ["super_admin", "project_manager"],
   },
 
@@ -129,7 +146,7 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   },
   {
     href: "/production",
-    allowedDivisions: ["Production", "Creative Director", "Content Creator"],
+    allowedDivisions: ["Production", "Creative Director", "Content Creator", "Editor"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {

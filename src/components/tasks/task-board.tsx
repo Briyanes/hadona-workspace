@@ -67,7 +67,6 @@ const DIVISION_TABS = [
   { label: "Creative", value: "Creative Director" },
   { label: "Content Creator", value: "Content Creator" },
   { label: "Editor", value: "Editor" },
-  { label: "Content Production", value: "Content Production" },
   { label: "Production", value: "Production" },
   { label: "Social Media", value: "Social Media Manager" },
   { label: "Project Manager", value: "Project Manager" },
@@ -1181,7 +1180,6 @@ export function TaskBoard({
                       <option value="Creative Director">Creative Director</option>
                       <option value="Content Creator">Content Creator</option>
                       <option value="Editor">Editor</option>
-                      <option value="Content Production">Content Production</option>
                       <option value="Production">Production</option>
                       <option value="Social Media Manager">Social Media Manager</option>
                       <option value="Project Manager">Project Manager</option>

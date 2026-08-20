@@ -358,7 +358,7 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
               client_id: plan.client_id || null,
               priority: "medium",
               status: "todo",
-              division: "Content Production",
+              division: "Editor",
               due_date: editForm.tanggal_upload || null,
               created_by: userData.user?.id,
               sheet_row_id: linkKey,
@@ -366,7 +366,7 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
             .select("id")
             .single();
           if (!taskError && task) {
-            toast.success("Task editor dibuat di Task Manager (Content Production)");
+            toast.success("Task editor dibuat di Task Manager (divisi Editor)");
           }
         }
       } else if (newKey === "done") {

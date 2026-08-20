@@ -403,7 +403,7 @@ export default function ContentPlansPage() {
   }
 
   // ── Workflow trigger: sinkronisasi plan → Task Manager ──
-  // Proses Edit → buat task editor (division: Content Production)
+  // Proses Edit → buat task editor (division: Editor — antrean kerja tim Editor)
   // Done → task editor ikut selesai
   async function syncTaskForPlan(
     plan: {
@@ -447,7 +447,7 @@ export default function ContentPlansPage() {
             client_id: plan.client_id || null,
             priority: "medium",
             status: "todo",
-            division: "Content Production",
+            division: "Editor",
             due_date: plan.tanggal_upload || null,
             created_by: userData.user?.id,
             sheet_row_id: linkKey,
@@ -455,7 +455,7 @@ export default function ContentPlansPage() {
           .select("id")
           .single();
         if (error) throw error;
-        if (task) toast.success("Task editor dibuat di Task Manager (Content Production)");
+        if (task) toast.success("Task editor dibuat di Task Manager (divisi Editor)");
       } else if (newKey === "done") {
         const { error } = await supabase
           .from("tasks")
