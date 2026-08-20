@@ -129,6 +129,21 @@ async function main() {
         const reactionPosted = apiLogs.some((l) => l.includes("POST /api/chat/reactions") && l.includes("→ 2"));
         mark(badge > 0 || reactionPosted, "Reaction 👍 tersimpan",
           badge > 0 ? "badge tampil di bubble" : reactionPosted ? "POST 200 (badge mungkin beda format)" : "tidak ada POST sukses");
+
+        // [GAP ASSERTION] Pill harus DI LUAR & DI BAWAH bubble (mt-1 = 4px)
+        // Patch lama (pill di dalam bubble + -mb-1.5) → gap negatif/overlap text
+        if (badge > 0) {
+          const pill = myRow.locator("button,span").filter({ hasText: /👍/ }).first();
+          const pillBox = await pill.boundingBox();
+          const textBox = await msgEl.boundingBox();
+          if (pillBox && textBox) {
+            const gap = pillBox.y - (textBox.y + textBox.height);
+            mark(gap >= 1, `Gap pill↔bubble = ${gap.toFixed(1)}px (≥1px → pill di luar bubble)`,
+              gap < 1 ? "pill overlap/inside bubble — patch belum ter-deploy" : `pill.y=${pillBox.y.toFixed(0)} text.bottom=${(textBox.y + textBox.height).toFixed(0)}`);
+          } else {
+            mark(false, "boundingBox pill/text tidak terukur");
+          }
+        }
         await page.screenshot({ path: "scripts/screenshots/chatbox-reaction.png" });
       }
     } else {
