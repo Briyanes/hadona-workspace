@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Dropdown 'Semua Bulan' muncul di filter bar",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "name": "Dropdown punya minimal 1 opsi bulan",
+    "pass": true,
+    "detail": "Agustus 2026"
+  },
+  {
+    "name": "Bulan tampil nama bulan saja di card & tabel (mis. 'Agustus')",
+    "pass": true,
+    "detail": "Agustus | Agustus"
+  },
+  {
+    "name": "Label dropdown bulan tanpa tanggal (mis. 'Agustus 2026', bukan '1 Agustus 2026')",
+    "pass": true,
+    "detail": "Agustus 2026"
+  },
+  {
+    "name": "Filter bulan mengurangi/menyaring row",
+    "pass": true,
+    "detail": "63/63 untuk Agustus 2026"
+  },
+  {
+    "name": "Semua row terfilter menampilkan bulan yang dipilih",
+    "pass": true,
+    "detail": "Agustus, Agustus, Agustus"
+  },
+  {
+    "name": "Reset ke 'Semua Bulan' mengembalikan semua row",
+    "pass": true,
+    "detail": "63/63"
+  }
+]
