@@ -608,8 +608,8 @@ function MemberPanel({
     }
   };
 
-  return (
-    <div className="w-60 flex-shrink-0 border-l bg-muted/30 p-3 overflow-y-auto hidden lg:flex flex-col">
+  const panelContent = (
+    <>
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Anggota ({members.length})
@@ -659,7 +659,23 @@ function MemberPanel({
           ))}
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop (>=lg): inline panel kanan */}
+      <div className="hidden lg:flex w-60 flex-shrink-0 border-l bg-muted/30 p-3 overflow-y-auto flex-col">
+        {panelContent}
+      </div>
+      {/* Mobile/tablet (<lg): slide-over drawer dari kanan */}
+      <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <div className="absolute inset-y-0 right-0 w-72 max-w-[85vw] bg-background border-l shadow-xl p-3 overflow-y-auto flex flex-col">
+          {panelContent}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -680,6 +696,7 @@ function ChatArea({
   onEndCall,
   onInvite,
   onLeaveGroup,
+  onOpenChannels,
 }: {
   channelId: string;
   channelName: string;
@@ -694,6 +711,7 @@ function ChatArea({
   onEndCall: () => void;
   onInvite: () => void;
   onLeaveGroup: () => void;
+  onOpenChannels?: () => void;
 }) {
   const {
     messages,
@@ -934,6 +952,16 @@ function ChatArea({
         {/* Channel Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm gap-2">
           <div className="flex items-center gap-2 min-w-0">
+            {onOpenChannels && (
+              <button
+                onClick={onOpenChannels}
+                className="md:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-muted text-base"
+                title="Daftar channel"
+                aria-label="Buka daftar channel"
+              >
+                ☰
+              </button>
+            )}
             <span className="text-lg flex-shrink-0">
               {isGroup ? "👥" : channelType === "dm" ? "💬" : channelType === "announcement" ? "📢" : "#"}
             </span>
@@ -1451,6 +1479,7 @@ export default function ChatPage() {
   const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
   const [inCallRoom, setInCallRoom] = useState<string | null>(null);
   const [callMinimized, setCallMinimized] = useState(false);
+  const [showChannelDrawer, setShowChannelDrawer] = useState(false);
 
   // Load channels
   const loadChannels = useCallback(async () => {
@@ -1676,6 +1705,7 @@ export default function ChatPage() {
                   onEndCall={handleLeaveCall}
                   onInvite={() => setShowInviteModal(true)}
                   onLeaveGroup={handleLeaveGroup}
+                  onOpenChannels={() => setShowChannelDrawer(true)}
                 />
               </div>
               {inCallRoom && (
@@ -1696,24 +1726,45 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Mobile: Channel selector */}
-      <div className="md:hidden mt-4">
-        <details className="rounded-lg border bg-card">
-          <summary className="px-4 py-2 text-sm font-medium cursor-pointer">
-            Pilih Channel {activeChannel && `· ${activeChannel.type === "group" ? "👥" : activeChannel.type === "dm" ? "💬" : "#"}${activeChannel.name}`}
-          </summary>
-          <div className="p-3 border-t">
-            <ChannelSidebar
-              channels={channels}
-              activeChannelId={activeChannelId}
-              activeCalls={activeCalls}
-              onSelect={setActiveChannelId}
-              onNewDM={() => setShowDMModal(true)}
-              onNewGroup={() => setShowGroupModal(true)}
-            />
+      {/* Mobile: Channel drawer (slide-in dari kiri, dibuka via tombol ☰ di header chat) */}
+      {showChannelDrawer && (
+        <div className="md:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowChannelDrawer(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-background border-r shadow-xl p-3 overflow-y-auto">
+            <div className="flex items-center justify-between mb-3 px-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Channels</p>
+              <button
+                onClick={() => setShowChannelDrawer(false)}
+                className="text-muted-foreground hover:text-foreground text-sm"
+                aria-label="Tutup daftar channel"
+              >
+                ✕
+              </button>
+            </div>
+            {loadingChannels ? (
+              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">Memuat...</div>
+            ) : (
+              <ChannelSidebar
+                channels={channels}
+                activeChannelId={activeChannelId}
+                activeCalls={activeCalls}
+                onSelect={(id) => {
+                  setActiveChannelId(id);
+                  setShowChannelDrawer(false);
+                }}
+                onNewDM={() => {
+                  setShowDMModal(true);
+                  setShowChannelDrawer(false);
+                }}
+                onNewGroup={() => {
+                  setShowGroupModal(true);
+                  setShowChannelDrawer(false);
+                }}
+              />
+            )}
           </div>
-        </details>
-      </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showDMModal && (
