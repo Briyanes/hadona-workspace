@@ -8,6 +8,8 @@
  */
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
+
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -119,7 +121,7 @@ function parseSlides(text: string): { intro: string | null; items: SlideSegment[
 function ExpandableText({ text, clampPx = 130 }: { text: string; clampPx?: number }) {
   const [expanded, setExpanded] = useState(false);
   const [overflowing, setOverflowing] = useState(false);
-  const ref = useRef<HTMLParagraphElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -129,13 +131,13 @@ function ExpandableText({ text, clampPx = 130 }: { text: string; clampPx?: numbe
 
   return (
     <div className="rounded-lg border border-border bg-background p-3">
-      <p
+      <div
         ref={ref}
         style={!expanded ? { maxHeight: clampPx, overflow: "hidden" } : undefined}
-        className="whitespace-pre-wrap break-words text-sm text-muted"
+        className="break-words text-sm text-muted"
       >
-        {text}
-      </p>
+        <RichText text={text} />
+      </div>
       {overflowing && (
         <button
           onClick={() => setExpanded(!expanded)}

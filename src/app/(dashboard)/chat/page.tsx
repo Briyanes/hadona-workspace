@@ -1703,10 +1703,7 @@ export default function ChatPage() {
 
   return (
     <>
-      <PageHeader title="Team Chat" />
-      <p className="text-sm text-muted-foreground -mt-2 mb-4">
-        Chat internal tim — grup, DM, group call, real-time
-      </p>
+      <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="mb-4" />
 
       <div className="relative flex h-[calc(100vh-180px)] rounded-xl border bg-card overflow-hidden">
         {/* Left: Channel Sidebar */}

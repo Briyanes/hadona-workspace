@@ -1,5 +1,7 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
+
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -138,6 +140,30 @@ const emptyForm = {
   services: [] as string[],
   status: "draft",
 };
+
+
+// ===== Helpers toolbar format (B/I/bullet) untuk textarea Copy =====
+function applyWrap(el: HTMLTextAreaElement, wrap: string, setVal: (v: string) => void) {
+  const { selectionStart: s, selectionEnd: e, value } = el;
+  const sel = value.slice(s, e) || "teks";
+  const next = value.slice(0, s) + wrap + sel + wrap + value.slice(e);
+  setVal(next);
+  requestAnimationFrame(() => {
+    el.focus();
+    el.setSelectionRange(s + wrap.length, s + wrap.length + sel.length);
+  });
+}
+
+function applyBullet(el: HTMLTextAreaElement, setVal: (v: string) => void) {
+  const { selectionStart: s, value } = el;
+  const lineStart = value.lastIndexOf("\n", s - 1) + 1;
+  const next = value.slice(0, lineStart) + "- " + value.slice(lineStart);
+  setVal(next);
+  requestAnimationFrame(() => {
+    el.focus();
+    el.setSelectionRange(s + 2, s + 2);
+  });
+}
 
 export default function ContentPlansPage() {
   const supabase = createClient();
@@ -571,7 +597,7 @@ export default function ContentPlansPage() {
         </div>
         {p.copy && (
           <div className="mt-2 flex items-start justify-between gap-2">
-            <p className="line-clamp-3 flex-1 whitespace-pre-line text-sm text-foreground">{p.copy}</p>
+            <div className="line-clamp-3 flex-1"><RichText text={p.copy} className="text-sm text-foreground" /></div>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -1050,12 +1076,50 @@ export default function ContentPlansPage() {
 
                 {/* Row 3: Copy */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Copy</label>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="block text-sm font-medium text-foreground">Copy</label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        title="Bold (**teks**)"
+                        onClick={() => {
+                          const ta = document.getElementById("copy-textarea") as HTMLTextAreaElement | null;
+                          if (ta) applyWrap(ta, "**", (v) => setForm((f) => ({ ...f, copy: v })));
+                        }}
+                        className="h-6 w-7 rounded border border-border bg-background text-xs font-bold hover:bg-muted"
+                      >
+                        B
+                      </button>
+                      <button
+                        type="button"
+                        title="Italic (*teks*)"
+                        onClick={() => {
+                          const ta = document.getElementById("copy-textarea") as HTMLTextAreaElement | null;
+                          if (ta) applyWrap(ta, "*", (v) => setForm((f) => ({ ...f, copy: v })));
+                        }}
+                        className="h-6 w-7 rounded border border-border bg-background text-xs italic hover:bg-muted"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        title="Bullet list"
+                        onClick={() => {
+                          const ta = document.getElementById("copy-textarea") as HTMLTextAreaElement | null;
+                          if (ta) applyBullet(ta, (v) => setForm((f) => ({ ...f, copy: v })));
+                        }}
+                        className="h-6 w-7 rounded border border-border bg-background text-xs hover:bg-muted"
+                      >
+                        •
+                      </button>
+                    </div>
+                  </div>
                   <textarea
-                    rows={2}
+                    id="copy-textarea"
+                    rows={4}
                     value={form.copy}
                     onChange={(e) => setForm({ ...form, copy: e.target.value })}
-                    placeholder="Copy / headline konten..."
+                    placeholder="Copy / headline konten... (dukung **bold**, *italic*, bullet, link otomatis)"
                     className="input resize-y"
                   />
                 </div>

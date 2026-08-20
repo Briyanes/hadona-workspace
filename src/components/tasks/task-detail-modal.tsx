@@ -1,5 +1,7 @@
 "use client";
 
+import { RichText } from "@/components/ui/rich-text";
+
 import { createClient } from "@/lib/supabase/client";
 import { uploadFile } from "@/lib/upload";
 import { useEffect, useState } from "react";
@@ -733,7 +735,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
               {task.description && (
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Deskripsi</p>
-                  <p className="text-sm text-muted whitespace-pre-wrap">{task.description}</p>
+                  <RichText text={task.description} className="text-sm text-muted" />
                 </div>
               )}
 
