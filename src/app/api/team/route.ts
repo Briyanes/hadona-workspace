@@ -61,7 +61,15 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    return NextResponse.json({ team: data || [] });
+    // Tandai user sendiri + sediakan objek `me` agar client (mis. chat)
+    // dapat menentukan pesan milik sendiri (alignment bubble).
+    const team = (data || []).map((p: Record<string, unknown>) => ({
+      ...p,
+      is_me: p.id === user.id,
+    }));
+    const me = team.find((p: { is_me: boolean }) => p.is_me) || null;
+
+    return NextResponse.json({ team, me });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[/api/team] Error:", msg);

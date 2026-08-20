@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { useChatRealtime, type ChatMessage } from "@/hooks/use-chat-realtime";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
@@ -1156,7 +1157,7 @@ function CreateGroupModal({
   useEffect(() => {
     fetch("/api/team")
       .then((r) => r.json())
-      .then((data) => setUsers(data.members || data.users || []))
+      .then((data) => setUsers(data.team || data.members || data.users || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -1297,7 +1298,7 @@ function InviteMemberModal({
   useEffect(() => {
     fetch("/api/team")
       .then((r) => r.json())
-      .then((data) => setUsers((data.members || data.users || []).filter((u: UserProfile) => !u.is_me)))
+      .then((data) => setUsers((data.team || data.members || data.users || []).filter((u: UserProfile) => !u.is_me)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -1413,7 +1414,7 @@ function NewDMModal({
   useEffect(() => {
     fetch("/api/team")
       .then((r) => r.json())
-      .then((data) => setUsers(data.members || data.users || []))
+      .then((data) => setUsers(data.team || data.members || data.users || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -1496,17 +1497,57 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Load current user
+  // Load current user — robust multi-fallback:
+  // 1) `me` object dari /api/team, 2) flag is_me di daftar team, 3) auth.getUser()
   useEffect(() => {
-    fetch("/api/team")
-      .then((r) => r.json())
-      .then((data) => {
-        const me = (data.members || data.users || []).find(
-          (u: UserProfile & { is_me?: boolean }) => u.is_me
-        );
-        if (me) setCurrentUser(me);
-      })
-      .catch(() => {});
+    let cancelled = false;
+
+    const fallbackToAuth = async (): Promise<UserProfile | null> => {
+      try {
+        const { data } = await createClient().auth.getUser();
+        if (!data.user) return null;
+        return {
+          id: data.user.id,
+          full_name:
+            (data.user.user_metadata?.full_name as string) ||
+            data.user.email ||
+            "Saya",
+          avatar_url: null,
+          role: "user",
+          is_me: true,
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    (async () => {
+      let me: UserProfile | null = null;
+      try {
+        const res = await fetch("/api/team");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.me) {
+            me = data.me;
+          } else {
+            const list: UserProfile[] = data.team || data.members || data.users || [];
+            me = list.find((u) => u.is_me) || null;
+            if (!me) {
+              const authMe = await fallbackToAuth();
+              if (authMe) me = list.find((u) => u.id === authMe.id) || authMe;
+            }
+          }
+        }
+      } catch {
+        // ignore — coba fallback auth
+      }
+      if (!me) me = await fallbackToAuth();
+      if (!cancelled && me) setCurrentUser(me);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
