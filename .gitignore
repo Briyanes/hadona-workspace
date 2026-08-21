@@ -31,4 +31,10 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.tsscripts/screenshots/
+next-env.d.ts
+
+# test artifacts
+scripts/screenshots/
+
+# supabase temp
+supabase/.temp/
