@@ -153,7 +153,7 @@ function ChannelSidebar({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="px-3 mb-1 text-xs font-semibold text-muted uppercase tracking-wider">
+        <p className="px-3 mb-1.5 text-xs font-semibold text-muted uppercase tracking-wider">
           Channels
         </p>
         <div className="flex flex-col gap-0.5">
@@ -166,7 +166,7 @@ function ChannelSidebar({
       </div>
       {divisionChannels.length > 0 && (
         <div>
-          <p className="px-3 mb-1 text-xs font-semibold text-muted uppercase tracking-wider">
+          <p className="px-3 mb-1.5 text-xs font-semibold text-muted uppercase tracking-wider">
             Divisi
           </p>
           <div className="flex flex-col gap-0.5">
@@ -175,7 +175,7 @@ function ChannelSidebar({
         </div>
       )}
       <div>
-        <div className="flex items-center justify-between px-3 mb-1">
+        <div className="flex items-center justify-between px-3 mb-1.5">
           <p className="text-xs font-semibold text-muted uppercase tracking-wider">
             Grup
           </p>
@@ -201,7 +201,7 @@ function ChannelSidebar({
         </div>
       </div>
       <div>
-        <div className="flex items-center justify-between px-3 mb-1">
+        <div className="flex items-center justify-between px-3 mb-1.5">
           <p className="text-xs font-semibold text-muted uppercase tracking-wider">
             Direct Messages
           </p>
@@ -1916,22 +1916,31 @@ export default function ChatPage() {
 
         {/* Mobile: daftar channel sebagai layar utama (ala Telegram) */}
         <div className={cn("flex-1 overflow-y-auto bg-muted/30 md:hidden", mobileChatOpen && "hidden")}>
+          {/* Header layar list (khusus mobile) — beri ruang atas agar label section tidak menempel */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 pt-3.5 pb-2.5">
+            <h2 className="text-lg font-bold leading-tight">Chat</h2>
+            <p className="text-xs text-muted">
+              {loadingChannels ? "Memuat percakapan..." : `${channels.length} percakapan`}
+            </p>
+          </div>
           {loadingChannels ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted">
               Memuat...
             </div>
           ) : (
-            <ChannelSidebar
-              channels={channels}
-              activeChannelId={activeChannelId}
-              activeCalls={activeCalls}
-              onSelect={(id) => {
-                setActiveChannelId(id);
-                setMobileChatOpen(true);
-              }}
-              onNewDM={() => setShowDMModal(true)}
-              onNewGroup={() => setShowGroupModal(true)}
-            />
+            <div className="p-3">
+              <ChannelSidebar
+                channels={channels}
+                activeChannelId={activeChannelId}
+                activeCalls={activeCalls}
+                onSelect={(id) => {
+                  setActiveChannelId(id);
+                  setMobileChatOpen(true);
+                }}
+                onNewDM={() => setShowDMModal(true)}
+                onNewGroup={() => setShowGroupModal(true)}
+              />
+            </div>
           )}
         </div>
 
