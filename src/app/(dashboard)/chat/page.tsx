@@ -1659,6 +1659,19 @@ export default function ChatPage() {
   const [callMinimized, setCallMinimized] = useState(false);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
+  // Tombol back browser/Android menutup chat fullscreen (pola pushState/popstate ala Telegram)
+  useEffect(() => {
+    if (!mobileChatOpen) return;
+    window.history.pushState({ chatOpen: true }, "");
+    const onPop = () => setMobileChatOpen(false);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      // Ditutup via tombol UI → konsumsi entry history ekstra agar tombol back tidak "mati" satu kali
+      if (window.history.state?.chatOpen) window.history.back();
+    };
+  }, [mobileChatOpen]);
+
   // Load channels
   const loadChannels = useCallback(async () => {
     try {
@@ -1880,9 +1893,9 @@ export default function ChatPage() {
 
   return (
     <>
-      <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="mb-4" />
+      <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="hidden md:flex mb-4" />
 
-      <div className="relative flex h-[calc(100vh-180px)] rounded-xl border bg-surface overflow-hidden">
+      <div className="relative flex h-[calc(100dvh-96px)] md:h-[calc(100vh-180px)] bg-surface overflow-hidden md:rounded-xl md:border">
         {/* Desktop (md+): Channel Sidebar */}
         <div className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
           {loadingChannels ? (
