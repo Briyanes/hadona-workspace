@@ -1895,7 +1895,7 @@ export default function ChatPage() {
     <>
       <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="hidden md:flex mb-4" />
 
-      <div className="relative flex h-[calc(100dvh-96px)] md:h-[calc(100vh-180px)] bg-surface overflow-hidden md:rounded-xl md:border">
+      <div className="relative flex h-[calc(100dvh-64px)] md:h-[calc(100vh-180px)] bg-surface overflow-hidden md:rounded-xl md:border">
         {/* Desktop (md+): Channel Sidebar */}
         <div data-testid="desktop-channel-sidebar" className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
           {loadingChannels ? (
