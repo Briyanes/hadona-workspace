@@ -9,6 +9,11 @@ import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  PanelLeft, Users as UsersIcon, MessageCircle, Megaphone, Lock, Video,
+  CircleDot, ArrowDown, Pencil, Reply, X, Trash2, SmilePlus, Send,
+  Maximize2, Minimize2, Check, Plus, Hash, Crown, Home
+} from "lucide-react";
 
 // ============================
 // Types
@@ -123,14 +128,16 @@ function ChannelSidebar({
         )}
       >
         <span className="flex items-center gap-2 truncate">
-          {ch.type === "announcement" ? "📢" : ch.type === "division" ? "🏠" : ch.type === "group" ? "👥" : ch.type === "dm" ? "💬" : "#"}
+          <span className="flex-shrink-0 flex items-center text-muted-foreground">
+            {ch.type === "announcement" ? <Megaphone size={14} /> : ch.type === "division" ? <Home size={14} /> : ch.type === "group" ? <UsersIcon size={14} /> : ch.type === "dm" ? <MessageCircle size={14} /> : <Hash size={14} />}
+          </span>
           <span className="truncate">{getDisplayName(ch)}</span>
           {ch.type === "group" && (ch.member_count || 0) > 0 && (
             <span className="text-[10px] text-muted-foreground/70">{ch.member_count}</span>
           )}
           {hasCall && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
-              ● LIVE
+              <CircleDot size={10} /> LIVE
             </span>
           )}
         </span>
@@ -174,10 +181,10 @@ function ChannelSidebar({
           </p>
           <button
             onClick={onNewGroup}
-            className="text-muted-foreground hover:text-primary text-base leading-none"
+            className="text-muted-foreground hover:text-primary flex items-center"
             title="Buat grup baru"
           >
-            ＋
+            <Plus size={16} />
           </button>
         </div>
         <div className="flex flex-col gap-0.5">
@@ -186,7 +193,7 @@ function ChannelSidebar({
               onClick={onNewGroup}
               className="px-3 text-xs text-muted-foreground italic hover:text-primary text-left"
             >
-              Buat grup pertama kamu ➕
+              Buat grup pertama kamu
             </button>
           ) : (
             groupChannels.map(renderChannel)
@@ -200,10 +207,10 @@ function ChannelSidebar({
           </p>
           <button
             onClick={onNewDM}
-            className="text-muted-foreground hover:text-primary text-sm"
+            className="text-muted-foreground hover:text-primary flex items-center"
             title="New DM"
           >
-            ✏
+            <Plus size={14} />
           </button>
         </div>
         <div className="flex flex-col gap-0.5">
@@ -305,7 +312,9 @@ function MessageBubble({
           "max-w-[75%] rounded-2xl p-3 border",
           isMine ? "bg-primary/10 border-primary/30 rounded-tr-sm" : "bg-blue-500/10 border-blue-500/30 rounded-tl-sm"
         )}>
-          <p className="text-sm font-medium mb-2">📹 Panggilan video dimulai</p>
+          <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+            <Video size={14} /> Panggilan video dimulai
+          </p>
           <a
             href={meetLink}
             target="_blank"
@@ -374,14 +383,14 @@ function MessageBubble({
               className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm"
               title="React"
             >
-              😀
+              <SmilePlus size={14} />
             </button>
             <button
               onClick={() => onReply(msg)}
               className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm"
               title="Reply"
             >
-              ↩
+              <Reply size={14} />
             </button>
             {isMine && (
               <>
@@ -390,14 +399,14 @@ function MessageBubble({
                   className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm"
                   title="Edit"
                 >
-                  ✏
+                  <Pencil size={14} />
                 </button>
                 <button
                   onClick={() => onDelete(msg.id)}
                   className="w-7 h-7 flex items-center justify-center hover:bg-destructive/10 rounded-full text-sm"
                   title="Delete"
                 >
-                  🗑
+                  <Trash2 size={14} />
                 </button>
               </>
             )}
@@ -432,8 +441,8 @@ function MessageBubble({
                   : "bg-white/20 border-white/60 text-white/90"
               )}
             >
-              <span className="font-semibold block truncate">
-                ↩ {replyToMsg.profiles?.full_name || "Pesan"}
+              <span className="font-semibold block truncate flex items-center gap-1">
+                <Reply size={10} /> {replyToMsg.profiles?.full_name || "Pesan"}
               </span>
               <span className="block truncate opacity-80">
                 {stripMentions(replyToMsg.content).slice(0, 80)}
@@ -443,8 +452,8 @@ function MessageBubble({
 
           {/* Content */}
           {msg.deleted_at ? (
-            <p className={cn("text-sm italic opacity-70", isMine && "text-primary-foreground/80")}>
-              🗑️ Pesan ini telah dihapus
+            <p className={cn("text-sm italic opacity-70 flex items-center gap-1.5", isMine && "text-primary-foreground/80")}>
+              <Trash2 size={13} /> Pesan ini telah dihapus
             </p>
           ) : (
             <div className="text-sm break-words prose prose-sm prose-invert max-w-none prose-p:my-0 prose-pre:my-1">
@@ -459,7 +468,7 @@ function MessageBubble({
           )}>
             {isEdited && <span className="italic">diedit</span>}
             <span>{timeStr}</span>
-            {isMine && <span className="text-primary-foreground/90">✓</span>}
+            {isMine && <Check size={11} className="text-primary-foreground/90" />}
           </div>
         </div>
 
@@ -529,11 +538,11 @@ function CallPanel({
       <div className="absolute bottom-20 right-4 z-30 flex items-center gap-2 bg-popover border rounded-full shadow-lg pl-4 pr-2 py-2">
         <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
         <span className="text-xs font-medium">Call berlangsung</span>
-        <button onClick={onMinimize} className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm" title="Buka">
-          ⤢
+        <button onClick={onMinimize} className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full" title="Buka">
+          <Maximize2 size={14} />
         </button>
-        <button onClick={onLeave} className="w-7 h-7 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full text-sm" title="Keluar">
-          ✕
+        <button onClick={onLeave} className="w-7 h-7 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full" title="Keluar">
+          <X size={14} />
         </button>
       </div>
     );
@@ -548,11 +557,11 @@ function CallPanel({
           <span className="text-xs text-muted-foreground hidden sm:inline">mic otomatis aktif, kamera off</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onMinimize} className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-lg text-sm" title="Minimize (tetap chat)">
-            ▭
+          <button onClick={onMinimize} className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-lg" title="Minimize (tetap chat)">
+            <Minimize2 size={15} />
           </button>
-          <button onClick={onLeave} className="w-8 h-8 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-sm" title="Keluar call">
-            ✕
+          <button onClick={onLeave} className="w-8 h-8 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg" title="Keluar call">
+            <X size={15} />
           </button>
         </div>
       </div>
@@ -621,14 +630,14 @@ function MemberPanel({
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Anggota ({members.length})
         </p>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
       </div>
       {isOwner && (
         <button
           onClick={onInvite}
           className="mb-3 w-full text-xs font-medium border-dashed border-primary/40 text-primary hover:bg-primary/5 rounded-lg py-1.5"
         >
-          ＋ Invite anggota
+          <span className="flex items-center justify-center gap-1"><Plus size={12} /> Invite anggota</span>
         </button>
       )}
       {loading ? (
@@ -650,16 +659,16 @@ function MemberPanel({
                   {m.user_id === myUserId && <span className="text-muted-foreground"> (kamu)</span>}
                 </p>
                 {m.role === "owner" && (
-                  <span className="text-[10px] text-amber-600 font-medium">👑 Owner</span>
+                  <span className="text-[10px] text-amber-600 font-medium flex items-center gap-1"><Crown size={10} /> Owner</span>
                 )}
               </div>
               {isOwner && m.user_id !== myUserId && m.role !== "owner" && (
                 <button
                   onClick={() => handleKick(m.user_id, m.profile?.full_name || "member")}
-                  className="opacity-0 group-hover:opacity-100 text-destructive/60 hover:text-destructive text-xs"
+                  className="opacity-0 group-hover:opacity-100 text-destructive/60 hover:text-destructive flex items-center"
                   title="Keluarkan"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               )}
             </div>
@@ -1097,15 +1106,15 @@ function ChatArea({
                 title="Daftar channel"
                 aria-label="Buka daftar channel"
               >
-                ☰
+                <PanelLeft size={18} />
               </button>
             )}
-            <span className="text-lg flex-shrink-0">
-              {isGroup ? "👥" : channelType === "dm" ? "💬" : channelType === "announcement" ? "📢" : "#"}
+            <span className="flex-shrink-0 flex items-center text-muted-foreground">
+              {isGroup ? <UsersIcon size={18} /> : channelType === "dm" ? <MessageCircle size={18} /> : channelType === "announcement" ? <Megaphone size={18} /> : <Hash size={18} />}
             </span>
             <h2 className="font-semibold truncate">{channelName}</h2>
             {isGroup && channelIsPrivate && (
-              <span className="text-[10px] text-muted-foreground border rounded px-1.5 py-0.5 flex-shrink-0">🔒</span>
+              <span className="text-muted-foreground border rounded px-1.5 py-0.5 flex-shrink-0 flex items-center"><Lock size={10} /></span>
             )}
             {onlineCount > 0 && (
               <span className="flex-shrink-0 flex items-center gap-1 text-xs text-green-600">
@@ -1118,10 +1127,10 @@ function ChatArea({
             {isGroup && (
               <button
                 onClick={() => setShowMembers((s) => !s)}
-                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted text-sm"
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground"
                 title="Anggota grup"
               >
-                👥
+                <UsersIcon size={18} />
               </button>
             )}
             {!hasLiveCall ? (
@@ -1129,14 +1138,14 @@ function ChatArea({
                 onClick={onStartCall}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
-                📹 <span className="hidden sm:inline">Call</span>
+                <Video size={15} /> <span className="hidden sm:inline">Call</span>
               </button>
             ) : (
               <button
                 onClick={onJoinCall}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors animate-pulse"
               >
-                ● <span className="hidden sm:inline">Join Call</span>
+                <CircleDot size={15} /> <span className="hidden sm:inline">Join Call</span>
               </button>
             )}
           </div>
@@ -1163,7 +1172,7 @@ function ChatArea({
           )}
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
-              <span className="text-4xl">💬</span>
+              <MessageCircle size={40} className="opacity-40" />
               <p className="text-sm">Belum ada pesan. Mulai percakapan pertama!</p>
             </div>
           ) : (
@@ -1194,7 +1203,11 @@ function ChatArea({
                 : "w-9 h-9 bg-popover hover:bg-muted"
             )}
           >
-            {newCount > 0 ? `↓ ${newCount} pesan baru` : "↓"}
+            {newCount > 0 ? (
+              <><ArrowDown size={14} /> {newCount} pesan baru</>
+            ) : (
+              <ArrowDown size={16} />
+            )}
           </button>
         )}
 
@@ -1203,19 +1216,19 @@ function ChatArea({
           <div className="px-4 py-1.5 border-t bg-muted/30 flex items-center justify-between text-xs gap-2">
             <span className="text-muted-foreground truncate flex items-center gap-1">
               {editingMsg ? (
-                <>✏ <span>Mengedit pesan</span></>
+                <><Pencil size={12} className="shrink-0" /> <span>Mengedit pesan</span></>
               ) : (
                 <>
-                  ↩ <span className="font-semibold">{replyTo?.profiles?.full_name || "pesan"}:</span>
+                  <Reply size={12} className="shrink-0" /> <span className="font-semibold">{replyTo?.profiles?.full_name || "pesan"}:</span>
                   <span className="truncate opacity-70">{stripMentions(replyTo?.content || "").slice(0, 60)}</span>
                 </>
               )}
             </span>
             <button
               onClick={() => { setReplyTo(null); setEditingMsg(null); setInput(""); }}
-              className="text-muted-foreground hover:text-destructive flex-shrink-0"
+              className="text-muted-foreground hover:text-destructive flex-shrink-0 flex items-center gap-1"
             >
-              ✕ Batal
+              <X size={12} /> Batal
             </button>
           </div>
         )}
@@ -1268,10 +1281,7 @@ function ChatArea({
               {sending ? (
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
+                <Send size={17} />
               )}
             </button>
           </div>
@@ -1360,7 +1370,7 @@ function CreateGroupModal({
             <h3 className="font-semibold">Buat Grup Baru</h3>
             <p className="text-xs text-muted-foreground">Chat & group call ala Discord/WhatsApp</p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-3 flex-1 overflow-y-auto">
           <div>
@@ -1383,8 +1393,8 @@ function CreateGroupModal({
               onChange={(e) => setIsPrivate(e.target.checked)}
               className="rounded"
             />
-            <label htmlFor="is-private" className="text-sm text-muted-foreground">
-              🔒 Private (hanya anggota yang diajak yang bisa lihat)
+            <label htmlFor="is-private" className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <Lock size={13} /> Private (hanya anggota yang diajak yang bisa lihat)
             </label>
           </div>
           <div>
@@ -1418,7 +1428,7 @@ function CreateGroupModal({
                     </div>
                     <span className="flex-1 truncate">{u.full_name}</span>
                     <span className="text-xs text-muted-foreground">{u.role?.replace(/_/g, " ")}</span>
-                    {selected.has(u.id) && <span className="text-primary font-bold">✓</span>}
+                    {selected.has(u.id) && <span className="text-primary flex items-center"><Check size={15} /></span>}
                   </button>
                 ))}
               </div>
@@ -1513,7 +1523,7 @@ function InviteMemberModal({
       <div className="bg-background rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Invite Anggota ke Grup</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
         </div>
         <div className="p-4 flex-1 overflow-y-auto">
           <input
@@ -1543,7 +1553,7 @@ function InviteMemberModal({
                     {(u.full_name || "?").charAt(0).toUpperCase()}
                   </div>
                   <span className="flex-1 truncate">{u.full_name}</span>
-                  {selected.has(u.id) && <span className="font-bold">✓</span>}
+                  {selected.has(u.id) && <span className="text-primary flex items-center"><Check size={15} /></span>}
                 </button>
               ))}
             </div>
@@ -1595,7 +1605,7 @@ function NewDMModal({
       <div className="bg-background rounded-xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Pilih anggota untuk DM</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
         </div>
         <div className="p-4">
           <input
@@ -1782,7 +1792,7 @@ export default function ChatPage() {
       setInCallRoom(data.call.jitsi_room);
       setCallMinimized(false);
       loadCalls();
-      toast.success("Group call dimulai! Tim bisa join dari badge 🔴 LIVE");
+      toast.success("Group call dimulai! Tim bisa join dari badge LIVE");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal memulai call");
     }
@@ -1825,7 +1835,7 @@ export default function ChatPage() {
         throw new Error(err.error || "Gagal membuat grup");
       }
       const data = await res.json();
-      toast.success(`Grup "${name}" dibuat 🎉`);
+      toast.success(`Grup "${name}" dibuat`);
       setShowGroupModal(false);
       await loadChannels();
       if (data.channel) setActiveChannelId(data.channel.id);
@@ -1940,10 +1950,10 @@ export default function ChatPage() {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Channels</p>
               <button
                 onClick={() => setShowChannelDrawer(false)}
-                className="text-muted-foreground hover:text-foreground text-sm"
+                className="text-muted-foreground hover:text-foreground flex items-center"
                 aria-label="Tutup daftar channel"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
             {loadingChannels ? (
