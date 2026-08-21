@@ -1954,7 +1954,7 @@ export default function ChatPage() {
         </div>
 
         {/* Center: Chat Area + Call Panel */}
-        <div className="flex flex-1 min-w-0 relative">
+        <div className={cn("flex flex-1 min-w-0 relative", !mobileChatOpen && !inCallRoom && "hidden lg:flex")}>
           {activeChannel ? (
             <>
               <div
