@@ -64,12 +64,12 @@ async function main() {
       log("[Mobile] Header punya ruang atas (tidak menempel)", !!notStuck, box ? `y=${Math.round(box.y)}` : "");
     }
 
-    // 4. Daftar channel (layar utama) terlihat — section "Channels"
-    const channelsSection = mp.locator("p", { hasText: "Channels" }).first();
+    // 4. Daftar channel (layar utama) terlihat — section "Channels" (scoped ke list mobile)
+    const channelsSection = mp.locator('[data-testid="mobile-channel-list"] p', { hasText: "Channels" }).first();
     log("[Mobile] Daftar channel tampil sebagai layar utama", await channelsSection.isVisible().catch(() => false));
 
-    // Klik channel pertama → chat fullscreen
-    const channelItem = mp.locator("div.flex.flex-col.gap-0\\.5 button").first();
+    // Klik channel pertama → chat fullscreen (scoped ke list mobile agar tidak match sidebar desktop yang hidden)
+    const channelItem = mp.locator('[data-testid="mobile-channel-list"] div.flex.flex-col.gap-0\\.5 button').first();
     await channelItem.click();
     await sleep(2500);
     await mp.screenshot({ path: `${SHOT_DIR}/chat-mobile-open.png`, fullPage: false });
@@ -83,7 +83,7 @@ async function main() {
     if (backVisible) {
       await backBtn.click();
       await sleep(1200);
-      const listBack = await mp.locator("p", { hasText: "Direct Messages" }).first().isVisible().catch(() => false);
+      const listBack = await mp.locator('[data-testid="mobile-channel-list"] p', { hasText: "Direct Messages" }).isVisible().catch(() => false);
       log("[Mobile] Back → kembali ke daftar channel", listBack);
       await mp.screenshot({ path: `${SHOT_DIR}/chat-mobile-back.png`, fullPage: false });
     }
@@ -93,7 +93,7 @@ async function main() {
     await sleep(2000);
     await mp.goBack();
     await sleep(1200);
-    const listAfterBrowserBack = await mp.locator("p", { hasText: "Direct Messages" }).first().isVisible().catch(() => false);
+    const listAfterBrowserBack = await mp.locator('[data-testid="mobile-channel-list"] p', { hasText: "Direct Messages" }).isVisible().catch(() => false);
     log("[Mobile] Browser back menutup chat (popstate)", listAfterBrowserBack);
   } catch (err) {
     log("[Mobile] Error", false, err.message);

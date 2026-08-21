@@ -1897,7 +1897,7 @@ export default function ChatPage() {
 
       <div className="relative flex h-[calc(100dvh-96px)] md:h-[calc(100vh-180px)] bg-surface overflow-hidden md:rounded-xl md:border">
         {/* Desktop (md+): Channel Sidebar */}
-        <div className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
+        <div data-testid="desktop-channel-sidebar" className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
           {loadingChannels ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted">
               Memuat...
@@ -1915,7 +1915,7 @@ export default function ChatPage() {
         </div>
 
         {/* Mobile: daftar channel sebagai layar utama (ala Telegram) */}
-        <div className={cn("flex-1 overflow-y-auto bg-muted/30 md:hidden", mobileChatOpen && "hidden")}>
+        <div data-testid="mobile-channel-list" className={cn("flex-1 overflow-y-auto bg-muted/30 md:hidden", mobileChatOpen && "hidden")}>
           {/* Header layar list (khusus mobile) — beri ruang atas agar label section tidak menempel */}
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 pt-3.5 pb-2.5">
             <h2 className="text-lg font-bold leading-tight">Chat</h2>
