@@ -123,8 +123,10 @@ async function main() {
     await sleep(5000);
     const md = await measure(dp);
     log("[Desktop] Center chat area tetap tampil (lg:flex)", md.centerDisplay !== "none", `display=${md.centerDisplay}`);
-    const emptyState = dp.locator("text=Pilih channel atau grup untuk mulai chat");
-    log("[Desktop] Empty state 'Pilih channel...' tampil", await emptyState.isVisible().catch(() => false));
+    // App auto-select channel pertama (useEffect line ~1781), jadi center panel
+    // harusnya menampilkan chat aktif dengan input pesan, bukan empty state
+    const chatInput = dp.locator("textarea").first();
+    log("[Desktop] Channel auto-selected, input pesan tampil", await chatInput.isVisible().catch(() => false));
     const sidebar = dp.locator('[data-testid="desktop-channel-sidebar"]');
     log("[Desktop] Sidebar desktop tampil", await sidebar.isVisible().catch(() => false));
   } catch (err) {
