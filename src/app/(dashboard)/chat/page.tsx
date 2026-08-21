@@ -549,7 +549,7 @@ function CallPanel({
   }
 
   return (
-    <div className="border-l bg-surface flex flex-col w-full md:w-[420px] lg:w-[520px] flex-shrink-0">
+    <div className="border-l bg-surface flex flex-col w-full lg:w-[520px] flex-shrink-0">
       <div className="flex items-center justify-between px-3 py-2 border-b bg-red-500/5">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
@@ -1102,7 +1102,7 @@ function ChatArea({
             {onBackMobile && (
               <button
                 onClick={onBackMobile}
-                className="md:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-surface-hover"
+                className="lg:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-surface-hover"
                 title="Kembali"
                 aria-label="Kembali ke daftar channel"
               >
@@ -1902,11 +1902,11 @@ export default function ChatPage() {
 
   return (
     <>
-      <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="hidden md:flex mb-4" />
+      <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="hidden lg:flex mb-4" />
 
-      <div className="relative flex h-[calc(100dvh-64px)] md:h-[calc(100vh-180px)] bg-surface overflow-hidden md:rounded-xl md:border">
+      <div className="relative flex h-[calc(100dvh-64px)] lg:h-[calc(100vh-180px)] bg-surface overflow-hidden lg:rounded-xl lg:border">
         {/* Desktop (md+): Channel Sidebar */}
-        <div data-testid="desktop-channel-sidebar" className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
+        <div data-testid="desktop-channel-sidebar" className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden lg:block">
           {loadingChannels ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted">
               Memuat...
@@ -1924,7 +1924,7 @@ export default function ChatPage() {
         </div>
 
         {/* Mobile: daftar channel sebagai layar utama (ala Telegram) */}
-        <div data-testid="mobile-channel-list" className={cn("flex-1 overflow-y-auto bg-muted/30 md:hidden", mobileChatOpen && "hidden")}>
+        <div data-testid="mobile-channel-list" className={cn("flex-1 overflow-y-auto bg-muted/30 lg:hidden", mobileChatOpen && "hidden")}>
           {/* Header layar list (khusus mobile) — beri ruang atas agar label section tidak menempel */}
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 pt-3.5 pb-2.5">
             <h2 className="text-lg font-bold leading-tight">Chat</h2>
@@ -1961,9 +1961,9 @@ export default function ChatPage() {
                 className={cn(
                   "flex-1 min-w-0",
                   mobileChatOpen && !(inCallRoom && !callMinimized) &&
-                    "fixed inset-0 z-[60] flex flex-col bg-background md:static md:inset-auto md:z-auto",
-                  !mobileChatOpen && "hidden md:flex",
-                  inCallRoom && !callMinimized && "hidden md:flex"
+                    "fixed inset-0 z-[60] flex flex-col bg-background lg:static lg:inset-auto lg:z-auto",
+                  !mobileChatOpen && "hidden lg:flex",
+                  inCallRoom && !callMinimized && "hidden lg:flex"
                 )}
               >
                 <ChatArea
@@ -1994,7 +1994,7 @@ export default function ChatPage() {
               )}
             </>
           ) : (
-            <div className="hidden md:flex items-center justify-center h-full w-full text-muted">
+            <div className="hidden lg:flex items-center justify-center h-full w-full text-muted">
               Pilih channel atau grup untuk mulai chat
             </div>
           )}
