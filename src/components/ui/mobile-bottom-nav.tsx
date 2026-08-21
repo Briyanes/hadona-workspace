@@ -17,6 +17,9 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { openMobile } = useSidebar();
 
+  // Halaman chat mobile = full-screen (ala Telegram) — nav disembunyikan
+  if (pathname.startsWith("/chat")) return null;
+
   return (
     <div
       className="fixed bottom-0 left-0 right-0 z-30 lg:hidden"

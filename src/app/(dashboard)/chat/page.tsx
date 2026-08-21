@@ -10,7 +10,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  PanelLeft, Users as UsersIcon, MessageCircle, Megaphone, Lock, Video,
+  ArrowLeft, Users as UsersIcon, MessageCircle, Megaphone, Lock, Video,
   CircleDot, ArrowDown, Pencil, Reply, X, Trash2, SmilePlus, Send,
   Maximize2, Minimize2, Check, Plus, Hash, Crown, Home
 } from "lucide-react";
@@ -417,15 +417,15 @@ function MessageBubble({
           className={cn(
             "rounded-2xl px-3 py-1.5 shadow-sm animate-in fade-in slide-in-from-bottom-1 duration-150",
             isMine
-              ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-gray-100 text-gray-900 dark:bg-blue-500 dark:text-white rounded-tl-sm",
+              ? "bg-blue-500 text-white dark:bg-amber-300 dark:text-gray-900 rounded-tr-sm"
+              : "bg-amber-300 text-gray-900 dark:bg-blue-500 dark:text-white rounded-tl-sm",
             isGrouped && (isMine ? "rounded-tr-2xl" : "rounded-tl-2xl"),
             highlight && "ring-2 ring-yellow-400 ring-offset-1"
           )}
         >
           {/* Nama pengirim (hanya pesan orang lain di grup chat) */}
           {!isMine && showName && (
-            <p className="text-xs font-bold mb-0.5 text-gray-600 dark:text-white/90">
+            <p className="text-xs font-bold mb-0.5 text-gray-800 dark:text-white/90">
               {msg.profiles?.full_name || "Unknown"}
             </p>
           )}
@@ -437,8 +437,8 @@ function MessageBubble({
               className={cn(
                 "block w-full text-left text-xs mb-1 px-2 py-1 rounded-md border-l-2 truncate",
                 isMine
-                  ? "bg-primary-foreground/15 border-primary-foreground/50 text-primary-foreground/90"
-                  : "bg-black/10 dark:bg-white/20 border-black/20 dark:border-white/60 text-gray-700 dark:text-white/90"
+                  ? "bg-white/15 border-white/50 text-white/90 dark:bg-black/10 dark:border-black/30 dark:text-gray-800"
+                  : "bg-black/10 border-black/30 text-gray-800 dark:bg-white/15 dark:border-white/50 dark:text-white/90"
               )}
             >
               <span className="font-semibold block truncate flex items-center gap-1">
@@ -452,7 +452,7 @@ function MessageBubble({
 
           {/* Content */}
           {msg.deleted_at ? (
-            <p className={cn("text-sm italic opacity-70 flex items-center gap-1.5", isMine && "text-primary-foreground/80")}>
+            <p className="text-sm italic opacity-70 flex items-center gap-1.5">
               <Trash2 size={13} /> Pesan ini telah dihapus
             </p>
           ) : (
@@ -464,11 +464,11 @@ function MessageBubble({
           {/* Timestamp + edited — dalam bubble */}
           <div className={cn(
             "flex items-center justify-end gap-1 text-[10px] mt-0.5",
-            isMine ? "text-primary-foreground/70" : "text-gray-500 dark:text-white/70"
+            isMine ? "text-white/70 dark:text-gray-700" : "text-gray-700 dark:text-white/70"
           )}>
             {isEdited && <span className="italic">diedit</span>}
             <span>{timeStr}</span>
-            {isMine && <Check size={11} className="text-primary-foreground/90" />}
+            {isMine && <Check size={11} className="text-white/90 dark:text-gray-800" />}
           </div>
         </div>
 
@@ -712,7 +712,7 @@ function ChatArea({
   onEndCall,
   onInvite,
   onLeaveGroup,
-  onOpenChannels,
+  onBackMobile,
 }: {
   channelId: string;
   channelName: string;
@@ -727,7 +727,7 @@ function ChatArea({
   onEndCall: () => void;
   onInvite: () => void;
   onLeaveGroup: () => void;
-  onOpenChannels?: () => void;
+  onBackMobile?: () => void;
 }) {
   const {
     messages,
@@ -1099,14 +1099,14 @@ function ChatArea({
         {/* Channel Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            {onOpenChannels && (
+            {onBackMobile && (
               <button
-                onClick={onOpenChannels}
-                className="md:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-surface-hover text-base"
-                title="Daftar channel"
-                aria-label="Buka daftar channel"
+                onClick={onBackMobile}
+                className="md:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-surface-hover"
+                title="Kembali"
+                aria-label="Kembali ke daftar channel"
               >
-                <PanelLeft size={18} />
+                <ArrowLeft size={20} />
               </button>
             )}
             <span className="flex-shrink-0 flex items-center text-muted">
@@ -1657,7 +1657,7 @@ export default function ChatPage() {
   const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
   const [inCallRoom, setInCallRoom] = useState<string | null>(null);
   const [callMinimized, setCallMinimized] = useState(false);
-  const [showChannelDrawer, setShowChannelDrawer] = useState(false);
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
   // Load channels
   const loadChannels = useCallback(async () => {
@@ -1883,7 +1883,7 @@ export default function ChatPage() {
       <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="mb-4" />
 
       <div className="relative flex h-[calc(100vh-180px)] rounded-xl border bg-surface overflow-hidden">
-        {/* Left: Channel Sidebar */}
+        {/* Desktop (md+): Channel Sidebar */}
         <div className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
           {loadingChannels ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted">
@@ -1901,11 +1901,40 @@ export default function ChatPage() {
           )}
         </div>
 
+        {/* Mobile: daftar channel sebagai layar utama (ala Telegram) */}
+        <div className={cn("flex-1 overflow-y-auto bg-muted/30 md:hidden", mobileChatOpen && "hidden")}>
+          {loadingChannels ? (
+            <div className="flex items-center justify-center py-8 text-sm text-muted">
+              Memuat...
+            </div>
+          ) : (
+            <ChannelSidebar
+              channels={channels}
+              activeChannelId={activeChannelId}
+              activeCalls={activeCalls}
+              onSelect={(id) => {
+                setActiveChannelId(id);
+                setMobileChatOpen(true);
+              }}
+              onNewDM={() => setShowDMModal(true)}
+              onNewGroup={() => setShowGroupModal(true)}
+            />
+          )}
+        </div>
+
         {/* Center: Chat Area + Call Panel */}
         <div className="flex flex-1 min-w-0 relative">
           {activeChannel ? (
             <>
-              <div className={cn("flex-1 min-w-0", inCallRoom && !callMinimized && "hidden md:flex")}>
+              <div
+                className={cn(
+                  "flex-1 min-w-0",
+                  mobileChatOpen && !(inCallRoom && !callMinimized) &&
+                    "fixed inset-0 z-[60] flex flex-col bg-background md:static md:inset-auto md:z-auto",
+                  !mobileChatOpen && "hidden md:flex",
+                  inCallRoom && !callMinimized && "hidden md:flex"
+                )}
+              >
                 <ChatArea
                   channelId={activeChannel.id}
                   channelName={activeChannel.type === "dm" ? (activeChannel.dm_partner?.full_name || activeChannel.name.replace(/__/g, " · ")) : activeChannel.name}
@@ -1920,7 +1949,7 @@ export default function ChatPage() {
                   onEndCall={handleLeaveCall}
                   onInvite={() => setShowInviteModal(true)}
                   onLeaveGroup={handleLeaveGroup}
-                  onOpenChannels={() => setShowChannelDrawer(true)}
+                  onBackMobile={() => setMobileChatOpen(false)}
                 />
               </div>
               {inCallRoom && (
@@ -1934,52 +1963,12 @@ export default function ChatPage() {
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center h-full w-full text-muted">
+            <div className="hidden md:flex items-center justify-center h-full w-full text-muted">
               Pilih channel atau grup untuk mulai chat
             </div>
           )}
         </div>
       </div>
-
-      {/* Mobile: Channel drawer (slide-in dari kiri, dibuka via tombol ☰ di header chat) */}
-      {showChannelDrawer && (
-        <div className="md:hidden fixed inset-0 z-50" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowChannelDrawer(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-background border-r shadow-xl p-3 overflow-y-auto">
-            <div className="flex items-center justify-between mb-3 px-3">
-              <p className="text-xs font-semibold text-muted uppercase tracking-wider">Channels</p>
-              <button
-                onClick={() => setShowChannelDrawer(false)}
-                className="text-muted hover:text-gray-900 flex items-center"
-                aria-label="Tutup daftar channel"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            {loadingChannels ? (
-              <div className="flex items-center justify-center py-8 text-sm text-muted">Memuat...</div>
-            ) : (
-              <ChannelSidebar
-                channels={channels}
-                activeChannelId={activeChannelId}
-                activeCalls={activeCalls}
-                onSelect={(id) => {
-                  setActiveChannelId(id);
-                  setShowChannelDrawer(false);
-                }}
-                onNewDM={() => {
-                  setShowDMModal(true);
-                  setShowChannelDrawer(false);
-                }}
-                onNewGroup={() => {
-                  setShowGroupModal(true);
-                  setShowChannelDrawer(false);
-                }}
-              />
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Modals */}
       {showDMModal && (
