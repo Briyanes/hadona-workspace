@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CheckSquare, MessageCircle, Users as UsersIcon, Menu } from "lucide-react";
@@ -17,8 +18,28 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { openMobile } = useSidebar();
 
-  // Halaman chat mobile = full-screen (ala Telegram) — nav disembunyikan
-  if (pathname.startsWith("/chat")) return null;
+  // Chat page (mobile) memberi tahu state fullscreen via custom event:
+  // - Daftar channel (layar utama) → nav tetap tampil
+  // - Chat channel terbuka (fullscreen ala Telegram) → nav disembunyikan
+  const [chatFullscreen, setChatFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onChatFullscreen = (e: Event) => {
+      setChatFullscreen(!!(e as CustomEvent).detail);
+    };
+    window.addEventListener("chat-mobile-fullscreen", onChatFullscreen);
+    return () => {
+      window.removeEventListener("chat-mobile-fullscreen", onChatFullscreen);
+    };
+  }, []);
+
+  // Reset saat navigasi antar halaman (chat page unmount mengirim false,
+  // tapi jaga-jaga bila event terlewat)
+  useEffect(() => {
+    if (!pathname.startsWith("/chat")) setChatFullscreen(false);
+  }, [pathname]);
+
+  if (chatFullscreen) return null;
 
   return (
     <div

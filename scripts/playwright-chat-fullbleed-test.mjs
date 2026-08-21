@@ -90,8 +90,10 @@ async function main() {
       log("[Mobile] Tanpa rounded/border (bukan kotak)", flat, `radius=${style.radius}`);
     }
 
-    // Bottom nav hidden di /chat
-    log("[Mobile] Bottom nav hidden", (await mp.locator("nav.fixed.bottom-0").count()) === 0);
+    // Bottom nav TAMPIL di daftar channel (hanya hidden saat chat fullscreen terbuka)
+    const navSel = 'nav[aria-label="Mobile bottom navigation"]';
+    log("[Mobile] Bottom nav tampil di daftar channel",
+      await mp.locator(navSel).isVisible().catch(() => false));
 
     // Header list "Chat" tampil
     log("[Mobile] Header 'Chat' tampil",
@@ -105,11 +107,20 @@ async function main() {
       await mp.screenshot({ path: `${SHOT_DIR}/chat-fullbleed-mobile-open.png`, fullPage: false });
       const backBtn = mp.locator('button[aria-label="Kembali ke daftar channel"]');
       log("[Mobile] Chat fullscreen + tombol back", await backBtn.isVisible().catch(() => false));
+
+      // Saat chat fullscreen terbuka → bottom nav harus HIDDEN
+      log("[Mobile] Bottom nav hidden saat chat fullscreen",
+        (await mp.locator(navSel).count()) === 0);
+
       if (await backBtn.isVisible().catch(() => false)) {
         await backBtn.click();
         await sleep(1200);
         log("[Mobile] Back → daftar channel",
           await mp.locator('[data-testid="mobile-channel-list"] p', { hasText: "Direct Messages" }).isVisible().catch(() => false));
+
+        // Kembali ke daftar channel → bottom nav TAMPIL lagi
+        log("[Mobile] Bottom nav tampil lagi setelah back",
+          await mp.locator(navSel).isVisible().catch(() => false));
       }
     } else {
       log("[Mobile] Chat fullscreen + tombol back", false, "channel tidak ditemukan");

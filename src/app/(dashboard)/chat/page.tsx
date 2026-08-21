@@ -1672,6 +1672,15 @@ export default function ChatPage() {
     };
   }, [mobileChatOpen]);
 
+  // Beri tahu MobileBottomNav state fullscreen:
+  // daftar channel → nav tampil; chat channel terbuka → nav disembunyikan
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("chat-mobile-fullscreen", { detail: mobileChatOpen }));
+    return () => {
+      window.dispatchEvent(new CustomEvent("chat-mobile-fullscreen", { detail: false }));
+    };
+  }, [mobileChatOpen]);
+
   // Load channels
   const loadChannels = useCallback(async () => {
     try {
@@ -1928,7 +1937,7 @@ export default function ChatPage() {
               Memuat...
             </div>
           ) : (
-            <div className="p-3">
+            <div className="p-3 pb-24">
               <ChannelSidebar
                 channels={channels}
                 activeChannelId={activeChannelId}
