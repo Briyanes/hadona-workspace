@@ -78,7 +78,7 @@ function DateSeparator({ date }: { date: string }) {
   return (
     <div className="flex items-center justify-center gap-3 my-3">
       <div className="h-px flex-1 bg-border" />
-      <span className="text-[11px] font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+      <span className="text-[11px] font-medium text-muted bg-gray-100 dark:bg-[#334155] px-3 py-1 rounded-full">
         {label}
       </span>
       <div className="h-px flex-1 bg-border" />
@@ -124,16 +124,16 @@ function ChannelSidebar({
           "flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-colors group",
           activeChannelId === ch.id
             ? "bg-primary/15 text-primary font-medium"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            : "text-muted hover:bg-surface-hover hover:text-gray-900"
         )}
       >
         <span className="flex items-center gap-2 truncate">
-          <span className="flex-shrink-0 flex items-center text-muted-foreground">
+          <span className="flex-shrink-0 flex items-center text-muted">
             {ch.type === "announcement" ? <Megaphone size={14} /> : ch.type === "division" ? <Home size={14} /> : ch.type === "group" ? <UsersIcon size={14} /> : ch.type === "dm" ? <MessageCircle size={14} /> : <Hash size={14} />}
           </span>
           <span className="truncate">{getDisplayName(ch)}</span>
           {ch.type === "group" && (ch.member_count || 0) > 0 && (
-            <span className="text-[10px] text-muted-foreground/70">{ch.member_count}</span>
+            <span className="text-[10px] text-muted/70">{ch.member_count}</span>
           )}
           {hasCall && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
@@ -153,12 +153,12 @@ function ChannelSidebar({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="px-3 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <p className="px-3 mb-1 text-xs font-semibold text-muted uppercase tracking-wider">
           Channels
         </p>
         <div className="flex flex-col gap-0.5">
           {generalChannels.length === 0 ? (
-            <p className="px-3 text-xs text-muted-foreground italic">Belum ada channel</p>
+            <p className="px-3 text-xs text-muted italic">Belum ada channel</p>
           ) : (
             generalChannels.map(renderChannel)
           )}
@@ -166,7 +166,7 @@ function ChannelSidebar({
       </div>
       {divisionChannels.length > 0 && (
         <div>
-          <p className="px-3 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <p className="px-3 mb-1 text-xs font-semibold text-muted uppercase tracking-wider">
             Divisi
           </p>
           <div className="flex flex-col gap-0.5">
@@ -176,12 +176,12 @@ function ChannelSidebar({
       )}
       <div>
         <div className="flex items-center justify-between px-3 mb-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <p className="text-xs font-semibold text-muted uppercase tracking-wider">
             Grup
           </p>
           <button
             onClick={onNewGroup}
-            className="text-muted-foreground hover:text-primary flex items-center"
+            className="text-muted hover:text-primary flex items-center"
             title="Buat grup baru"
           >
             <Plus size={16} />
@@ -191,7 +191,7 @@ function ChannelSidebar({
           {groupChannels.length === 0 ? (
             <button
               onClick={onNewGroup}
-              className="px-3 text-xs text-muted-foreground italic hover:text-primary text-left"
+              className="px-3 text-xs text-muted italic hover:text-primary text-left"
             >
               Buat grup pertama kamu
             </button>
@@ -202,12 +202,12 @@ function ChannelSidebar({
       </div>
       <div>
         <div className="flex items-center justify-between px-3 mb-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <p className="text-xs font-semibold text-muted uppercase tracking-wider">
             Direct Messages
           </p>
           <button
             onClick={onNewDM}
-            className="text-muted-foreground hover:text-primary flex items-center"
+            className="text-muted hover:text-primary flex items-center"
             title="New DM"
           >
             <Plus size={14} />
@@ -215,7 +215,7 @@ function ChannelSidebar({
         </div>
         <div className="flex flex-col gap-0.5">
           {dmChannels.length === 0 ? (
-            <p className="px-3 text-xs text-muted-foreground italic">Belum ada DM</p>
+            <p className="px-3 text-xs text-muted italic">Belum ada DM</p>
           ) : (
             dmChannels.map(renderChannel)
           )}
@@ -238,7 +238,7 @@ function ReactionPicker({
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="absolute z-50 bottom-full mb-1 left-0 bg-popover border rounded-full shadow-lg p-1.5 flex gap-0.5">
+      <div className="absolute z-50 bottom-full mb-1 left-0 bg-white dark:bg-[#1e293b] border rounded-full shadow-lg p-1.5 flex gap-0.5">
         {EMOJI_LIST.map((emoji) => (
           <button
             key={emoji}
@@ -246,7 +246,7 @@ function ReactionPicker({
               onReact(emoji);
               onClose();
             }}
-            className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-full transition-transform hover:scale-125 text-base"
+            className="w-8 h-8 flex items-center justify-center hover:bg-surface-hover rounded-full transition-transform hover:scale-125 text-base"
           >
             {emoji}
           </button>
@@ -296,7 +296,7 @@ function MessageBubble({
   if (msg.message_type === "system") {
     return (
       <div className="flex justify-center my-2">
-        <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+        <span className="text-xs text-muted bg-gray-100 dark:bg-[#334155] px-3 py-1 rounded-full">
           {msg.content}
         </span>
       </div>
@@ -369,7 +369,7 @@ function MessageBubble({
         {/* Hover actions */}
         {showActions && !msg.deleted_at && (
           <div className={cn(
-            "absolute top-0 flex items-center gap-0.5 bg-popover border rounded-full shadow-md p-0.5 z-20",
+            "absolute top-0 flex items-center gap-0.5 bg-white dark:bg-[#1e293b] border rounded-full shadow-md p-0.5 z-20",
             isMine ? "right-full mr-1" : "left-full ml-1"
           )}>
             {showReactionPicker && (
@@ -380,14 +380,14 @@ function MessageBubble({
             )}
             <button
               onClick={() => setShowReactionPicker((s) => !s)}
-              className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm"
+              className="w-7 h-7 flex items-center justify-center hover:bg-surface-hover rounded-full text-sm"
               title="React"
             >
               <SmilePlus size={14} />
             </button>
             <button
               onClick={() => onReply(msg)}
-              className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm"
+              className="w-7 h-7 flex items-center justify-center hover:bg-surface-hover rounded-full text-sm"
               title="Reply"
             >
               <Reply size={14} />
@@ -396,14 +396,14 @@ function MessageBubble({
               <>
                 <button
                   onClick={() => onEdit(msg)}
-                  className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full text-sm"
+                  className="w-7 h-7 flex items-center justify-center hover:bg-surface-hover rounded-full text-sm"
                   title="Edit"
                 >
                   <Pencil size={14} />
                 </button>
                 <button
                   onClick={() => onDelete(msg.id)}
-                  className="w-7 h-7 flex items-center justify-center hover:bg-destructive/10 rounded-full text-sm"
+                  className="w-7 h-7 flex items-center justify-center hover:bg-danger/10 rounded-full text-sm"
                   title="Delete"
                 >
                   <Trash2 size={14} />
@@ -418,14 +418,14 @@ function MessageBubble({
             "rounded-2xl px-3 py-1.5 shadow-sm animate-in fade-in slide-in-from-bottom-1 duration-150",
             isMine
               ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-blue-500 text-white rounded-tl-sm",
+              : "bg-gray-100 text-gray-900 dark:bg-blue-500 dark:text-white rounded-tl-sm",
             isGrouped && (isMine ? "rounded-tr-2xl" : "rounded-tl-2xl"),
             highlight && "ring-2 ring-yellow-400 ring-offset-1"
           )}
         >
           {/* Nama pengirim (hanya pesan orang lain di grup chat) */}
           {!isMine && showName && (
-            <p className="text-xs font-bold mb-0.5 text-white/90">
+            <p className="text-xs font-bold mb-0.5 text-gray-600 dark:text-white/90">
               {msg.profiles?.full_name || "Unknown"}
             </p>
           )}
@@ -438,7 +438,7 @@ function MessageBubble({
                 "block w-full text-left text-xs mb-1 px-2 py-1 rounded-md border-l-2 truncate",
                 isMine
                   ? "bg-primary-foreground/15 border-primary-foreground/50 text-primary-foreground/90"
-                  : "bg-white/20 border-white/60 text-white/90"
+                  : "bg-black/10 dark:bg-white/20 border-black/20 dark:border-white/60 text-gray-700 dark:text-white/90"
               )}
             >
               <span className="font-semibold block truncate flex items-center gap-1">
@@ -464,7 +464,7 @@ function MessageBubble({
           {/* Timestamp + edited — dalam bubble */}
           <div className={cn(
             "flex items-center justify-end gap-1 text-[10px] mt-0.5",
-            isMine ? "text-primary-foreground/70" : "text-white/70"
+            isMine ? "text-primary-foreground/70" : "text-gray-500 dark:text-white/70"
           )}>
             {isEdited && <span className="italic">diedit</span>}
             <span>{timeStr}</span>
@@ -484,10 +484,10 @@ function MessageBubble({
                   isMine
                     ? info.mine
                       ? "bg-primary-foreground/25 border-primary-foreground/50 text-primary-foreground"
-                      : "bg-background border-border text-foreground"
+                      : "bg-background border-border text-gray-700"
                     : info.mine
                     ? "bg-primary/15 border-primary/40 text-primary"
-                    : "bg-background border-border text-foreground"
+                    : "bg-background border-border text-gray-700"
                 )}
               >
                 <span>{emoji}</span>
@@ -535,10 +535,10 @@ function CallPanel({
 
   if (minimized) {
     return (
-      <div className="absolute bottom-20 right-4 z-30 flex items-center gap-2 bg-popover border rounded-full shadow-lg pl-4 pr-2 py-2">
+      <div className="absolute bottom-20 right-4 z-30 flex items-center gap-2 bg-white dark:bg-[#1e293b] border rounded-full shadow-lg pl-4 pr-2 py-2">
         <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
         <span className="text-xs font-medium">Call berlangsung</span>
-        <button onClick={onMinimize} className="w-7 h-7 flex items-center justify-center hover:bg-muted rounded-full" title="Buka">
+        <button onClick={onMinimize} className="w-7 h-7 flex items-center justify-center hover:bg-surface-hover rounded-full" title="Buka">
           <Maximize2 size={14} />
         </button>
         <button onClick={onLeave} className="w-7 h-7 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full" title="Keluar">
@@ -549,15 +549,15 @@ function CallPanel({
   }
 
   return (
-    <div className="border-l bg-card flex flex-col w-full md:w-[420px] lg:w-[520px] flex-shrink-0">
+    <div className="border-l bg-surface flex flex-col w-full md:w-[420px] lg:w-[520px] flex-shrink-0">
       <div className="flex items-center justify-between px-3 py-2 border-b bg-red-500/5">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
           <span className="text-sm font-semibold">Group Call</span>
-          <span className="text-xs text-muted-foreground hidden sm:inline">mic otomatis aktif, kamera off</span>
+          <span className="text-xs text-muted hidden sm:inline">mic otomatis aktif, kamera off</span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onMinimize} className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-lg" title="Minimize (tetap chat)">
+          <button onClick={onMinimize} className="w-8 h-8 flex items-center justify-center hover:bg-surface-hover rounded-lg" title="Minimize (tetap chat)">
             <Minimize2 size={15} />
           </button>
           <button onClick={onLeave} className="w-8 h-8 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg" title="Keluar call">
@@ -627,10 +627,10 @@ function MemberPanel({
   const panelContent = (
     <>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <p className="text-xs font-semibold text-muted uppercase tracking-wider">
           Anggota ({members.length})
         </p>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
+        <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
       </div>
       {isOwner && (
         <button
@@ -641,11 +641,11 @@ function MemberPanel({
         </button>
       )}
       {loading ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Memuat...</p>
+        <p className="text-xs text-muted text-center py-4">Memuat...</p>
       ) : (
         <div className="flex flex-col gap-1">
           {members.map((m) => (
-            <div key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted group">
+            <div key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface-hover group">
               <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden flex-shrink-0">
                 {m.profile?.avatar_url ? (
                   <img src={m.profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
@@ -656,7 +656,7 @@ function MemberPanel({
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate">
                   {m.profile?.full_name || "Unknown"}
-                  {m.user_id === myUserId && <span className="text-muted-foreground"> (kamu)</span>}
+                  {m.user_id === myUserId && <span className="text-muted"> (kamu)</span>}
                 </p>
                 {m.role === "owner" && (
                   <span className="text-[10px] text-amber-600 font-medium flex items-center gap-1"><Crown size={10} /> Owner</span>
@@ -665,7 +665,7 @@ function MemberPanel({
               {isOwner && m.user_id !== myUserId && m.role !== "owner" && (
                 <button
                   onClick={() => handleKick(m.user_id, m.profile?.full_name || "member")}
-                  className="opacity-0 group-hover:opacity-100 text-destructive/60 hover:text-destructive flex items-center"
+                  className="opacity-0 group-hover:opacity-100 text-danger/60 hover:text-danger flex items-center"
                   title="Keluarkan"
                 >
                   <X size={14} />
@@ -1102,19 +1102,19 @@ function ChatArea({
             {onOpenChannels && (
               <button
                 onClick={onOpenChannels}
-                className="md:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-muted text-base"
+                className="md:hidden w-8 h-8 -ml-1 flex-shrink-0 flex items-center justify-center rounded-lg hover:bg-surface-hover text-base"
                 title="Daftar channel"
                 aria-label="Buka daftar channel"
               >
                 <PanelLeft size={18} />
               </button>
             )}
-            <span className="flex-shrink-0 flex items-center text-muted-foreground">
+            <span className="flex-shrink-0 flex items-center text-muted">
               {isGroup ? <UsersIcon size={18} /> : channelType === "dm" ? <MessageCircle size={18} /> : channelType === "announcement" ? <Megaphone size={18} /> : <Hash size={18} />}
             </span>
             <h2 className="font-semibold truncate">{channelName}</h2>
             {isGroup && channelIsPrivate && (
-              <span className="text-muted-foreground border rounded px-1.5 py-0.5 flex-shrink-0 flex items-center"><Lock size={10} /></span>
+              <span className="text-muted border rounded px-1.5 py-0.5 flex-shrink-0 flex items-center"><Lock size={10} /></span>
             )}
             {onlineCount > 0 && (
               <span className="flex-shrink-0 flex items-center gap-1 text-xs text-green-600">
@@ -1127,7 +1127,7 @@ function ChatArea({
             {isGroup && (
               <button
                 onClick={() => setShowMembers((s) => !s)}
-                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground"
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-hover text-muted"
                 title="Anggota grup"
               >
                 <UsersIcon size={18} />
@@ -1168,10 +1168,10 @@ function ChatArea({
           className="flex-1 overflow-y-auto py-4 relative"
         >
           {loadingOlder && (
-            <div className="text-center text-xs text-muted-foreground py-2">Memuat pesan lama...</div>
+            <div className="text-center text-xs text-muted py-2">Memuat pesan lama...</div>
           )}
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+            <div className="flex flex-col items-center justify-center h-full text-muted gap-2">
               <MessageCircle size={40} className="opacity-40" />
               <p className="text-sm">Belum ada pesan. Mulai percakapan pertama!</p>
             </div>
@@ -1181,7 +1181,7 @@ function ChatArea({
           <div ref={messagesEndRef} />
 
           {typingText && (
-            <div className="px-4 py-1 text-xs text-muted-foreground flex items-center gap-2">
+            <div className="px-4 py-1 text-xs text-muted flex items-center gap-2">
               <span className="flex gap-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: "0ms" }} />
                 <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -1200,7 +1200,7 @@ function ChatArea({
               "absolute bottom-24 right-8 rounded-full border shadow-lg flex items-center justify-center gap-1 transition-colors z-10",
               newCount > 0
                 ? "px-3 h-9 bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90"
-                : "w-9 h-9 bg-popover hover:bg-muted"
+                : "w-9 h-9 bg-white dark:bg-[#1e293b] hover:bg-surface-hover"
             )}
           >
             {newCount > 0 ? (
@@ -1214,7 +1214,7 @@ function ChatArea({
         {/* Reply / Edit indicator */}
         {(replyTo || editingMsg) && (
           <div className="px-4 py-1.5 border-t bg-muted/30 flex items-center justify-between text-xs gap-2">
-            <span className="text-muted-foreground truncate flex items-center gap-1">
+            <span className="text-muted truncate flex items-center gap-1">
               {editingMsg ? (
                 <><Pencil size={12} className="shrink-0" /> <span>Mengedit pesan</span></>
               ) : (
@@ -1226,7 +1226,7 @@ function ChatArea({
             </span>
             <button
               onClick={() => { setReplyTo(null); setEditingMsg(null); setInput(""); }}
-              className="text-muted-foreground hover:text-destructive flex-shrink-0 flex items-center gap-1"
+              className="text-muted hover:text-danger flex-shrink-0 flex items-center gap-1"
             >
               <X size={12} /> Batal
             </button>
@@ -1238,8 +1238,8 @@ function ChatArea({
           <div className="flex items-end gap-2">
             <div className="flex-1 relative">
               {mentionState && mentionSuggestions.length > 0 && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 max-h-56 overflow-y-auto bg-popover border rounded-xl shadow-lg z-30 py-1">
-                  <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="absolute bottom-full left-0 mb-2 w-64 max-h-56 overflow-y-auto bg-white dark:bg-[#1e293b] border rounded-xl shadow-lg z-30 py-1">
+                  <p className="px-3 py-1 text-[10px] font-semibold text-muted uppercase tracking-wider">
                     Menyebut anggota
                   </p>
                   {mentionSuggestions.map((u, i) => (
@@ -1251,7 +1251,7 @@ function ChatArea({
                         "w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left",
                         i === Math.min(mentionIndex, mentionSuggestions.length - 1)
                           ? "bg-primary/10 text-primary"
-                          : "hover:bg-muted"
+                          : "hover:bg-surface-hover"
                       )}
                     >
                       <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0 overflow-hidden">
@@ -1269,7 +1269,7 @@ function ChatArea({
                 onKeyDown={handleKeyDown}
                 placeholder={`Pesan ke ${isGroup || channelType === "dm" ? "" : "#"}${channelName}...`}
                 rows={1}
-                className="w-full resize-none rounded-2xl border border-input bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
             <button
@@ -1285,13 +1285,13 @@ function ChatArea({
               )}
             </button>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1.5 text-center hidden sm:block">
+          <p className="text-[11px] text-muted mt-1.5 text-center hidden sm:block">
             Enter kirim · Shift+Enter baris baru · @mention anggota · Markdown didukung
           </p>
           {isGroup && !isGroupOwner && (
             <button
               onClick={onLeaveGroup}
-              className="text-[11px] text-destructive/70 hover:text-destructive mt-1"
+              className="text-[11px] text-danger/70 hover:text-danger mt-1"
             >
               Keluar dari grup
             </button>
@@ -1368,13 +1368,13 @@ function CreateGroupModal({
         <div className="flex items-center justify-between p-4 border-b">
           <div>
             <h3 className="font-semibold">Buat Grup Baru</h3>
-            <p className="text-xs text-muted-foreground">Chat & group call ala Discord/WhatsApp</p>
+            <p className="text-xs text-muted">Chat & group call ala Discord/WhatsApp</p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
+          <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
         </div>
         <div className="p-4 space-y-3 flex-1 overflow-y-auto">
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Nama grup</label>
+            <label className="text-xs font-medium text-muted">Nama grup</label>
             <input
               type="text"
               placeholder="cth: Tim Marketing"
@@ -1393,12 +1393,12 @@ function CreateGroupModal({
               onChange={(e) => setIsPrivate(e.target.checked)}
               className="rounded"
             />
-            <label htmlFor="is-private" className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <label htmlFor="is-private" className="text-sm text-muted flex items-center gap-1.5">
               <Lock size={13} /> Private (hanya anggota yang diajak yang bisa lihat)
             </label>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">
+            <label className="text-xs font-medium text-muted">
               Pilih anggota {selected.size > 0 && `(${selected.size} dipilih)`}
             </label>
             <input
@@ -1409,9 +1409,9 @@ function CreateGroupModal({
               className="w-full rounded-lg border px-3 py-2 text-sm mt-1 mb-2"
             />
             {loading ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Memuat...</p>
+              <p className="text-sm text-muted text-center py-4">Memuat...</p>
             ) : filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada user ditemukan</p>
+              <p className="text-sm text-muted text-center py-4">Tidak ada user ditemukan</p>
             ) : (
               <div className="max-h-52 overflow-y-auto space-y-1">
                 {filtered.map((u) => (
@@ -1420,14 +1420,14 @@ function CreateGroupModal({
                     onClick={() => toggle(u.id)}
                     className={cn(
                       "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-left transition-colors",
-                      selected.has(u.id) ? "bg-primary/15 text-primary" : "hover:bg-muted"
+                      selected.has(u.id) ? "bg-primary/15 text-primary" : "hover:bg-surface-hover"
                     )}
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold flex-shrink-0">
                       {(u.full_name || "?").charAt(0).toUpperCase()}
                     </div>
                     <span className="flex-1 truncate">{u.full_name}</span>
-                    <span className="text-xs text-muted-foreground">{u.role?.replace(/_/g, " ")}</span>
+                    <span className="text-xs text-muted">{u.role?.replace(/_/g, " ")}</span>
                     {selected.has(u.id) && <span className="text-primary flex items-center"><Check size={15} /></span>}
                   </button>
                 ))}
@@ -1436,7 +1436,7 @@ function CreateGroupModal({
           </div>
         </div>
         <div className="p-4 border-t flex gap-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-muted">
+          <button onClick={onClose} className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-surface-hover">
             Batal
           </button>
           <button
@@ -1523,7 +1523,7 @@ function InviteMemberModal({
       <div className="bg-background rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Invite Anggota ke Grup</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
+          <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
         </div>
         <div className="p-4 flex-1 overflow-y-auto">
           <input
@@ -1535,9 +1535,9 @@ function InviteMemberModal({
             autoFocus
           />
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Memuat...</p>
+            <p className="text-sm text-muted text-center py-4">Memuat...</p>
           ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Semua user sudah jadi anggota</p>
+            <p className="text-sm text-muted text-center py-4">Semua user sudah jadi anggota</p>
           ) : (
             <div className="max-h-60 overflow-y-auto space-y-1">
               {filtered.map((u) => (
@@ -1546,7 +1546,7 @@ function InviteMemberModal({
                   onClick={() => toggle(u.id)}
                   className={cn(
                     "flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-left",
-                    selected.has(u.id) ? "bg-primary/15 text-primary" : "hover:bg-muted"
+                    selected.has(u.id) ? "bg-primary/15 text-primary" : "hover:bg-surface-hover"
                   )}
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -1560,7 +1560,7 @@ function InviteMemberModal({
           )}
         </div>
         <div className="p-4 border-t flex gap-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-muted">Batal</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-surface-hover">Batal</button>
           <button
             onClick={submit}
             disabled={selected.size === 0 || inviting}
@@ -1605,7 +1605,7 @@ function NewDMModal({
       <div className="bg-background rounded-xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold">Pilih anggota untuk DM</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground flex items-center"><X size={16} /></button>
+          <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
         </div>
         <div className="p-4">
           <input
@@ -1617,22 +1617,22 @@ function NewDMModal({
             autoFocus
           />
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Memuat...</p>
+            <p className="text-sm text-muted text-center py-4">Memuat...</p>
           ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Tidak ada user ditemukan</p>
+            <p className="text-sm text-muted text-center py-4">Tidak ada user ditemukan</p>
           ) : (
             <div className="max-h-60 overflow-y-auto space-y-1">
               {filtered.map((u) => (
                 <button
                   key={u.id}
                   onClick={() => onPick(u.id)}
-                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-muted text-sm text-left"
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-surface-hover text-sm text-left"
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
                     {(u.full_name || "?").charAt(0).toUpperCase()}
                   </div>
                   <span>{u.full_name}</span>
-                  <span className="text-xs text-muted-foreground">{u.role?.replace(/_/g, " ")}</span>
+                  <span className="text-xs text-muted">{u.role?.replace(/_/g, " ")}</span>
                 </button>
               ))}
             </div>
@@ -1882,11 +1882,11 @@ export default function ChatPage() {
     <>
       <PageHeader title="Team Chat" subtitle="Chat internal tim — grup, DM, group call, real-time" className="mb-4" />
 
-      <div className="relative flex h-[calc(100vh-180px)] rounded-xl border bg-card overflow-hidden">
+      <div className="relative flex h-[calc(100vh-180px)] rounded-xl border bg-surface overflow-hidden">
         {/* Left: Channel Sidebar */}
         <div className="w-64 flex-shrink-0 border-r bg-muted/30 p-3 overflow-y-auto hidden md:block">
           {loadingChannels ? (
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center py-8 text-sm text-muted">
               Memuat...
             </div>
           ) : (
@@ -1934,7 +1934,7 @@ export default function ChatPage() {
               )}
             </>
           ) : (
-            <div className="flex items-center justify-center h-full w-full text-muted-foreground">
+            <div className="flex items-center justify-center h-full w-full text-muted">
               Pilih channel atau grup untuk mulai chat
             </div>
           )}
@@ -1947,17 +1947,17 @@ export default function ChatPage() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowChannelDrawer(false)} />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-background border-r shadow-xl p-3 overflow-y-auto">
             <div className="flex items-center justify-between mb-3 px-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Channels</p>
+              <p className="text-xs font-semibold text-muted uppercase tracking-wider">Channels</p>
               <button
                 onClick={() => setShowChannelDrawer(false)}
-                className="text-muted-foreground hover:text-foreground flex items-center"
+                className="text-muted hover:text-gray-900 flex items-center"
                 aria-label="Tutup daftar channel"
               >
                 <X size={16} />
               </button>
             </div>
             {loadingChannels ? (
-              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">Memuat...</div>
+              <div className="flex items-center justify-center py-8 text-sm text-muted">Memuat...</div>
             ) : (
               <ChannelSidebar
                 channels={channels}
