@@ -58,10 +58,11 @@ export async function GET() {
     // graceful
   }
 
-  // Filter: grup private hanya terlihat oleh member; DM hanya terlihat kedua pesertanya
+  // Filter: grup private hanya terlihat oleh member ATAU creator-nya
+  // (fallback created_by menutup celah grup orphan bila membership gagal dibuat)
   const visibleChannels = (channels || []).filter((ch: any) => {
     if (ch.is_private && ch.type === "group") {
-      return myMemberChannelIds.includes(ch.id);
+      return myMemberChannelIds.includes(ch.id) || ch.created_by === user.id;
     }
     if (ch.type === "dm") {
       return String(ch.name || "").split("__").includes(user.id);
@@ -218,25 +219,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: groupError.message }, { status: 500 });
     }
 
-    // Tambahkan creator sebagai owner
-    const memberRows = [
-      { channel_id: group.id, user_id: user.id, role: "owner" },
-      ...((member_ids || [])
-        .filter((id: string) => id && id !== user.id)
-        .map((id: string) => ({ channel_id: group.id, user_id: id, role: "member" }))),
-    ];
-
-    const { error: membersError } = await supabase
+    // Tambahkan creator sebagai owner — INSERT TERPISAH.
+    // (Batch insert owner+member dulu SEMPAT gagal total: RLS members_insert lama
+    //  auth.uid()=user_id menolak row member lain → seluruh statement rollback →
+    //  grup tanpa member & tak terlihat. Insert owner sendiri selalu lolos RLS.)
+    const { error: ownerError } = await supabase
       .from("chat_channel_members")
-      .insert(memberRows);
+      .insert({ channel_id: group.id, user_id: user.id, role: "owner" });
 
-    if (membersError) {
-      console.error("[chat/channels POST] members insert error:", membersError.message);
-      // Channel tetap dibuat, tapi report error
+    if (ownerError) {
+      console.error("[chat/channels POST] owner insert error:", ownerError.message);
       return NextResponse.json({
         channel: group,
-        warning: "Grup dibuat tapi sebagian anggota gagal ditambahkan",
+        warning: "Grup dibuat tapi gagal menambahkan Anda sebagai member (RLS).",
       });
+    }
+
+    // Lalu tambahkan member lain (dibolehkan RLS baru: creator boleh invite)
+    const otherMemberRows = (member_ids || [])
+      .filter((id: string) => id && id !== user.id)
+      .map((id: string) => ({ channel_id: group.id, user_id: id, role: "member" }));
+
+    if (otherMemberRows.length > 0) {
+      const { error: membersError } = await supabase
+        .from("chat_channel_members")
+        .insert(otherMemberRows);
+
+      if (membersError) {
+        console.error("[chat/channels POST] members insert error:", membersError.message);
+        // Owner sudah aman — member lain bisa ditambahkan manual nanti
+        return NextResponse.json({
+          channel: group,
+          warning: "Grup dibuat, tapi sebagian anggota gagal ditambahkan. Tambahkan lewat menu anggota.",
+        });
+      }
     }
 
     // System message: grup dibuat
