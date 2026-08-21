@@ -30,7 +30,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             "overflow-x-hidden",
             isChatPage
               ? "p-0 pb-0 lg:p-6 lg:pb-6"
-              : "p-4 pb-20 sm:p-6 lg:pb-6"
+              : "p-4 pb-24 sm:p-6 lg:pb-6"
           )}
         >
           {children}
