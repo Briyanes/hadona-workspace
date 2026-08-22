@@ -23,6 +23,19 @@ interface ClusterItem {
   entry_date: string;
   format_type: string | null;
   theme: string | null;
+  pillar?: string | null;
+  content_copy?: string | null;
+  details?: string | null;
+  referensi?: string | null;
+  caption?: string | null;
+  thumbnail?: string | null;
+  progress?: string | null;
+  result_link?: string | null;
+  assets?: string | null;
+  upload_date?: string | null;
+  client_hint?: string | null;
+  source_sheet?: string | null;
+  sheet_row?: number | null;
   created_at?: string;
   client?: { name: string } | null;
 }
@@ -48,6 +61,7 @@ const EMPTY_FORM = {
   client_id: "",
   entry_date: new Date().toISOString().slice(0, 10),
   format_type: "",
+  pillar: "",
   theme: "",
 };
 
@@ -81,6 +95,7 @@ export default function AdsContentClusters() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ClusterItem | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [detail, setDetail] = useState<ClusterItem | null>(null);
 
   useEffect(() => {
     loadItems();
@@ -115,10 +130,13 @@ export default function AdsContentClusters() {
     if (formatFilter !== "all" && it.format_type !== formatFilter) return false;
     if (search) {
       const q = search.toLowerCase();
-      const clientName = it.client?.name?.toLowerCase() || "";
+      const clientName = it.client?.name?.toLowerCase() || it.client_hint?.toLowerCase() || "";
       const theme = it.theme?.toLowerCase() || "";
       const fmt = it.format_type?.toLowerCase() || "";
-      if (!clientName.includes(q) && !theme.includes(q) && !fmt.includes(q)) return false;
+      const pillar = it.pillar?.toLowerCase() || "";
+      const caption = it.caption?.toLowerCase() || "";
+      if (!clientName.includes(q) && !theme.includes(q) && !fmt.includes(q) && !pillar.includes(q) && !caption.includes(q))
+        return false;
     }
     return true;
   });
@@ -135,6 +153,7 @@ export default function AdsContentClusters() {
       client_id: item.client_id || "",
       entry_date: (item.entry_date || "").slice(0, 10),
       format_type: item.format_type || "",
+      pillar: item.pillar || "",
       theme: item.theme || "",
     });
     setShowModal(true);
@@ -149,6 +168,7 @@ export default function AdsContentClusters() {
         client_id: form.client_id,
         entry_date: form.entry_date,
         format_type: form.format_type || null,
+        pillar: form.pillar.trim() || null,
         theme: form.theme.trim() || null,
       };
       let error;
@@ -248,15 +268,20 @@ export default function AdsContentClusters() {
       ) : view === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((it) => (
-            <div key={it.id} className="card p-4 flex flex-col gap-2">
+            <div
+              key={it.id}
+              className="card p-4 flex flex-col gap-2 cursor-pointer transition-shadow hover:shadow-md"
+              onClick={() => setDetail(it)}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-sm text-foreground">{it.client?.name || "—"}</p>
+                  <p className="font-semibold text-sm text-foreground">{it.client?.name || it.client_hint || "—"}</p>
                   <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
                     <Calendar size={11} /> {formatDate(it.entry_date)}
+                    {it.source_sheet && <span className="ml-1 opacity-70">• {it.source_sheet}</span>}
                   </p>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => openEdit(it)} className="p-1.5 rounded hover:bg-surface text-muted" title="Edit">
                     <Pencil size={14} />
                   </button>
@@ -269,11 +294,18 @@ export default function AdsContentClusters() {
                   </button>
                 </div>
               </div>
-              {it.format_type && (
-                <span className="inline-flex w-fit rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">
-                  {it.format_type}
-                </span>
-              )}
+              <div className="flex flex-wrap gap-1.5">
+                {it.format_type && (
+                  <span className="inline-flex w-fit rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">
+                    {it.format_type}
+                  </span>
+                )}
+                {it.pillar && (
+                  <span className="inline-flex w-fit rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {it.pillar}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-foreground/80 whitespace-pre-wrap line-clamp-5 flex-1">{it.theme || "—"}</p>
             </div>
           ))}
@@ -285,6 +317,7 @@ export default function AdsContentClusters() {
               <tr className="border-b border-border text-left text-xs text-muted">
                 <th className="p-3">Tanggal</th>
                 <th className="p-3">Klien</th>
+                <th className="p-3">Pillar</th>
                 <th className="p-3">Format</th>
                 <th className="p-3">Theme</th>
                 <th className="p-3 text-right">Aksi</th>
@@ -292,9 +325,10 @@ export default function AdsContentClusters() {
             </thead>
             <tbody>
               {filtered.map((it) => (
-                <tr key={it.id} className="border-b border-border/50 hover:bg-surface/50">
+                <tr key={it.id} className="border-b border-border/50 hover:bg-surface/50 cursor-pointer" onClick={() => setDetail(it)}>
                   <td className="p-3 whitespace-nowrap text-muted">{formatDate(it.entry_date)}</td>
-                  <td className="p-3 font-medium">{it.client?.name || "—"}</td>
+                  <td className="p-3 font-medium">{it.client?.name || it.client_hint || "—"}</td>
+                  <td className="p-3 text-xs text-foreground/80 max-w-[160px]">{it.pillar || "—"}</td>
                   <td className="p-3">
                     {it.format_type ? (
                       <span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">{it.format_type}</span>
@@ -375,6 +409,16 @@ export default function AdsContentClusters() {
                 </select>
               </div>
               <div>
+                <label className="label">Pillar</label>
+                <input
+                  type="text"
+                  value={form.pillar}
+                  onChange={(e) => setForm({ ...form, pillar: e.target.value })}
+                  placeholder="Contoh: USP/UVP, Conversion, Entertain..."
+                  className="input"
+                />
+              </div>
+              <div>
                 <label className="label">Theme</label>
                 <textarea
                   value={form.theme}
@@ -392,6 +436,75 @@ export default function AdsContentClusters() {
               <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 {editingId ? "Simpan Perubahan" : "Simpan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
+          <div
+            className="card w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-foreground">{detail.theme || detail.format_type || "Detail"}</h3>
+                <p className="text-xs text-muted mt-0.5">
+                  {detail.client?.name || detail.client_hint || "—"}
+                  {detail.source_sheet && ` • sumber: ${detail.source_sheet}${detail.sheet_row ? ` (row ${detail.sheet_row})` : ""}`}
+                </p>
+              </div>
+              <button onClick={() => setDetail(null)} className="p-1 rounded hover:bg-surface">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3 text-sm">
+              {[
+                ["Pillar", detail.pillar],
+                ["Format", detail.format_type],
+                ["Tema", detail.theme],
+                ["Copy", detail.content_copy],
+                ["Details", detail.details],
+                ["Aset", detail.assets],
+                ["Referensi", detail.referensi],
+                ["Caption", detail.caption],
+                ["Thumbnail", detail.thumbnail],
+                ["Progress", detail.progress],
+                ["Tanggal Unggah", detail.upload_date ? formatDate(detail.upload_date) : null],
+              ].map(([label, value]) =>
+                value ? (
+                  <div key={label as string} className="grid grid-cols-[110px_1fr] gap-3">
+                    <span className="text-muted text-xs pt-0.5">{label}</span>
+                    <p className="whitespace-pre-wrap text-foreground/90 break-words">{value as string}</p>
+                  </div>
+                ) : null
+              )}
+              {detail.result_link && (
+                <div className="grid grid-cols-[110px_1fr] gap-3">
+                  <span className="text-muted text-xs pt-0.5">Link Hasil</span>
+                  <a
+                    href={detail.result_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline break-all"
+                  >
+                    {detail.result_link}
+                  </a>
+                </div>
+              )}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setDetail(null);
+                  openEdit(detail);
+                }}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Pencil size={14} /> Edit
               </button>
             </div>
           </div>
