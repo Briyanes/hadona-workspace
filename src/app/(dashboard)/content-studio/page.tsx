@@ -40,7 +40,7 @@ export default function ContentStudioPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Ads Content Studio" subtitle="Creative request, banking caption & clustering content untuk divisi Copywriter & Advertiser" />
+      <PageHeader title="Ads Content Studio" subtitle="Creative request, banking caption & ads creative untuk divisi Copywriter & Advertiser" />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -57,7 +57,7 @@ export default function ContentStudioPage() {
         <div className="card p-4">
           <Boxes className="mb-2 text-accent" size={18} />
           <p className="text-xl font-bold text-foreground">{stats.totalClusters}</p>
-          <p className="text-xs text-muted">Clustering Content</p>
+          <p className="text-xs text-muted">Ads Creative</p>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export default function ContentStudioPage() {
                 : "border-transparent text-muted hover:text-foreground"
             )}
           >
-            <Boxes size={16} /> Clustering Content
+            <Boxes size={16} /> Ads Creative
           </button>
         </div>
       </div>

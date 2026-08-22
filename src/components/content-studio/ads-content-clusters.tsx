@@ -97,7 +97,7 @@ export default function AdsContentClusters() {
       if (error) throw error;
       setItems((data as unknown as ClusterItem[]) || []);
     } catch (err) {
-      toast.error("Gagal memuat clustering content: " + extractError(err));
+      toast.error("Gagal memuat ads creative: " + extractError(err));
     } finally {
       setLoading(false);
     }
@@ -243,7 +243,7 @@ export default function AdsContentClusters() {
       ) : filtered.length === 0 ? (
         <div className="card p-10 text-center text-muted">
           <Boxes className="mx-auto mb-3" size={32} />
-          <p className="text-sm">Belum ada clustering content</p>
+          <p className="text-sm">Belum ada ads creative</p>
         </div>
       ) : view === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
