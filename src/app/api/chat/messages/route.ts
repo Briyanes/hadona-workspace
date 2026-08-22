@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sanitizePlainText } from "@/lib/sanitize";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const db = () => createClient() as any;
 
@@ -117,15 +118,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "channel_id and content required" }, { status: 400 });
     }
 
-    // Rate limit: max 30 messages per minute per user
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
-    const { count } = await supabase
-      .from("chat_messages")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", oneMinuteAgo);
-
-    if ((count || 0) >= 30) {
+    // Rate limit: max 30 messages per minute per user (in-memory —
+    // query COUNT ke DB menambah ~400ms latensi per pesan)
+    const rl = checkRateLimit(`chat-msg:${user.id}`, 30, 60 * 1000);
+    if (!rl.allowed) {
       return NextResponse.json({ error: "Rate limit: too many messages" }, { status: 429 });
     }
 
@@ -140,45 +136,48 @@ export async function POST(req: NextRequest) {
     }
     const allMentions = Array.from(new Set([...extractedMentions, ...(mentions || [])]));
 
-    // Insert without complex joins — fetch profile separately
-    const { data: msg, error } = await supabase
-      .from("chat_messages")
-      .insert({
-        channel_id,
-        user_id: user.id,
-        content: sanitizePlainText(content).slice(0, 5000),
-        message_type,
-        metadata,
-        reply_to,
-        mentions: allMentions.length > 0 ? allMentions : null,
-      })
-      .select(`
-        id,
-        channel_id,
-        user_id,
-        content,
-        message_type,
-        metadata,
-        reply_to,
-        created_at,
-        edited_at,
-        mentions,
-        is_pinned,
-        deleted_at
-      `)
-      .single();
+    // Paralel: INSERT pesan + fetch profil penulis (independen — hemat 1 roundtrip)
+    const [msgRes, profileRes] = await Promise.all([
+      supabase
+        .from("chat_messages")
+        .insert({
+          channel_id,
+          user_id: user.id,
+          content: sanitizePlainText(content).slice(0, 5000),
+          message_type,
+          metadata,
+          reply_to,
+          mentions: allMentions.length > 0 ? allMentions : null,
+        })
+        .select(`
+          id,
+          channel_id,
+          user_id,
+          content,
+          message_type,
+          metadata,
+          reply_to,
+          created_at,
+          edited_at,
+          mentions,
+          is_pinned,
+          deleted_at
+        `)
+        .single(),
+      supabase
+        .from("profiles")
+        .select("full_name, avatar_url, role")
+        .eq("id", user.id)
+        .single(),
+    ]);
+
+    const { data: msg, error } = msgRes;
+    const { data: profile } = profileRes;
 
     if (error) {
       console.error("[chat/messages POST] DB error:", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    // Fetch author profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url, role")
-      .eq("id", user.id)
-      .single();
 
     // Mention notifications (graceful — requires service role key; never blocks the message)
     try {

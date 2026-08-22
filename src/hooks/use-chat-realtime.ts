@@ -36,6 +36,10 @@ export interface ChatMessage {
     user_id: string;
     emoji: string;
   }[];
+  /** Optimistic UI: pesan milik sendiri yang masih dikirim */
+  pending?: boolean;
+  /** Optimistic UI: gagal terkirim — bisa di-retry */
+  failed?: boolean;
 }
 
 export interface TypingUser {
@@ -50,6 +54,35 @@ export function useChatRealtime(channelId: string | null) {
   const [onlineUsers, setOnlineUsers] = useState<Map<string, string>>(new Map());
   const channelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  // Cache profil per user_id — hindari fetch enrich API untuk tiap pesan baru
+  const profileCacheRef = useRef<Map<string, NonNullable<ChatMessage["profiles"]>>>(new Map());
+  const usersFetchedRef = useRef<Set<string>>(new Set());
+
+  // Insert-or-update tanpa duplikat + reconcile optimistic temp message.
+  // Temp message (id "temp-*") milik user yang sama dengan konten identik
+  // digantikan oleh pesan asli dari server (broadcast atau postgres_changes).
+  const upsertMessage = useCallback((real: ChatMessage) => {
+    setMessages((prev) => {
+      const existingIdx = prev.findIndex((m) => m.id === real.id);
+      if (existingIdx >= 0) {
+        const next = [...prev];
+        next[existingIdx] = { ...next[existingIdx], ...real, pending: false, failed: false };
+        return next;
+      }
+      const tempIdx = prev.findIndex(
+        (m) => m.id.startsWith("temp-") && m.user_id === real.user_id && m.content === real.content
+      );
+      if (tempIdx >= 0) {
+        const next = [...prev];
+        next[tempIdx] = real;
+        return next;
+      }
+      return [...prev, real];
+    });
+  }, []);
+
+  const upsertRef = useRef(upsertMessage);
+  upsertRef.current = upsertMessage;
 
   // Load initial messages
   const loadMessages = useCallback(async () => {
@@ -58,7 +91,13 @@ export function useChatRealtime(channelId: string | null) {
       const res = await fetch(`/api/chat/messages?channelId=${channelId}&limit=50`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.messages || []);
+        const msgs: ChatMessage[] = data.messages || [];
+        // Seed cache profil dari history — pesan realtime berikutnya
+        // tidak perlu fetch enrich API lagi
+        msgs.forEach((m) => {
+          if (m.profiles?.full_name) profileCacheRef.current.set(m.user_id, m.profiles);
+        });
+        setMessages(msgs);
       }
     } catch (err) {
       console.error("Failed to load messages:", err);
@@ -110,30 +149,33 @@ export function useChatRealtime(channelId: string | null) {
           table: "chat_messages",
           filter: `channel_id=eq.${channelId}`,
         },
-        async (payload: any) => {
-          // Fetch the exact new message with relations (author profile, etc.)
-          try {
-            const res = await fetch(
-              `/api/chat/messages?channelId=${channelId}&messageId=${payload.new.id}`
-            );
-            if (res.ok) {
-              const data = await res.json();
-              const newMsg = data.messages?.find((m: ChatMessage) => m.id === payload.new.id);
-              if (newMsg) {
-                setMessages((prev) => {
-                  if (prev.some((m) => m.id === newMsg.id)) return prev;
-                  return [...prev, newMsg];
-                });
-                return;
-              }
-            }
-            throw new Error("enrich failed");
-          } catch {
-            // Fallback: use payload directly (author name may be missing but message still shows)
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === payload.new.id)) return prev;
-              return [...prev, payload.new as ChatMessage];
+        (payload: any) => {
+          // FAST-PATH: render langsung dari payload (tanpa roundtrip API).
+          // Profil penulis dari cache; kalau belum ada render placeholder
+          // lalu enrich sekali per user di background.
+          const raw = payload.new as ChatMessage;
+          const cached = profileCacheRef.current.get(raw.user_id);
+          if (cached) {
+            upsertRef.current({ ...raw, profiles: cached, chat_reactions: [] });
+          } else {
+            upsertRef.current({
+              ...raw,
+              profiles: { full_name: "Memuat…", avatar_url: null, role: "user" },
+              chat_reactions: [],
             });
+            if (!usersFetchedRef.current.has(raw.user_id)) {
+              usersFetchedRef.current.add(raw.user_id);
+              fetch(`/api/chat/messages?channelId=${channelId}&messageId=${raw.id}`)
+                .then((r) => (r.ok ? r.json() : null))
+                .then((data) => {
+                  const full = data?.messages?.find((m: ChatMessage) => m.id === raw.id);
+                  if (full?.profiles?.full_name) {
+                    profileCacheRef.current.set(raw.user_id, full.profiles);
+                    upsertRef.current({ ...full });
+                  }
+                })
+                .catch(() => {});
+            }
           }
         }
       )
@@ -167,7 +209,7 @@ export function useChatRealtime(channelId: string | null) {
           schema: "public",
           table: "chat_reactions",
         },
-        async (payload: any) => {
+        (payload: any) => {
           // Update reactions on the message
           setMessages((prev) =>
             prev.map((m) => {
@@ -220,6 +262,14 @@ export function useChatRealtime(channelId: string | null) {
         });
         setOnlineUsers(online);
       })
+      .on("broadcast", { event: "new_message" }, (payload: any) => {
+        // FAST-PATH delivery: pesan baru di-broadcast penuh (dengan profil)
+        // oleh pengirim — penerima render <300ms tanpa menunggu fetch API.
+        // postgres_changes di atas tetap berjalan sebagai source-of-truth
+        // (dedupe by id via upsertMessage).
+        const msg = payload?.payload?.message as ChatMessage | undefined;
+        if (msg?.id) upsertRef.current(msg);
+      })
       .on("broadcast", { event: "typing" }, (payload: any) => {
         const { user_id, user_name } = payload.payload;
         if (user_id) {
@@ -267,6 +317,21 @@ export function useChatRealtime(channelId: string | null) {
     [channelId]
   );
 
+  // Broadcast pesan baru (dipanggil sender setelah POST sukses) —
+  // penerima aktif di channel yang sama langsung render.
+  const broadcastMessage = useCallback(
+    (message: ChatMessage) => {
+      const client = getRealtimeClient();
+      if (!client || !channelId) return;
+      client.channel(`presence:${channelId}`).send({
+        type: "broadcast",
+        event: "new_message",
+        payload: { message },
+      });
+    },
+    [channelId]
+  );
+
   // Join presence
   const joinPresence = useCallback(
     (userName: string, userId: string) => {
@@ -291,6 +356,7 @@ export function useChatRealtime(channelId: string | null) {
     loadMessages,
     loadOlderMessages,
     broadcastTyping,
+    broadcastMessage,
     joinPresence,
   };
 }

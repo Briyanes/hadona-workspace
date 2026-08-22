@@ -305,15 +305,26 @@ export function TaskBoard({
 
   async function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
+    if (saving) return; // guard: mencegah double-submit saat request masih berjalan
     if (!form.title.trim()) {
       toast.error("Judul task wajib diisi");
       return;
     }
 
+    // Warning potensi duplikat: judul sama (case-insensitive) & belum selesai
+    const dupTitle = form.title.trim().toLowerCase();
+    const existing = tasks.find(
+      (t) => t.title?.trim().toLowerCase() === dupTitle && t.status !== "done"
+    );
+    if (existing && !confirm(`Task dengan judul yang sama sudah ada dan belum selesai:\n\n"${existing.title}"\n\nTetap buat task baru?`)) {
+      return;
+    }
+
     setSaving(true);
+    try {
     const { data: userData } = await supabase.auth.getUser();
 
-    const { error } = await supabase.from("tasks").insert({
+    const { data: newTask, error } = await supabase.from("tasks").insert({
       title: form.title.trim(),
       description: form.description.trim() || null,
       client_id: form.client_id || null,
@@ -325,19 +336,12 @@ export function TaskBoard({
       start_date: form.start_date || null,
       due_date: form.due_date || null,
       created_by: userData.user?.id,
-    } as never);
+    } as never).select("id").single();
 
     if (error) {
       toast.error("Gagal membuat task: " + error.message);
     } else {
       // Insert assignees if any selected
-      const { data: newTask } = await supabase
-        .from("tasks")
-        .select("id")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
       if (newTask && formAssignees.length > 0) {
         const assigneeRows = formAssignees.map((uid) => ({
           task_id: (newTask as { id: string }).id,
@@ -352,7 +356,9 @@ export function TaskBoard({
       setShowModal(false);
       loadTasks();
     }
-    setSaving(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleDragEnd(result: DropResult) {

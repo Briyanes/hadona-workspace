@@ -738,6 +738,7 @@ function ChatArea({
     loadMessages,
     loadOlderMessages,
     broadcastTyping,
+    broadcastMessage,
     joinPresence,
   } = useChatRealtime(channelId);
 
@@ -927,21 +928,37 @@ function ChatArea({
       const replyToMsg = msg.reply_to ? messagesById.get(msg.reply_to) || null : null;
 
       items.push(
-        <MessageBubble
+        <div
           key={msg.id}
-          msg={msg}
-          isMine={isMine}
-          isGrouped={isGrouped}
-          showName={!isGrouped}
-          replyToMsg={replyToMsg}
-          currentUserId={currentUserId}
-          highlight={highlightId === msg.id}
-          onReply={setReplyTo}
-          onReact={handleReact}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onJumpTo={handleJumpTo}
-        />
+          className={msg.pending ? "opacity-60 transition-opacity" : "transition-opacity"}
+        >
+          {msg.failed && (
+            <div className={`mb-1 flex items-center gap-1.5 text-[11px] text-red-500 ${isMine ? "justify-end" : ""}`}>
+              <span>Gagal terkirim</span>
+              <button
+                type="button"
+                className="underline hover:text-red-600"
+                onClick={() => handleRetry(msg)}
+              >
+                Coba lagi
+              </button>
+            </div>
+          )}
+          <MessageBubble
+            msg={msg}
+            isMine={isMine}
+            isGrouped={isGrouped}
+            showName={!isGrouped}
+            replyToMsg={replyToMsg}
+            currentUserId={currentUserId}
+            highlight={highlightId === msg.id}
+            onReply={setReplyTo}
+            onReact={handleReact}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onJumpTo={handleJumpTo}
+          />
+        </div>
       );
 
       prevMsg = msg;
@@ -973,16 +990,54 @@ function ChatArea({
           content: text,
         };
         if (replyTo) body.reply_to = replyTo.id;
-        const res = await fetch("/api/chat/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Gagal mengirim pesan");
+
+        // OPTIMISTIC UI: render instan sebagai pending — tidak menunggu server
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const optimistic: ChatMessage = {
+          id: tempId,
+          channel_id: channelId,
+          user_id: currentUserId,
+          content: text,
+          message_type: "text",
+          metadata: {},
+          reply_to: replyTo?.id ?? null,
+          created_at: new Date().toISOString(),
+          edited_at: null,
+          mentions: null,
+          is_pinned: false,
+          deleted_at: null,
+          profiles: { full_name: currentUserName, avatar_url: null, role: "user" },
+          chat_reactions: [],
+          pending: true,
+        };
+        setMessages((prev) => [...prev, optimistic]);
+        setInput("");
+        setMentionState(null);
+        if (textareaRef.current) textareaRef.current.style.height = "auto";
+
+        try {
+          const res = await fetch("/api/chat/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || "Gagal mengirim pesan");
+          }
+          const data = await res.json();
+          const real = data.message as ChatMessage;
+          // Ganti bubble temp dengan pesan asli dari server
+          setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...real, pending: false } : m)));
+          // Fast-path: dorong pesan penuh ke penerima lain via realtime broadcast
+          broadcastMessage(real);
+          if (replyTo) setReplyTo(null);
+        } catch (sendErr) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === tempId ? { ...m, pending: false, failed: true } : m))
+          );
+          throw sendErr;
         }
-        if (replyTo) setReplyTo(null);
       }
       setInput("");
       setMentionState(null);
@@ -992,6 +1047,13 @@ function ChatArea({
     } finally {
       setSending(false);
     }
+  };
+
+  // Retry pesan gagal: hapus bubble failed, kembalikan isi ke input untuk dikirim ulang
+  const handleRetry = (failedMsg: ChatMessage) => {
+    setMessages((prev) => prev.filter((m) => m.id !== failedMsg.id));
+    setInput(failedMsg.content);
+    textareaRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

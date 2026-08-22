@@ -3,17 +3,16 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/page-header";
-import UploadTracker from "@/components/content-studio/upload-tracker";
-import CaptionBank from "@/components/content-studio/caption-bank";
-import AdsManager from "@/components/content-studio/ads-manager";
-import { Upload, FileText, Megaphone } from "lucide-react";
+import AdsCaptionBank from "@/components/content-studio/ads-caption-bank";
+import AdsContentClusters from "@/components/content-studio/ads-content-clusters";
+import { BookMarked, Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tab = "uploads" | "captions" | "ads";
+type Tab = "captions" | "clusters";
 
 export default function ContentStudioPage() {
-  const [tab, setTab] = useState<Tab>("uploads");
-  const [stats, setStats] = useState({ totalUploads: 0, doneUploads: 0, totalCaptions: 0 });
+  const [tab, setTab] = useState<Tab>("captions");
+  const [stats, setStats] = useState({ totalCaptions: 0, totalClusters: 0 });
   // eslint-disable-next-line
   const supabase = createClient() as any;
 
@@ -23,16 +22,13 @@ export default function ContentStudioPage() {
 
   async function loadStats() {
     try {
-      const [uploadsRes, captionsRes] = await Promise.all([
-        supabase.from("content_uploads").select("status"),
-        supabase.from("caption_bank").select("id"),
+      const [captionsRes, clustersRes] = await Promise.all([
+        supabase.from("ads_captions").select("id"),
+        supabase.from("ads_content_clusters").select("id"),
       ]);
-      const uploads = uploadsRes.data || [];
-      const captions = captionsRes.data || [];
       setStats({
-        totalUploads: uploads.length,
-        doneUploads: uploads.filter((u: { status: string }) => u.status === "done").length,
-        totalCaptions: captions.length,
+        totalCaptions: (captionsRes.data || []).length,
+        totalClusters: (clustersRes.data || []).length,
       });
     } catch {
       // tables might not exist yet
@@ -41,41 +37,25 @@ export default function ContentStudioPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Content Studio" subtitle="Kelola content uploads, caption bank & ads manager" />
+      <PageHeader title="Ads Content Studio" subtitle="Banking caption & clustering content untuk divisi Copywriter & Advertiser" />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="card p-4">
-          <Upload className="mb-2 text-primary" size={18} />
-          <p className="text-xl font-bold text-foreground">{stats.totalUploads}</p>
-          <p className="text-xs text-muted">Total Uploads</p>
-        </div>
-        <div className="card p-4">
-          <Upload className="mb-2 text-success" size={18} />
-          <p className="text-xl font-bold text-success">{stats.doneUploads}</p>
-          <p className="text-xs text-muted">Completed</p>
-        </div>
-        <div className="card p-4">
-          <FileText className="mb-2 text-accent" size={18} />
+          <BookMarked className="mb-2 text-primary" size={18} />
           <p className="text-xl font-bold text-foreground">{stats.totalCaptions}</p>
-          <p className="text-xs text-muted">Caption Bank</p>
+          <p className="text-xs text-muted">Banking Caption</p>
+        </div>
+        <div className="card p-4">
+          <Boxes className="mb-2 text-accent" size={18} />
+          <p className="text-xl font-bold text-foreground">{stats.totalClusters}</p>
+          <p className="text-xs text-muted">Clustering Content</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-border">
         <div className="flex gap-1">
-          <button
-            onClick={() => setTab("uploads")}
-            className={cn(
-              "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
-              tab === "uploads"
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted hover:text-foreground"
-            )}
-          >
-            <Upload size={16} /> Upload Tracker
-          </button>
           <button
             onClick={() => setTab("captions")}
             className={cn(
@@ -85,24 +65,26 @@ export default function ContentStudioPage() {
                 : "border-transparent text-muted hover:text-foreground"
             )}
           >
-            <FileText size={16} /> Caption Bank
+            <BookMarked size={16} /> Banking Caption
           </button>
           <button
-            onClick={() => setTab("ads")}
+            onClick={() => setTab("clusters")}
             className={cn(
               "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
-              tab === "ads"
+              tab === "clusters"
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted hover:text-foreground"
             )}
           >
-            <Megaphone size={16} /> Ads Manager
+            <Boxes size={16} /> Clustering Content
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      {tab === "uploads" ? <UploadTracker /> : tab === "captions" ? <CaptionBank /> : <AdsManager />}
+      {/* Tab Content */}
+      <div>
+        {tab === "captions" ? <AdsCaptionBank /> : <AdsContentClusters />}
+      </div>
     </div>
   );
 }

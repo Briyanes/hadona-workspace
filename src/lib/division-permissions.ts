@@ -121,15 +121,7 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   },
   {
     href: "/content-studio",
-    allowedDivisions: [
-      "Content Creator",
-      "Project Manager",
-      "Creative Director",
-      "Copywriter",
-      "Production",
-      "Editor",
-      "Social Media Manager",
-    ],
+    allowedDivisions: ["Copywriter", "Advertiser"],
     allowedRoles: ["super_admin", "project_manager"],
   },
 
