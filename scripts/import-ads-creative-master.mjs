@@ -201,12 +201,15 @@ function rowToPayload(headerMap, cells) {
   // "Copy di Note" = bukan caption nyata.
   // "Caption (Copy)" / "Prefilled (Copy)" = hasil ekstraksi Apps Script dari
   // cell notes (scripts/apps-script-extract-notes.js) — prioritas utama.
+  // "Paste Disini" = placeholder instruksi di note — bukan konten nyata.
+  const notPlaceholder = (v) =>
+    v && /^paste\s*disini$/i.test(String(v).trim()) ? null : v;
   const realCaption =
-    captionCopy ||
-    (caption && /^copy\s*di\s*note$/i.test(caption) ? null : caption);
+    notPlaceholder(captionCopy) ||
+    notPlaceholder(caption && /^copy\s*di\s*note$/i.test(caption) ? null : caption);
   const realPrefilled =
-    prefilledCopy ||
-    (prefilled && /^copy\s*di\s*note$/i.test(prefilled) ? null : prefilled);
+    notPlaceholder(prefilledCopy) ||
+    notPlaceholder(prefilled && /^copy\s*di\s*note$/i.test(prefilled) ? null : prefilled);
 
   return {
     progress: isPlaceholder(status) ? null : status,
