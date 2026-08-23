@@ -1,84 +1,88 @@
 /**
  * ============================================================================
- * RESOLVE CONTENT LINK → URL (VERSI SMART v2.1 — Shared Drive + fuzzy match)
+ * RESOLVE CONTENT LINK → URL (VERSI SMART v2.2 — BULK INDEX + lokal match)
  * ============================================================================
- * Kelemahan v1 (resolveContentLinksFromDrive) yang diperbaiki:
- *  1. DriveApp.getFilesByName() TIDAK bisa menemukan file di Shared Drive
- *     (Team Drive) — padahal aset klien sering disimpan di sana.
- *  2. Nama harus PERSIS sama — "Brief 5" tidak ketemu kalau file bernama
- *     "Brief5.mp4" (beda spasi / ekstensi / huruf besar-kecil).
+ * Riwayat versi:
+ *  - v1   : DriveApp.getFilesByName — tidak lihat Shared Drive, harus persis.
+ *  - v2   : Drive API per-nama — bug: sintaks v3 dipakai di service v2
+ *           → semua query "Invalid query" → AUTO = 0.
+ *  - v2.1 : auto-detect dialek v2 (title) / v3 (name) → query jalan,
+ *           tapi hanya 7 terisi karena query Drive CASE-SENSITIVE dan
+ *           fuzzy lama butuh prefix ≥ 2 karakter.
+ *  - v2.2 : TIDAK ADA query per-nama lagi. Sekali di awal, tarik DAFTAR
+ *           SEMUA file yang bisa diakses akun (My Drive + Shared Drive,
+ *           non-trash, paginasi, cap 30.000 file) → INDEX. Semua
+ *           pencocokan dilakukan LOKAL di index:
+ *             exact : judul sama persis (abaikan besar/kecil)
+ *             norm  : sama setelah normalisasi (spasi/tanda baca/ekstensi
+ *                     dibuang) → "Brief 4" ≈ "Brief 4.mp4" ≈ "BRIEF4"
+ *             fuzzy : nama file (ternormalisasi) MULAI dengan teks cell
+ *                     (ternormalisasi) — bekerja juga utk "3 agustus", "1.jpg"
  *
- * FIX v2.1 (penting!): Advanced Drive Service bisa v2 atau v3.
- *  - v2 pakai field "title", param "maxResults", hasil "items"
- *  - v3 pakai field "name",   param "pageSize",  hasil "files"
- * Versi script sebelumnya SELALU pakai sintaks v3 → di service v2 SEMUA
- * query gagal "Invalid query" dan tidak ada satu pun baris terisi.
- * Sekarang dialek dideteksi OTOMATIS saat query pertama (coba v2 dulu,
- * kalau "Invalid query" ganti v3), lalu diingat untuk sisa run, dan
- * dilaporkan di execution log + sheet "Link Resolution Log".
+ * Aturan aman (tetap sama):
+ *  - Baris yang kolom (URL)-nya sudah terisi URL → DILEWATI (tidak ditimpa)
+ *  - Auto-fill HANYA jika tepat 1 file unik pada level tsb:
+ *      exact → HIJAU muda; norm/fuzzy → KUNING muda + note "mohon cek"
+ *  - 0 file atau >1 file → cell KUNING + note "CEK MANUAL" (+ daftar nama)
  *
- * Fitur script ini:
- *  1. Pakai Advanced Drive Service dengan supportsAllDrives +
- *     includeItemsFromAllDrives + corpora=allDrives
- *     → BISA menemukan file di Shared Drive.
- *     (Kalau service belum diaktifkan → otomatis fallback ke DriveApp,
- *       perilaku sama seperti v1, dan dicatat di log.)
- *  2. Fuzzy match aman, 3 level:
- *       exact : nama file PERSIS sama dengan teks cell
- *       norm  : sama setelah normalisasi — abaikan huruf besar/kecil, spasi,
- *               tanda baca, dan ekstensi file.
- *               Contoh: "Brief 5" ≈ "Brief5.mp4" ≈ "brief_5"
- *       fuzzy : nama file (hasil normalisasi) MULAI dengan teks cell.
- *               Contoh: "Brief5" cocok dengan "Brief5 Final.mp4"
- *  3. Tetap non-destruktif + aturan aman:
- *       - Baris yang kolom (URL)-nya sudah terisi → dilewati (tidak ditimpa)
- *       - Tepat 1 file unik → auto-fill:
- *           exact      → HIJAU muda
- *           norm/fuzzy → KUNING muda + note "mohon cek sebentar"
- *       - 0 file atau >1 file → cell KUNING + note "CEK MANUAL"
+ * PENTING soal hasil kecil: kalau setelah v2.2 masih banyak
+ * "0 file ditemukan", berarti folder aset TIDAK di-share ke akun Google
+ * yang menjalankan script ini. Solusi: share folder aset (Viewer saja)
+ * ke akun tsb → Run ulang. (Cek angka "Index file" di log — kalau
+ * kecil, akun memang tidak melihat banyak file.)
  *
  * ============================================================================
  * CARA PAKAI (di SHEET ASLI — bukan link publish):
  * ============================================================================
  * 1. Buka spreadsheet Google Sheets ASLI → Extensions → Apps Script.
- * 2. PENTING — aktifkan Advanced Drive Service (sekali saja):
- *       Di sidebar kiri editor, cari bagian "Services" → klik ➕ →
- *       pilih "Drive API" → identifier "Drive" (default) → Add.
- * 3. Tambahkan file script baru (＋ di samping Files) → paste SEMUA kode ini.
- *    (Ganti total isi file versi lama kalau sudah ada — script ini v2.1.)
+ * 2. Pastikan Advanced Drive Service aktif (sekali saja):
+ *       Sidebar "Services" → ➕ → Drive API → identifier "Drive" → Add.
+ *       (HANYA SATU — kalau muncul error "identifier used more than once:
+ *        Drive", hapus salah satu yang dobel.)
+ * 3. Paste SEMUA kode ini (ganti total isi file lama — versi ini v2.2).
  * 4. Save 💾 → pilih fungsi `resolveContentLinksSmart` → Run ▶.
  * 5. Permission pertama kali: "Review permissions" → pilih akun →
  *    "Advanced" → "Go to ... (unsafe)" → Allow.
- * 6. Tunggu log "SELESAI". PASTIKAN di log ada baris:
- *       "✓ Drive API dialek terdeteksi: v2 (field 'title')"  — atau v3
- *    dan TIDAK ada baris "⚠ Drive API error".
- * 7. Cek sheet "Link Resolution Log" untuk ringkasan per baris.
- * 8. Cell KUNING di kolom (URL) = ambigu → tim isi manual URL-nya.
+ * 6. Tunggu log "SELESAI". Cek angka "Index file: N" — makin besar makin
+ *    baik. Lalu cek "AUTO persis/mirip" — harusnya jauh lebih banyak
+ *    dari run sebelumnya (7).
+ * 7. Cek sheet "Link Resolution Log" → tabis per baris.
+ * 8. Cell KUNING = ambigu/tidak ketemu → tim isi manual URL-nya.
  * 9. File → Share → Publish to web → **Publish ulang** (re-publish).
  *10. Jalankan: node scripts/import-ads-creative-master.mjs
  *11. Verifikasi: node scripts/audit-ads-creative-completeness.mjs
  *
  * CATATAN:
- * - Idempotent: hanya memproses baris yang kolom (URL)-nya masih kosong,
- *   jadi aman dijalankan berulang setelah tim menambah konten baru.
+ * - Idempotent: hanya proses baris yang kolom (URL)-nya kosong → aman
+ *   dijalankan berulang (setelah tim tambah konten baru, dsb).
  * - Jalankan dari akun Google yang punya akses ke folder aset klien.
  * ============================================================================
  */
+
+var MAX_INDEX = 30000; // batas aman jumlah file yang di-index
 
 function resolveContentLinksSmart() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = ss.getSheets();
 
-  // Kandidat ekstensi untuk fallback DriveApp (nama generik tanpa ekstensi)
-  const EXT_CANDIDATES = [".mp4", ".mov", ".jpg", ".jpeg", ".png", ".webp"];
-
-  // Cache pencarian Drive per teks cell (hindari query ganda untuk teks sama)
-  var driveCache = {};
-
   var ADVANCED = hasAdvancedDrive();
   if (!ADVANCED) {
     Logger.log("⚠ Advanced Drive Service TIDAK aktif → fallback DriveApp (Shared Drive tidak terlihat).");
     Logger.log("  Cara aktifkan: Apps Script editor → Services (➕) → Drive API → Add → Run ulang.");
+  }
+
+  // ---- BANGUN INDEX SEMUA FILE (sekali saja, di awal) ----
+  var INDEX = null;
+  if (ADVANCED) {
+    try {
+      INDEX = buildIndex();
+      Logger.log("✓ Index selesai: " + INDEX.length + " file terlihat oleh akun ini" +
+        (INDEX.length >= MAX_INDEX ? " (CAP " + MAX_INDEX + " tercapai — mungkin ada file lagi)" : ""));
+      Logger.log("✓ Drive API dialek: " + (DRIVE_DIALECT || "?"));
+    } catch (e) {
+      INDEX = null;
+      Logger.log("⚠ Gagal bangun index (" + e + ") → fallback DriveApp per-nama. Kirim log ini ke developer.");
+    }
   }
 
   var totals = { rows: 0, autoExact: 0, autoMirip: 0, review: 0, skipped: 0 };
@@ -91,7 +95,7 @@ function resolveContentLinksSmart() {
     var lastCol = sheet.getLastColumn();
     if (lastCol < 1) return;
 
-    // ---- Deteksi header (sama seperti extractNotesToColumns & v1) ----
+    // ---- Deteksi header (sama seperti versi sebelumnya) ----
     var headerRange = sheet.getRange(1, 1, Math.min(sheet.getLastRow(), 10), lastCol);
     var headerVals = headerRange.getValues();
     var headerRow = -1, capCol = -1, preCol = -1, linkCol = -1, urlCol = -1;
@@ -110,7 +114,7 @@ function resolveContentLinksSmart() {
     var lastRow = sheet.getLastRow();
     if (lastRow <= headerRow) return;
 
-    // Kolom (URL) wajib ada — buat jika belum (satu kolom setelah terakhir)
+    // Kolom (URL) wajib ada — buat jika belum
     if (urlCol < 0) urlCol = sheet.getLastColumn() + 1;
     sheet.getRange(headerRow, urlCol).setValue("Content Link (URL)");
 
@@ -141,14 +145,16 @@ function resolveContentLinksSmart() {
 
       totals.rows++;
 
-      // ---- Cari file di Drive (exact → norm → fuzzy) ----
-      var res = searchSmart(cellText, driveCache, EXT_CANDIDATES);
+      // ---- Cari file (INDEX lokal → fallback DriveApp) ----
+      var res = (INDEX)
+        ? searchIndex(INDEX, cellText)
+        : searchBasic(cellText);
       var picked = pickUnique(res);
 
       if (picked.file) {
         newUrls[i] = [urlFor(picked.file)];
         if (picked.level === "exact") {
-          notes[i] = ["AUTO dari Drive: " + picked.file.name + (res.mode === "advanced" ? " (termasuk Shared Drive)" : "")];
+          notes[i] = ["AUTO dari Drive: " + picked.file.name + " (semua Drive termasuk Shared Drive)"];
           backgrounds[i] = ["#d9ead3"]; // hijau muda
           totals.autoExact++;
           logRows.push([name, rowNo, cellText, "AUTO", picked.file.name]);
@@ -166,7 +172,10 @@ function resolveContentLinksSmart() {
           notes[i] = ["CEK MANUAL: " + picked.count + " file cocok → " + picked.names.slice(0, 5).join(" | ") + (picked.count > 5 ? " …" : "")];
           logRows.push([name, rowNo, cellText, "REVIEW", picked.count + " file cocok"]);
         } else {
-          notes[i] = ["CEK MANUAL: tidak ada file cocok \"" + cellText + "\" (sudah dicari " + (res.mode === "advanced" ? "di semua Drive termasuk Shared Drive" : "di Drive pribadi saja — aktifkan Drive API service!") + ")"];
+          var cariDi = INDEX
+            ? "semua Drive yang terlihat akun ini (" + INDEX.length + " file di index)"
+            : "Drive pribadi saja (Drive API service tidak aktif / gagal)";
+          notes[i] = ["CEK MANUAL: tidak ada file cocok \"" + cellText + "\" (dicari di " + cariDi + "). Kalau file ada, pastikan folder aset di-share ke akun yang menjalankan script ini."];
           logRows.push([name, rowNo, cellText, "REVIEW", "0 file ditemukan"]);
         }
       }
@@ -193,12 +202,13 @@ function resolveContentLinksSmart() {
   }
   if (!logSheet) logSheet = ss.insertSheet("Link Resolution Log");
   logSheet.clear();
-  logSheet.getRange(1, 1, 1, 5).setValues([["RINGKASAN — SMART v2.1", "", "", "", ""]])
+  logSheet.getRange(1, 1, 1, 5).setValues([["RINGKASAN — SMART v2.2", "", "", "", ""]])
     .setFontWeight("bold");
-  logSheet.getRange(2, 1, 7, 2).setValues([
-    ["Mode pencarian", ADVANCED
-      ? "Advanced Drive API — SEMUA Drive termasuk Shared Drive (dialek: " + (DRIVE_DIALECT || "belum terdeteksi") + ")"
-      : "DriveApp saja — Shared Drive TIDAK terlihat (aktifkan: Services ➕ → Drive API)"],
+  logSheet.getRange(2, 1, 8, 2).setValues([
+    ["Mode pencarian", INDEX
+      ? "BULK INDEX lokal — semua Drive yang terlihat akun (dialek Drive API: " + (DRIVE_DIALECT || "?") + ")"
+      : "DriveApp per-nama — Shared Drive TIDAK terlihat"],
+    ["Jumlah file di index", INDEX ? INDEX.length : 0],
     ["Baris diproses", totals.rows],
     ["Auto persis (hijau)", totals.autoExact],
     ["Auto mirip (kuning muda)", totals.autoMirip],
@@ -206,23 +216,24 @@ function resolveContentLinksSmart() {
     ["Dilewati (sudah URL/kosong)", totals.skipped],
     ["Waktu jalan", new Date().toLocaleString("id-ID")],
   ]);
-  logSheet.getRange(10, 1, 1, 5).setValues([["Tab", "Baris", "Nama File di Cell", "Status", "Keterangan"]])
+  logSheet.getRange(11, 1, 1, 5).setValues([["Tab", "Baris", "Nama File di Cell", "Status", "Keterangan"]])
     .setFontWeight("bold");
   if (logRows.length > 1) {
-    logSheet.getRange(11, 1, logRows.length - 1, 5).setValues(logRows.slice(1));
+    logSheet.getRange(12, 1, logRows.length - 1, 5).setValues(logRows.slice(1));
   }
   logSheet.setColumnWidth(1, 160);
   logSheet.setColumnWidth(3, 260);
   logSheet.setColumnWidth(5, 320);
-  logSheet.setFrozenRows(10);
+  logSheet.setFrozenRows(11);
 
   Logger.log("SELESAI. Diproses: " + totals.rows +
     " | AUTO persis: " + totals.autoExact +
     " | AUTO mirip: " + totals.autoMirip +
     " | REVIEW (kuning): " + totals.review +
     " | Skip: " + totals.skipped +
-    " | Dialek Drive API: " + (DRIVE_DIALECT || "tidak terdeteksi"));
-  Logger.log(">>> Kalau AUTO = 0 dan banyak ⚠ error → kirim log ke developer. <<<");
+    " | Index file: " + (INDEX ? INDEX.length : 0) +
+    " | Dialek: " + (DRIVE_DIALECT || "-"));
+  Logger.log(">>> Kalau REVIEW masih besar & index kecil → share folder aset ke akun script, lalu Run ulang. <<<");
   Logger.log(">>> Cell KUNING = tim isi manual. Lalu: Publish ulang → node scripts/import-ads-creative-master.mjs <<<");
 }
 
@@ -235,113 +246,80 @@ function hasAdvancedDrive() {
   return (typeof Drive !== "undefined") && Drive && Drive.Files;
 }
 
-/* ---- Drive API dialect handling (FIX v2.1) -------------------------------
- * Advanced Drive Service bisa v2 (field "title", param maxResults, hasil
- * "items") atau v3 (field "name", param pageSize, hasil "files").
- * Dialek dideteksi otomatis sekali saat query pertama, lalu diingat.
- * ------------------------------------------------------------------------ */
-var DRIVE_DIALECT = null; // "v2" | "v3" — di-set otomatis saat query pertama
+/* ---- Drive API dialect (v2: title/maxResults/items, v3: name/pageSize/files) */
+var DRIVE_DIALECT = null; // "v2" | "v3" — di-set otomatis saat halaman pertama
 
-/** Nama field judul file sesuai dialek */
-function fieldName() {
-  return DRIVE_DIALECT === "v2" ? "title" : "name";
-}
-
-/** Apakah error tersebut "Invalid query" (tanda salah dialek)? */
-function isInvalidQuery(e) {
-  var msg = (e && e.message) ? e.message : String(e);
-  return /invalid query/i.test(msg);
-}
-
-/** Ambil SATU halaman hasil dari Drive.Files.list sesuai dialek */
-function listPage(fieldValue, mode, token) {
-  var op = (mode === "contains") ? "contains" : "=";
-  var q = fieldName() + " " + op + " '" + escapeQ(fieldValue) + "' and trashed = false";
+/** Ambil SATU halaman daftar file (tanpa filter nama) sesuai dialek */
+function indexPage(token) {
   var params = {
-    q: q,
+    q: "trashed = false",
     pageToken: token || null,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true,
     corpora: "allDrives"
   };
   if (DRIVE_DIALECT === "v2") {
-    params.maxResults = 200;                                   // v2
-    params.fields = "nextPageToken,items(id,title,mimeType)";  // v2
+    params.maxResults = 1000;
+    params.fields = "nextPageToken,items(id,title,mimeType)";
   } else {
-    params.pageSize = 200;                                   // v3
-    params.fields = "nextPageToken,files(id,name,mimeType)"; // v3
+    params.pageSize = 1000;
+    params.fields = "nextPageToken,files(id,name,mimeType)";
   }
-  var resp = Drive.Files.list(params);
-  var arr = (DRIVE_DIALECT === "v2") ? (resp.items || []) : (resp.files || []);
-  var out = [];
-  for (var i = 0; i < arr.length; i++) {
-    out.push({
-      id: arr[i].id,
-      name: (DRIVE_DIALECT === "v2") ? arr[i].title : arr[i].name,
-      isFolder: arr[i].mimeType === "application/vnd.google-apps.folder"
-    });
-  }
-  return { files: out, nextToken: resp.nextPageToken || null };
-}
-
-/** Lanjutkan pagination dari halaman pertama yang sudah didapat */
-function collectRest(firstPage, fieldValue, mode) {
-  var out = firstPage.files;
-  var token = firstPage.nextToken;
-  while (token && out.length < 1000) {
-    var pg = listPage(fieldValue, mode, token);
-    out = out.concat(pg.files);
-    token = pg.nextToken;
-  }
-  return out;
+  return Drive.Files.list(params);
 }
 
 /**
- * Pencarian penuh via Drive API — semua drive, non-trash, dengan pagination.
- * Saat pemanggilan PERTAMA: coba dialek v2 ("title"); kalau Invalid query →
- * ganti v3 ("name"). Dialek yang sukses diingat (DRIVE_DIALECT) permanen.
- * mode: "exact" (judul = teks) atau "contains" (judul mengandung teks).
+ * Bangun INDEX semua file yang terlihat akun: My Drive + Shared Drive,
+ * non-trash, paginasi penuh, cap MAX_INDEX. Return array
+ * { id, name, lower, norm, isFolder }.
  */
-function listDriveApi(fieldValue, mode) {
-  if (!DRIVE_DIALECT) {
-    DRIVE_DIALECT = "v2";
-    try {
-      var page2 = listPage(fieldValue, mode, null);
-      Logger.log("✓ Drive API dialek terdeteksi: v2 (field 'title')");
-      return collectRest(page2, fieldValue, mode);
-    } catch (e2) {
-      if (!isInvalidQuery(e2)) { DRIVE_DIALECT = null; throw e2; }
-      DRIVE_DIALECT = "v3";
-      try {
-        var page3 = listPage(fieldValue, mode, null);
-        Logger.log("✓ Drive API dialek terdeteksi: v3 (field 'name')");
-        return collectRest(page3, fieldValue, mode);
-      } catch (e3) {
-        DRIVE_DIALECT = null; // gagal deteksi — run berikutnya coba lagi
-        throw e3;
-      }
-    }
+function buildIndex() {
+  var index = [];
+
+  // Deteksi dialek dengan halaman pertama (coba v2 → v3)
+  var resp = null;
+  DRIVE_DIALECT = "v2";
+  try {
+    resp = indexPage(null);
+  } catch (e2) {
+    if (!/invalid query/i.test(String(e2 && e2.message || e2))) throw e2;
+    DRIVE_DIALECT = "v3";
+    resp = indexPage(null); // kalau ini juga gagal → throw ke pemanggil
   }
-  return collectRest(listPage(fieldValue, mode, null), fieldValue, mode);
+
+  var token = null;
+  var pages = 0;
+  do {
+    if (resp === null) resp = indexPage(token);
+    pages++;
+    var arr = (DRIVE_DIALECT === "v2") ? (resp.items || []) : (resp.files || []);
+    for (var i = 0; i < arr.length; i++) {
+      var nm = (DRIVE_DIALECT === "v2") ? arr[i].title : arr[i].name;
+      index.push({
+        id: arr[i].id,
+        name: nm,
+        lower: String(nm || "").toLowerCase(),
+        norm: normBase(nm),
+        isFolder: arr[i].mimeType === "application/vnd.google-apps.folder"
+      });
+    }
+    token = resp.nextPageToken || null;
+    resp = null;
+    if (index.length % 5000 < 1000) {
+      Logger.log("… indexing: " + index.length + " file…"); // progress ringan
+    }
+  } while (token && index.length < MAX_INDEX);
+
+  Logger.log("Index: " + index.length + " file / " + pages + " halaman (dialek " + DRIVE_DIALECT + ")");
+  return index;
 }
 
-/** Normalisasi nama file: lowercase, buang ekstensi, buang spasi & tanda baca */
+/** Normalisasi nama: lowercase, buang ekstensi, buang non-alfanumerik */
 function normBase(filename) {
   var s = String(filename || "").trim().toLowerCase();
   s = s.replace(/\.[a-z0-9]{2,5}$/, ""); // buang ekstensi terakhir
-  s = s.replace(/[^a-z0-9]/g, "");        // buang semua non-alfanumerik
+  s = s.replace(/[^a-z0-9]/g, "");
   return s;
-}
-
-/** Ambil run alfanumerik di awal teks (untuk query contains) */
-function leadingAlnum(text) {
-  var m = String(text || "").match(/^[a-zA-Z0-9]+/);
-  return m ? m[0] : "";
-}
-
-/** Escape kutip & backslash untuk parameter q Drive API */
-function escapeQ(s) {
-  return String(s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
 /** Bentuk URL tampilan dari objek file {id, isFolder} */
@@ -352,69 +330,53 @@ function urlFor(f) {
 }
 
 /**
- * Pencarian utama. Return { exact:[], norm:[], fuzzy:[], mode:"advanced"|"basic" }
- * mode "advanced" = via Drive API (semua Drive); "basic" = via DriveApp.
+ * Pencocokan LOKAL terhadap INDEX. Return { exact, norm, fuzzy }.
+ *  exact : judul sama persis (case-insensitive)
+ *  norm  : ternormalisasi sama (abaikan spasi/tanda baca/ekstensi)
+ *  fuzzy : norm(file) MULAI dengan norm(cell) — min 2 karakter
  */
-function searchSmart(text, cache, extCandidates) {
-  if (cache[text]) return cache[text];
+function searchIndex(index, text) {
+  var lower = String(text).toLowerCase();
+  var target = normBase(text);
+  var res = { exact: [], norm: [], fuzzy: [] };
 
-  var result;
-
-  if (hasAdvancedDrive()) {
-    result = { exact: [], norm: [], fuzzy: [], mode: "advanced" };
-    try {
-      // 1) Nama persis
-      result.exact = listDriveApi(text, "exact");
-
-      // 2) Fuzzy: query kandidat lewat prefix, cocokkan lokal via normalisasi
-      if (result.exact.length === 0) {
-        var target = normBase(text);
-        var prefix = leadingAlnum(text);
-        if (target.length >= 2 && prefix.length >= 2) {
-          var cands = listDriveApi(prefix, "contains");
-          cands.forEach(function (c) {
-            var nb = normBase(c.name);
-            if (nb === target) result.norm.push(c);
-            else if (nb.indexOf(target) === 0) result.fuzzy.push(c);
-          });
-        }
-      }
-    } catch (e) {
-      Logger.log("⚠ Drive API error utk \"" + text + "\": " + e + " → fallback DriveApp");
-      result = searchBasic(text, extCandidates);
+  for (var i = 0; i < index.length; i++) {
+    var f = index[i];
+    if (f.lower === lower) {
+      res.exact.push(f);
+      continue; // exact menang — tidak perlu cek level lain utk file ini
     }
-  } else {
-    result = searchBasic(text, extCandidates);
+    if (target.length >= 2) {
+      if (f.norm === target) res.norm.push(f);
+      else if (f.norm.indexOf(target) === 0) res.fuzzy.push(f);
+    }
   }
-
-  cache[text] = result;
-  return result;
+  return res;
 }
 
-/** Fallback DriveApp (perilaku v1) — hanya Drive pribadi + shared-with-me */
-function searchBasic(text, extCandidates) {
-  var result = { exact: [], norm: [], fuzzy: [], mode: "basic" };
+/** Fallback DriveApp per-nama (kalau index gagal / service mati) */
+function searchBasic(text) {
+  var EXT = [".mp4", ".mov", ".jpg", ".jpeg", ".png", ".webp"];
+  var res = { exact: [], norm: [], fuzzy: [] };
   var seen = {};
   function push(file) {
     var id = file.getId();
     if (seen[id]) return;
     seen[id] = 1;
-    result.exact.push({ id: id, name: file.getName(), isFolder: false });
+    res.exact.push({ id: id, name: file.getName(), isFolder: false });
   }
   var it = DriveApp.getFilesByName(text);
   while (it.hasNext()) push(it.next());
-
-  // Nama generik tanpa ekstensi → coba tambahkan ekstensi umum
-  if (result.exact.length === 0 && !/\.[a-z0-9]{2,5}$/i.test(text)) {
-    for (var i = 0; i < extCandidates.length; i++) {
-      var it2 = DriveApp.getFilesByName(text + extCandidates[i]);
+  if (res.exact.length === 0 && !/\.[a-z0-9]{2,5}$/i.test(text)) {
+    for (var i = 0; i < EXT.length; i++) {
+      var it2 = DriveApp.getFilesByName(text + EXT[i]);
       while (it2.hasNext()) push(it2.next());
     }
   }
-  return result;
+  return res;
 }
 
-/** Hilangkan file duplikat (ID sama) dari sebuah array hasil */
+/** Hilangkan duplikat (ID sama) */
 function dedupById(files) {
   var seen = {}, out = [];
   files.forEach(function (f) {
@@ -424,8 +386,8 @@ function dedupById(files) {
 }
 
 /**
- * Tentukan file terpilih dari hasil pencarian, level demi level:
- * exact → norm → fuzzy. Auto HANYA jika tepat 1 file unik di level tsb.
+ * Pilih file: exact → norm → fuzzy. Auto HANYA jika tepat 1 unik di level tsb.
+ * >1 → { reason:"multi", count, names }; 0 → { reason:"zero" }.
  */
 function pickUnique(res) {
   var levels = [
