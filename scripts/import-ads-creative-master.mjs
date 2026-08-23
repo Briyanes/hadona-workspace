@@ -26,6 +26,10 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
+import { execSync } from "child_process";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 config({ path: ".env.local" });
 
@@ -159,6 +163,120 @@ function parseCsv(text) {
     rows.push(row);
   }
   return rows;
+}
+
+// ============================================================
+// XLSX HYPERLINK EXTRACTION — CSV publish hanya memuat teks
+// tampilan hyperlink ("Link"/"Drive"); URL asli tersimpan pada
+// export XLSX dari publish link (pubhtml kini JS-rendered, tidak
+// lagi memuat tabel inline). Diekstrak via unzip + parse XML:
+//   xl/workbook.xml → nama sheet → worksheet file (via rels)
+//   xl/worksheets/sheetN.xml → <c> value + <hyperlink ref r:id>
+//   xl/worksheets/_rels/sheetN.xml.rels → r:id → URL external
+// ============================================================
+const XLSX_TMP = path.join(os.tmpdir(), "ads_master_xlsx");
+
+const decodeXml = (s) =>
+  String(s)
+    .split("&" + "amp;").join("&")
+    .split("&" + "lt;").join("<")
+    .split("&" + "gt;").join(">")
+    .split("&" + "quot;").join('"')
+    .split("&" + "apos;").join("'")
+    .split("&#39;").join("'");
+
+/** Download export XLSX publish sekali, unzip → dir */
+async function downloadMasterXlsx() {
+  const file = path.join(XLSX_TMP, "master.xlsx");
+  fs.mkdirSync(XLSX_TMP, { recursive: true });
+  const res = await fetch(`${PUBLISH_BASE}?output=xlsx`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
+  execSync(`unzip -oq "${file}" -d "${XLSX_TMP}"`);
+  return XLSX_TMP;
+}
+
+/** sharedStrings.xml → array string (index = <v> pada cell t="s") */
+function parseSharedStrings(dir) {
+  const f = path.join(dir, "xl", "sharedStrings.xml");
+  const arr = [];
+  if (!fs.existsSync(f)) return arr;
+  const xml = fs.readFileSync(f, "utf-8");
+  const sis = xml.match(/<si[ >][\s\S]*?<\/si>/g) || [];
+  for (const si of sis) {
+    const ts = si.match(/<t[^>]*>[\s\S]*?<\/t>/g) || [];
+    arr.push(decodeXml(ts.map((t) => t.replace(/<[^>]*>/g, "")).join("")));
+  }
+  return arr;
+}
+
+/** workbook.xml + rels → Map(nama sheet → path worksheet xml) */
+function sheetFileMap(dir) {
+  const wb = fs.readFileSync(path.join(dir, "xl", "workbook.xml"), "utf-8");
+  const relsXml = fs.readFileSync(path.join(dir, "xl", "_rels", "workbook.xml.rels"), "utf-8");
+  const relMap = {};
+  for (const m of relsXml.matchAll(/<Relationship\s[^>]*>/g)) {
+    const id = /Id="([^"]+)"/.exec(m[0])?.[1];
+    const tgt = /Target="([^"]+)"/.exec(m[0])?.[1];
+    if (id && tgt) relMap[id] = tgt;
+  }
+  const map = new Map();
+  for (const m of wb.matchAll(/<sheet\s[^>]*>/g)) {
+    const name = /name="([^"]+)"/.exec(m[0])?.[1];
+    const rid = /r:id="([^"]+)"/.exec(m[0])?.[1];
+    if (!name || !rid || !relMap[rid]) continue;
+    const t = relMap[rid].replace(/^\//, "");
+    const p = t.startsWith("xl/") ? path.join(dir, t) : path.join(dir, "xl", t);
+    map.set(decodeXml(name), p);
+  }
+  return map;
+}
+
+/**
+ * Worksheet xml → Map(nomor baris sheet → { url, display }).
+ * Baris sheet 1-based (header = 1); ordinal CSV r ↔ baris sheet r+1.
+ */
+function sheetHyperlinks(wsPath, shared) {
+  const out = new Map();
+  if (!fs.existsSync(wsPath)) return out;
+  const xml = fs.readFileSync(wsPath, "utf-8");
+
+  // Nilai cell (untuk guard teks tampilan): ref → text
+  const cellText = new Map();
+  for (const m of xml.matchAll(/<c\s([^>]*)>([\s\S]*?)<\/c>/g)) {
+    const attrs = m[1];
+    const body = m[2];
+    const ref = /r="([A-Z]+\d+)"/.exec(attrs)?.[1];
+    if (!ref) continue;
+    const t = /t="([^"]*)"/.exec(attrs)?.[1] || "";
+    let text = null;
+    const v = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1];
+    if (t === "s" && v != null) text = shared[Number(v)] ?? null;
+    else if (t === "inlineStr") text = decodeXml((body.match(/<t[^>]*>([\s\S]*?)<\/t>/) || [])[1] || "");
+    else if (v != null) text = v;
+    if (text != null) cellText.set(ref, String(text));
+  }
+
+  // Hyperlink: ref + r:id → URL via worksheet rels
+  const relsPath = wsPath.replace(/([^/]+)$/, "_rels/$1.rels");
+  const relMap = {};
+  if (fs.existsSync(relsPath)) {
+    const rx = fs.readFileSync(relsPath, "utf-8");
+    for (const m of rx.matchAll(/<Relationship\s[^>]*>/g)) {
+      const id = /Id="([^"]+)"/.exec(m[0])?.[1];
+      const tgt = /Target="([^"]+)"/.exec(m[0])?.[1];
+      if (id && tgt && /TargetMode="External"/.test(m[0])) relMap[id] = decodeXml(tgt);
+    }
+  }
+  for (const m of xml.matchAll(/<hyperlink\s([^>]*)\/?>/g)) {
+    const attrs = m[1];
+    const ref = /ref="([A-Z]+\d+)"/.exec(attrs)?.[1];
+    const rid = /r:id="([^"]+)"/.exec(attrs)?.[1];
+    if (!ref || !rid || !relMap[rid]) continue; // lewati hyperlink internal
+    const row = Number(/(\d+)$/.exec(ref)[1]);
+    out.set(row, { url: relMap[rid], display: cellText.get(ref) ?? null });
+  }
+  return out;
 }
 
 /** Map row → DB payload via header-name lookup */
@@ -297,7 +415,21 @@ async function main() {
     }
   }
 
-  let totalInsert = 0, totalUpdate = 0, totalSkip = 0;
+  // --- 3.5 URL hyperlink tertanam via export XLSX publish ---
+  const xlsxLinks = new Map();
+  try {
+    const dir = await downloadMasterXlsx();
+    const shared = parseSharedStrings(dir);
+    for (const [name, p] of sheetFileMap(dir)) {
+      xlsxLinks.set(name, sheetHyperlinks(p, shared));
+    }
+    const total = [...xlsxLinks.values()].reduce((a, m) => a + m.size, 0);
+    console.log(`📎 XLSX hyperlink map: ${xlsxLinks.size} sheet, ${total} hyperlink eksternal`);
+  } catch (e) {
+    console.warn(`⚠️  Ekstraksi XLSX gagal: ${e.message} — lanjut tanpa URL hyperlink`);
+  }
+
+  let totalInsert = 0, totalUpdate = 0, totalSkip = 0, totalHref = 0;
   const seenKeys = new Set();
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -339,7 +471,11 @@ async function main() {
     if (!clientId) console.log(`⚠️  ${sheet.sheet}: klien tidak ketemu di DB — client_hint saja`);
 
     const sourceSheet = `master|${sheet.sheet}`;
-    let ins = 0, upd = 0, skip = 0, skippedPlaceholder = 0;
+    let ins = 0, upd = 0, skip = 0, skippedPlaceholder = 0, hrefFixed = 0;
+
+    // URL hyperlink tertanam — dari export XLSX (CSV tidak memuatnya).
+    // Ordinal CSV r ↔ baris sheet r+1 (header XLSX = baris 1).
+    const linkMap = xlsxLinks.get(sheet.sheet);
 
     for (let r = 1; r < rows.length; r++) {
       // Lewati baris benar-benar kosong
@@ -350,10 +486,22 @@ async function main() {
       const key = `${sourceSheet}#${r}`;
       seenKeys.add(key);
 
-      const payload = rowToPayload(headerMap, rows[r]);
+      let payload = rowToPayload(headerMap, rows[r]);
       if (!payload) {
         skippedPlaceholder++;
         continue;
+      }
+      // Fix hyperlink tertanam: CSV hanya punya teks tampilan; URL asli
+      // dari XLSX — guard teks tampilan CSV == XLSX agar tidak salah baris.
+      const h = linkMap?.get(r + 1);
+      if (h && /^https?:\/\//i.test(h.url)) {
+        const csvCell = clean(rows[r][headerMap["content link"]] ?? "");
+        const looksUrl = payload.result_link && /^https?:\/\//i.test(payload.result_link);
+        const sameText = !h.display || norm(csvCell || "") === norm(h.display || "");
+        if (!looksUrl && sameText) {
+          payload.result_link = h.url;
+          hrefFixed++;
+        }
       }
       const full = { ...payload, client_id: clientId, client_hint: sheet.sheet, source_sheet: sourceSheet, sheet_row: r };
 
@@ -391,11 +539,12 @@ async function main() {
       }
     }
     console.log(
-      `${sheet.sheet}: ${ins} insert, ${upd} update, ${skip} unchanged, ${skippedPlaceholder} placeholder${clientId ? "" : " (⚠️ client_id null)"}`
+      `${sheet.sheet}: ${ins} insert, ${upd} update, ${skip} unchanged, ${skippedPlaceholder} placeholder, ${hrefFixed} href-fix${clientId ? "" : " (⚠️ client_id null)"}`
     );
     totalInsert += ins;
     totalUpdate += upd;
     totalSkip += skip;
+    totalHref += hrefFixed;
   }
 
   // --- 4. Row dihapus dari sheet? ---
@@ -418,7 +567,7 @@ async function main() {
   }
 
   console.log(
-    `\n${DRY_RUN ? "[DRY RUN] " : ""}✅ Selesai: ${totalInsert} insert, ${totalUpdate} update, ${totalSkip} unchanged`
+    `\n${DRY_RUN ? "[DRY RUN] " : ""}✅ Selesai: ${totalInsert} insert, ${totalUpdate} update, ${totalSkip} unchanged, ${totalHref} hyperlink diekstrak dari pubhtml`
   );
 }
 
