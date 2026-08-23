@@ -54,10 +54,10 @@ const FUNNEL_OPTIONS = ["TOFU", "MOFU", "BOFU"];
 const FORMAT_OPTIONS = ["Single Image", "Carousel", "Video"];
 
 // Post Type — derived dari caption (bukan kolom DB):
-// tanpa caption = Exiting Post, ada caption = Manual Upload
+// tanpa caption = Existing Post, ada caption = Manual Upload
 const POST_TYPE_MANUAL = "Manual Upload";
-const POST_TYPE_EXITING = "Exiting Post";
-const POST_TYPE_OPTIONS = [POST_TYPE_EXITING, POST_TYPE_MANUAL];
+const POST_TYPE_EXISTING = "Existing Post";
+const POST_TYPE_OPTIONS = [POST_TYPE_EXISTING, POST_TYPE_MANUAL];
 
 type PostTypeSource = Pick<ClusterItem, "caption" | "progress" | "theme" | "result_link" | "format_type">;
 
@@ -68,7 +68,7 @@ function postType(it: PostTypeSource): string | null {
     (it.theme && it.theme.trim()) ||
     (it.result_link && it.result_link.trim()) ||
     (it.format_type && it.format_type.trim());
-  return hasContent ? POST_TYPE_EXITING : null;
+  return hasContent ? POST_TYPE_EXISTING : null;
 }
 
 // Kelengkapan data — flag entry yang link/caption/prefilled-nya belum ada
@@ -668,7 +668,7 @@ export default function AdsContentClusters() {
                   className="input resize-y"
                 />
                 <p className="mt-1 text-xs text-muted">
-                  Post Type otomatis: kosong = <span className="font-medium text-amber-600">Exiting Post</span>, terisi ={" "}
+                  Post Type otomatis: kosong = <span className="font-medium text-amber-600">Existing Post</span>, terisi ={" "}
                   <span className="font-medium text-primary">Manual Upload</span>
                 </p>
               </div>
