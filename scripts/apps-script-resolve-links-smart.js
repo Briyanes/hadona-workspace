@@ -1,21 +1,17 @@
 /**
  * ============================================================================
- * RESOLVE CONTENT LINK -> URL (SMART v2.3 - PER-DRIVE INDEX + CONTAINS MATCH)
+ * RESOLVE CONTENT LINK -> URL (SMART v2.4 - + SHARED-WITH-ME PASS + DEDUP)
  * ============================================================================
  * Riwayat:
  *  - v2.1: query per-nama (case-sensitive) -> hanya 7 match.
  *  - v2.2: bulk index corpora=allDrives (2087 file) + prefix match -> AUTO=0.
- *          Artinya: file aset TIDAK ADA di 2087 file yang terlihat akun tsb.
- *          (corpora=allDrives terkenal bisa TIDAK lengkap utk Shared Drive!)
- *  - v2.3: index PER-DRIVE agar pasti lengkap:
- *            1) My Drive (corpora default)
- *            2) Enumerasi SEMUA Shared Drive via Drive.Drives.list,
- *               lalu index tiap drive (corpora teamDrive/drive + id)
- *         Matching bertambah level CONTAINS (dua arah, min 4 karakter):
- *            file "ads 3 agustus final.mp4" MATCH cell "3 agustus"
- *         Baris yang 0 match sekarang diberi SARAN KANDIDAT di note cell,
- *         dan sheet log diberi tabel SUMBER INDEX + SAMPLE 200 nama file
- *         supaya kelihatan Drive apa saja + file apa saja yang terlihat.
+ *  - v2.3: index PER-DRIVE (My Drive + Drives.list) + contains match.
+ *          Hasil run: AUTO=1, index 2087, "1 sumber" => akun script tidak
+ *          punya akses Shared Drive manapun; Drives.list = kosong.
+ *  - v2.4: celah terakhir = file "Shared with me" (milik rekan, di-share
+ *          ke akun script) TIDAK muncul di corpus default maupun Drives.list.
+ *          -> tambah pass q:"sharedWithMe = true" + dedup antar sumber
+ *             (file sama dari >1 corpus tidak dihitung 2x).
  *
  * Aturan aman (tetap):
  *  - URL yang sudah terisi TIDAK ditimpa (itulah kenapa ada "Skip")
@@ -23,12 +19,9 @@
  *
  * CARA PAKAI: paste total di Apps Script sheet ASLI -> Run
  * resolveContentLinksSmart -> baca sheet "Link Resolution Log":
- *   - tabel SUMBER INDEX: drive apa saja yang terindeks + jumlah filenya.
- *     Kalau Shared Drive aset klien TIDAK muncul di daftar -> akun script
- *     tidak punya akses -> share folder/drive tsb ke akun script -> Run ulang.
- *   - kolom INDEX SAMPLE: contoh 200 nama file pertama.
- * Setelah selesai: cell kuning diisi manual tim -> File > Share >
- * Publish to web > Republish -> node scripts/import-ads-creative-master.mjs
+ *   - SUMBER INDEX: kalau "Shared with me" 0/nol file juga, berarti aset
+ *     ada di akun lain yang belum share ke akun script -> minta share
+ *     folder aset ke akun yang menjalankan script -> Run ulang.
  * ============================================================================
  */
 
@@ -44,13 +37,13 @@ function resolveContentLinksSmart() {
     Logger.log("⚠ Advanced Drive Service TIDAK aktif -> fallback DriveApp (Shared Drive tidak terlihat).");
   }
 
-  // ---- BANGUN INDEX PER-DRIVE ----
+  // ---- BANGUN INDEX ----
   var INDEX = null;
   var SOURCES = []; // [nama sumber, jumlah file] atau [nama, "GAGAL: pesan"]
   if (ADVANCED) {
     try {
       INDEX = buildIndex(SOURCES);
-      Logger.log("✓ Index selesai: " + INDEX.length + " file dari " + SOURCES.length + " sumber (dialek " + DRIVE_DIALECT + ")" +
+      Logger.log("✓ Index selesai: " + INDEX.length + " file (unik) dari " + SOURCES.length + " sumber (dialek " + DRIVE_DIALECT + ")" +
         (INDEX.length >= MAX_INDEX ? " [CAP " + MAX_INDEX + " tercapai]" : ""));
       for (var si = 0; si < SOURCES.length; si++) {
         Logger.log("   • " + SOURCES[si][0] + ": " + SOURCES[si][1] + " file");
@@ -141,7 +134,7 @@ function resolveContentLinksSmart() {
         } else {
           var saran = (INDEX) ? suggestCandidates(INDEX, cellText, 5) : [];
           var bagSaran = saran.length ? " Kandidat terdekat: " + saran.join(" | ") : " Tidak ada kandidat mirip pun di " + (INDEX ? INDEX.length + " file index" : "Drive pribadi") + ".";
-          notes[i] = ["CEK MANUAL: 0 file cocok \"" + cellText + "\"." + bagSaran + " Kalau file ada di Drive lain, share foldernya ke akun script lalu Run ulang."];
+          notes[i] = ["CEK MANUAL: 0 file cocok \"" + cellText + "\"." + bagSaran + " Kalau file ada di akun Drive lain, share foldernya ke akun script lalu Run ulang."];
           logRows.push([name, rowNo, cellText, "REVIEW", "0 file" + (saran.length ? " (saran: " + saran.slice(0, 2).join(" | ") + ")" : "")]);
         }
       }
@@ -167,10 +160,10 @@ function resolveContentLinksSmart() {
   if (!logSheet) logSheet = ss.insertSheet("Link Resolution Log");
   logSheet.clear();
 
-  logSheet.getRange(1, 1, 1, 2).setValues([["RINGKASAN - SMART v2.3", ""]]).setFontWeight("bold");
+  logSheet.getRange(1, 1, 1, 2).setValues([["RINGKASAN - SMART v2.4", ""]]).setFontWeight("bold");
   logSheet.getRange(2, 1, 7, 2).setValues([
-    ["Mode", INDEX ? "PER-DRIVE INDEX (dialek " + DRIVE_DIALECT + ")" : "DriveApp fallback"],
-    ["Total file di index", INDEX ? INDEX.length : 0],
+    ["Mode", INDEX ? "INDEX MULTI-SUMBER (dialek " + DRIVE_DIALECT + ")" : "DriveApp fallback"],
+    ["Total file di index (unik)", INDEX ? INDEX.length : 0],
     ["Baris diproses", totals.rows],
     ["Auto persis (hijau)", totals.autoExact],
     ["Auto mirip (kuning muda)", totals.autoMirip],
@@ -212,7 +205,6 @@ function resolveContentLinksSmart() {
     " | Index: " + (INDEX ? INDEX.length : 0) + " file / " + SOURCES.length + " sumber" +
     " | Dialek: " + (DRIVE_DIALECT || "-"));
   Logger.log(">>> Cek sheet 'Link Resolution Log' -> SUMBER INDEX & INDEX SAMPLE. <<<");
-  Logger.log(">>> Kalau Shared Drive aset tidak ada di SUMBER INDEX: share ke akun script -> Run ulang. <<<");
 }
 
 /* ============================ HELPERS ==================================== */
@@ -223,10 +215,10 @@ function hasAdvancedDrive() {
 
 var DRIVE_DIALECT = null; // "v2" | "v3"
 
-/** Satu halaman daftar file; teamDriveId null = My Drive */
-function indexPage(token, teamDriveId) {
+/** Satu halaman daftar file; teamDriveId null + query null = My Drive semua */
+function indexPage(token, teamDriveId, query) {
   var params = {
-    q: "trashed = false",
+    q: query || "trashed = false",
     pageToken: token || null,
     supportsAllDrives: true,
     includeItemsFromAllDrives: true
@@ -261,19 +253,19 @@ function absorb(resp, index) {
   }
 }
 
-function paginateDrive(firstResp, index, teamDriveId, label) {
+function paginateDrive(firstResp, index, teamDriveId, label, query) {
   var token = (firstResp && firstResp.nextPageToken) || null;
   var guard = 0;
   while (token && index.length < MAX_INDEX && guard < 80) {
     guard++;
-    var r = indexPage(token, teamDriveId);
+    var r = indexPage(token, teamDriveId, query);
     absorb(r, index);
     token = r.nextPageToken || null;
   }
   if (guard >= 80) Logger.log("⚠ " + label + ": paginasi berhenti di guard 80 halaman");
 }
 
-/** Index My Drive + SEMUA Shared Drive yang terlihat akun */
+/** Index: My Drive + Shared with me + SEMUA Shared Drive, lalu dedup by id */
 function buildIndex(SOURCES) {
   var index = [];
 
@@ -281,21 +273,35 @@ function buildIndex(SOURCES) {
   DRIVE_DIALECT = "v2";
   var first = null;
   try {
-    first = indexPage(null, null);
+    first = indexPage(null, null, null);
   } catch (e) {
     if (!/invalid query/i.test(String(e && e.message || e))) throw e;
     DRIVE_DIALECT = "v3";
-    first = indexPage(null, null);
+    first = indexPage(null, null, null);
   }
 
-  // 1) My Drive
+  // 1) My Drive (milik akun script)
   var before = index.length;
   absorb(first, index);
-  paginateDrive(first, index, null, "My Drive");
+  paginateDrive(first, index, null, "My Drive", null);
   SOURCES.push(["My Drive (pribadi)", index.length - before]);
   Logger.log("Index My Drive: " + (index.length - before) + " file");
 
-  // 2) Semua Shared Drive via Drives.list
+  // 2) Shared with me (milik rekan, di-share ke akun script) -- BARU di v2.4
+  try {
+    var swmQ = "trashed = false and sharedWithMe = true";
+    var swm = indexPage(null, null, swmQ);
+    var b4s = index.length;
+    absorb(swm, index);
+    paginateDrive(swm, index, null, "Shared with me", swmQ);
+    SOURCES.push(["Shared with me (milik rekan)", index.length - b4s]);
+    Logger.log("Index Shared with me: " + (index.length - b4s) + " file");
+  } catch (swme) {
+    SOURCES.push(["Shared with me (milik rekan)", "GAGAL: " + swme]);
+    Logger.log("⚠ Gagal index sharedWithMe: " + swme);
+  }
+
+  // 3) Semua Shared Drive via Drives.list
   var dToken = null, dGuard = 0;
   do {
     var dparams = (DRIVE_DIALECT === "v2") ? { maxResults: 100 } : { pageSize: 100 };
@@ -313,9 +319,9 @@ function buildIndex(SOURCES) {
       var did = darr[d].id, dname = darr[d].name || did;
       var b4 = index.length;
       try {
-        var fr = indexPage(null, did);
+        var fr = indexPage(null, did, null);
         absorb(fr, index);
-        paginateDrive(fr, index, did, dname);
+        paginateDrive(fr, index, did, dname, null);
         SOURCES.push(["Shared Drive: " + dname, index.length - b4]);
         Logger.log("Index Shared Drive \"" + dname + "\": " + (index.length - b4) + " file");
       } catch (err) {
@@ -327,7 +333,13 @@ function buildIndex(SOURCES) {
     dGuard++;
   } while (dToken && dGuard < 10 && index.length < MAX_INDEX);
 
-  return index;
+  // Dedup antar sumber (file sama bisa muncul di >1 corpus)
+  var seenIds = {}, uniq = [];
+  for (var z = 0; z < index.length; z++) {
+    if (!seenIds[index[z].id]) { seenIds[index[z].id] = 1; uniq.push(index[z]); }
+  }
+  if (uniq.length !== index.length) Logger.log("Dedup antar sumber: " + index.length + " -> " + uniq.length + " file unik");
+  return uniq;
 }
 
 function normBase(filename) {
