@@ -75,7 +75,6 @@ const navSections: NavSection[] = [
   {
     title: "Creative",
     items: [
-      { label: "Creative Requests", href: "/creative", icon: Palette },
       { label: "Content Plans", href: "/content-plans", icon: Calendar },
       { label: "Content Studio", href: "/content-studio", icon: Clapperboard },
       { label: "Production", href: "/production", icon: Clapperboard },

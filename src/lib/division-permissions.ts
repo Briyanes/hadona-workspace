@@ -104,10 +104,6 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
-    href: "/creative",
-    allowedDivisions: ["Content Creator", "Production", "Creative Director", "Copywriter", "Editor"],
-  },
-  {
     href: "/content-plans",
     allowedDivisions: [
       "Content Creator",

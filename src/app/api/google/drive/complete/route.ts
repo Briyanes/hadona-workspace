@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
               type: "creative_deliverable",
               title: `🎬 Hasil edit v${nextVersion} diupload`,
               body: `${file_name.slice(0, 80)} untuk request ${clientLabel} sudah tersimpan di Google Drive. Segera review.`,
-              link: "/creative",
+              link: "/content-studio",
             });
           }
         }

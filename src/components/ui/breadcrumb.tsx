@@ -17,7 +17,6 @@ const ROUTE_LABELS: Record<string, BreadcrumbConfig> = {
   "/ads-spend": { label: "Ads Spend" },
   "/reports": { label: "Weekly Report" },
   "/strategy": { label: "Strategy (OKR)" },
-  "/creative": { label: "Creative Requests" },
   "/content-plans": { label: "Content Plans" },
   "/content-studio": { label: "Content Studio" },
   "/production": { label: "Production" },

@@ -56,7 +56,6 @@ export function CommandPalette() {
     { id: 'nav-strategy', label: 'Strategy', icon: '🎯', section: 'Navigasi', action: () => router.push('/strategy') },
     { id: 'nav-content-plans', label: 'Content Plans', icon: '📝', section: 'Navigasi', action: () => router.push('/content-plans') },
     { id: 'nav-content-studio', label: 'Content Studio', icon: '🎬', section: 'Navigasi', action: () => router.push('/content-studio') },
-    { id: 'nav-creative', label: 'Creative', icon: '🎨', section: 'Navigasi', action: () => router.push('/creative') },
     { id: 'nav-timesheet', label: 'Timesheet', icon: '⏰', section: 'Navigasi', action: () => router.push('/timesheet') },
   ];
 
