@@ -71,6 +71,26 @@ function postType(it: PostTypeSource): string | null {
   return hasContent ? POST_TYPE_EXITING : null;
 }
 
+// Kelengkapan data — flag entry yang link/caption/prefilled-nya belum ada
+// (sumber: cell notes "Copy di Note" / hyperlink yang belum diekstrak)
+type CompletenessSource = Pick<ClusterItem, "details" | "result_link" | "caption" | "content_copy">;
+
+function completeness(it: CompletenessSource): { complete: boolean; missing: string[] } {
+  const missing: string[] = [];
+  if (!it.result_link) missing.push("Link");
+  if (!it.caption) missing.push("Caption");
+  const ctwa = (it.details || "").toUpperCase().includes("CTWA");
+  if (ctwa && !it.content_copy) missing.push("Prefilled");
+  return { complete: missing.length === 0, missing };
+}
+
+const COMPLETENESS_OPTIONS = [
+  { value: "missing_link", label: "⚠ Link Belum Ada" },
+  { value: "missing_caption", label: "⚠ Caption Belum Ada" },
+  { value: "incomplete", label: "⚠ Belum Lengkap" },
+  { value: "complete", label: "✓ Lengkap" },
+];
+
 const EMPTY_FORM = {
   client_id: "",
   status: "",
@@ -148,6 +168,7 @@ export default function AdsContentClusters() {
   const [funnelFilter, setFunnelFilter] = useState("all");
   const [formatFilter, setFormatFilter] = useState("all");
   const [postTypeFilter, setPostTypeFilter] = useState("all");
+  const [completenessFilter, setCompletenessFilter] = useState("all");
   const [view, setView] = useState<"cards" | "table">("cards");
 
   const [showModal, setShowModal] = useState(false);
@@ -190,6 +211,13 @@ export default function AdsContentClusters() {
     if (funnelFilter !== "all" && it.pillar !== funnelFilter) return false;
     if (formatFilter !== "all" && it.format_type !== formatFilter) return false;
     if (postTypeFilter !== "all" && postType(it) !== postTypeFilter) return false;
+    if (completenessFilter !== "all") {
+      const c = completeness(it);
+      if (completenessFilter === "missing_link" && it.result_link) return false;
+      if (completenessFilter === "missing_caption" && it.caption) return false;
+      if (completenessFilter === "incomplete" && c.complete) return false;
+      if (completenessFilter === "complete" && !c.complete) return false;
+    }
     if (search) {
       const q = search.toLowerCase();
       const clientName = it.client?.name?.toLowerCase() || it.client_hint?.toLowerCase() || "";
@@ -338,6 +366,14 @@ export default function AdsContentClusters() {
             </option>
           ))}
         </select>
+        <select value={completenessFilter} onChange={(e) => setCompletenessFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Kelengkapan</option>
+          {COMPLETENESS_OPTIONS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
         <div className="flex rounded-lg border border-border overflow-hidden">
           <button
             onClick={() => setView("cards")}
@@ -417,7 +453,7 @@ export default function AdsContentClusters() {
                 )}
               </div>
               <p className="text-sm text-foreground/80 whitespace-pre-wrap line-clamp-5 flex-1">{it.theme || "—"}</p>
-              {it.result_link && (
+              {it.result_link ? (
                 <a
                   href={it.result_link}
                   target="_blank"
@@ -427,6 +463,15 @@ export default function AdsContentClusters() {
                 >
                   <ExternalLink size={11} /> Content Link
                 </a>
+              ) : (
+                (() => {
+                  const extra = completeness(it).missing.filter((m) => m !== "Link");
+                  return (
+                    <span className="inline-flex w-fit items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600">
+                      ⚠ Link belum ada{extra.length ? ` (+${extra.length})` : ""}
+                    </span>
+                  );
+                })()
               )}
             </div>
           ))}
@@ -482,7 +527,9 @@ export default function AdsContentClusters() {
                         <ExternalLink size={14} />
                       </a>
                     ) : (
-                      "—"
+                      <span className="text-xs font-medium text-amber-600" title="Belum ada link — cek sheet sumber / cell notes">
+                        belum ada
+                      </span>
                     )}
                   </td>
                   <td className="p-3 text-right whitespace-nowrap">

@@ -8,6 +8,9 @@
  * - 20 sheet tab (1 per klien) diunduh sebagai CSV per gid.
  * - Kolom master: No. | Status | Tanggal | Objective Campaign | Funnel | Format |
  *   Angle (request) | Content Link | Caption | Prefilled Message (If Use CTWA Campaign)
+ *   + kolom ekstraksi Apps Script v2: Caption (Copy) | Prefilled (Copy) |
+ *   Content Link (URL) — URL hyperlink tertanam via getRichTextValues
+ *   (CSV publish hanya memuat teks tampilan "Link"/"Drive", bukan URL)
  * - Mapping (REUSE kolom existing, tanpa migration v97):
  *   Status→progress, Tanggal→upload_date, Objective Campaign→details,
  *   Funnel→pillar, Format→format_type, Angle→theme, Content Link→result_link,
@@ -175,7 +178,10 @@ function rowToPayload(headerMap, cells) {
   const format = get(["format"]);
   const objective = get(["objective campaign", "objective"]);
   const angle = get(["angle (request)", "angle"]);
-  const link = get(["content link", "link"]);
+  // URL hasil ekstraksi Apps Script (hyperlink tertanam) — prioritas utama;
+  // fallback ke teks Content Link langsung (berisi URL nyata).
+  const linkUrl = get(["content link (url)", "link (url)"]);
+  const link = linkUrl || get(["content link", "link"]);
   const captionCopy = get(["caption (copy)", "caption copy"]);
   const prefilledCopy = get(["prefilled (copy)", "prefilled copy"]);
   const caption = get(["caption"]);
@@ -221,10 +227,11 @@ function changed(a, b) {
     "theme", "result_link", "caption", "content_copy", "upload_date",
   ];
   return keys.some((k) => {
-    // CSV publish tidak memuat isi cell notes ("Copy di Note" → null).
-    // Jangan anggap berubah bila DB punya caption/content_copy hasil
-    // notes-import (scripts/import-ads-creative-notes-xlsx.mjs).
-    if ((k === "caption" || k === "content_copy") && b[k] == null && a[k] != null) {
+    // CSV publish tidak memuat isi cell notes ("Copy di Note" → null) dan
+    // tidak memuat URL hyperlink tertanam. Jangan anggap berubah bila DB
+    // punya caption/content_copy/result_link hasil notes-import
+    // (scripts/import-ads-creative-notes-xlsx.mjs).
+    if ((k === "caption" || k === "content_copy" || k === "result_link") && b[k] == null && a[k] != null) {
       return false;
     }
     return (a[k] ?? null) !== (b[k] ?? null);
@@ -355,10 +362,12 @@ async function main() {
             upd++;
           } else {
             const patch = { ...payload, client_id: clientId, client_hint: sheet.sheet, updated_at: new Date().toISOString() };
-            // Preserve caption/content_copy hasil notes-import — CSV tidak
-            // memuat isi notes, jadi null dari CSV tidak boleh menimpa.
+            // Preserve caption/content_copy/result_link hasil notes-import —
+            // CSV tidak memuat isi notes & URL hyperlink, jadi null dari CSV
+            // tidak boleh menimpa.
             if (patch.caption == null && ex.caption != null) delete patch.caption;
             if (patch.content_copy == null && ex.content_copy != null) delete patch.content_copy;
+            if (patch.result_link == null && ex.result_link != null) delete patch.result_link;
             const { error } = await supabase
               .from("ads_content_clusters")
               .update(patch)
