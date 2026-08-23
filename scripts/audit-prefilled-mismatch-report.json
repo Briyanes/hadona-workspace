@@ -1,0 +1,298 @@
+{
+  "generatedAt": "2026-08-23T18:07:15.898Z",
+  "totalRows": 323,
+  "clients": [
+    "Anurakti",
+    "AUM Apparel",
+    "Bolu Pisang bu Winda",
+    "EJA Tour & Travel",
+    "EJA Tour & Travel ",
+    "EOP",
+    "Hadona agency",
+    "Kurma Ayyuwa",
+    "Marichan",
+    "Nouban",
+    "Ocean Rent & Travel Car",
+    "Olive Cookies",
+    "RAHA Pro",
+    "RMODA autospa Kelapa Gading",
+    "RMODA studio BSD",
+    "RMODA studio Makasar",
+    "RMODA Workshop",
+    "Seblak Merapi",
+    "Seminar Kulit",
+    "Shumijapan",
+    "Tape Ketan 181 Muntilan",
+    "Threenine",
+    "Tombo Ati",
+    "TPDOC",
+    "Travel Haji Umroh",
+    "Treetop Game",
+    "YBD"
+  ],
+  "mismatches": [],
+  "crossClientDuplicates": [],
+  "emptyAngleNoteIssues": [
+    {
+      "client": "Anurakti",
+      "sheet_row": 6,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Anurakti",
+      "sheet_row": 10,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Anurakti",
+      "sheet_row": 11,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Anurakti",
+      "sheet_row": 12,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Anurakti",
+      "sheet_row": 13,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Anurakti",
+      "sheet_row": 14,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Anurakti",
+      "sheet_row": 15,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 13,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 15,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 17,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 22,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 24,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 27,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 28,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 32,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 36,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Hadona agency",
+      "sheet_row": 37,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Ocean Rent & Travel Car",
+      "sheet_row": 4,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Ocean Rent & Travel Car",
+      "sheet_row": 5,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Ocean Rent & Travel Car",
+      "sheet_row": 7,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Ocean Rent & Travel Car",
+      "sheet_row": 9,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Ocean Rent & Travel Car",
+      "sheet_row": 10,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Ocean Rent & Travel Car",
+      "sheet_row": 13,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "RMODA autospa Kelapa Gading",
+      "sheet_row": 7,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Seblak Merapi",
+      "sheet_row": 8,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Seblak Merapi",
+      "sheet_row": 9,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Seblak Merapi",
+      "sheet_row": 10,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Seblak Merapi",
+      "sheet_row": 11,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Seblak Merapi",
+      "sheet_row": 12,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Seblak Merapi",
+      "sheet_row": 13,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 8,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 9,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 10,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 11,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 12,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 13,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Tape Ketan 181 Muntilan",
+      "sheet_row": 14,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "TPDOC",
+      "sheet_row": 3,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "TPDOC",
+      "sheet_row": 4,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "TPDOC",
+      "sheet_row": 5,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "Treetop Game",
+      "sheet_row": 5,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 15,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 19,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 22,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 23,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 24,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 25,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 26,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 27,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 29,
+      "theme": "Copy di Note"
+    },
+    {
+      "client": "YBD",
+      "sheet_row": 30,
+      "theme": "Copy di Note"
+    }
+  ],
+  "summary": {
+    "okRows": 323,
+    "mismatchRows": 0,
+    "prefilledMismatch": 0,
+    "captionMismatch": 0
+  }
+}
