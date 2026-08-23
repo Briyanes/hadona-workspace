@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   List,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
 
@@ -45,24 +46,23 @@ interface Client {
   name: string;
 }
 
-const FORMAT_OPTIONS = [
-  "Single Image",
-  "Carousel",
-  "Video Pendek",
-  "Video Panjang",
-  "Reels/TikTok",
-  "Story",
-  "UGC",
-  "Static Banner",
-  "Lainnya",
-];
+// Dropdown values — mirror master spreadsheet (publish)
+const STATUS_OPTIONS = ["Active", "Inactive"];
+const OBJECTIVE_OPTIONS = ["CTWA", "CTLP", "CPAS", "VISIT PROFILE"];
+const FUNNEL_OPTIONS = ["TOFU", "MOFU", "BOFU"];
+const FORMAT_OPTIONS = ["Single Image", "Carousel", "Video"];
 
 const EMPTY_FORM = {
   client_id: "",
-  entry_date: new Date().toISOString().slice(0, 10),
-  format_type: "",
-  pillar: "",
-  theme: "",
+  status: "",
+  upload_date: "",
+  objective: "",
+  funnel: "",
+  format: "",
+  angle: "",
+  content_link: "",
+  caption: "",
+  prefilled: "",
 };
 
 function formatDate(d: string | null | undefined) {
@@ -78,6 +78,21 @@ function formatDate(d: string | null | undefined) {
   }
 }
 
+function StatusBadge({ status }: { status: string | null | undefined }) {
+  if (!status) return <span className="text-muted">—</span>;
+  const active = status.toLowerCase() === "active";
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium",
+        active ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted"
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 export default function AdsContentClusters() {
   const supabase = createClient() as any;
   const [items, setItems] = useState<ClusterItem[]>([]);
@@ -85,10 +100,12 @@ export default function AdsContentClusters() {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [objectiveFilter, setObjectiveFilter] = useState("all");
+  const [funnelFilter, setFunnelFilter] = useState("all");
   const [formatFilter, setFormatFilter] = useState("all");
   const [view, setView] = useState<"cards" | "table">("cards");
 
-  // Modal
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -107,8 +124,7 @@ export default function AdsContentClusters() {
       const { data, error } = await supabase
         .from("ads_content_clusters")
         .select("*, client:clients(name)")
-        .order("entry_date", { ascending: false })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
       if (error) throw error;
       setItems((data as unknown as ClusterItem[]) || []);
     } catch (err) {
@@ -123,10 +139,11 @@ export default function AdsContentClusters() {
     setClients((data as unknown as Client[]) || []);
   }
 
-  const formats = Array.from(new Set(items.map((i) => i.format_type).filter(Boolean))) as string[];
-
   const filtered = items.filter((it) => {
     if (clientFilter !== "all" && it.client_id !== clientFilter) return false;
+    if (statusFilter !== "all" && it.progress !== statusFilter) return false;
+    if (objectiveFilter !== "all" && it.details !== objectiveFilter) return false;
+    if (funnelFilter !== "all" && it.pillar !== funnelFilter) return false;
     if (formatFilter !== "all" && it.format_type !== formatFilter) return false;
     if (search) {
       const q = search.toLowerCase();
@@ -143,7 +160,7 @@ export default function AdsContentClusters() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM, entry_date: new Date().toISOString().slice(0, 10) });
+    setForm({ ...EMPTY_FORM });
     setShowModal(true);
   }
 
@@ -151,25 +168,35 @@ export default function AdsContentClusters() {
     setEditingId(item.id);
     setForm({
       client_id: item.client_id || "",
-      entry_date: (item.entry_date || "").slice(0, 10),
-      format_type: item.format_type || "",
-      pillar: item.pillar || "",
-      theme: item.theme || "",
+      status: item.progress || "",
+      upload_date: (item.upload_date || "").slice(0, 10),
+      objective: item.details || "",
+      funnel: item.pillar || "",
+      format: item.format_type || "",
+      angle: item.theme || "",
+      content_link: item.result_link || "",
+      caption: item.caption || "",
+      prefilled: item.content_copy || "",
     });
     setShowModal(true);
   }
 
   async function save() {
     if (!form.client_id) return toast.error("Pilih klien dulu");
-    if (!form.format_type && !form.theme.trim()) return toast.error("Isi format atau theme");
+    if (!form.format && !form.angle.trim()) return toast.error("Isi format atau angle (request)");
     setSaving(true);
     try {
       const payload = {
         client_id: form.client_id,
-        entry_date: form.entry_date,
-        format_type: form.format_type || null,
-        pillar: form.pillar.trim() || null,
-        theme: form.theme.trim() || null,
+        progress: form.status || null,
+        upload_date: form.upload_date || null,
+        details: form.objective || null,
+        pillar: form.funnel || null,
+        format_type: form.format || null,
+        theme: form.angle.trim() || null,
+        result_link: form.content_link.trim() || null,
+        caption: form.caption.trim() || null,
+        content_copy: form.prefilled.trim() || null,
       };
       let error;
       if (editingId) {
@@ -179,7 +206,7 @@ export default function AdsContentClusters() {
         ({ error } = await supabase.from("ads_content_clusters").insert({ ...payload, created_by: user?.id || null }));
       }
       if (error) throw error;
-      toast.success(editingId ? "Cluster diperbarui" : "Cluster disimpan");
+      toast.success(editingId ? "Ads creative diperbarui" : "Ads creative disimpan");
       setShowModal(false);
       loadItems();
     } catch (err) {
@@ -195,7 +222,7 @@ export default function AdsContentClusters() {
     try {
       const { error } = await supabase.from("ads_content_clusters").delete().eq("id", confirmDelete.id);
       if (error) throw error;
-      toast.success("Cluster dihapus");
+      toast.success("Ads creative dihapus");
       setConfirmDelete(null);
       loadItems();
     } catch (err) {
@@ -214,7 +241,7 @@ export default function AdsContentClusters() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari theme / format / klien..."
+            placeholder="Cari angle / caption / klien..."
             className="input pl-9"
           />
         </div>
@@ -226,9 +253,33 @@ export default function AdsContentClusters() {
             </option>
           ))}
         </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Status</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select value={objectiveFilter} onChange={(e) => setObjectiveFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Objective</option>
+          {OBJECTIVE_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select value={funnelFilter} onChange={(e) => setFunnelFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Funnel</option>
+          {FUNNEL_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
         <select value={formatFilter} onChange={(e) => setFormatFilter(e.target.value)} className="input w-auto">
           <option value="all">Semua Format</option>
-          {formats.map((f) => (
+          {FORMAT_OPTIONS.map((f) => (
             <option key={f} value={f}>
               {f}
             </option>
@@ -277,36 +328,52 @@ export default function AdsContentClusters() {
                 <div>
                   <p className="font-semibold text-sm text-foreground">{it.client?.name || it.client_hint || "—"}</p>
                   <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
-                    <Calendar size={11} /> {formatDate(it.entry_date)}
-                    {it.source_sheet && <span className="ml-1 opacity-70">• {it.source_sheet}</span>}
+                    <Calendar size={11} /> {formatDate(it.upload_date)}
                   </p>
                 </div>
-                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                  <button onClick={() => openEdit(it)} className="p-1.5 rounded hover:bg-surface text-muted" title="Edit">
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(it)}
-                    className="p-1.5 rounded hover:bg-danger/10 text-danger"
-                    title="Hapus"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div className="flex flex-col items-end gap-1">
+                  <StatusBadge status={it.progress} />
+                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => openEdit(it)} className="p-1.5 rounded hover:bg-surface text-muted" title="Edit">
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(it)}
+                      className="p-1.5 rounded hover:bg-danger/10 text-danger"
+                      title="Hapus"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {it.details && (
+                  <span className="inline-flex w-fit rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {it.details}
+                  </span>
+                )}
+                {it.pillar && (
+                  <span className="inline-flex w-fit rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">{it.pillar}</span>
+                )}
                 {it.format_type && (
                   <span className="inline-flex w-fit rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">
                     {it.format_type}
                   </span>
                 )}
-                {it.pillar && (
-                  <span className="inline-flex w-fit rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                    {it.pillar}
-                  </span>
-                )}
               </div>
               <p className="text-sm text-foreground/80 whitespace-pre-wrap line-clamp-5 flex-1">{it.theme || "—"}</p>
+              {it.result_link && (
+                <a
+                  href={it.result_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline w-fit"
+                >
+                  <ExternalLink size={11} /> Content Link
+                </a>
+              )}
             </div>
           ))}
         </div>
@@ -317,18 +384,25 @@ export default function AdsContentClusters() {
               <tr className="border-b border-border text-left text-xs text-muted">
                 <th className="p-3">Tanggal</th>
                 <th className="p-3">Klien</th>
-                <th className="p-3">Pillar</th>
+                <th className="p-3">Status</th>
+                <th className="p-3">Objective</th>
+                <th className="p-3">Funnel</th>
                 <th className="p-3">Format</th>
-                <th className="p-3">Theme</th>
+                <th className="p-3">Angle (Request)</th>
+                <th className="p-3">Content Link</th>
                 <th className="p-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((it) => (
                 <tr key={it.id} className="border-b border-border/50 hover:bg-surface/50 cursor-pointer" onClick={() => setDetail(it)}>
-                  <td className="p-3 whitespace-nowrap text-muted">{formatDate(it.entry_date)}</td>
+                  <td className="p-3 whitespace-nowrap text-muted">{formatDate(it.upload_date)}</td>
                   <td className="p-3 font-medium">{it.client?.name || it.client_hint || "—"}</td>
-                  <td className="p-3 text-xs text-foreground/80 max-w-[160px]">{it.pillar || "—"}</td>
+                  <td className="p-3">
+                    <StatusBadge status={it.progress} />
+                  </td>
+                  <td className="p-3 text-xs">{it.details || "—"}</td>
+                  <td className="p-3 text-xs">{it.pillar || "—"}</td>
                   <td className="p-3">
                     {it.format_type ? (
                       <span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">{it.format_type}</span>
@@ -336,8 +410,24 @@ export default function AdsContentClusters() {
                       "—"
                     )}
                   </td>
-                  <td className="p-3 max-w-md">
+                  <td className="p-3 max-w-sm">
                     <p className="line-clamp-2 whitespace-pre-wrap text-foreground/80">{it.theme || "—"}</p>
+                  </td>
+                  <td className="p-3 max-w-[120px]">
+                    {it.result_link ? (
+                      <a
+                        href={it.result_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-primary hover:underline"
+                        title={it.result_link}
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="p-3 text-right whitespace-nowrap">
                     <button onClick={() => openEdit(it)} className="p-1.5 rounded hover:bg-surface text-muted" title="Edit">
@@ -363,7 +453,7 @@ export default function AdsContentClusters() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowModal(false)}>
           <div className="card w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">{editingId ? "Edit Cluster" : "Entry Cluster Baru"}</h3>
+              <h3 className="font-semibold text-foreground">{editingId ? "Edit Ads Creative" : "Entry Ads Creative Baru"}</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded hover:bg-surface">
                 <X size={18} />
               </button>
@@ -384,47 +474,104 @@ export default function AdsContentClusters() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="label">Tanggal</label>
-                <input
-                  type="date"
-                  value={form.entry_date}
-                  onChange={(e) => setForm({ ...form, entry_date: e.target.value })}
-                  className="input"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Status</label>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input">
+                    <option value="">—</option>
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Tanggal</label>
+                  <input
+                    type="date"
+                    value={form.upload_date}
+                    onChange={(e) => setForm({ ...form, upload_date: e.target.value })}
+                    className="input"
+                  />
+                </div>
               </div>
               <div>
-                <label className="label">Format</label>
+                <label className="label">Objective Campaign</label>
                 <select
-                  value={form.format_type}
-                  onChange={(e) => setForm({ ...form, format_type: e.target.value })}
+                  value={form.objective}
+                  onChange={(e) => setForm({ ...form, objective: e.target.value })}
                   className="input"
                 >
-                  <option value="">Pilih format</option>
-                  {Array.from(new Set([...FORMAT_OPTIONS, ...formats])).map((f) => (
-                    <option key={f} value={f}>
-                      {f}
+                  <option value="">—</option>
+                  {OBJECTIVE_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
                     </option>
                   ))}
                 </select>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Funnel</label>
+                  <select value={form.funnel} onChange={(e) => setForm({ ...form, funnel: e.target.value })} className="input">
+                    <option value="">—</option>
+                    {FUNNEL_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Format</label>
+                  <select value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value })} className="input">
+                    <option value="">—</option>
+                    {FORMAT_OPTIONS.map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               <div>
-                <label className="label">Pillar</label>
+                <label className="label">Angle (Request)</label>
+                <textarea
+                  value={form.angle}
+                  onChange={(e) => setForm({ ...form, angle: e.target.value })}
+                  rows={4}
+                  placeholder="Angle / request dari klien..."
+                  className="input resize-y"
+                />
+              </div>
+              <div>
+                <label className="label">Content Link</label>
                 <input
-                  type="text"
-                  value={form.pillar}
-                  onChange={(e) => setForm({ ...form, pillar: e.target.value })}
-                  placeholder="Contoh: USP/UVP, Conversion, Entertain..."
+                  type="url"
+                  value={form.content_link}
+                  onChange={(e) => setForm({ ...form, content_link: e.target.value })}
+                  placeholder="https://..."
                   className="input"
                 />
               </div>
               <div>
-                <label className="label">Theme</label>
+                <label className="label">Caption</label>
                 <textarea
-                  value={form.theme}
-                  onChange={(e) => setForm({ ...form, theme: e.target.value })}
-                  rows={4}
-                  placeholder="Contoh: Edukasi manfaat produk, Testimoni customer..."
+                  value={form.caption}
+                  onChange={(e) => setForm({ ...form, caption: e.target.value })}
+                  rows={3}
+                  placeholder="Caption iklan..."
+                  className="input resize-y"
+                />
+              </div>
+              <div>
+                <label className="label">Prefilled Message (If Use CTWA Campaign)</label>
+                <textarea
+                  value={form.prefilled}
+                  onChange={(e) => setForm({ ...form, prefilled: e.target.value })}
+                  rows={2}
+                  placeholder="Pesan prefilled WA..."
                   className="input resize-y"
                 />
               </div>
@@ -445,10 +592,7 @@ export default function AdsContentClusters() {
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
-          <div
-            className="card w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="card w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold text-foreground">{detail.theme || detail.format_type || "Detail"}</h3>
@@ -463,34 +607,26 @@ export default function AdsContentClusters() {
             </div>
             <div className="space-y-3 text-sm">
               {[
-                ["Pillar", detail.pillar],
+                ["Status", detail.progress],
+                ["Objective Campaign", detail.details],
+                ["Funnel", detail.pillar],
                 ["Format", detail.format_type],
-                ["Tema", detail.theme],
-                ["Copy", detail.content_copy],
-                ["Details", detail.details],
-                ["Aset", detail.assets],
-                ["Referensi", detail.referensi],
+                ["Angle (Request)", detail.theme],
                 ["Caption", detail.caption],
-                ["Thumbnail", detail.thumbnail],
-                ["Progress", detail.progress],
-                ["Tanggal Unggah", detail.upload_date ? formatDate(detail.upload_date) : null],
+                ["Prefilled Message", detail.content_copy],
+                ["Tanggal", detail.upload_date ? formatDate(detail.upload_date) : null],
               ].map(([label, value]) =>
                 value ? (
-                  <div key={label as string} className="grid grid-cols-[110px_1fr] gap-3">
+                  <div key={label as string} className="grid grid-cols-[140px_1fr] gap-3">
                     <span className="text-muted text-xs pt-0.5">{label}</span>
                     <p className="whitespace-pre-wrap text-foreground/90 break-words">{value as string}</p>
                   </div>
                 ) : null
               )}
               {detail.result_link && (
-                <div className="grid grid-cols-[110px_1fr] gap-3">
-                  <span className="text-muted text-xs pt-0.5">Link Hasil</span>
-                  <a
-                    href={detail.result_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline break-all"
-                  >
+                <div className="grid grid-cols-[140px_1fr] gap-3">
+                  <span className="text-muted text-xs pt-0.5">Content Link</span>
+                  <a href={detail.result_link} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
                     {detail.result_link}
                   </a>
                 </div>
@@ -515,9 +651,9 @@ export default function AdsContentClusters() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div className="card w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-foreground">Hapus cluster ini?</h3>
+            <h3 className="font-semibold text-foreground">Hapus ads creative ini?</h3>
             <p className="mt-2 text-sm text-muted">
-              Cluster <span className="font-medium text-foreground">{confirmDelete.theme?.slice(0, 40) || confirmDelete.format_type || "—"}</span>{" "}
+              Entry <span className="font-medium text-foreground">{confirmDelete.theme?.slice(0, 40) || confirmDelete.format_type || "—"}</span>{" "}
               akan dihapus permanen.
             </p>
             <div className="mt-4 flex justify-end gap-2">
