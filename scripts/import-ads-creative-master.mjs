@@ -220,7 +220,15 @@ function changed(a, b) {
     "client_id", "progress", "pillar", "details", "format_type",
     "theme", "result_link", "caption", "content_copy", "upload_date",
   ];
-  return keys.some((k) => (a[k] ?? null) !== (b[k] ?? null));
+  return keys.some((k) => {
+    // CSV publish tidak memuat isi cell notes ("Copy di Note" → null).
+    // Jangan anggap berubah bila DB punya caption/content_copy hasil
+    // notes-import (scripts/import-ads-creative-notes-xlsx.mjs).
+    if ((k === "caption" || k === "content_copy") && b[k] == null && a[k] != null) {
+      return false;
+    }
+    return (a[k] ?? null) !== (b[k] ?? null);
+  });
 }
 
 // ============================================================
@@ -327,13 +335,16 @@ async function main() {
       // Lewati baris benar-benar kosong
       if (!rows[r].some((c) => c && c.trim())) continue;
 
+      // Baris ADA di sheet (termasuk placeholder dgn notes) — tandai seen
+      // agar cleanup tidak menghapus row hasil notes-import.
+      const key = `${sourceSheet}#${r}`;
+      seenKeys.add(key);
+
       const payload = rowToPayload(headerMap, rows[r]);
       if (!payload) {
         skippedPlaceholder++;
         continue;
       }
-      const key = `${sourceSheet}#${r}`;
-      seenKeys.add(key);
       const full = { ...payload, client_id: clientId, client_hint: sheet.sheet, source_sheet: sourceSheet, sheet_row: r };
 
       const ex = existingByRowKey.get(key);
@@ -343,9 +354,14 @@ async function main() {
             console.log(`   ~ UPDATE row ${r}: ${full.theme?.slice(0, 50) || full.result_link?.slice(0, 40) || "—"}`);
             upd++;
           } else {
+            const patch = { ...payload, client_id: clientId, client_hint: sheet.sheet, updated_at: new Date().toISOString() };
+            // Preserve caption/content_copy hasil notes-import — CSV tidak
+            // memuat isi notes, jadi null dari CSV tidak boleh menimpa.
+            if (patch.caption == null && ex.caption != null) delete patch.caption;
+            if (patch.content_copy == null && ex.content_copy != null) delete patch.content_copy;
             const { error } = await supabase
               .from("ads_content_clusters")
-              .update({ ...payload, client_id: clientId, client_hint: sheet.sheet, updated_at: new Date().toISOString() })
+              .update(patch)
               .eq("id", ex.id);
             if (error) console.error(`   ❌ update row ${r}: ${error.message}`);
             else upd++;
@@ -371,7 +387,13 @@ async function main() {
   }
 
   // --- 4. Row dihapus dari sheet? ---
-  const removed = [...existingByRowKey.keys()].filter((k) => !seenKeys.has(k));
+  // Hanya rows dari 20 sheet yang dikelola importer ini. Rows dari sheet
+  // lain (mis. hasil notes-import: Travel Haji Umroh, Seblak Merapi, dll.)
+  // tidak boleh terhapus hanya karena tidak ada di daftar SHEETS.
+  const managedSheets = new Set(SHEETS.map((s) => `master|${s.sheet}`));
+  const removed = [...existingByRowKey.keys()].filter(
+    (k) => managedSheets.has(k.split("#")[0]) && !seenKeys.has(k)
+  );
   if (removed.length) {
     console.log(`\n🗑️  ${removed.length} row ada di DB tapi tidak ada lagi di sheet master:`);
     for (const k of removed.slice(0, 10)) console.log(`   - ${k}`);
