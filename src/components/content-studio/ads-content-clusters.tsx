@@ -15,6 +15,7 @@ import {
   List,
   Calendar,
   ExternalLink,
+  Copy,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
 
@@ -78,7 +79,16 @@ function formatDate(d: string | null | undefined) {
   }
 }
 
-function StatusBadge({ status }: { status: string | null | undefined }) {
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Disalin ke clipboard");
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  }
+
+  function StatusBadge({ status }: { status: string | null | undefined }) {
   if (!status) return <span className="text-muted">—</span>;
   const active = status.toLowerCase() === "active";
   return (
@@ -615,14 +625,28 @@ export default function AdsContentClusters() {
                 ["Caption", detail.caption],
                 ["Prefilled Message", detail.content_copy],
                 ["Tanggal", detail.upload_date ? formatDate(detail.upload_date) : null],
-              ].map(([label, value]) =>
-                value ? (
+              ].map(([label, value]) => {
+                if (!value) return null;
+                const copyable =
+                  label === "Caption" || label === "Prefilled Message" || label === "Angle (Request)";
+                return (
                   <div key={label as string} className="grid grid-cols-[140px_1fr] gap-3">
                     <span className="text-muted text-xs pt-0.5">{label}</span>
-                    <p className="whitespace-pre-wrap text-foreground/90 break-words">{value as string}</p>
+                    <div className="flex items-start gap-1.5">
+                      <p className="whitespace-pre-wrap text-foreground/90 break-words flex-1">{value as string}</p>
+                      {copyable && (
+                        <button
+                          onClick={() => copyText(value as string)}
+                          className="shrink-0 mt-0.5 p-1 rounded hover:bg-surface text-muted hover:text-foreground"
+                          title="Copy ke clipboard"
+                        >
+                          <Copy size={13} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ) : null
-              )}
+                );
+              })}
               {detail.result_link && (
                 <div className="grid grid-cols-[140px_1fr] gap-3">
                   <span className="text-muted text-xs pt-0.5">Content Link</span>

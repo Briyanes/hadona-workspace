@@ -176,6 +176,8 @@ function rowToPayload(headerMap, cells) {
   const objective = get(["objective campaign", "objective"]);
   const angle = get(["angle (request)", "angle"]);
   const link = get(["content link", "link"]);
+  const captionCopy = get(["caption (copy)", "caption copy"]);
+  const prefilledCopy = get(["prefilled (copy)", "prefilled copy"]);
   const caption = get(["caption"]);
   const prefilled = get(["prefilled message (if use ctwa campaign)", "prefilled message"]);
   const tanggal = get(["tanggal"]);
@@ -190,8 +192,15 @@ function rowToPayload(headerMap, cells) {
     angle != null;
   if (!hasReal) return null;
 
-  // "Copy di Note" = bukan caption nyata
-  const realCaption = caption && /^copy\s*di\s*note$/i.test(caption) ? null : caption;
+  // "Copy di Note" = bukan caption nyata.
+  // "Caption (Copy)" / "Prefilled (Copy)" = hasil ekstraksi Apps Script dari
+  // cell notes (scripts/apps-script-extract-notes.js) — prioritas utama.
+  const realCaption =
+    captionCopy ||
+    (caption && /^copy\s*di\s*note$/i.test(caption) ? null : caption);
+  const realPrefilled =
+    prefilledCopy ||
+    (prefilled && /^copy\s*di\s*note$/i.test(prefilled) ? null : prefilled);
 
   return {
     progress: isPlaceholder(status) ? null : status,
@@ -201,7 +210,7 @@ function rowToPayload(headerMap, cells) {
     theme: angle,
     result_link: link,
     caption: realCaption,
-    content_copy: prefilled && /^copy\s*di\s*note$/i.test(prefilled) ? null : prefilled,
+    content_copy: realPrefilled,
     upload_date: parseDate(tanggal),
   };
 }
