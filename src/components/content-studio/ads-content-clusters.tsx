@@ -53,6 +53,24 @@ const OBJECTIVE_OPTIONS = ["CTWA", "CTLP", "CPAS", "VISIT PROFILE"];
 const FUNNEL_OPTIONS = ["TOFU", "MOFU", "BOFU"];
 const FORMAT_OPTIONS = ["Single Image", "Carousel", "Video"];
 
+// Post Type — derived dari caption (bukan kolom DB):
+// tanpa caption = Exiting Post, ada caption = Manual Upload
+const POST_TYPE_MANUAL = "Manual Upload";
+const POST_TYPE_EXITING = "Exiting Post";
+const POST_TYPE_OPTIONS = [POST_TYPE_EXITING, POST_TYPE_MANUAL];
+
+type PostTypeSource = Pick<ClusterItem, "caption" | "progress" | "theme" | "result_link" | "format_type">;
+
+function postType(it: PostTypeSource): string | null {
+  if (it.caption && it.caption.trim()) return POST_TYPE_MANUAL;
+  const hasContent =
+    (it.progress && it.progress.trim()) ||
+    (it.theme && it.theme.trim()) ||
+    (it.result_link && it.result_link.trim()) ||
+    (it.format_type && it.format_type.trim());
+  return hasContent ? POST_TYPE_EXITING : null;
+}
+
 const EMPTY_FORM = {
   client_id: "",
   status: "",
@@ -103,6 +121,21 @@ function formatDate(d: string | null | undefined) {
   );
 }
 
+function PostTypeBadge({ type }: { type: string | null | undefined }) {
+  if (!type) return null;
+  const manual = type === POST_TYPE_MANUAL;
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium",
+        manual ? "bg-primary/10 text-primary" : "bg-amber-500/15 text-amber-600"
+      )}
+    >
+      {type}
+    </span>
+  );
+}
+
 export default function AdsContentClusters() {
   const supabase = createClient() as any;
   const [items, setItems] = useState<ClusterItem[]>([]);
@@ -114,6 +147,7 @@ export default function AdsContentClusters() {
   const [objectiveFilter, setObjectiveFilter] = useState("all");
   const [funnelFilter, setFunnelFilter] = useState("all");
   const [formatFilter, setFormatFilter] = useState("all");
+  const [postTypeFilter, setPostTypeFilter] = useState("all");
   const [view, setView] = useState<"cards" | "table">("cards");
 
   const [showModal, setShowModal] = useState(false);
@@ -155,6 +189,7 @@ export default function AdsContentClusters() {
     if (objectiveFilter !== "all" && it.details !== objectiveFilter) return false;
     if (funnelFilter !== "all" && it.pillar !== funnelFilter) return false;
     if (formatFilter !== "all" && it.format_type !== formatFilter) return false;
+    if (postTypeFilter !== "all" && postType(it) !== postTypeFilter) return false;
     if (search) {
       const q = search.toLowerCase();
       const clientName = it.client?.name?.toLowerCase() || it.client_hint?.toLowerCase() || "";
@@ -295,6 +330,14 @@ export default function AdsContentClusters() {
             </option>
           ))}
         </select>
+        <select value={postTypeFilter} onChange={(e) => setPostTypeFilter(e.target.value)} className="input w-auto">
+          <option value="all">Semua Post Type</option>
+          {POST_TYPE_OPTIONS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
         <div className="flex rounded-lg border border-border overflow-hidden">
           <button
             onClick={() => setView("cards")}
@@ -358,6 +401,7 @@ export default function AdsContentClusters() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {postType(it) && <PostTypeBadge type={postType(it)} />}
                 {it.details && (
                   <span className="inline-flex w-fit rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                     {it.details}
@@ -398,6 +442,7 @@ export default function AdsContentClusters() {
                 <th className="p-3">Objective</th>
                 <th className="p-3">Funnel</th>
                 <th className="p-3">Format</th>
+                <th className="p-3">Post Type</th>
                 <th className="p-3">Angle (Request)</th>
                 <th className="p-3">Content Link</th>
                 <th className="p-3 text-right">Aksi</th>
@@ -420,6 +465,7 @@ export default function AdsContentClusters() {
                       "—"
                     )}
                   </td>
+                  <td className="p-3">{postType(it) ? <PostTypeBadge type={postType(it)} /> : "—"}</td>
                   <td className="p-3 max-w-sm">
                     <p className="line-clamp-2 whitespace-pre-wrap text-foreground/80">{it.theme || "—"}</p>
                   </td>
@@ -574,6 +620,10 @@ export default function AdsContentClusters() {
                   placeholder="Caption iklan..."
                   className="input resize-y"
                 />
+                <p className="mt-1 text-xs text-muted">
+                  Post Type otomatis: kosong = <span className="font-medium text-amber-600">Exiting Post</span>, terisi ={" "}
+                  <span className="font-medium text-primary">Manual Upload</span>
+                </p>
               </div>
               <div>
                 <label className="label">Prefilled Message (If Use CTWA Campaign)</label>
@@ -621,6 +671,7 @@ export default function AdsContentClusters() {
                 ["Objective Campaign", detail.details],
                 ["Funnel", detail.pillar],
                 ["Format", detail.format_type],
+                ["Post Type", postType(detail)],
                 ["Angle (Request)", detail.theme],
                 ["Caption", detail.caption],
                 ["Prefilled Message", detail.content_copy],
