@@ -27,8 +27,6 @@ interface AdRow {
   client_id: string | null;
 }
 
-interface Client { id: string; name: string; }
-
 const emptyForm = {
   ad_no: "", ad_status: "off", tanggal: "", objective: "", funnel: "",
   format_type: "", angle: "", content_link: "", caption: "", prefilled_message: "",
@@ -38,7 +36,6 @@ export default function AdsManager() {
   // eslint-disable-next-line
   const supabase = createClient() as any;
   const [rows, setRows] = useState<AdRow[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [fClient, setFClient] = useState("all");
@@ -56,18 +53,16 @@ export default function AdsManager() {
   async function load() {
     setLoading(true);
     try {
-      const [adsRes, clientsRes] = await Promise.all([
+      const [adsRes] = await Promise.all([
         supabase
           .from("content_uploads")
           .select("id, ad_no, ad_status, tanggal, objective, funnel, format_type, angle, content_link, caption, prefilled_message, client_label, client_id")
           .not("sheet_name", "is", null)
           .order("sheet_name")
           .order("sheet_row_no"),
-        supabase.from("clients").select("id, name"),
       ]);
       if (adsRes.error) throw adsRes.error;
       setRows((adsRes.data as AdRow[]) || []);
-      setClients((clientsRes.data as Client[]) || []);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error("Gagal memuat data ads. Jalankan migrasi v84 dulu. " + msg);
@@ -76,10 +71,24 @@ export default function AdsManager() {
     }
   }
 
+  // Opsi client hanya dari yang benar-benar punya data ads (+ jumlah rows)
+  const clientOptions = useMemo(() => {
+    const counts = new Map<string, { label: string; n: number }>();
+    for (const r of rows) {
+      const key = r.client_id || "__none__";
+      const label = r.client_id ? (r.client_label || "Tanpa Nama") : "(Tanpa Client)";
+      const cur = counts.get(key);
+      counts.set(key, { label: cur?.label || label, n: (cur?.n || 0) + 1 });
+    }
+    return Array.from(counts.entries())
+      .map(([id, v]) => ({ id, label: v.label, n: v.n }))
+      .sort((a2, b2) => a2.label.localeCompare(b2.label));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return rows.filter((r) => {
-      if (fClient !== "all" && r.client_id !== fClient) return false;
+      if (fClient !== "all" && (r.client_id || "__none__") !== fClient) return false;
       if (fObjective !== "all" && r.objective !== fObjective) return false;
       if (fFunnel !== "all" && r.funnel !== fFunnel) return false;
       if (fStatus !== "all" && (r.ad_status || "off") !== fStatus) return false;
@@ -177,9 +186,11 @@ export default function AdsManager() {
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
           <select value={fClient} onChange={(e) => setFClient(e.target.value)} className="input">
-            <option value="all">Semua Client</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            <option value="all">Semua Client ({rows.length})</option>
+            {clientOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label} ({c.n})
+              </option>
             ))}
           </select>
           <select value={fObjective} onChange={(e) => setFObjective(e.target.value)} className="input">
