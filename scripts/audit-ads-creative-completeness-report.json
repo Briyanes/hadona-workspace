@@ -1,0 +1,755 @@
+{
+  "generatedAt": "2026-08-23T19:40:54.755Z",
+  "perClient": {
+    "Hadona agency": {
+      "rows": 88,
+      "placeholder": 88,
+      "okLink": 0,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 0,
+      "notInDb": 0
+    },
+    "RMODA Workshop": {
+      "rows": 99,
+      "placeholder": 70,
+      "okLink": 27,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 2,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 36,
+      "notInDb": 0
+    },
+    "RMODA studio BSD": {
+      "rows": 88,
+      "placeholder": 49,
+      "okLink": 38,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 1,
+      "missingLink": 0,
+      "noteMissing": 1,
+      "noteOk": 47,
+      "notInDb": 0
+    },
+    "RMODA studio Makasar": {
+      "rows": 99,
+      "placeholder": 82,
+      "okLink": 17,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 4,
+      "noteOk": 19,
+      "notInDb": 0
+    },
+    "RMODA autospa Kelapa Gading": {
+      "rows": 88,
+      "placeholder": 83,
+      "okLink": 5,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 9,
+      "notInDb": 0
+    },
+    "AUM Apparel": {
+      "rows": 88,
+      "placeholder": 71,
+      "okLink": 3,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 14,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 17,
+      "notInDb": 0
+    },
+    "Treetop Game": {
+      "rows": 78,
+      "placeholder": 74,
+      "okLink": 1,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 3,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 1,
+      "notInDb": 0
+    },
+    "Anurakti": {
+      "rows": 77,
+      "placeholder": 72,
+      "okLink": 5,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 4,
+      "notInDb": 0
+    },
+    "EOP": {
+      "rows": 77,
+      "placeholder": 72,
+      "okLink": 0,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 5,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 2,
+      "notInDb": 0
+    },
+    "Nouban": {
+      "rows": 77,
+      "placeholder": 62,
+      "okLink": 11,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 4,
+      "missingLink": 0,
+      "noteMissing": 2,
+      "noteOk": 14,
+      "notInDb": 0
+    },
+    "Tombo Ati": {
+      "rows": 75,
+      "placeholder": 68,
+      "okLink": 7,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 2,
+      "notInDb": 0
+    },
+    "Bolu Pisang bu Winda": {
+      "rows": 75,
+      "placeholder": 70,
+      "okLink": 5,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 0,
+      "notInDb": 0
+    },
+    "Ocean Rent & Travel Car": {
+      "rows": 73,
+      "placeholder": 71,
+      "okLink": 2,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 0,
+      "notInDb": 0
+    },
+    "Tape Ketan 181 Muntilan": {
+      "rows": 88,
+      "placeholder": 83,
+      "okLink": 0,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 5,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 5,
+      "notInDb": 0
+    },
+    "TPDOC": {
+      "rows": 88,
+      "placeholder": 86,
+      "okLink": 1,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 1,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 2,
+      "notInDb": 0
+    },
+    "YBD": {
+      "rows": 88,
+      "placeholder": 75,
+      "okLink": 13,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 20,
+      "notInDb": 0
+    },
+    "RAHA Pro": {
+      "rows": 88,
+      "placeholder": 74,
+      "okLink": 9,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 5,
+      "missingLink": 0,
+      "noteMissing": 1,
+      "noteOk": 9,
+      "notInDb": 0
+    },
+    "Threenine": {
+      "rows": 88,
+      "placeholder": 83,
+      "okLink": 3,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 2,
+      "missingLink": 0,
+      "noteMissing": 3,
+      "noteOk": 2,
+      "notInDb": 0
+    },
+    "Shumijapan": {
+      "rows": 88,
+      "placeholder": 55,
+      "okLink": 10,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 23,
+      "missingLink": 0,
+      "noteMissing": 0,
+      "noteOk": 31,
+      "notInDb": 0
+    },
+    "EJA Tour & Travel": {
+      "rows": 78,
+      "placeholder": 77,
+      "okLink": 1,
+      "noLinkSheet": 0,
+      "hyperlinkSuspect": 0,
+      "missingLink": 0,
+      "noteMissing": 1,
+      "noteOk": 0,
+      "notInDb": 0
+    }
+  },
+  "issues": [
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RMODA Workshop",
+      "row": 9,
+      "text": "1766319566103398.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RMODA Workshop",
+      "row": 10,
+      "text": "1766314931351328.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RMODA studio BSD",
+      "row": 1,
+      "text": "BRIEF 4 CAROUSEL",
+      "dbHasUrl": false
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "RMODA studio BSD",
+      "row": 15
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "RMODA studio Makasar",
+      "row": 7
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "RMODA studio Makasar",
+      "row": 8
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "RMODA studio Makasar",
+      "row": 9
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "RMODA studio Makasar",
+      "row": 10
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 1,
+      "text": "Brief1_AUM_Nov.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 2,
+      "text": "Brief2(2)_AUM_Nov.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 3,
+      "text": "AUM_Big size.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 4,
+      "text": "Fabric",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 5,
+      "text": "Bried4_AUM_Nov(5).mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 6,
+      "text": "Brief5_AUM_Nov.png",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 7,
+      "text": "Brief7_AUM_Nov.png",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 8,
+      "text": "Brief8_AUM_Nov.png",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 10,
+      "text": "Brief9_AUM_Nov.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 11,
+      "text": "Brief10_AUM_Nov.mp4k",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 12,
+      "text": "Brief1.png",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 13,
+      "text": "Brief2.png",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 14,
+      "text": "ADS-WA-COMMUNITY.jpg",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "AUM Apparel",
+      "row": 15,
+      "text": "LEGGING ADS.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Treetop Game",
+      "row": 1,
+      "text": "Brief1",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Treetop Game",
+      "row": 2,
+      "text": "Brief2",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Treetop Game",
+      "row": 3,
+      "text": "1.jpg",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "EOP",
+      "row": 1,
+      "text": "Ads2_EOP.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "EOP",
+      "row": 2,
+      "text": "Ads1_EOP.jpg",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "EOP",
+      "row": 3,
+      "text": "Brief3",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "EOP",
+      "row": 4,
+      "text": "Brief4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "EOP",
+      "row": 5,
+      "text": "Brief5_Ads_EOP_Final.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Nouban",
+      "row": 1,
+      "text": "Brief1",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Nouban",
+      "row": 2,
+      "text": "Ads2_Nouban.jpg",
+      "dbHasUrl": true
+    },
+    {
+      "type": "COPY_DI_NOTE_PREFILLED_MISSING",
+      "client": "Nouban",
+      "row": 4
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Nouban",
+      "row": 5,
+      "text": "New ads_nouban",
+      "dbHasUrl": true
+    },
+    {
+      "type": "COPY_DI_NOTE_PREFILLED_MISSING",
+      "client": "Nouban",
+      "row": 5
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Nouban",
+      "row": 6,
+      "text": "Brief3_Ads_NoUban.jpg",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Tape Ketan 181 Muntilan",
+      "row": 1,
+      "text": "Konten_testi_shopee",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Tape Ketan 181 Muntilan",
+      "row": 2,
+      "text": "Ads_2.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Tape Ketan 181 Muntilan",
+      "row": 3,
+      "text": "Ads_1.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Tape Ketan 181 Muntilan",
+      "row": 4,
+      "text": "Brief3.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Tape Ketan 181 Muntilan",
+      "row": 5,
+      "text": "Brief1",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "TPDOC",
+      "row": 2,
+      "text": "Brief8",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RAHA Pro",
+      "row": 4,
+      "text": "FEED.png",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RAHA Pro",
+      "row": 5,
+      "text": "STORY.jpg.jpeg",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RAHA Pro",
+      "row": 9,
+      "text": "klinik (1).mov",
+      "dbHasUrl": true
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "RAHA Pro",
+      "row": 12
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RAHA Pro",
+      "row": 13,
+      "text": "3 agustus",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "RAHA Pro",
+      "row": 14,
+      "text": "5 juli",
+      "dbHasUrl": false
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "Threenine",
+      "row": 1
+    },
+    {
+      "type": "COPY_DI_NOTE_PREFILLED_MISSING",
+      "client": "Threenine",
+      "row": 1
+    },
+    {
+      "type": "COPY_DI_NOTE_PREFILLED_MISSING",
+      "client": "Threenine",
+      "row": 2
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Threenine",
+      "row": 4,
+      "text": "Brief1",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Threenine",
+      "row": 5,
+      "text": "Brief2.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 6,
+      "text": "SHUMIJapan_AdsJune_3.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 8,
+      "text": "Brief2",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 9,
+      "text": "Brief2",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 11,
+      "text": "2(2).mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 12,
+      "text": "Brief 4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 13,
+      "text": "Brief 5",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 14,
+      "text": "Brief 6",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 15,
+      "text": "Brief 7",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 16,
+      "text": "Brief 8",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 18,
+      "text": "Brief 2",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 19,
+      "text": "1.mp4k",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 20,
+      "text": "Brief 9",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 21,
+      "text": "Brief 10",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 22,
+      "text": "Brief1.jpg",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 23,
+      "text": "Brief2.jpg",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 24,
+      "text": "Brief3.mp4",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 25,
+      "text": "Brief4.jpg",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 26,
+      "text": "Brief5.jpg",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 27,
+      "text": "Ads_29July_Brief2.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 28,
+      "text": "Ads_29July_Brief1.mp4",
+      "dbHasUrl": true
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 31,
+      "text": "Brief1",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 32,
+      "text": "Brief2",
+      "dbHasUrl": false
+    },
+    {
+      "type": "HYPERLINK_TERSEMBUNYI",
+      "client": "Shumijapan",
+      "row": 33,
+      "text": "Brief3",
+      "dbHasUrl": true
+    },
+    {
+      "type": "COPY_DI_NOTE_CAPTION_MISSING",
+      "client": "EJA Tour & Travel",
+      "row": 1
+    }
+  ],
+  "totals": {
+    "sheetRows": 1688,
+    "dbRows": 323,
+    "missingInDb": 0,
+    "bugImport": 0,
+    "sumberKosongLink": 0,
+    "hyperlinkTersembunyi": 65,
+    "copyDiNoteCaptionMissing": 8,
+    "copyDiNotePrefilledMissing": 4,
+    "noteResolved": 220,
+    "captionMismatch": 0,
+    "linkMismatch": 0
+  }
+}

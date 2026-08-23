@@ -38,3 +38,6 @@ scripts/screenshots/
 
 # supabase temp
 supabase/.temp/
+
+# DB backup dumps (jangan commit data klien)
+scripts/backup-*.json
