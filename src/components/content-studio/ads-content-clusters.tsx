@@ -93,6 +93,7 @@ const COMPLETENESS_OPTIONS = [
 
 const EMPTY_FORM = {
   client_id: "",
+  post_type: POST_TYPE_EXISTING,
   status: "",
   upload_date: "",
   objective: "",
@@ -233,7 +234,7 @@ export default function AdsContentClusters() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM });
+    setForm({ ...EMPTY_FORM, upload_date: new Date().toISOString().slice(0, 10) });
     setShowModal(true);
   }
 
@@ -241,6 +242,7 @@ export default function AdsContentClusters() {
     setEditingId(item.id);
     setForm({
       client_id: item.client_id || "",
+      post_type: postType(item) || POST_TYPE_EXISTING,
       status: item.progress || "",
       upload_date: (item.upload_date || "").slice(0, 10),
       objective: item.details || "",
@@ -254,9 +256,28 @@ export default function AdsContentClusters() {
     setShowModal(true);
   }
 
-  async function save() {
+  async function save(force = false) {
     if (!form.client_id) return toast.error("Pilih klien dulu");
+    const link = form.content_link.trim();
+    if (link && !/^https?:\/\//i.test(link))
+      return toast.error("Content Link harus diawali http:// atau https://");
+    if (form.post_type === POST_TYPE_EXISTING && !link)
+      return toast.error("Existing Post wajib diisi Content Link (post yang di-boost)");
+    if (form.post_type === POST_TYPE_MANUAL && !form.caption.trim())
+      return toast.error("Manual Upload wajib diisi Caption");
     if (!form.format && !form.angle.trim()) return toast.error("Isi format atau angle (request)");
+    if (!force && link) {
+      const dup = items.find(
+        (it) => it.client_id === form.client_id && it.result_link === link && it.id !== editingId
+      );
+      if (dup) {
+        toast.warning("Content Link ini sudah ada untuk klien yang sama", {
+          description: "Entry dengan link identik sudah terdaftar. Tetap simpan juga?",
+          action: { label: "Tetap Simpan", onClick: () => save(true) },
+        });
+        return;
+      }
+    }
     setSaving(true);
     try {
       const payload = {
@@ -267,8 +288,8 @@ export default function AdsContentClusters() {
         pillar: form.funnel || null,
         format_type: form.format || null,
         theme: form.angle.trim() || null,
-        result_link: form.content_link.trim() || null,
-        caption: form.caption.trim() || null,
+        result_link: link || null,
+        caption: form.post_type === POST_TYPE_MANUAL ? form.caption.trim() || null : null,
         content_copy: form.prefilled.trim() || null,
       };
       let error;
@@ -577,6 +598,29 @@ export default function AdsContentClusters() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="label">Jenis Posting *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {POST_TYPE_OPTIONS.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setForm({ ...form, post_type: t })}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                        form.post_type === t
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-foreground/80 hover:bg-surface"
+                      )}
+                    >
+                      <span className="font-medium">{t}</span>
+                      <span className="mt-0.5 block text-xs font-normal text-muted">
+                        {t === POST_TYPE_EXISTING ? "Boost post IG yang sudah ada" : "Upload baru via Ads Manager"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label">Status</label>
@@ -613,6 +657,11 @@ export default function AdsContentClusters() {
                     </option>
                   ))}
                 </select>
+                {form.objective === "CTWA" && !form.prefilled.trim() && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    Objective CTWA — isi Prefilled Message (di bawah) agar tidak ditandai "Belum Lengkap".
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -649,7 +698,9 @@ export default function AdsContentClusters() {
                 />
               </div>
               <div>
-                <label className="label">Content Link</label>
+                <label className="label">
+                  Content Link {form.post_type === POST_TYPE_EXISTING ? "*" : "(opsional)"}
+                </label>
                 <input
                   type="url"
                   value={form.content_link}
@@ -659,18 +710,22 @@ export default function AdsContentClusters() {
                 />
               </div>
               <div>
-                <label className="label">Caption</label>
+                <label className="label">
+                  Caption {form.post_type === POST_TYPE_MANUAL ? "*" : "(tidak dipakai)"}
+                </label>
                 <textarea
-                  value={form.caption}
+                  value={form.post_type === POST_TYPE_MANUAL ? form.caption : ""}
                   onChange={(e) => setForm({ ...form, caption: e.target.value })}
                   rows={3}
-                  placeholder="Caption iklan..."
-                  className="input resize-y"
+                  disabled={form.post_type !== POST_TYPE_MANUAL}
+                  placeholder={
+                    form.post_type === POST_TYPE_MANUAL ? "Caption iklan..." : "Existing Post tidak memakai caption"
+                  }
+                  className="input resize-y disabled:opacity-50"
                 />
-                <p className="mt-1 text-xs text-muted">
-                  Post Type otomatis: kosong = <span className="font-medium text-amber-600">Existing Post</span>, terisi ={" "}
-                  <span className="font-medium text-primary">Manual Upload</span>
-                </p>
+                {form.post_type === POST_TYPE_MANUAL && (
+                  <p className="mt-1 text-xs text-muted">Caption untuk iklan yang di-upload manual via Ads Manager.</p>
+                )}
               </div>
               <div>
                 <label className="label">Prefilled Message (If Use CTWA Campaign)</label>
@@ -687,7 +742,7 @@ export default function AdsContentClusters() {
               <button onClick={() => setShowModal(false)} className="btn-ghost">
                 Batal
               </button>
-              <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
+              <button onClick={() => save()} disabled={saving} className="btn-primary flex items-center gap-2">
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 {editingId ? "Simpan Perubahan" : "Simpan"}
               </button>
@@ -778,6 +833,12 @@ export default function AdsContentClusters() {
               Entry <span className="font-medium text-foreground">{confirmDelete.theme?.slice(0, 40) || confirmDelete.format_type || "—"}</span>{" "}
               akan dihapus permanen.
             </p>
+            {confirmDelete.source_sheet && (
+              <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
+                ⚠ Entry ini berasal dari import sheet ({confirmDelete.source_sheet}). Jika dihapus, entry akan muncul
+                kembali saat re-import ulang dari spreadsheet.
+              </p>
+            )}
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)} className="btn-ghost">
                 Batal
