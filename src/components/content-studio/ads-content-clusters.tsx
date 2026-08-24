@@ -45,6 +45,7 @@ interface ClusterItem {
 interface Client {
   id: string;
   name: string;
+  status?: string;
 }
 
 // Dropdown values — mirror master spreadsheet (publish)
@@ -162,6 +163,8 @@ export default function AdsContentClusters() {
   const [items, setItems] = useState<ClusterItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
+  const [activeClientIds, setActiveClientIds] = useState<Set<string>>(new Set());
+  const [showInactive, setShowInactive] = useState(false);
   const [search, setSearch] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -201,11 +204,22 @@ export default function AdsContentClusters() {
   }
 
   async function loadClients() {
-    const { data } = await supabase.from("clients").select("id, name").eq("status", "active").order("name");
-    setClients((data as unknown as Client[]) || []);
+    const { data } = await supabase.from("clients").select("id, name, status").order("name");
+    const all = (data as unknown as Client[]) || [];
+    const active = all.filter((c) => c.status === "active");
+    setClients(active);
+    setActiveClientIds(new Set(active.map((c) => c.id)));
   }
 
+  // Entry milik client non-aktif — default disembunyikan (konsisten dgn dashboard), toggle di toolbar
+  const inactiveCount = items.filter(
+    (it) => it.client_id && activeClientIds.size > 0 && !activeClientIds.has(it.client_id)
+  ).length;
+  const isInactiveClient = (it: ClusterItem) =>
+    !!it.client_id && activeClientIds.size > 0 && !activeClientIds.has(it.client_id);
+
   const filtered = items.filter((it) => {
+    if (!showInactive && clientFilter === "all" && isInactiveClient(it)) return false;
     if (clientFilter !== "all" && it.client_id !== clientFilter) return false;
     if (statusFilter !== "all" && it.progress !== statusFilter) return false;
     if (objectiveFilter !== "all" && it.details !== objectiveFilter) return false;
@@ -339,6 +353,18 @@ export default function AdsContentClusters() {
             className="input pl-9"
           />
         </div>
+        {inactiveCount > 0 && (
+          <button
+            onClick={() => setShowInactive((v) => !v)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
+              showInactive ? "border-primary bg-primary/10 text-primary" : "border-border text-muted hover:text-foreground"
+            )}
+            title={showInactive ? "Sembunyikan entry client non-aktif" : "Tampilkan entry client non-aktif"}
+          >
+            {showInactive ? `✓ Non-aktif (${inactiveCount})` : `Non-aktif (${inactiveCount})`}
+          </button>
+        )}
         <select value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="input w-auto">
           <option value="all">Semua Klien</option>
           {clients.map((c) => (
@@ -436,7 +462,14 @@ export default function AdsContentClusters() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-sm text-foreground">{it.client?.name || it.client_hint || "—"}</p>
+                   <p className="font-semibold text-sm text-foreground">
+                     {it.client?.name || it.client_hint || "—"}
+                     {showInactive && isInactiveClient(it) && (
+                       <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                         non-aktif
+                       </span>
+                     )}
+                   </p>
                   <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
                     <Calendar size={11} /> {formatDate(it.upload_date)}
                   </p>
@@ -518,7 +551,14 @@ export default function AdsContentClusters() {
               {filtered.map((it) => (
                 <tr key={it.id} className="border-b border-border/50 hover:bg-surface/50 cursor-pointer" onClick={() => setDetail(it)}>
                   <td className="p-3 whitespace-nowrap text-muted">{formatDate(it.upload_date)}</td>
-                  <td className="p-3 font-medium">{it.client?.name || it.client_hint || "—"}</td>
+                  <td className="p-3 font-medium">
+                    {it.client?.name || it.client_hint || "—"}
+                    {showInactive && isInactiveClient(it) && (
+                      <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                        non-aktif
+                      </span>
+                    )}
+                  </td>
                   <td className="p-3">
                     <StatusBadge status={it.progress} />
                   </td>
