@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T19:40:54.755Z",
+  "generatedAt": "2026-08-23T21:10:26.833Z",
   "perClient": {
     "Hadona agency": {
       "rows": 88,
@@ -242,7 +242,7 @@
       "client": "RMODA studio BSD",
       "row": 1,
       "text": "BRIEF 4 CAROUSEL",
-      "dbHasUrl": false
+      "dbHasUrl": true
     },
     {
       "type": "COPY_DI_NOTE_CAPTION_MISSING",
@@ -365,7 +365,7 @@
       "client": "AUM Apparel",
       "row": 15,
       "text": "LEGGING ADS.mp4",
-      "dbHasUrl": false
+      "dbHasUrl": true
     },
     {
       "type": "HYPERLINK_TERSEMBUNYI",
@@ -466,7 +466,7 @@
       "client": "Tape Ketan 181 Muntilan",
       "row": 1,
       "text": "Konten_testi_shopee",
-      "dbHasUrl": false
+      "dbHasUrl": true
     },
     {
       "type": "HYPERLINK_TERSEMBUNYI",
@@ -534,14 +534,14 @@
       "client": "RAHA Pro",
       "row": 13,
       "text": "3 agustus",
-      "dbHasUrl": false
+      "dbHasUrl": true
     },
     {
       "type": "HYPERLINK_TERSEMBUNYI",
       "client": "RAHA Pro",
       "row": 14,
       "text": "5 juli",
-      "dbHasUrl": false
+      "dbHasUrl": true
     },
     {
       "type": "COPY_DI_NOTE_CAPTION_MISSING",
