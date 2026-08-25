@@ -386,7 +386,7 @@ export default function StrategyPage() {
               {statusConfig[kr.status]?.label || kr.status}
             </span>
             {kr.kr_type && (
-              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", kr.kr_type === "leading" ? "bg-primary/10 text-primary" : "bg-muted text-muted")}>
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", kr.kr_type === "leading" ? "bg-primary/10 text-primary" : "bg-muted/10 text-muted")}>
                 {kr.kr_type === "leading" ? "Leading" : "Lagging"}
               </span>
             )}

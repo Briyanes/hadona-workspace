@@ -35,7 +35,7 @@ const config: Config = {
         danger: "#EF4444",
         muted: {
           DEFAULT: "#6B7280",
-          foreground: "#FFFFFF",
+          foreground: "#374151",
         },
       },
       fontFamily: {

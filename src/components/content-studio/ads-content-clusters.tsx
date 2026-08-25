@@ -135,7 +135,7 @@ function formatDate(d: string | null | undefined) {
     <span
       className={cn(
         "inline-flex w-fit rounded-full px-2 py-0.5 text-xs font-medium",
-        active ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted"
+        active ? "bg-emerald-500/15 text-emerald-600" : "bg-muted/15 text-muted"
       )}
     >
       {status}

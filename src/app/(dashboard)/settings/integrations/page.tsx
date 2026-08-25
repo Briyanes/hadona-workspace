@@ -136,7 +136,7 @@ export default function IntegrationsSettingsPage() {
         <div className="mb-3 flex items-center gap-2">
           <Plug size={18} className="text-muted" />
           <h3 className="text-sm font-semibold text-foreground">Email (SMTP)</h3>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+          <span className="rounded-full bg-muted/10 px-2 py-0.5 text-[10px] font-medium text-muted">
             Coming Soon
           </span>
         </div>

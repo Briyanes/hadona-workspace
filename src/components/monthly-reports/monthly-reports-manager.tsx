@@ -400,7 +400,7 @@ export function MonthlyReportsManager() {
               </option>
             ))}
           </select>
-          <div className="ml-auto self-center text-sm text-muted-foreground">
+          <div className="ml-auto self-center text-sm text-muted">
             {filtered.length} report
           </div>
         </div>
@@ -449,14 +449,14 @@ export function MonthlyReportsManager() {
                       <td className="whitespace-nowrap px-4 py-3 font-medium">
                         {MONTHS[r.period_month - 1]} {r.period_year}
                       </td>
-                      <td className="px-4 py-3">{r.client?.name || <span className="text-muted-foreground">—</span>}</td>
+                      <td className="px-4 py-3">{r.client?.name || <span className="text-muted">—</span>}</td>
                       <td className="max-w-[220px] px-4 py-3">
                         <div className="flex items-center gap-2">
                           <FileIcon className="h-4 w-4 shrink-0 text-primary" />
                           <span className="truncate" title={r.file_name || ""}>
                             {r.file_name || "report"}
                           </span>
-                          <span className="shrink-0 text-xs text-muted-foreground">
+                          <span className="shrink-0 text-xs text-muted">
                             ({formatFileSize(r.file_size)})
                           </span>
                         </div>
@@ -468,11 +468,11 @@ export function MonthlyReportsManager() {
                             {r.task.title.length > 30 ? r.task.title.slice(0, 30) + "…" : r.task.title}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          <span className="text-muted">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">{r.creator?.full_name || "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                      <td className="whitespace-nowrap px-4 py-3 text-muted">
                         {formatDate(r.created_at)}
                       </td>
                       <td className="px-4 py-3">
@@ -566,13 +566,13 @@ export function MonthlyReportsManager() {
                 <>
                   <FileText className="h-8 w-8 text-primary" />
                   <span className="text-sm font-medium">{file.name}</span>
-                  <span className="text-xs text-muted-foreground">{formatFileSize(file.size)} — klik untuk ganti</span>
+                  <span className="text-xs text-muted">{formatFileSize(file.size)} — klik untuk ganti</span>
                 </>
               ) : (
                 <>
-                  <Upload className="h-8 w-8 text-muted-foreground" />
+                  <Upload className="h-8 w-8 text-muted" />
                   <span className="text-sm font-medium">Klik untuk pilih file</span>
-                  <span className="text-xs text-muted-foreground">PDF, Excel, Word, PowerPoint (maks ~25MB)</span>
+                  <span className="text-xs text-muted">PDF, Excel, Word, PowerPoint (maks ~25MB)</span>
                 </>
               )}
             </label>
@@ -648,7 +648,7 @@ export function MonthlyReportsManager() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted">
               Task yang dilink akan otomatis pindah ke Review setelah report diupload.
             </p>
           </div>
@@ -710,7 +710,7 @@ export function MonthlyReportsManager() {
               <span className="truncate" title={editReport?.file_name || ""}>
                 {editReport?.file_name || "report"}
               </span>
-              <span className="shrink-0 text-xs text-muted-foreground">
+              <span className="shrink-0 text-xs text-muted">
                 ({formatFileSize(editReport?.file_size ?? null)}) — file saat ini
               </span>
             </div>
@@ -730,15 +730,15 @@ export function MonthlyReportsManager() {
                 <>
                   <FileText className="h-6 w-6 text-primary" />
                   <span className="text-sm font-medium">{editFile.name}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted">
                     {formatFileSize(editFile.size)} — klik untuk ganti
                   </span>
                 </>
               ) : (
                 <>
-                  <Upload className="h-6 w-6 text-muted-foreground" />
+                  <Upload className="h-6 w-6 text-muted" />
                   <span className="text-sm font-medium">Klik untuk ganti file (opsional)</span>
-                  <span className="text-xs text-muted-foreground">Biarkan kosong jika file tidak berubah</span>
+                  <span className="text-xs text-muted">Biarkan kosong jika file tidak berubah</span>
                 </>
               )}
             </label>
@@ -812,7 +812,7 @@ export function MonthlyReportsManager() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted">
               Jika diganti ke task lain, task baru akan otomatis pindah ke Review.
             </p>
           </div>
