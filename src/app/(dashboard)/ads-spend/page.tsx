@@ -27,15 +27,13 @@ import {
   KeyRound,
   ExternalLink,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import dynamic from "next/dynamic";
+
+// Chart di-load client-side saja agar recharts tidak masuk initial bundle halaman
+const SpendRevenueChart = dynamic(
+  () => import("@/components/charts/spend-revenue-chart").then((m) => m.SpendRevenueChart),
+  { ssr: false }
+);
 import { formatIDR, cn, extractError } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { useShiftSelect } from "@/hooks/use-shift-select";
@@ -54,10 +52,20 @@ import {
   emptySpendForm,
   calcDaysLeft,
 } from "@/components/ads-spend/types";
-import { AdAccountModal } from "@/components/ads-spend/ad-account-modal";
-import { ManualTokenModal } from "@/components/ads-spend/manual-token-modal";
-import { ImportSheetModal } from "@/components/ads-spend/import-sheet-modal";
-import { SpendLogModal } from "@/components/ads-spend/spend-log-modal";
+// FASE 5 (perf): Modals di-lazy-load agar tidak masuk initial chunk halaman.
+// Hanya di-download saat pertama kali modal dibuka user.
+const AdAccountModal = dynamic(() =>
+  import("@/components/ads-spend/ad-account-modal").then((m) => m.AdAccountModal)
+);
+const ManualTokenModal = dynamic(() =>
+  import("@/components/ads-spend/manual-token-modal").then((m) => m.ManualTokenModal)
+);
+const ImportSheetModal = dynamic(() =>
+  import("@/components/ads-spend/import-sheet-modal").then((m) => m.ImportSheetModal)
+);
+const SpendLogModal = dynamic(() =>
+  import("@/components/ads-spend/spend-log-modal").then((m) => m.SpendLogModal)
+);
 
 export default function AdsSpendPage() {
   const supabase = createClient();
@@ -1393,79 +1401,24 @@ export default function AdsSpendPage() {
             </button>
           </div>
         </div>
-        {trendData.every((d) => d.spend === 0) ? (
-          <div className="flex h-48 flex-col items-center justify-center text-center">
-            <TrendingUp className="mb-2 text-muted" size={24} />
-            <p className="text-xs text-muted">Belum ada data spend.</p>
-            <p className="text-[10px] text-muted">
-              Klik icon <ClipboardList size={10} className="inline" /> di tabel untuk log spend
-              harian.
-            </p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={trendData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                interval={chartRange === 30 ? 3 : 0}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                axisLine={false}
-                tickLine={false}
-                width={40}
-              />
-              <Tooltip
-                formatter={(value: number) => formatIDR(value)}
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid #e5e7eb",
-                  fontSize: "12px",
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="spend"
-                stroke="#f59e0b"
-                strokeWidth={2}
-                fill="url(#colorSpend)"
-                name="Spend"
-              />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#10b981"
-                strokeWidth={2}
-                fill="url(#colorRevenue)"
-                name="Revenue"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-        {/* Legend */}
-        <div className="mt-3 flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-[10px] text-muted">
-            <span className="h-2 w-2 rounded-full bg-warning" /> Spend
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-muted">
-            <span className="h-2 w-2 rounded-full bg-success" /> Revenue
-          </span>
-        </div>
+        <SpendRevenueChart
+          data={trendData}
+          xKey="date"
+          xInterval={chartRange === 30 ? 3 : 0}
+          formatValue={formatIDR}
+          isEmpty={trendData.every((d) => d.spend === 0)}
+          empty={
+            <div className="flex h-48 flex-col items-center justify-center text-center">
+              <TrendingUp className="mb-2 text-muted" size={24} />
+              <p className="text-xs text-muted">Belum ada data spend.</p>
+              <p className="text-[10px] text-muted">
+                Klik icon <ClipboardList size={10} className="inline" /> di tabel untuk log spend
+                harian.
+              </p>
+            </div>
+          }
+          showLegend
+        />
       </div>
 
       {/* Filters */}
@@ -1906,7 +1859,8 @@ export default function AdsSpendPage() {
       )}
 
       {/* Create/Edit Modal */}
-      <AdAccountModal
+      {showModal && (
+        <AdAccountModal
         open={showModal}
         onClose={() => setShowModal(false)}
         form={form}
@@ -1916,20 +1870,26 @@ export default function AdsSpendPage() {
         editingId={editingId}
         clients={clients}
         team={team}
-      />
+
+        />
+      )}
 
       {/* Manual Token Modal */}
-      <ManualTokenModal
+      {showTokenModal && (
+        <ManualTokenModal
         open={showTokenModal}
         onClose={() => setShowTokenModal(false)}
         manualToken={manualToken}
         setManualToken={setManualToken}
         onSubmit={handleManualTokenSubmit}
         savingToken={savingToken}
-      />
+
+        />
+      )}
 
       {/* Import Sheet Modal */}
-      <ImportSheetModal
+      {showImportModal && (
+        <ImportSheetModal
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
         importMode={importMode}
@@ -1946,10 +1906,13 @@ export default function AdsSpendPage() {
         setAssignResult={setAssignResult}
         onSubmit={handleImportSheet}
         importing={importing}
-      />
+
+        />
+      )}
 
       {/* Spend Log Modal */}
-      <SpendLogModal
+      {showSpendModal && (
+        <SpendLogModal
         open={showSpendModal}
         onClose={() => setShowSpendModal(false)}
         modalAccount={modalAccount || null}
@@ -1959,7 +1922,9 @@ export default function AdsSpendPage() {
         savingSpend={savingSpend}
         modalSpendLogs={modalSpendLogs}
         onDeleteLog={handleDeleteSpendLog}
-      />
+
+        />
+      )}
     </div>
   );
 }

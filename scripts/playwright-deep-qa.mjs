@@ -12,7 +12,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-const BASE = 'http://localhost:3000';
+const BASE = process.env.QA_BASE_URL || 'http://localhost:3000';
 const EMAIL = process.env.QA_EMAIL || 'admin@hadona.id';
 const PASSWORD = process.env.QA_PASSWORD || '@Yogyakarta2026';
 const STATE_FILE = '/tmp/hadona-qa-state.json';

@@ -42,14 +42,28 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
-import { CompareView } from "@/components/reports/compare-view";
+import dynamic from "next/dynamic";
 import { ShareButton } from "@/components/reports/share-button";
-import { GoalTracker } from "@/components/reports/goal-tracker";
-import { EmailScheduleManager } from "@/components/reports/email-schedule-manager";
-import { CreativePerformanceTracker } from "@/components/reports/creative-performance-tracker";
 import { ObjectiveSelector } from "@/components/reports/objective-selector";
 import { ObjectiveKPIBar } from "@/components/reports/kpi-bar";
-import { SheetPreviewModal } from "@/components/reports/sheet-preview-modal";
+
+// FASE 5 (perf): Komponen berat & kondisional di-lazy-load agar tidak masuk
+// initial chunk halaman reports. Baru di-download saat fiturnya dibuka user.
+const CompareView = dynamic(() =>
+  import("@/components/reports/compare-view").then((m) => m.CompareView)
+);
+const GoalTracker = dynamic(() =>
+  import("@/components/reports/goal-tracker").then((m) => m.GoalTracker)
+);
+const EmailScheduleManager = dynamic(() =>
+  import("@/components/reports/email-schedule-manager").then((m) => m.EmailScheduleManager)
+);
+const CreativePerformanceTracker = dynamic(() =>
+  import("@/components/reports/creative-performance-tracker").then((m) => m.CreativePerformanceTracker)
+);
+const SheetPreviewModal = dynamic(() =>
+  import("@/components/reports/sheet-preview-modal").then((m) => m.SheetPreviewModal)
+);
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 import { OBJECTIVE_MAP, type ObjectiveKey } from "@/lib/ad-objectives";
@@ -1942,11 +1956,13 @@ export default function ReportsPage() {
       )}
 
       {/* Sheet Preview Modal — lihat semua sheet tabs (read-only) */}
-      <SheetPreviewModal
-        open={showSheetPreview}
-        onClose={() => setShowSheetPreview(false)}
-        defaultUrl={DEFAULT_SHEET_URL}
-      />
+      {showSheetPreview && (
+        <SheetPreviewModal
+          open
+          onClose={() => setShowSheetPreview(false)}
+          defaultUrl={DEFAULT_SHEET_URL}
+        />
+      )}
 
       {/* ═══════════════════════════════════════════ */}
       {/* 🆕 v3: SYNC PROGRESS BAR — Real-time per-tab */}
