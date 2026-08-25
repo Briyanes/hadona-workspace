@@ -331,9 +331,63 @@ export default function ClientsPage() {
     }
   }
 
+  // 🆕 Cascade-aware delete — insiden 21 Agu 2026: duplikat client dihapus →
+  // content_plans ikut cascade-delete permanen. Proteksi berlapis:
+  // 1) Hitung data turunan sebelum delete (content_plans, tasks, invoices, contracts)
+  // 2) Jika ada data turunan → tawarkan ARSIP (aman) sebagai opsi utama
+  // 3) Hapus permanen butuh konfirmasi kedua dengan peringatan eksplisit
+  // 4) DB trigger (migration-v98) memblokir hard-delete yang punya content_plans
   async function handleDelete(id: string, name: string) {
-    if (!confirm(`Hapus client "${name}"? Tugas terkait akan kehilangan referensi client.`)) return;
     try {
+      // 1. Hitung dependensi (parallel, head-only untuk performance)
+      const [plans, tasks, invoices, contracts] = await Promise.all([
+        supabase.from("content_plans").select("id", { count: "exact", head: true }).eq("client_id", id),
+        supabase.from("tasks").select("id", { count: "exact", head: true }).eq("client_id", id),
+        supabase.from("invoices").select("id", { count: "exact", head: true }).eq("client_id", id),
+        supabase.from("contracts").select("id", { count: "exact", head: true }).eq("client_id", id),
+      ]);
+      const planCount = plans.count || 0;
+      const taskCount = tasks.count || 0;
+      const invoiceCount = invoices.count || 0;
+      const contractCount = contracts.count || 0;
+      const hasDependents = planCount + taskCount + invoiceCount + contractCount > 0;
+
+      // 2. Client dengan data turunan: tawarkan arsip dulu (jalur aman)
+      if (hasDependents) {
+        const archive = confirm(
+          `Client "${name}" memiliki data terkait:\n\n` +
+            `• ${planCount} content plan — akan TERHAPUS PERMANEN (cascade)\n` +
+            `• ${taskCount} task\n` +
+            `• ${invoiceCount} invoice\n` +
+            `• ${contractCount} contract\n\n` +
+            `Disarankan: ARSIPKAN client (status → inactive) agar semua data tetap aman.\n\n` +
+            `OK = Arsipkan (aman, reversible)\n` +
+            `Cancel = Lanjut ke opsi hapus permanen`
+        );
+        if (archive) {
+          const { error } = await supabase
+            .from("clients")
+            .update({ status: "inactive" } as never)
+            .eq("id", id);
+          if (error) throw error;
+          toast.success(`"${name}" diarsipkan (inactive) — data terkait aman`);
+          loadClients();
+          return;
+        }
+
+        // 3. Konfirmasi kedua untuk hard delete — eksplisit & menakutkan (by design)
+        const hard = confirm(
+          `HAPUS PERMANEN "${name}"?\n\n` +
+            `${planCount} content plan akan ikut TERHAPUS dan TIDAK BISA DIKEMBALIKAN.\n` +
+            `Task/invoice/contract terkait dapat kehilangan referensi.\n\n` +
+            `Jika ragu, pilih Cancel lalu Arsipkan.`
+        );
+        if (!hard) return;
+      } else {
+        // Client kosong — konfirmasi biasa cukup
+        if (!confirm(`Hapus client "${name}"? Tidak ada data terkait yang ditemukan.`)) return;
+      }
+
       const { error } = await supabase.from("clients").delete().eq("id", id);
       if (error) throw error;
       toast.success("Client dihapus");
