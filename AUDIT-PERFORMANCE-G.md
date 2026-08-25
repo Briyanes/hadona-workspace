@@ -10,9 +10,11 @@ Top 3 route chunks terberat (gzip):
 | Route | Before | After | Δ |
 |---|---|---|---|
 | `/ads-spend` | 292 kB | **187 kB** | **-36%** |
-| `/reports` | 314 kB | 305 kB | -3% |
+| `/reports` | 314 kB | **204 kB** | **-35%** |
 | `/chat` | 236 kB | 236 kB | 0 (tech debt) |
 | Shared JS | — | 87.8 kB | — |
+
+> Update 2026-08-25 (verifikasi ulang): `/reports` kini **204 kB** setelah `SpendRevenueChart` (recharts) dan `CreativePerformanceTracker` di-load via `next/dynamic` + conditional mount. `date-fns` terkonfirmasi hanya dipakai di `/chat`, bukan `/reports`.
 
 Penyebab utama: `recharts` + `date-fns` di-import statis di dalam chart & modal yang semuanya ter-mount saat page load.
 
@@ -51,9 +53,8 @@ Tidak di-refactor: `use-chat-realtime` harus aktif di mount untuk subscription S
 
 ## 4. Tech Debt Tersisa
 
-1. `/chat` 236 kB — perlu restrukturisasi hook realtime agar panel bisa di-lazy tanpa memutus subscription.
-2. `/reports` 305 kB — sisa berat dari `date-fns` locale + tabel besar; butuh pemecahan tab menjadi route terpisah.
-3. `recharts` masih masuk chunk `/reports` via tracker lain — kandidat dynamic import lanjutan.
+1. `/chat` 236 kB — perlu restrukturisasi hook realtime agar panel bisa di-lazy tanpa memutus subscription. (`date-fns` satu-satunya dependency berat di sini.)
+2. `/reports` 204 kB — sisa berat dari page component besar (~3.3k baris, tabel + filter + 6 tab); butuh pemecahan tab menjadi route terpisah. **Selesai:** ~~`recharts` masih masuk chunk `/reports`~~ — sudah dynamic via `SpendRevenueChart` & `CreativePerformanceTracker` (diverifikasi build 2026-08-25).
 
 ## 5. Cara Menjalankan Ulang
 
