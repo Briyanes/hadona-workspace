@@ -35,6 +35,8 @@ next-env.d.ts
 
 # test artifacts
 scripts/screenshots/
+scripts/deep-qa-report.json
+scripts/tmp-*.mjs
 
 # supabase temp
 supabase/.temp/
