@@ -2,9 +2,10 @@
   "passed": [
     "Page navigation",
     "Unauthenticated redirect",
+    "No console errors",
+    "No uncaught exceptions",
     "Mobile page load",
     "Mobile: no horizontal overflow",
-    "Mobile: tap target sizes OK",
     "Error state handled gracefully",
     "Slow network load"
   ],
@@ -20,7 +21,7 @@
     },
     {
       "test": "Heading",
-      "detail": "404"
+      "detail": "Hadona Workspace"
     },
     {
       "test": "Stats cards",
@@ -61,20 +62,15 @@
     {
       "test": "Report cards",
       "detail": "No cards visible (mungkin belum ada data atau redirect ke login)"
-    }
-  ],
-  "bugs": [
-    {
-      "test": "Console errors",
-      "detail": "3 errors"
     },
     {
-      "test": "Uncaught exceptions",
-      "detail": "1 errors"
+      "test": "Mobile: small tap targets",
+      "detail": "2 buttons <36px (WCAG recommends ≥44px)"
     }
   ],
+  "bugs": [],
   "metrics": {
-    "initialLoadMs": 3758,
-    "slowNetworkLoadMs": 1058
+    "initialLoadMs": 7028,
+    "slowNetworkLoadMs": 746
   }
 }

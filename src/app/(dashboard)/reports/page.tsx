@@ -32,15 +32,6 @@ import {
   Layers,
   MoreHorizontal,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { ShareButton } from "@/components/reports/share-button";
@@ -63,6 +54,12 @@ const CreativePerformanceTracker = dynamic(() =>
 );
 const SheetPreviewModal = dynamic(() =>
   import("@/components/reports/sheet-preview-modal").then((m) => m.SheetPreviewModal)
+);
+// FASE 5 (perf): recharts di-load lazy via reusable SpendRevenueChart (ssr:false).
+// Chunk recharts hanya diunduh saat detail modal dengan trend chart dibuka.
+const SpendRevenueChart = dynamic(
+  () => import("@/components/charts/spend-revenue-chart").then((m) => m.SpendRevenueChart),
+  { ssr: false, loading: () => <div style={{ height: 180 }} /> }
 );
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
@@ -3222,39 +3219,17 @@ export default function ReportsPage() {
               </div>
             )}
 
-            {/* Trend Chart — FASE 2 */}
+            {/* Trend Chart — FASE 2 (refactor: pakai SpendRevenueChart reusable, lazy-loaded) */}
             {chartData.length > 1 && (
               <div className="mb-4 rounded-lg border border-border p-3">
                 <p className="mb-2 text-xs font-semibold uppercase text-muted">📈 Trend 8 Minggu Terakhir</p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorDetailSpend" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorDetailRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                    <XAxis dataKey="period" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                    <YAxis
-                      tick={{ fontSize: 9, fill: "#9ca3af" }}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                      axisLine={false}
-                      tickLine={false}
-                      width={35}
-                    />
-                    <Tooltip
-                      formatter={(value: number) => formatIDR(value)}
-                      contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px" }}
-                    />
-                    <Area type="monotone" dataKey="spend" stroke="#f59e0b" strokeWidth={2} fill="url(#colorDetailSpend)" name="Spend" />
-                    <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#colorDetailRev)" name="Revenue" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <SpendRevenueChart
+                  data={chartData}
+                  xKey="period"
+                  height={180}
+                  yWidth={35}
+                  formatValue={formatIDR}
+                />
               </div>
             )}
 
