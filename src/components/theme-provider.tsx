@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, createContext, useContext } from "react";
+import { useEffect, useState, useCallback, useRef, createContext, useContext } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Theme = "light" | "dark" | "system";
@@ -36,6 +36,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false);
   const supabase = createClient();
 
+  // Race guard: true setelah user manual override via setTheme().
+  // Mencegah loadTheme() yang lambat menimpa pilihan user dengan data DB lama.
+  const userOverrideRef = useRef(false);
+  // Ref sinkron agar listener mediaQuery tidak membaca stale closure `theme`.
+  const themeRef = useRef(theme);
+  useEffect(() => { themeRef.current = theme; }, [theme]);
+
   // Apply theme on mount + listen to system changes
   useEffect(() => {
     // 1. Try localStorage first (instant, no flicker)
@@ -56,6 +63,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         .single();
       const prefs = data as unknown as { preferences?: { theme?: Theme } };
       if (prefs?.preferences?.theme) {
+        // Skip jika user sudah override manual (query ini mungkin stale)
+        if (userOverrideRef.current) return;
         const dbTheme = prefs.preferences.theme;
         setThemeState(dbTheme);
         applyTheme(dbTheme);
@@ -67,7 +76,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // 3. Listen to system preference changes (for "system" mode)
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (theme === "system") applyTheme("system");
+      if (themeRef.current === "system") applyTheme("system");
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
@@ -80,6 +89,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const setTheme = useCallback(async (newTheme: Theme) => {
+    userOverrideRef.current = true;
     setThemeState(newTheme);
     applyTheme(newTheme);
     localStorage.setItem("theme", newTheme);
