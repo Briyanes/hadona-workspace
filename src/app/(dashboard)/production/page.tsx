@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ProductionDetailModal } from "@/components/production/production-detail-modal";
+import { useIncrementalList } from "@/hooks/use-incremental-list";
+import { LoadMore } from "@/components/ui/load-more";
 
 interface Production {
   id: string;
@@ -120,6 +122,11 @@ export default function ProductionPage() {
       return matchSearch && matchStatus;
     });
   }, [productions, search, statusFilter]);
+
+  // Load More pagination — pattern konsisten dengan clients/reports page
+  const { visibleItems, loadMore, hasMore, remaining } = useIncrementalList(filtered, {
+    resetKey: `${search}|${statusFilter}`,
+  });
 
   const stats = useMemo(() => {
     const total = productions.length;
@@ -348,7 +355,7 @@ export default function ProductionPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((p) => {
+          {visibleItems.map((p) => {
             const status = STATUSES.find((s) => s.value === p.status);
             const Icon = status?.icon || Clapperboard;
             const isUpcoming = p.shoot_date && new Date(p.shoot_date) > new Date();
@@ -422,6 +429,15 @@ export default function ProductionPage() {
               </div>
             );
           })}
+
+          <LoadMore
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            remaining={remaining}
+            visibleCount={visibleItems.length}
+            totalCount={filtered.length}
+            itemLabel="productions"
+          />
         </div>
       )}
 

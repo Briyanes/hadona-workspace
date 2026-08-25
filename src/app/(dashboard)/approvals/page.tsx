@@ -10,6 +10,8 @@ import {
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useIncrementalList } from "@/hooks/use-incremental-list";
+import { LoadMore } from "@/components/ui/load-more";
 
 interface Approval {
   id: string;
@@ -130,6 +132,11 @@ export default function ApprovalsPage() {
       return matchSearch && matchStatus;
     });
   }, [approvals, search, statusFilter]);
+
+  // Load More pagination — pattern konsisten dengan clients/reports page
+  const { visibleItems, loadMore, hasMore, remaining } = useIncrementalList(filtered, {
+    resetKey: `${search}|${statusFilter}`,
+  });
 
   const stats = useMemo(() => {
     const total = approvals.length;
@@ -365,7 +372,7 @@ export default function ApprovalsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((a) => {
+          {visibleItems.map((a) => {
             const status = STATUSES.find((s) => s.value === a.status);
             const type = TYPES.find((t) => t.value === a.type);
             const isOverdue = a.status === "pending" && a.due_date && new Date(a.due_date) < new Date();
@@ -470,6 +477,15 @@ export default function ApprovalsPage() {
               </div>
             );
           })}
+
+          <LoadMore
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            remaining={remaining}
+            visibleCount={visibleItems.length}
+            totalCount={filtered.length}
+            itemLabel="approvals"
+          />
         </div>
       )}
 

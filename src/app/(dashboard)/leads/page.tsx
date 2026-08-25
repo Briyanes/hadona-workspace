@@ -10,6 +10,8 @@ import {
 import { cn, formatIDR } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useIncrementalList } from "@/hooks/use-incremental-list";
+import { LoadMore } from "@/components/ui/load-more";
 
 // ============================================================
 // Types — match DB table "leads" (migration-v79.sql)
@@ -125,6 +127,11 @@ export default function LeadsPage() {
       return matchSearch && matchStage;
     });
   }, [leads, search, stageFilter]);
+
+  // Load More pagination — pattern konsisten dengan clients/reports page
+  const { visibleItems, loadMore, hasMore, remaining } = useIncrementalList(filtered, {
+    resetKey: `${search}|${stageFilter}`,
+  });
 
   // ============================================
   // Stats
@@ -400,6 +407,7 @@ export default function LeadsPage() {
           </button>
         </div>
       ) : (
+        <>
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-background">
@@ -414,7 +422,7 @@ export default function LeadsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((lead) => (
+              {visibleItems.map((lead) => (
                 <tr key={lead.id} className="border-b border-border transition-colors last:border-0 hover:bg-primary/5">
                   {/* Company */}
                   <td className="px-4 py-3">
@@ -533,6 +541,16 @@ export default function LeadsPage() {
             </tbody>
           </table>
         </div>
+
+        <LoadMore
+          hasMore={hasMore}
+          onLoadMore={loadMore}
+          remaining={remaining}
+          visibleCount={visibleItems.length}
+          totalCount={filtered.length}
+          itemLabel="leads"
+        />
+      </>
       )}
 
       {/* Create/Edit Modal */}

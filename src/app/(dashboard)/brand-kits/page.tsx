@@ -10,6 +10,8 @@ import {
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useIncrementalList } from "@/hooks/use-incremental-list";
+import { LoadMore } from "@/components/ui/load-more";
 import { uploadFile } from "@/lib/upload";
 
 interface BrandKit {
@@ -133,6 +135,11 @@ export default function BrandKitsPage() {
       return matchSearch;
     });
   }, [brandKits, search]);
+
+  // Load More pagination — pattern konsisten dengan clients/reports page
+  const { visibleItems, loadMore, hasMore, remaining } = useIncrementalList(filtered, {
+    resetKey: search,
+  });
 
   function openCreate() { setForm(emptyForm); setEditingId(null); setShowModal(true); }
 
@@ -307,7 +314,7 @@ export default function BrandKitsPage() {
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {filtered.map((k) => (
+          {visibleItems.map((k) => (
             <div key={k.id} className="card overflow-hidden">
               {/* Color bar */}
               <div className="flex h-3">
@@ -433,6 +440,16 @@ export default function BrandKitsPage() {
               </div>
             </div>
           ))}
+
+          <LoadMore
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+            remaining={remaining}
+            visibleCount={visibleItems.length}
+            totalCount={filtered.length}
+            itemLabel="brand kits"
+            spanFull
+          />
         </div>
       )}
 
