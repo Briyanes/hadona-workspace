@@ -256,7 +256,7 @@ export default function ProductionPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Production</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-lg" />)}
@@ -276,7 +276,7 @@ export default function ProductionPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       <PageHeader
         title="Production"
         subtitle="Jadwal dan tracking produksi video/foto"

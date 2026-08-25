@@ -274,7 +274,7 @@ export default function LeadsPage() {
   // ============================================
   if (loading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Lead Pipeline</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -299,7 +299,7 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       {/* Header */}
       <PageHeader
         title="Lead Pipeline"

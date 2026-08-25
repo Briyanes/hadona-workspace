@@ -247,7 +247,7 @@ export default function ApprovalsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Approvals</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-lg" />)}
@@ -267,7 +267,7 @@ export default function ApprovalsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       <PageHeader
         title="Approval Workflow"
         subtitle="Review dan approve creative content, copy, dan ad creatives"

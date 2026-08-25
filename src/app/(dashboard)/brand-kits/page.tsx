@@ -264,7 +264,7 @@ export default function BrandKitsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-4 md:p-6">
+      <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Brand Kits</h1>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-40 rounded-lg" />)}
@@ -284,7 +284,7 @@ export default function BrandKitsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6">
       <PageHeader
         title="Brand Kits"
         subtitle="Brand guidelines dan asset library per client"
