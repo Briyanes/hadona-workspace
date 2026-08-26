@@ -4,6 +4,7 @@ import { SidebarProvider, useSidebar } from "@/components/ui/sidebar-context";
 import { Sidebar } from "@/components/ui/sidebar";
 import { Header } from "@/components/ui/header";
 import { MobileBottomNav } from "@/components/ui/mobile-bottom-nav";
+import { FloatingChatButton } from "@/components/ui/floating-chat-button";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <MobileBottomNav />
+      {/* Desktop-only FAB ke Team Chat (inversi lg:hidden bottom nav) */}
+      <FloatingChatButton />
     </div>
   );
 }
