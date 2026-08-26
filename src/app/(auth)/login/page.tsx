@@ -119,8 +119,8 @@ export default function LoginPage() {
               priority
             />
           </div>
-          <h1 className="text-2xl font-bold text-white">Hadona Workspace</h1>
-          <p className="mt-1 text-sm text-white/70">Agency Operating System</p>
+          <h1 className="text-2xl font-bold text-primary-foreground">Hadona Workspace</h1>
+          <p className="mt-1 text-sm text-primary-foreground/70">Agency Operating System</p>
         </div>
 
         {/* Login Card */}
@@ -189,7 +189,7 @@ export default function LoginPage() {
             <button type="submit" disabled={loading || !isFormValid()} className="btn-primary w-full">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
                   Memproses...
                 </span>
               ) : (
@@ -234,7 +234,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs text-white/50">
+        <p className="mt-6 text-center text-xs text-primary-foreground/50">
           Hanya untuk tim internal Hadona Digital Media.
         </p>
       </div>

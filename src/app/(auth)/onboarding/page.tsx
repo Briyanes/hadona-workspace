@@ -177,13 +177,13 @@ export default function OnboardingPage() {
               priority
             />
           </div>
-          <h1 className="text-2xl font-bold text-white">Selamat Datang di Hadona!</h1>
-          <p className="mt-1 text-sm text-white/70">
-            Hai <span className="font-medium text-white">{userName}</span> ({userEmail}),
+          <h1 className="text-2xl font-bold text-primary-foreground">Selamat Datang di Hadona!</h1>
+          <p className="mt-1 text-sm text-primary-foreground/70">
+            Hai <span className="font-medium text-primary-foreground">{userName}</span> ({userEmail}),
             <br />
             pilih divisi Anda untuk mulai berkontribusi
           </p>
-          <p className="mt-0.5 text-xs text-white/50">
+          <p className="mt-0.5 text-xs text-primary-foreground/50">
             Anda bisa memilih lebih dari 1 divisi
           </p>
         </div>

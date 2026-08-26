@@ -157,8 +157,8 @@ export default function SignupPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface p-2 shadow-lg shadow-black/10">
             <Image src="/logo/logo-hadona.png" alt="Hadona Digital Media" width={48} height={48} className="h-full w-full object-contain" priority />
           </div>
-          <h1 className="text-2xl font-bold text-white">Buat Akun Baru</h1>
-          <p className="mt-1 text-sm text-white/70">Hadona Digital Media Team</p>
+          <h1 className="text-2xl font-bold text-primary-foreground">Buat Akun Baru</h1>
+          <p className="mt-1 text-sm text-primary-foreground/70">Hadona Digital Media Team</p>
         </div>
 
         <div className="rounded-2xl bg-surface p-8 shadow-2xl shadow-black/20">
@@ -294,7 +294,7 @@ export default function SignupPage() {
             <button type="submit" disabled={loading || !isFormValid()} className="btn-primary w-full">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
                   Memproses...
                 </span>
               ) : "Daftar"}
@@ -333,7 +333,7 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs text-white/50">
+        <p className="mt-6 text-center text-xs text-primary-foreground/50">
           Dengan mendaftar, Anda akan mendapat role default sebagai "Advertiser". Manager dapat mengubah role Anda setelah login.
         </p>
       </div>

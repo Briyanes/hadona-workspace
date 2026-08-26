@@ -119,7 +119,7 @@ export default function WaitingApprovalPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary via-primary to-primary-dark">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-foreground" />
       </div>
     );
   }
@@ -216,7 +216,7 @@ export default function WaitingApprovalPage() {
         </div>
 
         {/* Footer */}
-        <p className="mt-4 text-center text-xs text-white/50">
+        <p className="mt-4 text-center text-xs text-primary-foreground/50">
           Hadona Digital Media Workspace
         </p>
       </div>
