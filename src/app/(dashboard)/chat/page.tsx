@@ -516,8 +516,33 @@ function stripMentions(content: string): string {
 }
 
 // ============================
-// Jitsi Call Panel
+// Jitsi Call Panel (External API — events hangup/readyToClose tersinkron)
 // ============================
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI?: any;
+  }
+}
+
+function loadJitsiScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.JitsiMeetExternalAPI) return resolve();
+    const existing = document.getElementById("jitsi-external-api") as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Gagal memuat Jitsi")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "jitsi-external-api";
+    script.src = "https://meet.jit.si/external_api.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Gagal memuat Jitsi"));
+    document.head.appendChild(script);
+  });
+}
+
 function CallPanel({
   room,
   displayName,
@@ -531,47 +556,85 @@ function CallPanel({
   onMinimize: () => void;
   minimized: boolean;
 }) {
-  const jitsiUrl = `https://meet.jit.si/${room}#config.prejoinPageEnabled=false&config.startWithVideoMuted=true&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(displayName)}&config.disableDeepLinking=true`;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const onLeaveRef = useRef(onLeave);
+  const [loadError, setLoadError] = useState(false);
 
-  if (minimized) {
-    return (
-      <div className="absolute bottom-20 right-4 z-30 flex items-center gap-2 bg-white dark:bg-[#1e293b] border rounded-full shadow-lg pl-4 pr-2 py-2">
-        <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-xs font-medium">Call berlangsung</span>
-        <button onClick={onMinimize} className="w-7 h-7 flex items-center justify-center hover:bg-surface-hover rounded-full" title="Buka">
-          <Maximize2 size={14} />
-        </button>
-        <button onClick={onLeave} className="w-7 h-7 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full" title="Keluar">
-          <X size={14} />
-        </button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    onLeaveRef.current = onLeave;
+  }, [onLeave]);
+
+  useEffect(() => {
+    let disposed = false;
+    let api: any = null;
+
+    loadJitsiScript()
+      .then(() => {
+        if (disposed || !containerRef.current || !window.JitsiMeetExternalAPI) return;
+        api = new window.JitsiMeetExternalAPI("meet.jit.si", {
+          roomName: room,
+          parentNode: containerRef.current,
+          userInfo: { displayName },
+          configOverwrites: {
+            prejoinPageEnabled: false,
+            startWithVideoMuted: true,
+            startWithAudioMuted: false,
+            disableDeepLinking: true,
+          },
+        });
+        // Tombol hangup internal Jitsi → perlakukan sama seperti tombol Keluar
+        api.addListener("videoConferenceLeft", () => onLeaveRef.current());
+        api.addListener("readyToClose", () => onLeaveRef.current());
+      })
+      .catch(() => setLoadError(true));
+
+    return () => {
+      disposed = true;
+      try { api?.dispose(); } catch { /* ignore */ }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
 
   return (
-    <div className="border-l bg-surface flex flex-col w-full lg:w-[520px] flex-shrink-0">
-      <div className="flex items-center justify-between px-3 py-2 border-b bg-red-500/5">
-        <div className="flex items-center gap-2">
+    <>
+      {minimized && (
+        <div className="absolute bottom-20 right-4 z-30 flex items-center gap-2 bg-white dark:bg-[#1e293b] border rounded-full shadow-lg pl-4 pr-2 py-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-sm font-semibold">Group Call</span>
-          <span className="text-xs text-muted hidden sm:inline">mic otomatis aktif, kamera off</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={onMinimize} className="w-8 h-8 flex items-center justify-center hover:bg-surface-hover rounded-lg" title="Minimize (tetap chat)">
-            <Minimize2 size={15} />
+          <span className="text-xs font-medium">Call berlangsung</span>
+          <button onClick={onMinimize} className="w-7 h-7 flex items-center justify-center hover:bg-surface-hover rounded-full" title="Buka">
+            <Maximize2 size={14} />
           </button>
-          <button onClick={onLeave} className="w-8 h-8 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg" title="Keluar call">
-            <X size={15} />
+          <button onClick={onLeave} className="w-7 h-7 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full" title="Keluar">
+            <X size={14} />
           </button>
         </div>
+      )}
+      {/* Container tetap dimount saat minimized agar call tidak terputus */}
+      <div className={`border-l bg-surface flex-col w-full lg:w-[520px] flex-shrink-0 ${minimized ? "hidden" : "flex"}`}>
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-red-500/5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-sm font-semibold">Group Call</span>
+            <span className="text-xs text-muted hidden sm:inline">mic otomatis aktif, kamera off</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={onMinimize} className="w-8 h-8 flex items-center justify-center hover:bg-surface-hover rounded-lg" title="Minimize (call tetap jalan)">
+              <Minimize2 size={15} />
+            </button>
+            <button onClick={onLeave} className="w-8 h-8 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg" title="Keluar call">
+              <X size={15} />
+            </button>
+          </div>
+        </div>
+        {loadError ? (
+          <div className="flex-1 flex items-center justify-center text-sm text-muted p-4 text-center">
+            Gagal memuat video call. Periksa koneksi internet lalu keluar dan mulai ulang call.
+          </div>
+        ) : (
+          <div ref={containerRef} className="flex-1 w-full h-full min-h-[300px]" />
+        )}
       </div>
-      <iframe
-        src={jitsiUrl}
-        allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-write"
-        className="flex-1 w-full h-full min-h-[300px] border-0"
-        style={{ height: "100%" }}
-      />
-    </div>
+    </>
   );
 }
 
@@ -1837,6 +1900,36 @@ export default function ChatPage() {
     const interval = setInterval(loadCalls, 10000);
     return () => clearInterval(interval);
   }, [loadCalls]);
+
+  // Refs untuk akses state terbaru dari handler unload (menghindari stale closure)
+  const inCallRoomRef = useRef<string | null>(null);
+  const activeCallsRef = useRef<ActiveCall[]>([]);
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => { inCallRoomRef.current = inCallRoom; }, [inCallRoom]);
+  useEffect(() => { activeCallsRef.current = activeCalls; }, [activeCalls]);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
+  // End call otomatis saat tab ditutup/refresh — mencegah ghost call & badge LIVE menetap.
+  // Hanya pagehide (unload sungguhan), bukan visibilitychange, agar pindah app di mobile
+  // tidak mengakhiri call untuk semua peserta.
+  useEffect(() => {
+    const endMyCallOnHide = () => {
+      const room = inCallRoomRef.current;
+      if (!room) return;
+      const myCall = activeCallsRef.current.find(
+        (c) => c.jitsi_room === room && c.started_by === currentUserRef.current?.id
+      );
+      if (!myCall) return;
+      fetch("/api/chat/calls", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ call_id: myCall.id, channel_id: myCall.channel_id }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+    window.addEventListener("pagehide", endMyCallOnHide);
+    return () => window.removeEventListener("pagehide", endMyCallOnHide);
+  }, []);
 
   // Auto-select first channel
   useEffect(() => {

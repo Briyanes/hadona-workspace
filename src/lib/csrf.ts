@@ -43,6 +43,21 @@ function getExpectedOrigin(): string[] {
 }
 
 /**
+ * Check whether the given origin/referer URL belongs to the same host
+ * the request was served on (including port). Same-origin requests are
+ * inherently trusted — browsers cannot spoof Origin cross-site.
+ */
+function isSameOrigin(url: string | URL, request: NextRequest): boolean {
+  try {
+    const parsed = typeof url === "string" ? new URL(url) : url;
+    const requestHost = request.headers.get("host");
+    return !!requestHost && parsed.host === requestHost;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validate CSRF for mutation requests (POST, PUT, PATCH, DELETE).
  *
  * Returns a NextResponse (403) if the request fails CSRF validation,
@@ -65,9 +80,11 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
 
   // Check Origin header (primary)
   if (origin) {
-    const isAllowed = expectedOrigins.some(
-      (expected) => origin === expected || origin.startsWith(expected + ".")
-    );
+    const isAllowed =
+      isSameOrigin(origin, request) ||
+      expectedOrigins.some(
+        (expected) => origin === expected || origin.startsWith(expected + ".")
+      );
     if (!isAllowed) {
       return NextResponse.json(
         { success: false, error: "CSRF_VALIDATION_FAILED", message: "Origin not allowed" },
@@ -81,11 +98,13 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
   if (referer) {
     try {
       const refererUrl = new URL(referer);
-      const isAllowed = expectedOrigins.some(
-        (expected) =>
-          refererUrl.origin === expected ||
-          refererUrl.origin.startsWith(expected + ".")
-      );
+      const isAllowed =
+        isSameOrigin(refererUrl, request) ||
+        expectedOrigins.some(
+          (expected) =>
+            refererUrl.origin === expected ||
+            refererUrl.origin.startsWith(expected + ".")
+        );
       if (!isAllowed) {
         return NextResponse.json(
           { success: false, error: "CSRF_VALIDATION_FAILED", message: "Referer not allowed" },

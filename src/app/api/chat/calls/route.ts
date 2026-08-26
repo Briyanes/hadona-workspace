@@ -3,6 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 
 const db = () => createClient() as any;
 
+// Call dianggap stale/ghost setelah 4 jam tanpa leave (mis. tab ditutup paksa
+// atau browser crash). GET/POST akan auto-close record tersebut sebagai backstop
+// di samping handler pagehide di frontend.
+const STALE_CALL_MS = 4 * 60 * 60 * 1000;
+const staleCutoff = () => new Date(Date.now() - STALE_CALL_MS).toISOString();
+
 // GET /api/chat/calls — semua call aktif (untuk badge LIVE di sidebar)
 export async function GET() {
   try {
@@ -12,6 +18,13 @@ export async function GET() {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Auto-close ghost calls agar badge LIVE tidak menetap selamanya
+    await supabase
+      .from("chat_channel_calls")
+      .update({ ended_at: new Date().toISOString() })
+      .is("ended_at", null)
+      .lt("started_at", staleCutoff());
 
     const { data: calls, error } = await supabase
       .from("chat_channel_calls")
@@ -70,20 +83,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "channel_id required" }, { status: 400 });
     }
 
-    // Cek apakah sudah ada call aktif di channel ini
+    // Cek apakah sudah ada call aktif (belum stale) di channel ini
     const { data: existing } = await supabase
       .from("chat_channel_calls")
       .select("*")
       .eq("channel_id", channel_id)
       .is("ended_at", null)
+      .gt("started_at", staleCutoff())
       .maybeSingle();
 
     if (existing) {
       return NextResponse.json({ call: existing });
     }
 
-    // Buat room Jitsi unik per channel
-    const jitsiRoom = `hadona-chat-${channel_id}`;
+    // Tutup record ghost call lama di channel ini agar tidak menumpuk
+    await supabase
+      .from("chat_channel_calls")
+      .update({ ended_at: new Date().toISOString() })
+      .eq("channel_id", channel_id)
+      .is("ended_at", null)
+      .lt("started_at", staleCutoff());
+
+    // Room name tidak predictable (channel + random suffix) — pihak luar
+    // tidak bisa menebak URL room Jitsi publik untuk memperusahaan
+    const jitsiRoom = `hadona-chat-${String(channel_id).slice(0, 8)}-${crypto.randomUUID().slice(0, 8)}`;
 
     const { data: call, error } = await supabase
       .from("chat_channel_calls")
