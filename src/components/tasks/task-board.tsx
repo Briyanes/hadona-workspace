@@ -156,12 +156,17 @@ export function TaskBoard({
   }
 
   async function updateStatus(taskId: string, newStatus: string) {
-    const { error } = await supabase
+    // .select("id"): RLS block = PostgREST 200 + 0 rows (bukan error) — cegah toast sukses palsu
+    const { data, error } = await supabase
       .from("tasks")
       .update({ status: newStatus } as never)
-      .eq("id", taskId);
+      .eq("id", taskId)
+      .select("id");
     if (error) {
       toast.error("Gagal update status: " + error.message);
+    } else if (!data || data.length === 0) {
+      toast.error("Tidak ada izin memindahkan task ini. Kartu dikembalikan.");
+      loadTasks();
     } else {
       toast.success("Task dipindahkan ke " + newStatus.replace("_", " "));
       loadTasks();
@@ -191,14 +196,19 @@ export function TaskBoard({
   async function handleBulkStatus() {
     if (!bulkStatus || selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    const { error } = await supabase
+    // .select("id") → deteksi update yang diblokir RLS (0 rows = silent block, bukan error)
+    const { data, error } = await supabase
       .from("tasks")
       .update({ status: bulkStatus } as never)
-      .in("id", ids);
+      .in("id", ids)
+      .select("id");
     if (error) {
       toast.error("Bulk update gagal: " + error.message);
     } else {
-      toast.success(`${ids.length} task diupdate ke ${bulkStatus.replace("_", " ")}`);
+      const updated = data?.length ?? 0;
+      if (updated === 0) toast.error("Tidak ada izin mengubah task yang dipilih");
+      else if (updated < ids.length) toast.warning(`${updated}/${ids.length} task diupdate — sisanya diblokir izin`);
+      else toast.success(`${ids.length} task diupdate ke ${bulkStatus.replace("_", " ")}`);
       setSelectedIds(new Set());
       setShowBulkBar(false);
       setBulkStatus("");
@@ -209,14 +219,19 @@ export function TaskBoard({
   async function handleBulkPriority() {
     if (!bulkPriority || selectedIds.size === 0) return;
     const ids = Array.from(selectedIds);
-    const { error } = await supabase
+    // .select("id") → deteksi update yang diblokir RLS (0 rows = silent block, bukan error)
+    const { data, error } = await supabase
       .from("tasks")
       .update({ priority: bulkPriority } as never)
-      .in("id", ids);
+      .in("id", ids)
+      .select("id");
     if (error) {
       toast.error("Bulk update gagal: " + error.message);
     } else {
-      toast.success(`${ids.length} task priority diubah ke ${bulkPriority}`);
+      const updated = data?.length ?? 0;
+      if (updated === 0) toast.error("Tidak ada izin mengubah task yang dipilih");
+      else if (updated < ids.length) toast.warning(`${updated}/${ids.length} task diupdate — sisanya diblokir izin`);
+      else toast.success(`${ids.length} task priority diubah ke ${bulkPriority}`);
       setSelectedIds(new Set());
       setShowBulkBar(false);
       setBulkPriority("");
@@ -228,11 +243,14 @@ export function TaskBoard({
     if (selectedIds.size === 0) return;
     if (!confirm(`Hapus ${selectedIds.size} task yang dipilih? Tindakan ini tidak bisa dibatalkan.`)) return;
     const ids = Array.from(selectedIds);
-    const { error } = await supabase.from("tasks").delete().in("id", ids);
+    const { data, error } = await supabase.from("tasks").delete().in("id", ids).select("id");
     if (error) {
       toast.error("Bulk delete gagal: " + error.message);
     } else {
-      toast.success(`${ids.length} task dihapus`);
+      const deleted = data?.length ?? 0;
+      if (deleted === 0) toast.error("Tidak ada izin menghapus task yang dipilih");
+      else if (deleted < ids.length) toast.warning(`${deleted}/${ids.length} task dihapus — sisanya diblokir izin`);
+      else toast.success(`${ids.length} task dihapus`);
       setSelectedIds(new Set());
       setShowBulkBar(false);
       loadTasks();

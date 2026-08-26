@@ -441,7 +441,8 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       return;
     }
     setSaving(true);
-    const { error } = await supabase
+    // .select("id") → deteksi update yang diblokir RLS (0 rows = silent block, bukan error)
+    const { data: saveData, error } = await supabase
       .from("tasks")
       .update({
         title: editForm.title.trim(),
@@ -454,10 +455,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         result: editForm.result.trim() || null,
         notes: editForm.notes.trim() || null,
       } as never)
-      .eq("id", taskId);
+      .eq("id", taskId)
+      .select("id");
 
     if (error) {
       toast.error("Gagal update task: " + error.message);
+    } else if (!saveData || saveData.length === 0) {
+      toast.error("Tidak ada izin mengubah task ini. Perubahan tidak disimpan.");
     } else {
       const currentIds = task?.task_assignees?.map((a) => a.user_id) || [];
       const toAdd = editAssignees.filter((id) => !currentIds.includes(id));
@@ -484,9 +488,15 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
       setConfirmDelete(true);
       return;
     }
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+    // .select("id") → deteksi delete yang diblokir RLS (0 rows = silent block, bukan error)
+    const { data: delData, error } = await supabase.from("tasks").delete().eq("id", taskId).select("id");
     if (error) {
       toast.error("Gagal hapus task: " + error.message);
+      setConfirmDelete(false);
+      return;
+    }
+    if (!delData || delData.length === 0) {
+      toast.error("Tidak ada izin menghapus task ini.");
       setConfirmDelete(false);
       return;
     }
@@ -553,7 +563,8 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   async function handleApproval(action: "approved" | "rejected" | "changes_requested") {
     if (!currentUserId) return;
     setApproving(true);
-    const { error } = await supabase
+    // .select("id") → deteksi update yang diblokir RLS (0 rows = silent block, bukan error)
+    const { data: apprData, error } = await supabase
       .from("tasks")
       .update({
         approval_status: action,
@@ -561,10 +572,13 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
         approved_at: new Date().toISOString(),
         approval_note: approvalNote.trim() || null,
       } as never)
-      .eq("id", taskId);
+      .eq("id", taskId)
+      .select("id");
 
     if (error) {
       toast.error("Gagal update approval: " + error.message);
+    } else if (!apprData || apprData.length === 0) {
+      toast.error("Tidak ada izin memberi approval pada task ini.");
     } else {
       toast.success(
         action === "approved" ? "Task approved!" :
