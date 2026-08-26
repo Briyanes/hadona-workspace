@@ -10,71 +10,18 @@ import type { DropResult } from "@hello-pangea/dnd";
 const DragDropContext = dynamic(() => import("@hello-pangea/dnd").then((m) => m.DragDropContext), { ssr: false });
 const Droppable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Droppable), { ssr: false });
 const Draggable = dynamic(() => import("@hello-pangea/dnd").then((m) => m.Draggable), { ssr: false });
-import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, Lightbulb, User, CheckSquare, Trash2, Layers, BarChart3, TrendingUp, CheckCircle2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, LayoutGrid, List, User, CheckSquare, Trash2, Layers, BarChart3, TrendingUp, CheckCircle2, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDate, getInitials, cn, stripUrls } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
-import { AssigneePicker } from "@/components/tasks/assignee-picker";
+import { CreateTaskModal } from "./task-board/create-task-modal";
+import { COLUMNS, priorityColors, DIVISION_TABS, emptyTaskForm } from "./task-board/constants";
+import type { Task, Client, TaskForm, TaskBoardProps } from "./task-board/types";
+export type { TaskBoardProps };
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 import { Avatar } from "@/components/ui/avatar";
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  priority: string;
-  division: string | null;
-  due_date: string | null;
-  client?: { name: string };
-  task_assignees?: { user_id: string; user: { full_name: string; avatar_url: string | null } }[];
-}
-
-interface Client {
-  id: string;
-  name: string;
-}
-
-const COLUMNS = [
-  { id: "todo", label: "To Do", color: "border-t-muted" },
-  { id: "in_progress", label: "In Progress", color: "border-t-warning" },
-  { id: "review", label: "Review", color: "border-t-accent" },
-  { id: "blocked", label: "Blocked", color: "border-t-danger" },
-  { id: "done", label: "Done", color: "border-t-success" },
-];
-
-const priorityColors: Record<string, string> = {
-  low: "text-muted",
-  medium: "text-primary",
-  high: "text-warning",
-  urgent: "text-danger",
-};
-
-export interface TaskBoardProps {
-  /** Filter tasks to specific division. null = show all */
-  division?: string | null;
-  /** Page title shown in header */
-  pageTitle?: string;
-  /** Page subtitle */
-  pageSubtitle?: string;
-  /** Default division value for new tasks created from this board */
-  defaultDivision?: string;
-}
-
-// Division tab options for filter (order matches form Divisi dropdown)
-const DIVISION_TABS = [
-  { label: "All Tasks", value: null },
-  { label: "Creative", value: "Creative Director" },
-  { label: "Content Creator", value: "Content Creator" },
-  { label: "Editor", value: "Editor" },
-  { label: "Production", value: "Production" },
-  { label: "Social Media", value: "Social Media Manager" },
-  { label: "Project Manager", value: "Project Manager" },
-  { label: "Advertiser", value: "Advertiser" },
-  { label: "Account Executive", value: "Account Executive" },
-  { label: "Copywriter", value: "Copywriter" },
-  { label: "Developer", value: "Developer" },
-];
+// Shared types, constants & subcomponents live in ./task-board/ — single source of truth.
 
 export function TaskBoard({
   division = null,
@@ -141,18 +88,7 @@ export function TaskBoard({
   const [showModal, setShowModal] = useState(false);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    client_id: "",
-    priority: "medium",
-    due_date: "",
-    status: "todo",
-    division: defaultDivision,
-    result: "",
-    blocker: "",
-    start_date: "",
-  });
+  const [form, setForm] = useState<TaskForm>(() => emptyTaskForm(defaultDivision));
   const [formAssignees, setFormAssignees] = useState<string[]>([]);
 
   useEffect(() => {
@@ -351,7 +287,7 @@ export function TaskBoard({
       }
 
       toast.success("Task berhasil dibuat!");
-      setForm({ title: "", description: "", client_id: "", priority: "medium", due_date: "", status: "todo", division: defaultDivision, result: "", blocker: "", start_date: "" });
+      setForm(emptyTaskForm(defaultDivision));
       setFormAssignees([]);
       setShowModal(false);
       loadTasks();
@@ -1060,202 +996,17 @@ export function TaskBoard({
 
       {/* Create Task Modal — 2-Column + Sticky */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            {/* Sticky Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-foreground">Buat Task Baru</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <form onSubmit={handleCreateTask} className="flex flex-1 flex-col overflow-hidden">
-              <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
-                {/* Full-width: Title */}
-                <div className="lg:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Judul Task *</label>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    placeholder="Contoh: Setup Campaign Meta Ads Client X"
-                    className="input"
-                  />
-                </div>
-
-                {/* Full-width: Description */}
-                <div className="lg:col-span-2">
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
-                  <textarea
-                    rows={2}
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Detail tugas (opsional)"
-                    className="input resize-none"
-                  />
-                </div>
-
-                {/* LEFT column fields */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
-                    <select
-                      value={form.client_id}
-                      onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                      className="input"
-                    >
-                      <option value="">— Pilih Client —</option>
-                      {clients.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Status Awal</label>
-                    <select
-                      value={form.status}
-                      onChange={(e) => setForm({ ...form, status: e.target.value })}
-                      className="input"
-                    >
-                      <option value="todo">To Do</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="review">Review</option>
-                      <option value="blocked">Blocked</option>
-                      <option value="done">Done</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Start Date</label>
-                    <input
-                      type="date"
-                      value={form.start_date}
-                      onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                      className="input"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Result / Output</label>
-                    <input
-                      type="text"
-                      value={form.result}
-                      onChange={(e) => setForm({ ...form, result: e.target.value })}
-                      placeholder="Contoh: Monthly report selesai"
-                      className="input"
-                    />
-                  </div>
-                </div>
-
-                {/* RIGHT column fields */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Prioritas</label>
-                    <select
-                      value={form.priority}
-                      onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                      className="input"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Divisi</label>
-                    <select
-                      value={form.division}
-                      onChange={(e) => setForm({ ...form, division: e.target.value })}
-                      className="input"
-                      // Lock division when on a sub-page (division prop is set)
-                      disabled={!!activeDivision}
-                    >
-                      <option value="">— Pilih Divisi —</option>
-                      <option value="Creative Director">Creative Director</option>
-                      <option value="Content Creator">Content Creator</option>
-                      <option value="Editor">Editor</option>
-                      <option value="Production">Production</option>
-                      <option value="Social Media Manager">Social Media Manager</option>
-                      <option value="Project Manager">Project Manager</option>
-                      <option value="Advertiser">Advertiser</option>
-                      <option value="Account Executive">Account Executive</option>
-                      <option value="Copywriter">Copywriter</option>
-                      <option value="Developer">Developer</option>
-                    </select>
-                    {activeDivision && (
-                      <p className="mt-1 text-xs text-muted">🔒 Division terkunci: <strong>{activeDivision}</strong></p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
-                    <input
-                      type="date"
-                      value={form.due_date}
-                      onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                      className="input"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">
-                      Blocker / Kendala
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={form.blocker}
-                      onChange={(e) => setForm({ ...form, blocker: e.target.value })}
-                      placeholder="Isi jika ada kendala..."
-                      className="input resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Full-width: Assignees */}
-                <div className="lg:col-span-2">
-                  <AssigneePicker
-                    selectedIds={formAssignees}
-                    onChange={setFormAssignees}
-                    label="Assignee"
-                    divisionFilter={form.division || null}
-                  />
-                  {form.division && (
-                    <p className="mt-1.5 flex items-start gap-1 text-xs text-muted">
-                      <Lightbulb size={12} className="mt-0.5 shrink-0 text-warning" />
-                      <span>Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong></span>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Sticky Footer */}
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
-                >
-                  Batal
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? "Menyimpan..." : "Simpan Task"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateTaskModal
+          clients={clients}
+          form={form}
+          onFormChange={setForm}
+          assigneeIds={formAssignees}
+          onAssigneeChange={setFormAssignees}
+          activeDivision={activeDivision}
+          saving={saving}
+          onSubmit={handleCreateTask}
+          onClose={() => setShowModal(false)}
+        />
       )}
     </div>
   );
