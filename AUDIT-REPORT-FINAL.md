@@ -524,3 +524,35 @@ Commit `d06245a` menghapus kredensial dari repo, **tetapi credential yang sudah 
 ---
 
 *SESI 6 selesai — 9 commit, production live di commit `e0fa0f2`, health check PASS*
+
+---
+
+## SESI 7 — SEO/PWA Metadata Fix (26 Agu 2026)
+
+### Bug Ditemukan
+Endpoint metadata publik diblokir auth guard middleware:
+- `GET /sitemap.xml` unauth → 307 → `/login` (SEO crawling rusak)
+- `GET /manifest.webmanifest` unauth → 307 → `/login` (PWA install / Add to Home Screen rusak)
+- `robots.txt` lolos hanya karena diserve edge-level, tidak melalui matcher middleware
+
+### Root Cause
+`src/middleware.ts` matcher mencakup semua path non-static; tidak ada exemption untuk metadata files. Guard `if (!user) redirect("/login")` menangkap path metadata sebelum ter-render.
+
+### Fix
+Commit `0561c31` — tambah exemption eksplisit sebelum guard auth:
+```ts
+if (pathname === "/robots.txt" || pathname === "/sitemap.xml" || pathname === "/manifest.webmanifest") {
+  return supabaseResponse;
+}
+```
+
+### Verifikasi Produksi (workspace.hadona.id)
+| Endpoint | Sebelum | Sesudah |
+|---|---|---|
+| `/robots.txt` | 200 (edge-level) | 200 PASS |
+| `/sitemap.xml` | 307 → /login | **200 PASS** |
+| `/manifest.webmanifest` | 307 → /login | **200 PASS** |
+| `/login` (publik) | 200 | 200 PASS |
+| `/tasks` unauth (proteksi) | 307 → /login | 307 PASS (tidak regresi) |
+
+Build: `tsc --noEmit` clean + `next build` ✓ (83 static pages).
