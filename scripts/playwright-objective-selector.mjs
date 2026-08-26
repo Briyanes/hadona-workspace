@@ -10,7 +10,7 @@
  *   6. Group label: text-[10px] sm:text-[9px] → readable
  *
  * Usage:
- *   TEST_LOGIN_EMAIL=admin@hadona.id TEST_LOGIN_PASSWORD='...' \
+ *   TEST_LOGIN_EMAIL=your@email.com TEST_LOGIN_PASSWORD='...' \
  *   BASE_URL=https://workspace.hadona.id \
  *   node scripts/playwright-objective-selector.mjs
  *

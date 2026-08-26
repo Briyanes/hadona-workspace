@@ -36,7 +36,7 @@ if (!TEST_EMAIL || !TEST_PASSWORD) {
   console.error("❌ TEST_LOGIN_EMAIL dan TEST_LOGIN_PASSWORD wajib di-set");
   console.error("   Contoh:");
   console.error(
-    "   TEST_LOGIN_EMAIL=admin@hadona.id TEST_LOGIN_PASSWORD=xxx node scripts/playwright-sync-real.mjs"
+    "   TEST_LOGIN_EMAIL=your@email.com TEST_LOGIN_PASSWORD=xxx node scripts/playwright-sync-real.mjs"
   );
   process.exit(1);
 }

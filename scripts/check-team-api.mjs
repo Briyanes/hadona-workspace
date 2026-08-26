@@ -1,3 +1,8 @@
+if (!process.env.TEST_EMAIL || !process.env.TEST_PASSWORD) {
+  console.error("Set TEST_EMAIL and TEST_PASSWORD env vars first!");
+  process.exit(1);
+}
+
 import { chromium } from "playwright";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await chromium.launch({ headless: true });
@@ -15,8 +20,8 @@ page.on("response", async (res) => {
 
 await page.goto("https://workspace.hadona.id/login", { waitUntil: "networkidle", timeout: 30000 });
 await sleep(1500);
-await page.locator('input[type="email"]').fill("admin@hadona.id");
-await page.locator('input[type="password"]').fill("@Yogyakarta2026");
+await page.locator('input[type="email"]').fill(process.env.TEST_EMAIL);
+await page.locator('input[type="password"]').fill(process.env.TEST_PASSWORD);
 await page.locator('button[type="submit"]').first().click();
 await sleep(4000);
 await page.goto("https://workspace.hadona.id/chat", { waitUntil: "networkidle", timeout: 30000 });

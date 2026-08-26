@@ -17,8 +17,8 @@ const SCREENSHOT_DIR = path.join(process.cwd(), "scripts", "screenshots", "meta-
 
 fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 
 const results = { passed: [], failed: [], warnings: [] };
 

@@ -5,8 +5,8 @@
 import { chromium } from "playwright";
 
 const BASE_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const MARKERS = [
   "items-stretch overflow-hidden rounded-md",
   "flex items-center gap-1 px-3 text-xs font-medium transition-colors",

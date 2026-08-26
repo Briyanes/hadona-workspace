@@ -10,8 +10,8 @@
  *   node scripts/playwright-auth-audit.mjs
  *
  * Env:
- *   AUDIT_EMAIL     — login email    (default: admin@hadona.id)
- *   AUDIT_PASSWORD  — login password (default: @Yogyakarta2026)
+ *   AUDIT_EMAIL     — login email    (required — no hardcoded defaults)
+ *   AUDIT_PASSWORD  — login password (required — no hardcoded defaults)
  *   AUDIT_BASE_URL  — base URL       (default: http://localhost:3000)
  */
 
@@ -20,8 +20,15 @@ import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
 const BASE_URL = process.env.AUDIT_BASE_URL || "http://localhost:3000";
-const EMAIL = process.env.AUDIT_EMAIL || "admin@hadona.id";
-const PASSWORD = process.env.AUDIT_PASSWORD || "@Yogyakarta2026";
+// Credentials via env only — never hardcode secrets in the repo
+const EMAIL = process.env.AUDIT_EMAIL;
+const PASSWORD = process.env.AUDIT_PASSWORD;
+
+if (!EMAIL || !PASSWORD) {
+  console.error("❌ Set AUDIT_EMAIL and AUDIT_PASSWORD env vars first!");
+  console.error("   Usage: AUDIT_EMAIL=xxx AUDIT_PASSWORD=xxx node scripts/playwright-auth-audit.mjs");
+  process.exit(1);
+}
 
 const SCREENSHOT_DIR = "scripts/screenshots/audit-auth";
 mkdirSync(SCREENSHOT_DIR, { recursive: true });
@@ -279,7 +286,7 @@ function generateMarkdown(results, loginSuccess) {
   md.push("# 🔐 Playwright Authenticated Audit Report\n");
   md.push(`**Date:** ${now}`);
   md.push(`**Base URL:** ${BASE_URL}`);
-  md.push(`**Authenticated:** ${loginSuccess ? "✅ Yes (admin@hadona.id)" : "❌ No"}\n`);
+  md.push(`**Authenticated:** ${loginSuccess ? `✅ Yes (${EMAIL})` : "❌ No"}\n`);
 
   // Summary
   const ok = results.filter((r) => r.status === "ok").length;

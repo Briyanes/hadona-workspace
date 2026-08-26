@@ -5,8 +5,8 @@
 import { chromium } from "playwright";
 
 const BASE_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const MARKERS = ["appearance-none rounded-full border-0 py-1 pl-2.5 pr-7", "rounded-full px-3 py-1 text-xs font-medium transition-colors"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

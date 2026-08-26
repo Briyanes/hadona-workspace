@@ -6,7 +6,11 @@ import { readFileSync } from 'fs';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://rsxqjjcuixdsmijhgdyl.supabase.co';
-const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzeHFqamN1aXhkc21pamhnZHlsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTMwNTgwOCwiZXhwIjoyMTAwODgxODA4fQ.dQZ-oGUN1VvW6UCcN5cT-sBEEBzf2-jQdLYzvjJ2IMA';
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_KEY) {
+  console.error("Set SUPABASE_SERVICE_ROLE_KEY env var first!");
+  process.exit(1);
+}
 
 async function runMigration() {
   const sql = readFileSync('supabase/migration-v79.sql', 'utf8');

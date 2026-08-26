@@ -2,8 +2,8 @@ import { chromium } from "playwright";
 import fs from "fs";
 
 const BASE_URL = "https://workspace.hadona.id";
-const LOGIN_EMAIL = "admin@hadona.id";
-const LOGIN_PASSWORD = "@Yogyakarta2026";
+const LOGIN_EMAIL = process.env.TEST_EMAIL;
+const LOGIN_PASSWORD = process.env.TEST_PASSWORD;
 
 async function main() {
   const browser = await chromium.launch({ headless: true });

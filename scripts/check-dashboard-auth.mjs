@@ -1,9 +1,20 @@
+if (!process.env.TEST_EMAIL || !process.env.TEST_PASSWORD) {
+  console.error("Set TEST_EMAIL and TEST_PASSWORD env vars first!");
+  process.exit(1);
+}
+
 import { chromium } from "playwright";
 import fs from "fs";
 
 const APP_URL = "https://workspace.hadona.id";
-const SUPABASE_URL = "https://rsxqjjcuixdsmijhgdyl.supabase.co";
-const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzeHFqamN1aXhkc21pamhnZHlsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTMwNTgwOCwiZXhwIjoyMTAwODgxODA4fQ.dQZ-oGUN1VvW6UCcN5cT-sBEEBzf2-jQdLYzvjJ2IMA";
+const SUPABASE_URL = SUPABASE_URL_ENV;
+const SUPABASE_URL_ENV = process.env.SUPABASE_URL;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL_ENV || !SERVICE_KEY) {
+  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars first!");
+  process.exit(1);
+}
 const SCREENSHOT_DIR = "scripts/screenshots/dashboard-check";
 
 fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
@@ -19,7 +30,7 @@ async function generateAccessToken(userId) {
     },
     body: JSON.stringify({
       type: "magiclink",
-      email: "admin@hadona.id",
+      email: process.env.TEST_EMAIL,
     }),
   });
   

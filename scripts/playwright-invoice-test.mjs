@@ -7,17 +7,24 @@
  * 3. Screenshot invoice list
  * 4. Test PDF download via API
  *
- * Usage: node scripts/playwright-invoice-test.mjs
- * Env: TEST_EMAIL, TEST_PASSWORD (or defaults)
+ * Usage: TEST_EMAIL=xxx TEST_PASSWORD=xxx BASE_URL=https://... node scripts/playwright-invoice-test.mjs
+ * Env: TEST_EMAIL, TEST_PASSWORD (required — no hardcoded defaults)
  */
 
 import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 
-const BASE_URL = process.env.BASE_URL || "https://workspace.hadona.id";
-const TEST_EMAIL = process.env.TEST_EMAIL || "admin@hadona.id";
-const TEST_PASSWORD = process.env.TEST_PASSWORD || "@Yogyakarta2026";
+const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+// Credentials via env only — never hardcode secrets in the repo
+const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
+
+if (!TEST_EMAIL || !TEST_PASSWORD) {
+  console.error("❌ Set TEST_EMAIL and TEST_PASSWORD env vars first!");
+  console.error("   Usage: TEST_EMAIL=xxx TEST_PASSWORD=xxx node scripts/playwright-invoice-test.mjs");
+  process.exit(1);
+}
 
 const SCREENSHOT_DIR = path.join(process.cwd(), "scripts", "screenshots", "invoice-test");
 fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });

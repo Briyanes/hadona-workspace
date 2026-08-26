@@ -5,8 +5,8 @@
 import { chromium } from "playwright";
 
 const BASE_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await chromium.launch({ headless: true });

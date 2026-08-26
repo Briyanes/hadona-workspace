@@ -4,8 +4,8 @@ import { chromium } from "playwright";
 import fs from "fs";
 
 const APP_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const SCREENSHOT_DIR = "scripts/screenshots/dashboard-ads-check";
 
 fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });

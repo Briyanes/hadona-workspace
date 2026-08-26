@@ -11,8 +11,8 @@
 import { chromium } from "playwright";
 
 const BASE = process.env.QA_BASE_URL || "http://localhost:3000";
-const EMAIL = process.env.QA_EMAIL || "admin@hadona.id";
-const PASSWORD = process.env.QA_PASSWORD || "@Yogyakarta2026";
+const EMAIL = process.env.QA_EMAIL;
+const PASSWORD = process.env.QA_PASSWORD;
 
 const PAGES = [
   { name: "Production", path: "/production" },

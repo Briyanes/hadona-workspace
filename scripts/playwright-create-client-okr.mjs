@@ -4,15 +4,15 @@
  *
  * Env:
  *   AUDIT_BASE_URL  — default: https://workspace.hadona.id
- *   AUDIT_EMAIL     — default: admin@hadona.id
- *   AUDIT_PASSWORD  — default: @Yogyakarta2026
+ *   AUDIT_EMAIL     — required (env)
+ *   AUDIT_PASSWORD  — required (env)
  */
 import { chromium } from "playwright";
 import { mkdirSync } from "fs";
 
 const BASE_URL = process.env.AUDIT_BASE_URL || "https://workspace.hadona.id";
-const EMAIL = process.env.AUDIT_EMAIL || "admin@hadona.id";
-const PASSWORD = process.env.AUDIT_PASSWORD || "@Yogyakarta2026";
+const EMAIL = process.env.AUDIT_EMAIL;
+const PASSWORD = process.env.AUDIT_PASSWORD;
 const DIR = "scripts/screenshots/create-client-okr";
 mkdirSync(DIR, { recursive: true });
 

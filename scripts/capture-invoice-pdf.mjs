@@ -8,8 +8,8 @@ import path from "path";
 import { execSync } from "child_process";
 
 const BASE_URL = "https://workspace.hadona.id";
-const TEST_EMAIL = "admin@hadona.id";
-const TEST_PASSWORD = "@Yogyakarta2026";
+const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
 const OUT_DIR = path.join(process.cwd(), "scripts", "screenshots", "invoice-test");
 fs.mkdirSync(OUT_DIR, { recursive: true });

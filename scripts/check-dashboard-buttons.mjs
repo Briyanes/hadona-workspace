@@ -24,7 +24,7 @@ async function main() {
   // Try to login with test credentials
   console.log("3. Attempting login...");
   try {
-    await page.fill('input[type="email"], input[name="email"]', "admin@hadona.id");
+    await page.fill('input[type="email"], input[name="email"]', process.env.TEST_EMAIL);
     await page.fill('input[type="password"], input[name="password"]', "hadona123");
     
     // Find and click submit button

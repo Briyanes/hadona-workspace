@@ -15,8 +15,8 @@ const BASE_URL = 'https://workspace.hadona.id';
 const LOGIN_URL = `${BASE_URL}/login`;
 const TASKS_URL = `${BASE_URL}/tasks`;
 
-const TEST_EMAIL = process.env.TEST_EMAIL || 'admin@hadona.id';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '@Yogyakarta2026';
+const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
 const SCREENSHOT_DIR = 'scripts/screenshots/tasks-mobile';
 

@@ -19,8 +19,8 @@
 import { chromium } from 'playwright';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3456';
-const TEST_EMAIL = process.env.TEST_EMAIL || 'admin@hadona.id';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '@Yogyakarta2026';
+const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
 
 const consoleErrors = [];
 const networkErrors = [];

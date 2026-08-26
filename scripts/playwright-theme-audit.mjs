@@ -12,8 +12,8 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 
 const BASE = process.env.QA_BASE_URL || 'http://localhost:3000';
-const EMAIL = process.env.QA_EMAIL || 'admin@hadona.id';
-const PASSWORD = process.env.QA_PASSWORD || '@Yogyakarta2026';
+const EMAIL = process.env.QA_EMAIL;
+const PASSWORD = process.env.QA_PASSWORD;
 const STATE_FILE = '/tmp/hadona-qa-state.json';
 const SHOT_DIR = 'scripts/theme-audit-shots';
 

@@ -13,8 +13,8 @@
 import { chromium } from "playwright";
 
 const BASE = process.argv[2] || "https://workspace.hadona.id";
-const EMAIL = process.env.TEST_EMAIL || "admin@hadona.id";
-const PASSWORD = process.env.TEST_PASSWORD || "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const VW = 390, VH = 844;
 const SHOT_DIR = "scripts/screenshots";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

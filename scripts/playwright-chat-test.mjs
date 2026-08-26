@@ -4,17 +4,24 @@
  * Tests the chat page at https://workspace.hadona.id/chat
  * Captures: console errors, network failures, API responses, UI state
  * 
- * Usage: node scripts/playwright-chat-test.mjs
+ * Usage: TEST_EMAIL=xxx TEST_PASSWORD=xxx BASE_URL=https://... node scripts/playwright-chat-test.mjs
  */
 
 import { chromium } from 'playwright';
 
-const BASE_URL = 'https://workspace.hadona.id';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const LOGIN_URL = `${BASE_URL}/login`;
 const CHAT_URL = `${BASE_URL}/chat`;
 
-const TEST_EMAIL = process.env.TEST_EMAIL || 'admin@hadona.id';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '@Yogyakarta2026';
+// Credentials via env only — never hardcode secrets in the repo
+const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
+
+if (!TEST_EMAIL || !TEST_PASSWORD) {
+  console.error('❌ Set TEST_EMAIL and TEST_PASSWORD env vars first!');
+  console.error('   Usage: TEST_EMAIL=xxx TEST_PASSWORD=xxx node scripts/playwright-chat-test.mjs');
+  process.exit(1);
+}
 
 const consoleErrors = [];
 const networkErrors = [];

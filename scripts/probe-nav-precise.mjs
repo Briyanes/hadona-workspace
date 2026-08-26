@@ -5,8 +5,8 @@ const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, is
 const page = await ctx.newPage();
 await page.goto(BASE + '/login', { waitUntil: 'networkidle', timeout: 30000 });
 await new Promise(r => setTimeout(r, 1500));
-await page.fill('input[type="email"]', 'admin@hadona.id');
-await page.fill('input[type="password"]', '@Yogyakarta2026');
+await page.fill('input[type="email"]', process.env.TEST_EMAIL);
+await page.fill('input[type="password"]', process.env.TEST_PASSWORD);
 await page.locator('button[type="submit"]').first().click();
 await page.waitForURL((u) => !u.toString().includes('/login'), { timeout: 20000 }).catch(() => {});
 await page.goto(BASE + '/ads-spend', { waitUntil: 'domcontentloaded' });

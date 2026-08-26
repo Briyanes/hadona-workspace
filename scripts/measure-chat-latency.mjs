@@ -14,8 +14,8 @@ import { chromium } from "playwright";
 
 const BASE = process.argv[2] || "https://workspace.hadona.id";
 const LABEL = process.argv[3] || "run";
-const EMAIL = process.env.TEST_EMAIL || "admin@hadona.id";
-const PASSWORD = process.env.TEST_PASSWORD || "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const SAMPLES = 3;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

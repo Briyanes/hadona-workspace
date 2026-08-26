@@ -8,8 +8,8 @@ import fs from "fs";
 import path from "path";
 
 const BASE_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const SCREENSHOT_DIR = path.join(process.cwd(), "scripts", "screenshots", "tasks-board-audit");
 
 async function sleep(ms) {

@@ -11,13 +11,19 @@
 
 import { chromium } from 'playwright';
 
-const BASE_URL = 'https://workspace.hadona.id';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const LOGIN_URL = `${BASE_URL}/login`;
 const CALENDAR_URL = `${BASE_URL}/calendar`;
 
-// Credentials provided by user
-const TEST_EMAIL = process.env.TEST_EMAIL || 'admin@hadona.id';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || '@Yogyakarta2026';
+// Credentials via env only — never hardcode secrets in the repo
+const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_PASSWORD = process.env.TEST_PASSWORD;
+
+if (!TEST_EMAIL || !TEST_PASSWORD) {
+  console.error('❌ Set TEST_EMAIL and TEST_PASSWORD env vars first!');
+  console.error('   Usage: TEST_EMAIL=xxx TEST_PASSWORD=xxx node scripts/playwright-calendar-test.mjs');
+  process.exit(1);
+}
 
 const consoleErrors = [];
 const networkErrors = [];
@@ -27,12 +33,6 @@ async function run() {
   console.log('═══════════════════════════════════════════════');
   console.log('  Calendar Event Creation Test');
   console.log('═══════════════════════════════════════════════\n');
-
-  if (!TEST_PASSWORD) {
-    console.error('❌ Set TEST_PASSWORD env var first!');
-    console.error('   Usage: TEST_PASSWORD=xxx node scripts/playwright-calendar-test.mjs');
-    process.exit(1);
-  }
 
   const browser = await chromium.launch({ headless: false, slowMo: 300 });
   const context = await browser.newContext({

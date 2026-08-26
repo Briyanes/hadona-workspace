@@ -3,8 +3,8 @@ import fs from "fs";
 import path from "path";
 
 const BASE_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const SCREENSHOT_DIR = path.join(process.cwd(), "scripts", "screenshots", "audit");
 const REPORT_PATH = path.join(process.cwd(), "scripts", "audit-report.json");
 
@@ -63,7 +63,7 @@ async function runAudit() {
   const browser = await chromium.launch({ headless: true });
 
   // ════ LOGIN (Desktop context) ════
-  console.log("📝 Logging in as admin@hadona.id...");
+  console.log("📝 Logging in...");
   const desktopContext = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
     locale: "id-ID",
@@ -110,7 +110,7 @@ async function runAudit() {
       const { createClient } = await import("@supabase/supabase-js");
       const supabase = createClient(
         "https://rsxqjjcuixdsmijhgdyl.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzeHFqamN1aXhkc21pamhnZHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMDU4MDgsImV4cCI6MjEwMDg4MTgwOH0.Onekq4zkmIBNqze-fhLG189FVedYvQAcxYwulp90R0U"
+        process.env.SUPABASE_SERVICE_ROLE_KEY
       );
       const { data, error } = await supabase.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
       if (error) throw error;

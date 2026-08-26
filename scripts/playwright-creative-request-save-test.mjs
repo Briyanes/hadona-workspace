@@ -16,8 +16,8 @@ try {
 } catch {}
 
 const BASE_URL = "https://workspace.hadona.id";
-const EMAIL = "admin@hadona.id";
-const PASSWORD = "@Yogyakarta2026";
+const EMAIL = process.env.TEST_EMAIL;
+const PASSWORD = process.env.TEST_PASSWORD;
 const SB_URL = env.NEXT_PUBLIC_SUPABASE_URL;
 const SR_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
