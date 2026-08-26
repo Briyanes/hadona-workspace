@@ -223,11 +223,7 @@
     @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all duration-150 disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn gradient-primary text-white hover:opacity-90 active:scale-[0.98] shadow-sm;
-  }
-  /* Dark mode: btn-primary text harus gelap (di atas gradient kuning) */
-  .dark .btn-primary {
-    color: #0f172a !important;
+    @apply btn gradient-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] shadow-sm;
   }
   .btn-secondary {
     @apply btn border border-border bg-white text-gray-700 hover:bg-surface-hover active:scale-[0.98] shadow-sm;

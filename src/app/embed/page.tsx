@@ -93,7 +93,7 @@ export default function EmbedDashboardPage() {
     <div className="flex h-screen flex-col">
       <header className="border-b border-border bg-surface px-4 py-3">
         <h1 className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <span className="flex h-6 w-6 items-center justify-center rounded gradient-primary text-[10px]">H</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded gradient-primary text-primary-foreground text-[10px]">H</span>
           Hadona Dashboard
         </h1>
       </header>
