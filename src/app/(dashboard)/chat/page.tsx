@@ -417,15 +417,15 @@ function MessageBubble({
           className={cn(
             "rounded-2xl px-3 py-1.5 shadow-sm animate-in fade-in slide-in-from-bottom-1 duration-150",
             isMine
-              ? "bg-blue-500 text-white dark:bg-amber-300 dark:text-gray-900 rounded-tr-sm"
-              : "bg-amber-300 text-gray-900 dark:bg-blue-500 dark:text-white rounded-tl-sm",
+              ? "bg-blue-500 text-white dark:bg-amber-300 dark:text-slate-900 rounded-tr-sm"
+              : "bg-amber-300 text-slate-900 dark:bg-blue-500 dark:text-white rounded-tl-sm",
             isGrouped && (isMine ? "rounded-tr-2xl" : "rounded-tl-2xl"),
             highlight && "ring-2 ring-yellow-400 ring-offset-1"
           )}
         >
           {/* Nama pengirim (hanya pesan orang lain di grup chat) */}
           {!isMine && showName && (
-            <p className="text-xs font-bold mb-0.5 text-gray-800 dark:text-white/90">
+            <p className="text-xs font-bold mb-0.5 text-slate-800 dark:text-white/90">
               {msg.profiles?.full_name || "Unknown"}
             </p>
           )}
@@ -437,8 +437,8 @@ function MessageBubble({
               className={cn(
                 "block w-full text-left text-xs mb-1 px-2 py-1 rounded-md border-l-2 truncate",
                 isMine
-                  ? "bg-white/15 border-white/50 text-white/90 dark:bg-black/10 dark:border-black/30 dark:text-gray-800"
-                  : "bg-black/10 border-black/30 text-gray-800 dark:bg-white/15 dark:border-white/50 dark:text-white/90"
+                  ? "bg-white/15 border-white/50 text-white/90 dark:bg-black/10 dark:border-black/30 dark:text-slate-800"
+                  : "bg-black/10 border-black/30 text-slate-800 dark:bg-white/15 dark:border-white/50 dark:text-white/90"
               )}
             >
               <span className="font-semibold block truncate flex items-center gap-1">
@@ -456,7 +456,7 @@ function MessageBubble({
               <Trash2 size={13} /> Pesan ini telah dihapus
             </p>
           ) : (
-            <div className="text-sm break-words prose prose-sm prose-invert max-w-none prose-p:my-0 prose-pre:my-1">
+            <div className="text-sm break-words max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{renderMentions(msg.content)}</ReactMarkdown>
             </div>
           )}
@@ -464,11 +464,11 @@ function MessageBubble({
           {/* Timestamp + edited — dalam bubble */}
           <div className={cn(
             "flex items-center justify-end gap-1 text-[10px] mt-0.5",
-            isMine ? "text-white/70 dark:text-gray-700" : "text-gray-700 dark:text-white/70"
+            isMine ? "text-white/70 dark:text-slate-700" : "text-slate-700 dark:text-white/70"
           )}>
             {isEdited && <span className="italic">diedit</span>}
             <span>{timeStr}</span>
-            {isMine && <Check size={11} className="text-white/90 dark:text-gray-800" />}
+            {isMine && <Check size={11} className="text-white/90 dark:text-slate-800" />}
           </div>
         </div>
 
