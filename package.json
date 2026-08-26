@@ -9,7 +9,9 @@
     "lint": "next lint",
     "import:sheets": "tsx src/scripts/import-google-sheets.ts",
     "migrate:v84": "node scripts/run-migration-v84.mjs",
-    "import:content-ads": "node scripts/import-content-ads.mjs"
+    "import:content-ads": "node scripts/import-content-ads.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "smoke:prod": "BASE_URL=https://workspace.hadona.id node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.654.0",
