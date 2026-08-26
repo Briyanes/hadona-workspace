@@ -47,6 +47,17 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Allow public metadata files (SEO crawlers & PWA install)
+  // Without this, /sitemap.xml & /manifest.webmanifest redirect to /login,
+  // breaking search engine crawling and "Add to Home Screen"
+  if (
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/manifest.webmanifest"
+  ) {
+    return supabaseResponse;
+  }
+
   // Allow API routes — but enforce CSRF on mutation methods
   // Critical for OAuth callbacks (e.g., /api/meta/callback) where
   // cross-domain redirects may cause cookie/session timing issues
