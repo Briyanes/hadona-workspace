@@ -458,3 +458,69 @@
 *Tanggal: 8 November 2026*
 *Total commits: 13 | Total files modified: 105+*
 *Status: ✅ All pushed to origin/main (commit 54c3a0f)*
+
+---
+
+# 🔄 SESI 6 — Theme/Chat Fixes, Security Hardening & Refactor (26 Agustus 2026)
+
+Sesi tindak lanjut setelah SESI 5, mencakup audit ulang area theme, chat, keamanan scripts, dan refactoring code quality.
+
+## Perbaikan (9 commit, semua sudah live di production)
+
+### 1. Theme System (2 commit)
+14. `53abe24` — **fix(theme): race condition loadTheme vs toggle** — perbaikan flicker/konflik saat toggle dark mode sebelum theme selesai dimuat
+15. `67b738f` — **test(theme): Playwright theme regression audit script** — skrip regresi tema agar perubahan token tidak merusak kontras lagi
+
+### 2. UI Contrast & Chat (2 commit)
+16. `5e75093` — **fix(ui): muted token contrast** — `muted.foreground` dari `#FFFFFF` (tidak terbaca di light mode) → `#374151` (gray-700, WCAG compliant)
+17. `57d52b3` — **fix(chat): bubble pesan sendiri tidak terbaca di dark mode** — own-message kembali terbaca setelah perbaikan token
+
+### 3. Chat Calls & Security (1 commit)
+18. `b812806` — **fix(chat): ghost calls + real Jitsi embed + CSRF same-origin** — eliminasi panggilan hantu (call state stale), embed Jitsi asli menggantikan placeholder, validasi CSRF origin
+
+### 4. Security Hardening (1 commit) ⚠️ KRITIS
+19. `d06245a` — **security: hapus semua hardcoded credentials dari scripts** — admin email/password fallback + Supabase service_role JWTs yang ter-commit di repo. Semua skrip kini baca dari `.env.local`. (Lihat catatan ROTASI SECRET di bawah)
+
+### 5. QA Tooling (1 commit)
+20. `678ad26` — **chore(qa): smoke test runner + migration docs** — `scripts/smoke-test.mjs` untuk regresi cepat post-deploy
+
+### 6. Refactor Code Quality (2 commit)
+21. `d2fc95c` — **refactor(tasks): extract task-board subcomponents** — `task-board.tsx` dipecah menjadi `task-board/types.ts`, `task-board/constants.ts`, `task-board/create-task-modal.tsx` (mengurangi ukuran giant component)
+22. `e0fa0f2` — **refactor(reports): konsolidasi types & METRIC_DEFS ke metrics.ts** — menghilangkan duplikasi definisi metric antara reports page & shared view
+
+## ✅ Production Verification (SESI 6)
+
+### Deploy Status
+- Push `e0fa0f2` → 08:38:32 WIB, deploy production dibuat 08:38:34 WIB (**auto-deploy git**, 2 detik setelah push) → status **Ready**
+- 9 deployment production terakhir semuanya **Ready** (tidak ada yang Error/Canceled)
+
+### Health Check (Unauthenticated) — `https://workspace.hadona.id`
+| Route | Status | Keterangan |
+|-------|--------|------------|
+| `/` | 307 → `/login?redirect=%2F` (200) | ✅ Middleware auth bekerja |
+| `/login` | 200 | ✅ Halaman login render |
+| `/reports` | 307 → login | ✅ Route terproteksi |
+| `/tasks` | 307 → login | ✅ Route terproteksi |
+| `/api/health` | 404 | ℹ️ Endpoint memang tidak pernah ada (bukan regresi) |
+
+### Verifikasi Build
+- `npx tsc --noEmit` → **0 errors**
+- `npm run build` → **Success**
+- Refactor task-board & reports diverifikasi tidak mengubah perilaku (pure extraction + konsolidasi)
+
+## ⚠️ Action Required: Rotasi Secret
+
+Commit `d06245a` menghapus kredensial dari repo, **tetapi credential yang sudah pernah ter-commit tetap ada di git history**. Wajib rotasi manual:
+1. **Supabase service_role JWT** — regenerate di Dashboard → Settings → API
+2. **Password admin** yang hardcoded di skrip — ganti jika sama dengan password production
+3. Opsional jangka panjang: rewrite git history (BFG/GitHub support) jika repo bisa bersifat private selamanya
+
+## 📋 What Remains (Manual Verification)
+
+- **Authenticated regression test** — smoke test login + task board + reports + shared view memerlukan kredensial test (`TEST_EMAIL`/`TEST_PASSWORD`); jalankan `node scripts/smoke-test.mjs` dengan env tersebut
+- **Rotasi secret** seperti di atas
+- Playwright browser test menyeluruh post-deploy bila kredensial tersedia (skrip sudah tersedia: `playwright-full-audit.mjs`, `playwright-deep-qa.mjs`)
+
+---
+
+*SESI 6 selesai — 9 commit, production live di commit `e0fa0f2`, health check PASS*
