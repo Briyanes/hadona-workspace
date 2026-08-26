@@ -2,28 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { SharedReportView } from "@/components/reports/share-button";
+// BATCH 2 Sesi 2: gunakan shared Report type (single source of truth),
+// sebelumnya interface duplikat lokal di sini.
+import { type Report } from "@/components/reports/metrics";
 import { FileText, Loader2, AlertCircle } from "lucide-react";
-
-interface ReportMetric {
-  id: string;
-  metric_type: string;
-  value: number | null;
-  previous_value: number | null;
-}
-
-interface Report {
-  id: string;
-  client_id: string;
-  period_start: string;
-  period_end: string;
-  summary: string | null;
-  performance_text: string | null;
-  conclusion: string | null;
-  action: string | null;
-  status: string;
-  client?: { name: string };
-  report_metrics?: ReportMetric[];
-}
 
 export function ReportView({ token }: { token: string }) {
   const [report, setReport] = useState<Report | null>(null);

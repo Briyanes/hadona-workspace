@@ -4,56 +4,11 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Share2, Copy, Check, ExternalLink, X } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatIDR } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-
-interface ReportMetric {
-  id: string;
-  metric_type: string;
-  value: number | null;
-  previous_value: number | null;
-}
-
-interface Report {
-  id: string;
-  client_id: string;
-  period_start: string;
-  period_end: string;
-  summary: string | null;
-  performance_text: string | null;
-  conclusion: string | null;
-  action: string | null;
-  status: string;
-  client?: { name: string };
-  pic?: { full_name: string };
-  report_metrics?: ReportMetric[];
-}
-
-const METRIC_DEFS = [
-  { key: "spend", label: "Total Spend", unit: "currency" },
-  { key: "impressions", label: "Impressions", unit: "number" },
-  { key: "clicks", label: "Clicks", unit: "number" },
-  { key: "ctr", label: "CTR", unit: "percent" },
-  { key: "cpc", label: "CPC", unit: "currency" },
-  { key: "conversions", label: "Conversions", unit: "number" },
-  { key: "cpr", label: "CPR", unit: "currency" },
-  { key: "revenue", label: "Revenue", unit: "currency" },
-  { key: "roas", label: "ROAS", unit: "ratio" },
-];
-
-function formatMetric(value: number | null | undefined, unit: string): string {
-  if (value === null || value === undefined || isNaN(value)) return "-";
-  switch (unit) {
-    case "currency":
-      return formatIDR(value);
-    case "percent":
-      return `${value.toFixed(2)}%`;
-    case "ratio":
-      return `${value.toFixed(2)}x`;
-    default:
-      return value.toLocaleString("id-ID");
-  }
-}
+// BATCH 2 Sesi 2: types + METRIC_DEFS + formatMetric diimpor dari modul shared
+// (single source of truth; sebelumnya duplikat 9-metrik versi lama di sini).
+import { type Report, METRIC_DEFS, formatMetric } from "@/components/reports/metrics";
 
 export function ShareButton({ report }: { report: Report }) {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
