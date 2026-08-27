@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn, formatIDR, stripUrls } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Modal } from "@/components/ui/modal";
 
 interface CalendarEvent {
   id: string;
@@ -1331,18 +1332,18 @@ export default function CalendarPage() {
 
       {/* ═══ Meet Success Modal ═══ */}
       {meetSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setMeetSuccess(null)}>
-          <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <CheckCircle2 size={20} className="text-success" />
-                Meeting Berhasil Dibuat!
-              </h2>
-              <button onClick={() => setMeetSuccess(null)} className="text-muted hover:text-foreground">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="space-y-3 p-4">
+        <Modal
+          open
+          onClose={() => setMeetSuccess(null)}
+          title="Meeting Berhasil Dibuat!"
+          size="sm"
+          footer={
+            <button onClick={() => setMeetSuccess(null)} className="btn-primary text-xs">
+              Selesai
+            </button>
+          }
+        >
+          <div className="space-y-3">
               {/* Meet Link */}
               {meetSuccess.link && (
                 <div>
@@ -1393,31 +1394,20 @@ export default function CalendarPage() {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 border-t border-border pt-3">
-                <button onClick={() => setMeetSuccess(null)} className="btn-primary text-xs">
-                  Selesai
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ═══ Event Modal ═══ */}
       {showEventModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowEventModal(false)}>
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Users size={20} className="text-purple-500" />
-                Buat Event / Meeting
-              </h2>
-              <button onClick={() => setShowEventModal(false)} className="text-muted hover:text-foreground">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSaveEvent} className="space-y-3 p-4">
+        <Modal
+          open
+          onClose={() => setShowEventModal(false)}
+          title="Buat Event / Meeting"
+          size="md"
+          scrollable
+        >
+          <form onSubmit={handleSaveEvent} className="space-y-3">
               {/* Title */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted">Judul Event <span className="text-danger">*</span></label>
@@ -1603,25 +1593,14 @@ export default function CalendarPage() {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
 
       {/* ═══ Meeting Detail Modal ═══ */}
       {detailEvent && !showReschedule && !showCancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetailEvent(null)}>
-          <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Users size={20} className="text-purple-500" />
-                Detail Meeting
-              </h2>
-              <button onClick={() => setDetailEvent(null)} className="text-muted hover:text-foreground">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="space-y-3 p-4">
+        <Modal open onClose={() => setDetailEvent(null)} title="Detail Meeting" size="sm">
+          <div className="space-y-3">
               {/* Title */}
               <div>
                 <p className="text-sm font-bold text-foreground">{detailEvent.title}</p>
@@ -1712,25 +1691,19 @@ export default function CalendarPage() {
                   <CalendarX size={14} /> Batalkan
                 </button>
               </div>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* ═══ Reschedule Modal ═══ */}
       {detailEvent && showReschedule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => { setShowReschedule(false); setDetailEvent(null); }}>
-          <div className="w-full max-w-md rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Pencil size={20} className="text-warning" />
-                Reschedule Meeting
-              </h2>
-              <button onClick={() => { setShowReschedule(false); setDetailEvent(null); }} className="text-muted hover:text-foreground">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleReschedule} className="space-y-3 p-4">
+        <Modal
+          open
+          onClose={() => { setShowReschedule(false); setDetailEvent(null); }}
+          title="Reschedule Meeting"
+          size="sm"
+        >
+          <form onSubmit={handleReschedule} className="space-y-3">
               <p className="text-xs text-muted">
                 {detailEvent.googleEventId
                   ? "📅 Meeting di Google Calendar akan otomatis diupdate, dan email notifikasi dikirim ke semua attendees."
@@ -1767,16 +1740,14 @@ export default function CalendarPage() {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
 
       {/* ═══ Cancel Confirmation Modal ═══ */}
       {detailEvent && showCancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCancelConfirm(false)}>
-          <div className="w-full max-w-sm rounded-lg bg-surface shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="p-6 text-center">
+        <Modal open onClose={() => setShowCancelConfirm(false)} size="sm">
+          <div className="text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-danger/10">
                 <CalendarX size={24} className="text-danger" />
               </div>
@@ -1809,9 +1780,8 @@ export default function CalendarPage() {
                   )}
                 </button>
               </div>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

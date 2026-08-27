@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
+import { Modal } from "@/components/ui/modal";
 import {
   FileText,
   Plus,
@@ -1196,16 +1197,8 @@ export function ContractManager({ clientId }: { clientId: string }) {
       })}
 
       {/* ==================== Create Contract Modal ==================== */}
-      {showContractModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h2 className="text-lg font-bold text-foreground">Kontrak Baru</h2>
-              <button onClick={() => setShowContractModal(false)} className="rounded p-1 text-muted hover:bg-background">
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleCreateContract} className="space-y-4 px-6 py-4">
+      <Modal open={showContractModal} onClose={() => setShowContractModal(false)} title="Kontrak Baru" scrollable>
+        <form onSubmit={handleCreateContract} className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Mulai Kontrak *</label>
@@ -1538,25 +1531,18 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* ==================== Edit Contract Modal ==================== */}
-      {showEditModal && editingContract && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <div>
-                <h2 className="text-lg font-bold text-foreground">Edit Kontrak</h2>
-                <p className="text-xs text-muted">{editingContract.contract_number || "Kontrak"} • Mulai {formatDate(editingContract.start_date)}</p>
-              </div>
-              <button onClick={() => { setShowEditModal(false); setEditingContract(null); }} className="rounded p-1 text-muted hover:bg-background">
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleSaveEdit} className="space-y-4 px-6 py-4">
+      <Modal
+        open={showEditModal && !!editingContract}
+        onClose={() => { setShowEditModal(false); setEditingContract(null); }}
+        title="Edit Kontrak"
+        subtitle={editingContract ? `${editingContract.contract_number || "Kontrak"} • Mulai ${formatDate(editingContract.start_date)}` : undefined}
+        scrollable
+      >
+        <form onSubmit={handleSaveEdit} className="space-y-4">
               {/* Status & End Date */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -1784,23 +1770,13 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* ==================== Add Service Modal ==================== */}
-      {showServiceModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <h2 className="text-lg font-bold text-foreground">Tambah Service</h2>
-              <button onClick={() => setShowServiceModal(null)} className="rounded p-1 text-muted hover:bg-background">
-                <X size={18} />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => handleAddService(e, showServiceModal)}
+      <Modal open={!!showServiceModal} onClose={() => setShowServiceModal(null)} title="Tambah Service">
+        <form
+              onSubmit={(e) => showServiceModal && handleAddService(e, showServiceModal)}
               className="space-y-4 px-6 py-4"
             >
               <div>
@@ -1872,10 +1848,8 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

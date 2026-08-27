@@ -8,6 +8,7 @@ import {
   Layers, CalendarClock, Check,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 import { sopTasksToPayload } from "@/lib/sop-templates";
 
 interface TeamMember { id: string; full_name: string | null }
@@ -213,10 +214,13 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
   const sopPreview = sopTasksToPayload(name || "Client");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-        {/* Sticky Header: title + step indicator */}
-        <div className="shrink-0 border-b border-border bg-surface px-6 py-4">
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="lg"
+      scrollable
+      header={
+        <div className="shrink-0 border-b border-border bg-surface px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">Client Strategy Canvas</h2>
             <button onClick={onClose} className="rounded p-1 text-muted hover:bg-background hover:text-foreground"><X size={18} /></button>
@@ -237,9 +241,9 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
             })}
           </div>
         </div>
-
-        {/* Scrollable Body */}
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+      }
+    >
+      <div className="space-y-4">
           {step === 0 && (
             <>
               <div>
@@ -437,23 +441,20 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
               )}
             </>
           )}
-        </div>
-
-        {/* Sticky Footer */}
-        <div className="flex shrink-0 items-center justify-between border-t border-border bg-surface px-6 py-4">
-          <button type="button" onClick={onClose} className="text-sm text-muted hover:text-foreground">Batal</button>
-          <div className="flex gap-2">
-            {step > 0 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-ghost border border-border px-4 py-2 text-sm">← Kembali</button>}
-            {step < STEPS.length - 1 ? (
-              <button type="button" onClick={next} className="btn-primary px-4 py-2 text-sm">Lanjut →</button>
-            ) : (
-              <button type="button" onClick={handleSave} disabled={saving} className="btn-primary px-4 py-2 text-sm">
-                {saving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : <><Check size={14} /> Buat Client + Canvas</>}
-              </button>
-            )}
-          </div>
-        </div>
       </div>
-    </div>
+      footer={
+        <>
+          <button type="button" onClick={onClose} className="btn-ghost text-sm text-muted hover:text-foreground">Batal</button>
+          {step > 0 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-ghost border border-border px-4 py-2 text-sm">← Kembali</button>}
+          {step < STEPS.length - 1 ? (
+            <button type="button" onClick={next} className="btn-primary px-4 py-2 text-sm">Lanjut →</button>
+          ) : (
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary px-4 py-2 text-sm">
+              {saving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : <><Check size={14} /> Buat Client + Canvas</>}
+            </button>
+          )}
+        </>
+      }
+    </Modal>
   );
 }

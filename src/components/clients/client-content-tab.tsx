@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Modal } from "@/components/ui/modal";
 import { createClient } from "@/lib/supabase/client";
 import {
   Upload,
@@ -438,17 +439,19 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
       )}
 
       {/* ── Add Upload Form Modal ── */}
-      {showUploadForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setShowUploadForm(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-xl bg-surface p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-4 text-base font-bold text-foreground">Tambah Content Upload</h3>
-            <div className="space-y-3">
+      <Modal
+        open={showUploadForm}
+        onClose={() => setShowUploadForm(false)}
+        title="Tambah Content Upload"
+        size="sm"
+        footer={
+          <>
+            <button onClick={() => setShowUploadForm(false)} className="btn-ghost text-sm">Batal</button>
+            <button onClick={handleAddUpload} className="btn-primary text-sm">Simpan</button>
+          </>
+        }
+      >
+        <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted">Divisi</label>
                 <input
@@ -513,33 +516,22 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                 />
               </div>
             </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => setShowUploadForm(false)}
-                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm text-muted hover:bg-background"
-              >
-                Batal
-              </button>
-              <button onClick={handleAddUpload} className="btn-primary flex-1 text-sm">
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* ── Add Caption Form Modal ── */}
-      {showCaptionForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setShowCaptionForm(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-xl bg-surface p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-4 text-base font-bold text-foreground">Tambah Caption ke Bank</h3>
-            <div className="space-y-3">
+      <Modal
+        open={showCaptionForm}
+        onClose={() => setShowCaptionForm(false)}
+        title="Tambah Caption ke Bank"
+        size="sm"
+        footer={
+          <>
+            <button onClick={() => setShowCaptionForm(false)} className="btn-ghost text-sm">Batal</button>
+            <button onClick={handleAddCaption} className="btn-primary text-sm">Simpan</button>
+          </>
+        }
+      >
+        <div className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted">Product</label>
@@ -609,20 +601,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                 </select>
               </div>
             </div>
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => setShowCaptionForm(false)}
-                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm text-muted hover:bg-background"
-              >
-                Batal
-              </button>
-              <button onClick={handleAddCaption} className="btn-primary flex-1 text-sm">
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }
