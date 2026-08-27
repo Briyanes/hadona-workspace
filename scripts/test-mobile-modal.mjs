@@ -2,7 +2,7 @@ import { chromium, devices } from "playwright";
 import fs from "fs";
 import path from "path";
 
-const BASE_URL = "https://workspace.hadona.id";
+const BASE_URL = process.env.BASE_URL || "https://workspace.hadona.id";
 const EMAIL = process.env.TEST_EMAIL;
 const PASSWORD = process.env.TEST_PASSWORD;
 const SCREENSHOT_DIR = path.join(process.cwd(), "scripts", "screenshots");
