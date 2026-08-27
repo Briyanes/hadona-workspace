@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ProductionDetailModal } from "@/components/production/production-detail-modal";
 import { useIncrementalList } from "@/hooks/use-incremental-list";
 import { LoadMore } from "@/components/ui/load-more";
+import { Modal } from "@/components/ui/modal";
 
 interface Production {
   id: string;
@@ -442,14 +443,23 @@ export default function ProductionPage() {
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="text-lg font-bold text-foreground">{editingId ? "Edit Production" : "New Production"}</h2>
-              <button onClick={() => setShowModal(false)} className="rounded p-1.5 text-muted hover:bg-background hover:text-foreground"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-5 py-4">
+<Modal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          title={editingId ? "Edit Production" : "New Production"}
+          size="lg"
+          footer={
+            <>
+
+                <button type="button" onClick={() => setShowModal(false)} className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:bg-background hover:text-foreground">Cancel</button>
+                <button type="submit" form="production-form" disabled={saving} className="btn-primary flex items-center gap-1.5 disabled:opacity-50">
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  {editingId ? "Update" : "Create"}
+                </button>
+                          </>
+          }
+        >
+          <form id="production-form" onSubmit={handleSave}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-medium text-muted">Title <span className="text-danger">*</span></label>
@@ -547,17 +557,8 @@ export default function ProductionPage() {
                   <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input py-2 text-sm" placeholder="Catatan tambahan..." />
                 </div>
               </div>
-              <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:bg-background hover:text-foreground">Cancel</button>
-                <button type="submit" disabled={saving} className="btn-primary flex items-center gap-1.5 disabled:opacity-50">
-                  {saving && <Loader2 size={14} className="animate-spin" />}
-                  {editingId ? "Update" : "Create"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              </form>
+        </Modal>
 
       {/* Detail Modal */}
       {detailProduction && (
