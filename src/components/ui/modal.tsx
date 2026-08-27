@@ -9,7 +9,7 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   footer?: React.ReactNode;
