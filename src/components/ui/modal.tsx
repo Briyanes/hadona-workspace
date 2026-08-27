@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,17 @@ export function Modal({
   const modalRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  /**
+   * Portal target guard — render on client only (SSR-safe).
+   * Portal ke document.body memastikan overlay `fixed inset-0` tidak
+   * terjebak containing-block ancestor (backdrop-blur/transform),
+   * sehingga selalu menutup 100% viewport di semua halaman.
+   */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /**
    * Get all focusable elements inside the modal
@@ -123,11 +135,11 @@ export function Modal({
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-0 sm:p-6"
+      className="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-0 sm:p-6"
       onClick={(e) => {
         // Close on backdrop click only (not when clicking inside modal)
         if (e.target === e.currentTarget) onClose();
@@ -141,7 +153,10 @@ export function Modal({
         aria-describedby={subtitle ? "modal-subtitle" : undefined}
         tabIndex={-1}
         className={cn(
-          "my-0 flex w-full flex-col overflow-hidden rounded-t-xl border border-border bg-surface shadow-xl sm:my-4 sm:rounded-lg",
+          // Mobile: bottom-sheet full-bleed (mt-auto) + rounded top.
+          // Desktop: centered (sm:my-auto) — margin auto collapse ke 0 saat
+          // konten lebih tinggi dari viewport sehingga tetap bisa discroll.
+          "mt-auto flex w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border border-border bg-surface shadow-xl sm:my-auto sm:rounded-xl",
           "focus:outline-none",
           sizeMap[size],
           scrollable ? "max-h-[100dvh] sm:max-h-[calc(100dvh-3rem)]" : ""
@@ -176,14 +191,15 @@ export function Modal({
           <div className="px-4 py-4 sm:px-6">{children}</div>
         )}
 
-        {/* Sticky Footer */}
+        {/* Sticky Footer — button stack full-width di mobile, row di desktop */}
         {footer && (
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-4 py-4 sm:px-6">
+          <div className="flex shrink-0 flex-col gap-2 border-t border-border bg-surface px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6 sm:pb-4 [&>*]:w-full sm:[&>*]:w-auto">
             {footer}
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
