@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   ClipboardList,
   Plus,
-  X,
   Trash2,
   Search,
   Pencil,
@@ -16,6 +15,8 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface CreativeRequest {
   id: string;
@@ -453,16 +454,25 @@ export default function AdsCreativeRequests() {
       )}
 
       {/* Modal Form */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowModal(false)}>
-          <div className="card w-full max-w-2xl p-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">{editingId ? "Edit Creative Request" : "Creative Request Baru"}</h3>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded hover:bg-surface">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="space-y-3">
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingId ? "Edit Creative Request" : "Creative Request Baru"}
+        size="lg"
+        scrollable
+        footer={
+          <>
+            <button onClick={() => setShowModal(false)} className="btn-ghost">
+              Batal
+            </button>
+            <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {editingId ? "Simpan Perubahan" : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="label">Klien *</label>
@@ -618,68 +628,32 @@ export default function AdsCreativeRequests() {
                   />
                 </div>
               </div>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)} className="btn-ghost">
-                Batal
-              </button>
-              <button onClick={save} disabled={saving} className="btn-primary flex items-center gap-2">
-                {saving && <Loader2 size={14} className="animate-spin" />}
-                {editingId ? "Simpan Perubahan" : "Simpan"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Confirm Save to Bank */}
-      {bankingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBankingId(null)}>
-          <div className="card w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <BookMarked size={16} className="text-primary" /> Simpan ke Banking Caption?
-            </h3>
-            <p className="mt-2 text-sm text-muted">
-              Hook + caption + CTA dari request ini akan disimpan ke Banking Caption untuk dipakai ulang nanti.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setBankingId(null)} className="btn-ghost">
-                Batal
-              </button>
-              <button onClick={saveToBank} disabled={banking} className="btn-primary flex items-center gap-2">
-                {banking && <Loader2 size={14} className="animate-spin" />}
-                Simpan ke Bank
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!bankingId}
+        onClose={() => setBankingId(null)}
+        onConfirm={saveToBank}
+        title="Simpan ke Banking Caption?"
+        message="Hook + caption + CTA dari request ini akan disimpan ke Banking Caption untuk dipakai ulang nanti."
+        confirmText="Simpan ke Bank"
+        variant="primary"
+        loading={banking}
+      />
 
       {/* Confirm Delete */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
-          <div className="card w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-foreground">Hapus request ini?</h3>
-            <p className="mt-2 text-sm text-muted">
-              Request <span className="font-medium text-foreground">{confirmDelete.angle || confirmDelete.client?.name || "—"}</span> akan
-              dihapus permanen.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)} className="btn-ghost">
-                Batal
-              </button>
-              <button
-                onClick={doDelete}
-                disabled={deleting === confirmDelete.id}
-                className="flex items-center gap-2 rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 disabled:opacity-50"
-              >
-                {deleting === confirmDelete.id && <Loader2 size={14} className="animate-spin" />}
-                Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={doDelete}
+        title="Hapus request ini?"
+        message={`Request ${confirmDelete?.angle || confirmDelete?.client?.name || "—"} akan dihapus permanen.`}
+        confirmText="Hapus"
+        variant="danger"
+        loading={!!confirmDelete && deleting === confirmDelete.id}
+      />
     </div>
   );
 }

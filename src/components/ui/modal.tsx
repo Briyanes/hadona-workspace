@@ -127,7 +127,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 backdrop-blur-sm p-0 sm:p-6"
       onClick={(e) => {
         // Close on backdrop click only (not when clicking inside modal)
         if (e.target === e.currentTarget) onClose();
@@ -141,15 +141,15 @@ export function Modal({
         aria-describedby={subtitle ? "modal-subtitle" : undefined}
         tabIndex={-1}
         className={cn(
-          "my-4 flex w-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl",
+          "my-0 flex w-full flex-col overflow-hidden rounded-t-xl border border-border bg-surface shadow-xl sm:my-4 sm:rounded-lg",
           "focus:outline-none",
           sizeMap[size],
-          scrollable ? "max-h-[calc(100dvh-2rem)]" : ""
+          scrollable ? "max-h-[100dvh] sm:max-h-[calc(100dvh-3rem)]" : ""
         )}
       >
         {/* Sticky Header */}
         {(title || subtitle) && (
-          <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-4 sm:px-6">
             <div>
               {title && (
                 <h2 id="modal-title" className="text-lg font-bold text-foreground">{title}</h2>
@@ -171,14 +171,14 @@ export function Modal({
 
         {/* Body — scrollable if scrollable=true, otherwise static */}
         {scrollable ? (
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">{children}</div>
         ) : (
-          <div className="px-6 py-4">{children}</div>
+          <div className="px-4 py-4 sm:px-6">{children}</div>
         )}
 
         {/* Sticky Footer */}
         {footer && (
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
+          <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-4 py-4 sm:px-6">
             {footer}
           </div>
         )}

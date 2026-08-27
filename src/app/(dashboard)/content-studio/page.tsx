@@ -24,14 +24,14 @@ export default function ContentStudioPage() {
   async function loadStats() {
     try {
       const [reqRes, captionsRes, clustersRes] = await Promise.all([
-        supabase.from("ads_creative_requests").select("id"),
-        supabase.from("ads_captions").select("id"),
-        supabase.from("ads_content_clusters").select("id"),
+        supabase.from("ads_creative_requests").select("id", { count: "exact", head: true }),
+        supabase.from("ads_captions").select("id", { count: "exact", head: true }),
+        supabase.from("ads_content_clusters").select("id", { count: "exact", head: true }),
       ]);
       setStats({
-        totalRequests: (reqRes.data || []).length,
-        totalCaptions: (captionsRes.data || []).length,
-        totalClusters: (clustersRes.data || []).length,
+        totalRequests: reqRes.count || 0,
+        totalCaptions: captionsRes.count || 0,
+        totalClusters: clustersRes.count || 0,
       });
     } catch {
       // tables might not exist yet
@@ -43,7 +43,7 @@ export default function ContentStudioPage() {
       <PageHeader title="Ads Content Studio" subtitle="Creative request, banking caption & ads creative untuk divisi Copywriter & Advertiser" />
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="card p-4">
           <ClipboardList className="mb-2 text-orange-500" size={18} />
           <p className="text-xl font-bold text-foreground">{stats.totalRequests}</p>
@@ -78,7 +78,7 @@ export default function ContentStudioPage() {
           <button
             onClick={() => setTab("captions")}
             className={cn(
-              "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
               tab === "captions"
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted hover:text-foreground"
@@ -89,7 +89,7 @@ export default function ContentStudioPage() {
           <button
             onClick={() => setTab("clusters")}
             className={cn(
-              "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap",
               tab === "clusters"
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted hover:text-foreground"

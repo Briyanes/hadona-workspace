@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   Boxes,
   Plus,
-  X,
   Trash2,
   Search,
   Pencil,
@@ -18,6 +17,8 @@ import {
   Copy,
 } from "lucide-react";
 import { cn, extractError } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ClusterItem {
   id: string;
@@ -613,16 +614,24 @@ export default function AdsContentClusters() {
       )}
 
       {/* Modal Form */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowModal(false)}>
-          <div className="card w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">{editingId ? "Edit Ads Creative" : "Entry Ads Creative Baru"}</h3>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded hover:bg-surface">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="space-y-3">
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingId ? "Edit Ads Creative" : "Entry Ads Creative Baru"}
+        scrollable
+        footer={
+          <>
+            <button onClick={() => setShowModal(false)} className="btn-ghost">
+              Batal
+            </button>
+            <button onClick={() => save()} disabled={saving} className="btn-primary flex items-center gap-2">
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {editingId ? "Simpan Perubahan" : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
               <div>
                 <label className="label">Klien *</label>
                 <select
@@ -777,38 +786,35 @@ export default function AdsContentClusters() {
                   className="input resize-y"
                 />
               </div>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)} className="btn-ghost">
-                Batal
-              </button>
-              <button onClick={() => save()} disabled={saving} className="btn-primary flex items-center gap-2">
-                {saving && <Loader2 size={14} className="animate-spin" />}
-                {editingId ? "Simpan Perubahan" : "Simpan"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Detail Modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
-          <div className="card w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-semibold text-foreground">{detail.theme || detail.format_type || "Detail"}</h3>
-                <p className="text-xs text-muted mt-0.5">
-                  {detail.client?.name || detail.client_hint || "—"}
-                  {detail.source_sheet && ` • sumber: ${detail.source_sheet}${detail.sheet_row ? ` (row ${detail.sheet_row})` : ""}`}
-                </p>
-              </div>
-              <button onClick={() => setDetail(null)} className="p-1 rounded hover:bg-surface">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="space-y-3 text-sm">
-              {[
+        <Modal
+          open
+          onClose={() => setDetail(null)}
+          title={detail.theme || detail.format_type || "Detail"}
+          size="lg"
+          scrollable
+          footer={
+            <button
+              onClick={() => {
+                setDetail(null);
+                openEdit(detail);
+              }}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Pencil size={14} /> Edit
+            </button>
+          }
+        >
+        <div className="space-y-3 text-sm">
+          <p className="text-xs text-muted">
+            {detail.client?.name || detail.client_hint || "—"}
+            {detail.source_sheet && ` • sumber: ${detail.source_sheet}${detail.sheet_row ? ` (row ${detail.sheet_row})` : ""}`}
+          </p>
+          {[
                 ["Status", detail.progress],
                 ["Objective Campaign", detail.details],
                 ["Funnel", detail.pillar],
@@ -840,61 +846,35 @@ export default function AdsContentClusters() {
                   </div>
                 );
               })}
-              {detail.result_link && (
-                <div className="grid grid-cols-[140px_1fr] gap-3">
-                  <span className="text-muted text-xs pt-0.5">Content Link</span>
-                  <a href={detail.result_link} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
-                    {detail.result_link}
-                  </a>
-                </div>
-              )}
+          {detail.result_link && (
+            <div className="grid grid-cols-[140px_1fr] gap-3">
+              <span className="text-muted text-xs pt-0.5">Content Link</span>
+              <a href={detail.result_link} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+                {detail.result_link}
+              </a>
             </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setDetail(null);
-                  openEdit(detail);
-                }}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Pencil size={14} /> Edit
-              </button>
-            </div>
-          </div>
+          )}
         </div>
+        </Modal>
       )}
 
       {/* Confirm Delete */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
-          <div className="card w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-foreground">Hapus ads creative ini?</h3>
-            <p className="mt-2 text-sm text-muted">
-              Entry <span className="font-medium text-foreground">{confirmDelete.theme?.slice(0, 40) || confirmDelete.format_type || "—"}</span>{" "}
-              akan dihapus permanen.
-            </p>
-            {confirmDelete.source_sheet && (
-              <p className="mt-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-600">
-                ⚠ Entry ini berasal dari import sheet ({confirmDelete.source_sheet}). Jika dihapus, entry akan muncul
-                kembali saat re-import ulang dari spreadsheet.
-              </p>
-            )}
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)} className="btn-ghost">
-                Batal
-              </button>
-              <button
-                onClick={doDelete}
-                disabled={deleting === confirmDelete.id}
-                className="flex items-center gap-2 rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white hover:bg-danger/90 disabled:opacity-50"
-              >
-                {deleting === confirmDelete.id && <Loader2 size={14} className="animate-spin" />}
-                Hapus
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={doDelete}
+        title="Hapus ads creative ini?"
+        message={`Entry ${confirmDelete?.theme?.slice(0, 40) || confirmDelete?.format_type || "—"} akan dihapus permanen.${
+          confirmDelete?.source_sheet
+            ? " ⚠ Entry ini berasal dari import sheet (" +
+              confirmDelete.source_sheet +
+              ") — jika dihapus, entry akan muncul kembali saat re-import ulang dari spreadsheet."
+            : ""
+        }`}
+        confirmText="Hapus"
+        variant="danger"
+        loading={!!confirmDelete && deleting === confirmDelete.id}
+      />
     </div>
   );
 }
