@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   Clock,
   Plus,
-  X,
   Pencil,
   Trash2,
   Search,
@@ -17,6 +16,7 @@ import {
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
 import { useTimer, formatTimerTime } from "@/hooks/use-timer";
 import { Play, Square, Timer as TimerIcon } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 
 interface Timesheet {
   id: string;
@@ -569,28 +569,39 @@ export default function TimesheetPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal — Sticky Header/Footer + Scroll */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            {/* Sticky Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-foreground">
-                {editingId ? "Edit Entry" : "Log Time Baru"}
-              </h2>
+      {/* Create/Edit Modal — shared Modal (portal, focus trap, mobile fullscreen) */}
+        <Modal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          title={editingId ? "Edit Entry" : "Log Time Baru"}
+          size="md"
+          scrollable
+          footer={
+            <>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
+                className="px-4 py-2 text-sm text-muted hover:text-foreground"
               >
-                <X size={18} />
+                Batal
               </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Anggota Tim</label>
+              <button type="submit" form="timesheet-entry-form" disabled={saving} className="btn-primary">
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Menyimpan...
+                  </>
+                ) : editingId ? (
+                  "Update Entry"
+                ) : (
+                  "Simpan Entry"
+                )}
+              </button>
+            </>
+          }
+        >
+          <form id="timesheet-entry-form" onSubmit={handleSave} className="space-y-4">
+            <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Anggota Tim</label>
                 <select
                   value={form.user_id}
                   onChange={(e) => setForm({ ...form, user_id: e.target.value })}
@@ -688,42 +699,16 @@ export default function TimesheetPage() {
               </div>
 
               <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={form.billable}
-                  onChange={(e) => setForm({ ...form, billable: e.target.checked })}
-                  className="h-4 w-4 rounded border-border"
-                />
-                <span className="text-sm text-foreground">Billable (dikenakan biaya ke client)</span>
-              </label>
-
-              </div>
-
-              {/* Sticky Footer */}
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
-                >
-                  Batal
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
-                    </>
-                  ) : editingId ? (
-                    "Update Entry"
-                  ) : (
-                    "Simpan Entry"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <input
+                type="checkbox"
+                checked={form.billable}
+                onChange={(e) => setForm({ ...form, billable: e.target.checked })}
+                className="h-4 w-4 rounded border-border"
+              />
+              <span className="text-sm text-foreground">Billable (dikenakan biaya ke client)</span>
+            </label>
+          </form>
+        </Modal>
     </div>
   );
 }
