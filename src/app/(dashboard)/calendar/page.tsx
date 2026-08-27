@@ -1463,7 +1463,7 @@ export default function CalendarPage() {
               </div>
 
               {/* Date & Time */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted">Mulai <span className="text-danger">*</span></label>
                   <input
@@ -1497,7 +1497,7 @@ export default function CalendarPage() {
               </label>
 
               {/* Location & Link */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted flex items-center gap-1">
                     <MapPin size={12} /> Lokasi

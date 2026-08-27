@@ -670,7 +670,7 @@ export default function AdsContentClusters() {
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="label">Status</label>
                   <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input">
@@ -712,7 +712,7 @@ export default function AdsContentClusters() {
                   </p>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="label">Funnel</label>
                   <select value={form.funnel} onChange={(e) => setForm({ ...form, funnel: e.target.value })} className="input">

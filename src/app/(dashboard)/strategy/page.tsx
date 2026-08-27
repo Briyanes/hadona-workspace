@@ -822,7 +822,7 @@ export default function StrategyPage() {
                   <input type="text" value={form.key_result} onChange={(e) => setForm({ ...form, key_result: e.target.value })} placeholder="Contoh: Capai ROAS rata-rata 3.5" className="input" />
                   <p className="mt-1 text-xs text-muted">Key Result = cara mengukur objective (quantitative)</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Quarter</label>
                     <select value={form.quarter} onChange={(e) => setForm({ ...form, quarter: e.target.value })} className="input">

@@ -54,7 +54,7 @@ export function SpendLogModal({
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {/* Form */}
           <form onSubmit={onSubmit} className="mb-4 space-y-3 rounded-lg bg-background p-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted">Tanggal</label>
                 <input

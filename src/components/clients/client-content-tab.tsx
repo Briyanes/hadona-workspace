@@ -540,7 +540,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
           >
             <h3 className="mb-4 text-base font-bold text-foreground">Tambah Caption ke Bank</h3>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted">Product</label>
                   <input

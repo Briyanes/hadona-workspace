@@ -64,7 +64,7 @@ export function AdAccountModal({
                   </option>
                 ))}
               </select>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <select
                   value={form.platform}
                   onChange={(e) => setForm({ ...form, platform: e.target.value })}
@@ -96,7 +96,7 @@ export function AdAccountModal({
 
             <div className="space-y-3 rounded-lg bg-background p-3">
               <p className="text-xs font-semibold uppercase text-muted">Budget</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-[10px] font-medium text-muted">Daily Budget (Rp)</label>
                   <input

@@ -279,7 +279,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                       <button onClick={() => setSocials((p) => p.filter((_, x) => x !== i))} className="rounded p-1 text-muted hover:text-danger"><Trash2 size={14} /></button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <select className="input" value={s.platform} onChange={(e) => setSocials((p) => p.map((r, x) => x === i ? { ...r, platform: e.target.value } : r))}>
                       {PLATFORMS.map((pl) => <option key={pl} value={pl}>{pl}</option>)}
                     </select>
@@ -308,7 +308,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                     <input className="input max-w-[60%] text-sm font-semibold" placeholder="Nama kompetitor" value={c.name} onChange={(e) => setCompetitors((p) => p.map((r, x) => x === i ? { ...r, name: e.target.value } : r))} />
                     <button onClick={() => setCompetitors((p) => p.filter((_, x) => x !== i))} className="rounded p-1 text-muted hover:text-danger"><Trash2 size={14} /></button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <select className="input" value={c.platform} onChange={(e) => setCompetitors((p) => p.map((r, x) => x === i ? { ...r, platform: e.target.value } : r))}>
                       <option value="">— Platform —</option>
                       {PLATFORMS.map((pl) => <option key={pl} value={pl}>{pl}</option>)}
@@ -340,7 +340,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                     )}
                   </div>
                   <input className="input" placeholder="Contoh: Meningkatkan sales melalui iklan CTWA" value={o.objective} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, objective: e.target.value } : r))} />
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <select className="input" value={o.quarter} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, quarter: e.target.value } : r))}>
                       <option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option>
                     </select>

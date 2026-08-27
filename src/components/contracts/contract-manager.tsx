@@ -1206,7 +1206,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </button>
             </div>
             <form onSubmit={handleCreateContract} className="space-y-4 px-6 py-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Mulai Kontrak *</label>
                   <input
@@ -1228,7 +1228,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Minimum Bulan</label>
                   <input
@@ -1256,7 +1256,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Section: PIC Client */}
               <div className="rounded-md border border-border bg-background/50 p-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Nama PIC</label>
                     <input
@@ -1293,7 +1293,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Section: Payment Schedule / Prepaid */}
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Skema Bayar</label>
                     <select
@@ -1345,7 +1345,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
 
               {/* Section: Sales & Payment */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Sales / AM</label>
                   <select
@@ -1558,7 +1558,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
             </div>
             <form onSubmit={handleSaveEdit} className="space-y-4 px-6 py-4">
               {/* Status & End Date */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Status Kontrak</label>
                   <select
@@ -1584,7 +1584,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Minimum Bulan</label>
                   <input
@@ -1613,7 +1613,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* PIC Client */}
               <div className="rounded-md border border-border bg-background/50 p-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Nama PIC</label>
                     <input
@@ -1647,7 +1647,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Bug #5 fix: Skema Pembayaran (Prepaid) */}
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Skema Bayar</label>
                     <select
@@ -1691,7 +1691,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
 
               {/* Sales & Payment */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Sales / AM</label>
                   <select
@@ -1828,7 +1828,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   className="input mt-2"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Harga / Bulan (IDR) *</label>
                   <input

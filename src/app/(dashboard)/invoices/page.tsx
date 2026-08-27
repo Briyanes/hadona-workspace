@@ -737,7 +737,7 @@ export default function InvoicesPage() {
               <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
 
                 {/* Invoice Number + Client */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Nomor Invoice *
@@ -840,7 +840,7 @@ export default function InvoicesPage() {
                 )}
 
                 {/* Dates */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Tanggal Invoice
@@ -953,7 +953,7 @@ export default function InvoicesPage() {
                 </div>
 
                 {/* Tax + Status */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
                       Pajak/PPh (Rp)

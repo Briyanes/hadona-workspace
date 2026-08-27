@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Search, Megaphone, Loader2, Pencil, ExternalLink, Power, Copy,
 } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 
 const OBJECTIVES = ["CTWA", "CTLP", "CPAS", "Visit Profile"];
 const FUNNELS = ["TOFU", "MOFU", "BOFU"];
@@ -321,18 +322,23 @@ export default function AdsManager() {
       )}
 
       {/* Edit Modal */}
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditing(null)}>
-          <div className="card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">
-                Edit Ad — {editing.client_label}
-              </h3>
-              <button onClick={() => setEditing(null)} className="text-muted hover:text-foreground">✕</button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+      <Modal
+        open={!!editing}
+        onClose={() => setEditing(null)}
+        title={editing ? `Edit Ad — ${editing.client_label}` : ""}
+        size="lg"
+        scrollable
+        footer={
+          <>
+            <button onClick={() => setEditing(null)} className="btn-secondary">Batal</button>
+            <button onClick={save} disabled={saving} className="btn-primary">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">No.</label>
                   <input value={form.ad_no} onChange={(e) => setForm({ ...form, ad_no: e.target.value })} className="input" />
@@ -343,7 +349,7 @@ export default function AdsManager() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Status</label>
                   <select value={form.ad_status} onChange={(e) => setForm({ ...form, ad_status: e.target.value })} className="input">
@@ -360,7 +366,7 @@ export default function AdsManager() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Funnel</label>
                   <select value={form.funnel} onChange={(e) => setForm({ ...form, funnel: e.target.value })} className="input">
@@ -405,17 +411,8 @@ export default function AdsManager() {
                 </label>
                 <textarea value={form.prefilled_message} onChange={(e) => setForm({ ...form, prefilled_message: e.target.value })} rows={3} className="input" />
               </div>
-            </div>
-
-            <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setEditing(null)} className="btn-secondary">Batal</button>
-              <button onClick={save} disabled={saving} className="btn-primary">
-                {saving ? <Loader2 size={14} className="animate-spin" /> : "Simpan"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
