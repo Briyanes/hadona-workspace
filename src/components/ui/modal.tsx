@@ -15,6 +15,9 @@ interface ModalProps {
   footer?: React.ReactNode;
   /** If true, the body scrolls and header/footer are sticky (for forms) */
   scrollable?: boolean;
+  /** Fully custom header node — replaces the default title/subtitle row.
+   *  Caller is responsible for its own layout & close button if needed. */
+  header?: React.ReactNode;
 }
 
 const sizeMap = {
@@ -36,6 +39,7 @@ export function Modal({
   size = "md",
   footer,
   scrollable = false,
+  header,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -162,8 +166,10 @@ export function Modal({
           scrollable ? "max-h-[100dvh] sm:max-h-[calc(100dvh-3rem)]" : ""
         )}
       >
-        {/* Sticky Header */}
-        {(title || subtitle) && (
+        {/* Sticky Header — custom node or default title/subtitle row */}
+        {header ? (
+          header
+        ) : (title || subtitle) ? (
           <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-4 sm:px-6">
             <div>
               {title && (
@@ -182,7 +188,7 @@ export function Modal({
               <X size={18} aria-hidden />
             </button>
           </div>
-        )}
+        ) : null}
 
         {/* Body — scrollable if scrollable=true, otherwise static */}
         {scrollable ? (

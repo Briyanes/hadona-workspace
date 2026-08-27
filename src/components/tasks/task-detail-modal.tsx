@@ -1,6 +1,7 @@
 "use client";
 
 import { RichText } from "@/components/ui/rich-text";
+import { Modal } from "@/components/ui/modal";
 
 import { createClient } from "@/lib/supabase/client";
 import { uploadFile } from "@/lib/upload";
@@ -599,25 +600,27 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-0 sm:p-4">
-        <div className="w-full max-w-2xl rounded-none border-border bg-surface p-4 sm:rounded-lg sm:p-6">
-          <div className="skeleton h-8 w-3/4 mb-4" />
-          <div className="skeleton h-4 w-full mb-2" />
-          <div className="skeleton h-4 w-2/3 mb-2" />
-          <div className="skeleton h-32 w-full" />
-        </div>
-      </div>
+      <Modal open onClose={onClose} title="Task Detail" size="lg">
+        <div className="skeleton h-8 w-3/4 mb-4" />
+        <div className="skeleton h-4 w-full mb-2" />
+        <div className="skeleton h-4 w-2/3 mb-2" />
+        <div className="skeleton h-32 w-full" />
+      </Modal>
     );
   }
 
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-0 sm:p-4">
-      <div className="relative my-0 flex min-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-border bg-surface shadow-xl sm:my-4 sm:min-h-0 sm:max-h-[calc(100dvh-2rem)] sm:rounded-lg sm:border">
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex items-center gap-3">
+    <Modal
+      open
+      onClose={onClose}
+      title="Task Detail"
+      size="lg"
+      scrollable
+      header={
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
             <h2 className="text-lg font-bold text-foreground">{isEditing ? "Edit Task" : "Task Detail"}</h2>
             {!isEditing && (
               <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusOptions.find((s) => s.value === task.status)?.color)}>
@@ -646,14 +649,14 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 )}
               </>
             )}
-            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
+            <button onClick={onClose} aria-label="Tutup modal" className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
               <X size={18} />
             </button>
           </div>
         </div>
-
-        {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
+      }
+    >
+      <div>
           {isEditing ? (
             /* ==================== EDIT MODE ==================== */
             <form onSubmit={handleSaveEdit} className="space-y-4">
@@ -1165,8 +1168,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
               </div>
             </div>
           )}
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

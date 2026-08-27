@@ -1,6 +1,7 @@
 "use client";
 
-import { X, Lightbulb } from "lucide-react";
+import { Lightbulb } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import type { Client, TaskForm } from "./types";
 
@@ -17,6 +18,8 @@ interface CreateTaskModalProps {
   onClose: () => void;
 }
 
+const FORM_ID = "create-task-form";
+
 /** Create Task modal — 2-column layout with sticky header & footer. */
 export function CreateTaskModal({
   clients,
@@ -30,201 +33,191 @@ export function CreateTaskModal({
   onClose,
 }: CreateTaskModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-        {/* Sticky Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-          <h2 className="text-lg font-bold text-foreground">Buat Task Baru</h2>
+    <Modal
+      open
+      onClose={onClose}
+      title="Buat Task Baru"
+      size="lg"
+      scrollable
+      footer={
+        <>
           <button
+            type="button"
             onClick={onClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
+            className="px-4 py-2 text-sm text-muted hover:text-foreground"
           >
-            <X size={18} />
+            Batal
           </button>
+          <button type="submit" form={FORM_ID} disabled={saving} className="btn-primary">
+            {saving ? "Menyimpan..." : "Simpan Task"}
+          </button>
+        </>
+      }
+    >
+      <form id={FORM_ID} onSubmit={onSubmit} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Full-width: Title */}
+        <div className="lg:col-span-2">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Judul Task *</label>
+          <input
+            type="text"
+            required
+            autoFocus
+            value={form.title}
+            onChange={(e) => onFormChange({ ...form, title: e.target.value })}
+            placeholder="Contoh: Setup Campaign Meta Ads Client X"
+            className="input"
+          />
         </div>
 
-        {/* Scrollable Body */}
-        <form onSubmit={onSubmit} className="flex flex-1 flex-col overflow-hidden">
-          <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto px-6 py-4 lg:grid-cols-2">
-            {/* Full-width: Title */}
-            <div className="lg:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Judul Task *</label>
-              <input
-                type="text"
-                required
-                autoFocus
-                value={form.title}
-                onChange={(e) => onFormChange({ ...form, title: e.target.value })}
-                placeholder="Contoh: Setup Campaign Meta Ads Client X"
-                className="input"
-              />
-            </div>
+        {/* Full-width: Description */}
+        <div className="lg:col-span-2">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
+          <textarea
+            rows={2}
+            value={form.description}
+            onChange={(e) => onFormChange({ ...form, description: e.target.value })}
+            placeholder="Detail tugas (opsional)"
+            className="input resize-none"
+          />
+        </div>
 
-            {/* Full-width: Description */}
-            <div className="lg:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Deskripsi</label>
-              <textarea
-                rows={2}
-                value={form.description}
-                onChange={(e) => onFormChange({ ...form, description: e.target.value })}
-                placeholder="Detail tugas (opsional)"
-                className="input resize-none"
-              />
-            </div>
-
-            {/* LEFT column fields */}
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
-                <select
-                  value={form.client_id}
-                  onChange={(e) => onFormChange({ ...form, client_id: e.target.value })}
-                  className="input"
-                >
-                  <option value="">— Pilih Client —</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Status Awal</label>
-                <select
-                  value={form.status}
-                  onChange={(e) => onFormChange({ ...form, status: e.target.value })}
-                  className="input"
-                >
-                  <option value="todo">To Do</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="review">Review</option>
-                  <option value="blocked">Blocked</option>
-                  <option value="done">Done</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Start Date</label>
-                <input
-                  type="date"
-                  value={form.start_date}
-                  onChange={(e) => onFormChange({ ...form, start_date: e.target.value })}
-                  className="input"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Result / Output</label>
-                <input
-                  type="text"
-                  value={form.result}
-                  onChange={(e) => onFormChange({ ...form, result: e.target.value })}
-                  placeholder="Contoh: Monthly report selesai"
-                  className="input"
-                />
-              </div>
-            </div>
-
-            {/* RIGHT column fields */}
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Prioritas</label>
-                <select
-                  value={form.priority}
-                  onChange={(e) => onFormChange({ ...form, priority: e.target.value })}
-                  className="input"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Divisi</label>
-                <select
-                  value={form.division}
-                  onChange={(e) => onFormChange({ ...form, division: e.target.value })}
-                  className="input"
-                  // Lock division when on a sub-page (division prop is set)
-                  disabled={!!activeDivision}
-                >
-                  <option value="">— Pilih Divisi —</option>
-                  <option value="Creative Director">Creative Director</option>
-                  <option value="Content Creator">Content Creator</option>
-                  <option value="Editor">Editor</option>
-                  <option value="Production">Production</option>
-                  <option value="Social Media Manager">Social Media Manager</option>
-                  <option value="Project Manager">Project Manager</option>
-                  <option value="Advertiser">Advertiser</option>
-                  <option value="Account Executive">Account Executive</option>
-                  <option value="Copywriter">Copywriter</option>
-                  <option value="Developer">Developer</option>
-                </select>
-                {activeDivision && (
-                  <p className="mt-1 text-xs text-muted">🔒 Division terkunci: <strong>{activeDivision}</strong></p>
-                )}
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
-                <input
-                  type="date"
-                  value={form.due_date}
-                  onChange={(e) => onFormChange({ ...form, due_date: e.target.value })}
-                  className="input"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Blocker / Kendala
-                </label>
-                <textarea
-                  rows={2}
-                  value={form.blocker}
-                  onChange={(e) => onFormChange({ ...form, blocker: e.target.value })}
-                  placeholder="Isi jika ada kendala..."
-                  className="input resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Full-width: Assignees */}
-            <div className="lg:col-span-2">
-              <AssigneePicker
-                selectedIds={assigneeIds}
-                onChange={onAssigneeChange}
-                label="Assignee"
-                divisionFilter={form.division || null}
-              />
-              {form.division && (
-                <p className="mt-1.5 flex items-start gap-1 text-xs text-muted">
-                  <Lightbulb size={12} className="mt-0.5 shrink-0 text-warning" />
-                  <span>Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong></span>
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Sticky Footer */}
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-muted hover:text-foreground"
+        {/* LEFT column fields */}
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
+            <select
+              value={form.client_id}
+              onChange={(e) => onFormChange({ ...form, client_id: e.target.value })}
+              className="input"
             >
-              Batal
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary">
-              {saving ? "Menyimpan..." : "Simpan Task"}
-            </button>
+              <option value="">— Pilih Client —</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
-        </form>
-      </div>
-    </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Status Awal</label>
+            <select
+              value={form.status}
+              onChange={(e) => onFormChange({ ...form, status: e.target.value })}
+              className="input"
+            >
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Start Date</label>
+            <input
+              type="date"
+              value={form.start_date}
+              onChange={(e) => onFormChange({ ...form, start_date: e.target.value })}
+              className="input"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Result / Output</label>
+            <input
+              type="text"
+              value={form.result}
+              onChange={(e) => onFormChange({ ...form, result: e.target.value })}
+              placeholder="Contoh: Monthly report selesai"
+              className="input"
+            />
+          </div>
+        </div>
+
+        {/* RIGHT column fields */}
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Prioritas</label>
+            <select
+              value={form.priority}
+              onChange={(e) => onFormChange({ ...form, priority: e.target.value })}
+              className="input"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Divisi</label>
+            <select
+              value={form.division}
+              onChange={(e) => onFormChange({ ...form, division: e.target.value })}
+              className="input"
+              // Lock division when on a sub-page (division prop is set)
+              disabled={!!activeDivision}
+            >
+              <option value="">— Pilih Divisi —</option>
+              <option value="Creative Director">Creative Director</option>
+              <option value="Content Creator">Content Creator</option>
+              <option value="Editor">Editor</option>
+              <option value="Production">Production</option>
+              <option value="Social Media Manager">Social Media Manager</option>
+              <option value="Project Manager">Project Manager</option>
+              <option value="Advertiser">Advertiser</option>
+              <option value="Account Executive">Account Executive</option>
+              <option value="Copywriter">Copywriter</option>
+              <option value="Developer">Developer</option>
+            </select>
+            {activeDivision && (
+              <p className="mt-1 text-xs text-muted">🔒 Division terkunci: <strong>{activeDivision}</strong></p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Deadline</label>
+            <input
+              type="date"
+              value={form.due_date}
+              onChange={(e) => onFormChange({ ...form, due_date: e.target.value })}
+              className="input"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Blocker / Kendala
+            </label>
+            <textarea
+              rows={2}
+              value={form.blocker}
+              onChange={(e) => onFormChange({ ...form, blocker: e.target.value })}
+              placeholder="Isi jika ada kendala..."
+              className="input resize-none"
+            />
+          </div>
+        </div>
+
+        {/* Full-width: Assignees */}
+        <div className="lg:col-span-2">
+          <AssigneePicker
+            selectedIds={assigneeIds}
+            onChange={onAssigneeChange}
+            label="Assignee"
+            divisionFilter={form.division || null}
+          />
+          {form.division && (
+            <p className="mt-1.5 flex items-start gap-1 text-xs text-muted">
+              <Lightbulb size={12} className="mt-0.5 shrink-0 text-warning" />
+              <span>Assignee difilter otomatis berdasarkan divisi <strong>{form.division}</strong></span>
+            </p>
+          )}
+        </div>
+      </form>
+    </Modal>
   );
 }
