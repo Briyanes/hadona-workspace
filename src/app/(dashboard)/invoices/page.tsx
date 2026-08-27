@@ -1,12 +1,12 @@
 "use client";
 
+import { Modal } from "@/components/ui/modal";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   FileText,
   Plus,
-  X,
   Pencil,
   Trash2,
   Search,
@@ -716,25 +716,36 @@ export default function InvoicesPage() {
       )}
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            {/* Sticky Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-6 py-4">
-              <h2 className="text-lg font-bold text-foreground">
-                {editingId ? "Edit Invoice" : "Invoice Baru"}
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="min-h-0 space-y-4 overflow-y-auto px-6 py-4">
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingId ? "Edit Invoice" : "Invoice Baru"}
+        size="lg"
+        scrollable
+        footer={
+          <>
+            <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
+                >
+                  Batal
+                </button>
+                <button type="submit" form="invoice-form" disabled={saving} className="btn-primary">
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
+                    </>
+                  ) : editingId ? (
+                    "Update Invoice"
+                  ) : (
+                    "Simpan Invoice"
+                  )}
+                </button>
+          </>
+        }
+      >
+        <form id="invoice-form" onSubmit={handleSave} className="space-y-4">
 
                 {/* Invoice Number + Client */}
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -1010,33 +1021,8 @@ export default function InvoicesPage() {
                   />
                 </div>
 
-              </div>
-
-              {/* Sticky Footer */}
-              <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-surface px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-foreground"
-                >
-                  Batal
-                </button>
-                <button type="submit" disabled={saving} className="btn-primary">
-                  {saving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Menyimpan...
-                    </>
-                  ) : editingId ? (
-                    "Update Invoice"
-                  ) : (
-                    "Simpan Invoice"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                      </form>
+      </Modal>
 
       {/* Print Area */}
       <PrintableInvoice invoice={printInvoice} />

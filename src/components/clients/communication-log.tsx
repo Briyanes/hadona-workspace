@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Modal } from "@/components/ui/modal";
 import {
   Plus,
   X,
@@ -307,24 +308,22 @@ export function CommunicationLog({ clientId }: CommunicationLogProps) {
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowModal(false)}>
-          <div
-            className="card max-h-[90vh] w-full max-w-lg overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <h3 className="text-base font-bold">
-                {editingId ? "Edit Interaksi" : "Log Interaksi Baru"}
-              </h3>
-              <button onClick={() => setShowModal(false)} className="text-muted hover:text-foreground">
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="space-y-4 p-5">
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingId ? "Edit Interaksi" : "Log Interaksi Baru"}
+        footer={
+          <>
+            <button onClick={() => setShowModal(false)} className="btn-secondary text-sm">
+              Cancel
+            </button>
+            <button onClick={handleSave} disabled={saving} className="btn-primary text-sm">
+              {saving ? <Loader2 size={16} className="animate-spin" /> : editingId ? "Update" : "Simpan"}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
               {/* Type selector */}
               <div>
                 <label className="mb-2 block text-sm font-medium">Tipe Interaksi</label>
@@ -414,24 +413,7 @@ export function CommunicationLog({ clientId }: CommunicationLogProps) {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
-              <button onClick={() => setShowModal(false)} className="btn-secondary text-sm">
-                Cancel
-              </button>
-              <button onClick={handleSave} disabled={saving} className="btn-primary text-sm">
-                {saving ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : editingId ? (
-                  "Update"
-                ) : (
-                  "Simpan"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

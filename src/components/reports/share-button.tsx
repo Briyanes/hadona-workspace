@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Share2, Copy, Check, ExternalLink, X } from "lucide-react";
+import { Share2, Copy, Check, ExternalLink } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -61,28 +62,14 @@ export function ShareButton({ report }: { report: Report }) {
       </button>
 
       {/* Share Link Modal */}
-      {shareUrl && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setShareUrl(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-lg border border-border bg-surface p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-foreground">🔗 Share Link Aktif</h3>
-              <button onClick={() => setShareUrl(null)} className="text-muted hover:text-foreground">
-                <X size={18} />
-              </button>
-            </div>
+      <Modal open={!!shareUrl} onClose={() => setShareUrl(null)} title="🔗 Share Link Aktif">
             <p className="mb-3 text-xs text-muted">
               Kirim link ini ke client untuk lihat report tanpa login. Link akan aktif selamanya kecuali di-revoke.
             </p>
             <div className="flex gap-2">
               <input
                 type="text"
-                value={shareUrl}
+                value={shareUrl ?? ""}
                 readOnly
                 className="input flex-1 text-xs"
                 onClick={(e) => (e.target as HTMLInputElement).select()}
@@ -95,7 +82,7 @@ export function ShareButton({ report }: { report: Report }) {
                 {copied ? "Copied!" : "Copy"}
               </button>
               <a
-                href={shareUrl}
+                href={shareUrl ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 rounded-md bg-primary px-3 py-2 text-xs text-white hover:opacity-90"
@@ -103,9 +90,7 @@ export function ShareButton({ report }: { report: Report }) {
                 <ExternalLink size={14} /> Open
               </a>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Shield, Key, Monitor, Smartphone, Globe, CheckCircle2, AlertCircle, Lock, Copy } from "lucide-react";
 import Image from "next/image";
+import { Modal } from "@/components/ui/modal";
 
 export default function SecuritySettingsPage() {
   const supabase = createClient();
@@ -315,12 +316,8 @@ export default function SecuritySettingsPage() {
       </div>
 
       {/* 2FA Setup Modal */}
-      {showSetupModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowSetupModal(false)}>
-          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-bold text-foreground">Setup 2FA</h3>
-
-            {!showBackupCodes ? (
+      <Modal open={showSetupModal} onClose={() => setShowSetupModal(false)} title="Setup 2FA">
+        {!showBackupCodes ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted">Scan QR code dengan authenticator app Anda:</p>
                 <div className="flex justify-center">
@@ -394,9 +391,7 @@ export default function SecuritySettingsPage() {
                 </button>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }
