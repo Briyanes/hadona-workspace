@@ -62,7 +62,7 @@ async function login(page) {
  * Return { issues: string[], minW: number }
  */
 async function auditForm(page, label) {
-  const audit = await page.evaluate((minW) => {
+  const audit = await page.evaluate((minAllowed) => {
     const modal = document.querySelector('[role="dialog"]') || document.body;
     const fields = modal.querySelectorAll("input, select, textarea");
     const issues = [];
@@ -72,9 +72,9 @@ async function auditForm(page, label) {
       const r = el.getBoundingClientRect();
       if (r.width === 0) return;
       minW = Math.min(minW, r.width);
-      if (r.width < minW) {
+      if (r.width < minAllowed) {
         issues.push(
-          `${el.tagName.toLowerCase()}[${el.type || el.name || ""}] width=${Math.round(r.width)}px (min ${minW})`
+          `${el.tagName.toLowerCase()}[${el.type || el.name || ""}] width=${Math.round(r.width)}px (min ${minAllowed})`
         );
       }
       if (r.right > window.innerWidth + 1) {
