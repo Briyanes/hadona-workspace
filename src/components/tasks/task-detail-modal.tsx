@@ -670,7 +670,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 <textarea rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="input resize-none" />
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
                   <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="input">
@@ -699,7 +699,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Start Date</label>
                   <input type="date" value={editForm.start_date} onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })} className="input" />
