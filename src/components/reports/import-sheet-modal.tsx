@@ -37,6 +37,7 @@ import {
   Download,
 } from "lucide-react";
 import { cn, formatDate, formatIDR, formatCompact } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 // ============================================================================
 // TYPES (sync dengan API route)
@@ -327,11 +328,52 @@ export function ImportSheetModal({
 
   // ─── Render ───
 
+  // Footer kondisional per step — dirender sebagai sticky footer oleh shared <Modal>
+  const footerNode =
+    step === "preview" ? (
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-xs text-muted">
+          <strong className="text-foreground">{selectedRowIndexes.size}</strong> baris dipilih
+          {previewStats && (
+            <> • Match rate: {Math.round((previewStats.matched / Math.max(previewStats.total, 1)) * 100)}%</>
+          )}
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button onClick={() => setStep("url")} className="btn-secondary">
+            Kembali
+          </button>
+          <button
+            onClick={() => handleImport()}
+            disabled={importing || selectedRowIndexes.size === 0}
+            className="btn-primary"
+          >
+            {importing ? (
+              <>
+                <Loader2 className="animate-spin" size={14} /> Importing...
+              </>
+            ) : (
+              <>
+                <Download size={14} /> Import {selectedRowIndexes.size} Report
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    ) : step === "result" ? (
+      <button onClick={handleClose} className="btn-primary">
+        Selesai
+      </button>
+    ) : null;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-        {/* ─── Header ─── */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
+    <Modal
+      open
+      onClose={handleClose}
+      size="xl"
+      scrollable
+      footer={footerNode}
+      header={
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-surface px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-primary/10 p-2">
               <FileSpreadsheet className="text-primary" size={20} />
@@ -348,23 +390,24 @@ export function ImportSheetModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground"
+            aria-label="Tutup"
           >
             <X size={18} />
           </button>
         </div>
-
-        {/* ─── Stepper ─── */}
-        <div className="flex shrink-0 items-center gap-2 border-b border-border bg-background/50 px-4 py-2 text-xs">
-          <StepBadge label="1. URL Sheet" active={step === "url"} done={step !== "url"} />
-          <div className="h-px w-6 bg-border" />
-          <StepBadge label="2. Preview" active={step === "preview"} done={step === "result"} />
-          <div className="h-px w-6 bg-border" />
-          <StepBadge label="3. Result" active={step === "result"} done={false} />
-        </div>
-
-        {/* ─── Body ─── */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      }
+    >
+      <div className="space-y-4">
+      {/* ─── Stepper ─── */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/50 px-4 py-2 text-xs">
+        <StepBadge label="1. URL Sheet" active={step === "url"} done={step !== "url"} />
+        <div className="h-px w-6 bg-border" />
+        <StepBadge label="2. Preview" active={step === "preview"} done={step === "result"} />
+        <div className="h-px w-6 bg-border" />
+        <StepBadge label="3. Result" active={step === "result"} done={false} />
+      </div>
+      <div>
           {step === "url" && (
             <form onSubmit={handlePreview} className="space-y-4">
               <div>
@@ -481,49 +524,9 @@ export function ImportSheetModal({
               onReimport={(rowIndexes) => handleImport(rowIndexes)}
             />
           )}
-        </div>
-
-        {/* ─── Footer ─── */}
-        {step === "preview" && (
-          <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-background/50 p-3">
-            <div className="text-xs text-muted">
-              <strong className="text-foreground">{selectedRowIndexes.size}</strong> baris dipilih
-              {previewStats && (
-                <> • Match rate: {Math.round((previewStats.matched / Math.max(previewStats.total, 1)) * 100)}%</>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setStep("url")} className="btn-secondary">
-                Kembali
-              </button>
-              <button
-                onClick={() => handleImport()}
-                disabled={importing || selectedRowIndexes.size === 0}
-                className="btn-primary"
-              >
-                {importing ? (
-                  <>
-                    <Loader2 className="animate-spin" size={14} /> Importing...
-                  </>
-                ) : (
-                  <>
-                    <Download size={14} /> Import {selectedRowIndexes.size} Report
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === "result" && (
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-background/50 p-3">
-            <button onClick={handleClose} className="btn-primary">
-              Selesai
-            </button>
-          </div>
-        )}
       </div>
-    </div>
+      </div>
+    </Modal>
   );
 }
 
