@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { X, FileText, Calendar, Edit3, Trash2, CheckCircle, AlertCircle, ExternalLink, Database, Clock, AlertTriangle } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 interface ReportDetail {
   id: string;
@@ -123,13 +124,11 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-0 sm:p-4">
-        <div className="w-full max-w-lg rounded-none border-border bg-surface p-4 sm:rounded-lg sm:p-6">
-          <div className="skeleton h-8 w-3/4 mb-4" />
-          <div className="skeleton h-4 w-full mb-2" />
-          <div className="skeleton h-32 w-full" />
-        </div>
-      </div>
+      <Modal open onClose={onClose} size="md">
+        <div className="skeleton h-8 w-3/4 mb-4" />
+        <div className="skeleton h-4 w-full mb-2" />
+        <div className="skeleton h-32 w-full" />
+      </Modal>
     );
   }
 
@@ -138,9 +137,12 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
   const status = statusConfig[report.status] || statusConfig.draft;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-0 sm:p-4">
-      <div className="relative my-0 flex min-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-none border-border bg-surface shadow-xl sm:my-4 sm:min-h-0 sm:max-h-[calc(100dvh-2rem)] sm:rounded-lg sm:border">
-        {/* Header */}
+    <Modal
+      open
+      onClose={onClose}
+      size="md"
+      scrollable
+      header={
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-foreground">{isEditing ? "Edit Report" : "Report Detail"}</h2>
@@ -153,10 +155,10 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
           <div className="flex items-center gap-1">
             {!isEditing && (
               <>
-                <button onClick={() => setIsEditing(true)} className="rounded p-2 text-muted hover:bg-background hover:text-primary" title="Edit Report">
+                <button onClick={() => setIsEditing(true)} className="rounded p-2 text-muted hover:bg-background hover:text-primary" title="Edit Report" aria-label="Edit Report">
                   <Edit3 size={16} />
                 </button>
-                <button onClick={handleDelete} className={cn("rounded p-2 hover:bg-background", confirmDelete ? "text-danger" : "text-muted hover:text-danger")} title="Delete Report">
+                <button onClick={handleDelete} className={cn("rounded p-2 hover:bg-background", confirmDelete ? "text-danger" : "text-muted hover:text-danger")} title="Delete Report" aria-label="Delete Report">
                   <Trash2 size={16} />
                 </button>
                 {confirmDelete && (
@@ -166,155 +168,152 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
                 )}
               </>
             )}
-            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
+            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground" aria-label="Tutup modal">
               <X size={18} />
             </button>
           </div>
         </div>
+      }
+    >
+      {isEditing ? (
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Periode Mulai</label>
+              <input type="date" value={editForm.period_start} onChange={(e) => setEditForm({ ...editForm, period_start: e.target.value })} className="input" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Periode Akhir</label>
+              <input type="date" value={editForm.period_end} onChange={(e) => setEditForm({ ...editForm, period_end: e.target.value })} className="input" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
+            <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="input">
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Summary</label>
+            <textarea rows={5} value={editForm.summary} onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })} className="input resize-none" />
+          </div>
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={() => setIsEditing(false)} className="btn-secondary">Batal</button>
+            <button type="submit" disabled={saving} className="btn-primary">{saving ? "Menyimpan..." : "Simpan Perubahan"}</button>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-4">
+          {/* Period */}
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar size={14} className="text-muted" />
+            <span className="font-medium text-foreground">
+              {formatDate(report.period_start, { day: "numeric", month: "long", year: "numeric" })} — {" "}
+              {formatDate(report.period_end, { day: "numeric", month: "long", year: "numeric" })}
+            </span>
+          </div>
 
-        {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
-          {isEditing ? (
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Periode Mulai</label>
-                  <input type="date" value={editForm.period_start} onChange={(e) => setEditForm({ ...editForm, period_start: e.target.value })} className="input" />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">Periode Akhir</label>
-                  <input type="date" value={editForm.period_end} onChange={(e) => setEditForm({ ...editForm, period_end: e.target.value })} className="input" />
-                </div>
+          {/* Status badge */}
+          <div className="flex items-center gap-2">
+            {report.status === "approved" ? (
+              <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/5 p-3 w-full">
+                <CheckCircle size={16} className="text-success" />
+                <p className="text-sm font-medium text-success">Report ini sudah di-approve</p>
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
-                <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="input">
-                  <option value="draft">Draft</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+            ) : report.status === "rejected" ? (
+              <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/5 p-3 w-full">
+                <AlertCircle size={16} className="text-danger" />
+                <p className="text-sm font-medium text-danger">Report ditolak, perlu revisi</p>
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Summary</label>
-                <textarea rows={5} value={editForm.summary} onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })} className="input resize-none" />
+            ) : null}
+          </div>
+
+          {/* Summary */}
+          {report.summary ? (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Summary</p>
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="text-sm text-muted whitespace-pre-wrap">{report.summary}</p>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
-                <button type="submit" disabled={saving} className="btn-primary">{saving ? "Menyimpan..." : "Simpan Perubahan"}</button>
-              </div>
-            </form>
+            </div>
           ) : (
-            <div className="space-y-4">
-              {/* Period */}
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar size={14} className="text-muted" />
-                <span className="font-medium text-foreground">
-                  {formatDate(report.period_start, { day: "numeric", month: "long", year: "numeric" })} — {" "}
-                  {formatDate(report.period_end, { day: "numeric", month: "long", year: "numeric" })}
-                </span>
-              </div>
+            <div className="rounded-lg border border-dashed border-border p-6 text-center">
+              <FileText size={24} className="mx-auto mb-2 text-muted" />
+              <p className="text-sm text-muted">Belum ada summary</p>
+            </div>
+          )}
 
-              {/* Status badge */}
-              <div className="flex items-center gap-2">
-                {report.status === "approved" ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/5 p-3 w-full">
-                    <CheckCircle size={16} className="text-success" />
-                    <p className="text-sm font-medium text-success">Report ini sudah di-approve</p>
-                  </div>
-                ) : report.status === "rejected" ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/5 p-3 w-full">
-                    <AlertCircle size={16} className="text-danger" />
-                    <p className="text-sm font-medium text-danger">Report ditolak, perlu revisi</p>
-                  </div>
-                ) : null}
-              </div>
+          {/* Created date */}
+          <div className="pt-2 text-xs text-muted">
+            Dibuat: {formatDate(report.created_at, { day: "numeric", month: "short", year: "numeric" })}
+          </div>
 
-              {/* Summary */}
-              {report.summary ? (
-                <div>
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">Summary</p>
-                  <div className="rounded-lg border border-border bg-background p-4">
-                    <p className="text-sm text-muted whitespace-pre-wrap">{report.summary}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                  <FileText size={24} className="mx-auto mb-2 text-muted" />
-                  <p className="text-sm text-muted">Belum ada summary</p>
-                </div>
-              )}
+          {/* 🆕 P4: Sheet Source & Data Status Section */}
+          {(report.sheet_source || report.data_status || report.last_synced_at) && (
+            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+                <Database size={12} /> Sumber Data
+              </p>
 
-              {/* Created date */}
-              <div className="pt-2 text-xs text-muted">
-                Dibuat: {formatDate(report.created_at, { day: "numeric", month: "short", year: "numeric" })}
-              </div>
-
-              {/* 🆕 P4: Sheet Source & Data Status Section */}
-              {(report.sheet_source || report.data_status || report.last_synced_at) && (
-                <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-                  <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
-                    <Database size={12} /> Sumber Data
-                  </p>
-
-                  {/* Data status badge */}
-                  {report.data_status && report.data_status !== "ok" && (
-                    <div
-                      className={cn(
-                        "flex items-center gap-2 rounded-md p-2 text-xs font-medium",
-                        report.data_status === "no_metrics" && "bg-warning/10 text-warning",
-                        report.data_status === "partial" && "bg-warning/10 text-warning",
-                        report.data_status === "synced_error" && "bg-danger/10 text-danger"
-                      )}
-                    >
-                      <AlertTriangle size={12} />
-                      <span>
-                        {report.data_status === "no_metrics" && "Tidak ada angka metric — narrative only"}
-                        {report.data_status === "partial" && "Data tidak lengkap — metric kurang dari 3"}
-                        {report.data_status === "synced_error" && "Error saat sync — data mungkin unreliable"}
-                      </span>
-                    </div>
+              {/* Data status badge */}
+              {report.data_status && report.data_status !== "ok" && (
+                <div
+                  className={cn(
+                    "flex items-center gap-2 rounded-md p-2 text-xs font-medium",
+                    report.data_status === "no_metrics" && "bg-warning/10 text-warning",
+                    report.data_status === "partial" && "bg-warning/10 text-warning",
+                    report.data_status === "synced_error" && "bg-danger/10 text-danger"
                   )}
-
-                  <div className="space-y-1 text-xs text-muted">
-                    {report.sheet_source && (
-                      <p>
-                        <span className="font-medium text-muted">Sheet Tab:</span> {report.sheet_source}
-                        {report.sheet_gid && <span className="ml-1 font-mono text-muted/70">(gid: {report.sheet_gid})</span>}
-                      </p>
-                    )}
-                    {report.data_source_kind && (
-                      <p>
-                        <span className="font-medium text-muted">Metode Import:</span>{" "}
-                        {report.data_source_kind === "sheet_auto" && "Auto-sync dari Google Sheet"}
-                        {report.data_source_kind === "sheet_manual" && "Manual import via tombol Import Sheet"}
-                        {report.data_source_kind === "manual_entry" && "Input manual user"}
-                      </p>
-                    )}
-                    {report.last_synced_at && (
-                      <p className="flex items-center gap-1">
-                        <Clock size={11} />
-                        <span>Last sync: {formatDate(report.last_synced_at, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                      </p>
-                    )}
-                    {report.source_sheet_url && (
-                      <a
-                        href={report.source_sheet_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <ExternalLink size={11} />
-                        <span>Lihat Google Sheet asal</span>
-                      </a>
-                    )}
-                  </div>
+                >
+                  <AlertTriangle size={12} />
+                  <span>
+                    {report.data_status === "no_metrics" && "Tidak ada angka metric — narrative only"}
+                    {report.data_status === "partial" && "Data tidak lengkap — metric kurang dari 3"}
+                    {report.data_status === "synced_error" && "Error saat sync — data mungkin unreliable"}
+                  </span>
                 </div>
               )}
+
+              <div className="space-y-1 text-xs text-muted">
+                {report.sheet_source && (
+                  <p>
+                    <span className="font-medium text-muted">Sheet Tab:</span> {report.sheet_source}
+                    {report.sheet_gid && <span className="ml-1 font-mono text-muted/70">(gid: {report.sheet_gid})</span>}
+                  </p>
+                )}
+                {report.data_source_kind && (
+                  <p>
+                    <span className="font-medium text-muted">Metode Import:</span>{" "}
+                    {report.data_source_kind === "sheet_auto" && "Auto-sync dari Google Sheet"}
+                    {report.data_source_kind === "sheet_manual" && "Manual import via tombol Import Sheet"}
+                    {report.data_source_kind === "manual_entry" && "Input manual user"}
+                  </p>
+                )}
+                {report.last_synced_at && (
+                  <p className="flex items-center gap-1">
+                    <Clock size={11} />
+                    <span>Last sync: {formatDate(report.last_synced_at, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                  </p>
+                )}
+                {report.source_sheet_url && (
+                  <a
+                    href={report.source_sheet_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    <ExternalLink size={11} />
+                    <span>Lihat Google Sheet asal</span>
+                  </a>
+                )}
+              </div>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }

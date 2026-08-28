@@ -30,6 +30,7 @@ import {
   Clock,
 } from "lucide-react";
 import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ContractManager } from "@/components/contracts/contract-manager";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { ReportDetailModal } from "@/components/reports/report-detail-modal";
@@ -688,48 +689,17 @@ export default function ClientDetailPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => !deleting && setShowDeleteConfirm(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-xl bg-surface p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger/10">
-                <Trash size={18} className="text-danger" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-foreground">Hapus Client?</h3>
-                <p className="text-xs text-muted">Tindakan ini tidak dapat dibatalkan</p>
-              </div>
-            </div>
-            <p className="mb-4 text-sm text-muted">
-              Yakin ingin menghapus <strong className="text-foreground">{client.name}</strong>? Semua data terkait
-              (tasks, reports, strategies) mungkin terpengaruh.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-                className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface disabled:opacity-50"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-danger/90 disabled:opacity-50"
-              >
-                {deleting ? "Menghapus..." : "Hapus"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Hapus Client?"
+        message={`Yakin ingin menghapus "${client.name}"? Semua data terkait (tasks, reports, strategies) mungkin terpengaruh. Tindakan ini tidak dapat dibatalkan.`}
+        confirmText="Hapus"
+        variant="danger"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onClose={() => setShowDeleteConfirm(false)}
+      />
 
       {/* Task Detail Modal */}
       {selectedTaskId && (

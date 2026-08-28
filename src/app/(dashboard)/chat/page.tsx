@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useChatRealtime, type ChatMessage } from "@/hooks/use-chat-realtime";
 import { PageHeader } from "@/components/ui/page-header";
+import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
@@ -1488,16 +1489,29 @@ function CreateGroupModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <div>
-            <h3 className="font-semibold">Buat Grup Baru</h3>
-            <p className="text-xs text-muted">Chat & group call ala Discord/WhatsApp</p>
-          </div>
-          <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
-        </div>
-        <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+    <Modal
+      open={true}
+      onClose={onClose}
+      title="Buat Grup Baru"
+      subtitle="Chat & group call ala Discord/WhatsApp"
+      size="sm"
+      scrollable
+      footer={
+        <>
+          <button onClick={onClose} className="px-4 py-2 text-sm border rounded-lg hover:bg-surface-hover">
+            Batal
+          </button>
+          <button
+            onClick={submit}
+            disabled={!name.trim() || creating}
+            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-40"
+          >
+            {creating ? "Membuat..." : selected.size > 0 ? `Buat Grup + ${selected.size} anggota` : "Buat Grup"}
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted">Nama grup</label>
             <input
@@ -1559,21 +1573,8 @@ function CreateGroupModal({
               </div>
             )}
           </div>
-        </div>
-        <div className="p-4 border-t flex gap-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-surface-hover">
-            Batal
-          </button>
-          <button
-            onClick={submit}
-            disabled={!name.trim() || creating}
-            className="flex-[2] px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-40"
-          >
-            {creating ? "Membuat..." : selected.size > 0 ? `Buat Grup + ${selected.size} anggota` : "Buat Grup"}
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1644,21 +1645,32 @@ function InviteMemberModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-xl shadow-xl w-full max-w-md max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold">Invite Anggota ke Grup</h3>
-          <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
-        </div>
-        <div className="p-4 flex-1 overflow-y-auto">
-          <input
-            type="text"
-            placeholder="Cari nama..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm mb-3"
-            autoFocus
-          />
+    <Modal
+      open={true}
+      onClose={onClose}
+      title="Invite Anggota ke Grup"
+      size="sm"
+      scrollable
+      footer={
+        <>
+          <button onClick={onClose} className="px-4 py-2 text-sm border rounded-lg hover:bg-surface-hover">Batal</button>
+          <button
+            onClick={submit}
+            disabled={selected.size === 0 || inviting}
+            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-40"
+          >
+            {inviting ? "Menginvite..." : `Invite (${selected.size})`}
+          </button>
+        </>
+      }
+    >
+      <input
+        type="text"
+        placeholder="Cari nama..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full rounded-lg border px-3 py-2 text-sm mb-3"
+      />
           {loading ? (
             <p className="text-sm text-muted text-center py-4">Memuat...</p>
           ) : filtered.length === 0 ? (
@@ -1683,19 +1695,7 @@ function InviteMemberModal({
               ))}
             </div>
           )}
-        </div>
-        <div className="p-4 border-t flex gap-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-surface-hover">Batal</button>
-          <button
-            onClick={submit}
-            disabled={selected.size === 0 || inviting}
-            className="flex-1 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-40"
-          >
-            {inviting ? "Menginvite..." : `Invite (${selected.size})`}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1726,21 +1726,14 @@ function NewDMModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-semibold">Pilih anggota untuk DM</h3>
-          <button onClick={onClose} className="text-muted hover:text-gray-900 flex items-center"><X size={16} /></button>
-        </div>
-        <div className="p-4">
-          <input
-            type="text"
-            placeholder="Cari nama..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm mb-3"
-            autoFocus
-          />
+    <Modal open={true} onClose={onClose} title="Pilih anggota untuk DM" size="sm">
+      <input
+        type="text"
+        placeholder="Cari nama..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full rounded-lg border px-3 py-2 text-sm mb-3"
+      />
           {loading ? (
             <p className="text-sm text-muted text-center py-4">Memuat...</p>
           ) : filtered.length === 0 ? (
@@ -1762,9 +1755,7 @@ function NewDMModal({
               ))}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

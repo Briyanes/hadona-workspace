@@ -571,12 +571,30 @@ export default function ApprovalsPage() {
         </Modal>
 
       {/* Review Dialog */}
-      {reviewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-xl">
-            <h3 className="mb-2 text-lg font-bold text-foreground">
-              {reviewTarget.action === "approved" ? "✅ Approve" : reviewTarget.action === "rejected" ? "❌ Reject" : "📝 Request Changes"}
-            </h3>
+      <Modal
+        open={!!reviewTarget}
+        onClose={() => { setReviewTarget(null); setReviewNotes(""); }}
+        title={reviewTarget?.action === "approved" ? "✅ Approve" : reviewTarget?.action === "rejected" ? "❌ Reject" : "📝 Request Changes"}
+        size="sm"
+        footer={
+          <>
+            <button onClick={() => { setReviewTarget(null); setReviewNotes(""); }} className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:bg-background">
+              Cancel
+            </button>
+            <button
+              onClick={handleReview}
+              className={cn(
+                "rounded-md px-4 py-2 text-sm font-medium text-white",
+                reviewTarget?.action === "approved" ? "bg-success hover:bg-success/90" : "bg-danger hover:bg-danger/90"
+              )}
+            >
+              Confirm
+            </button>
+          </>
+        }
+      >
+        {reviewTarget && (
+          <>
             <p className="mb-3 text-sm text-muted">
               {reviewTarget.action === "approved"
                 ? "Setujui request ini. Client akan diberi tahu."
@@ -591,23 +609,9 @@ export default function ApprovalsPage() {
               className="input py-2 text-sm"
               placeholder="Review notes (opsional untuk approve, wajib untuk reject/changes)..."
             />
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => { setReviewTarget(null); setReviewNotes(""); }} className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:bg-background">
-                Cancel
-              </button>
-              <button
-                onClick={handleReview}
-                className={cn(
-                  "rounded-md px-4 py-2 text-sm font-medium text-white",
-                  reviewTarget.action === "approved" ? "bg-success hover:bg-success/90" : "bg-danger hover:bg-danger/90"
-                )}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Delete Confirm */}
       <ConfirmDialog

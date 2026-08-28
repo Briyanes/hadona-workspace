@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
 import { toast } from "sonner";
+import { Modal } from "@/components/ui/modal";
 
 // ────────────────────────────────────────────────────────────────────────────
 // TYPES (mirror dari API response)
@@ -173,36 +174,17 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
     }
   }, [open, data, loading, fetchData]);
 
-  // Escape key + scroll lock
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, onClose]);
-
+  // Escape key, focus trap, scroll lock ditangani shared <Modal>
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
-        {/* ─── Header ─── */}
-        <div className="flex items-start justify-between gap-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 p-5">
+    <Modal
+      open
+      onClose={onClose}
+      size="xl"
+      scrollable
+      header={
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-4 py-4 sm:px-6">
           <div className="flex items-start gap-3">
             <div className="rounded-xl bg-primary/10 p-2.5">
               <FileSpreadsheet className="h-6 w-6 text-primary" />
@@ -246,191 +228,190 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
             </button>
           </div>
         </div>
+      }
+    >
+      <div className="space-y-4">
+        {/* Loading state */}
+        {loading && !data && (
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm">Mengambil semua sheet tabs…</p>
+            <p className="text-xs text-muted/70">
+              Fetch & parse multi-sheet (bisa 10-30 detik untuk 7 tabs)
+            </p>
+          </div>
+        )}
 
-        {/* ─── Body ─── */}
-        <div className="flex-1 overflow-y-auto p-5">
-          {/* Loading state */}
-          {loading && !data && (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm">Mengambil semua sheet tabs…</p>
-              <p className="text-xs text-muted/70">
-                Fetch & parse multi-sheet (bisa 10-30 detik untuk 7 tabs)
-              </p>
+        {/* Error state */}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 py-12 text-center">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+            <p className="text-sm font-medium text-destructive">Gagal load sheet</p>
+            <p className="max-w-md text-xs text-muted">{error}</p>
+            <button
+              type="button"
+              onClick={fetchData}
+              className="mt-2 rounded-lg bg-destructive px-4 py-2 text-xs font-medium text-white hover:bg-destructive/90"
+            >
+              Coba lagi
+            </button>
+          </div>
+        )}
+
+        {/* Data state */}
+        {data && !loading && (
+          <div className="space-y-4">
+            {/* Summary stats */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard label="Total Sheet" value={String(data.totalSheets)} />
+              <StatCard label="Total Rows" value={String(data.totalRows)} />
+              <StatCard label="Berhasil Parse" value={String(data.totalParsed)} />
+              <StatCard label="Durasi" value={`${data.durationSec}s`} />
             </div>
-          )}
 
-          {/* Error state */}
-          {error && !loading && (
-            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 py-12 text-center">
-              <AlertCircle className="h-8 w-8 text-destructive" />
-              <p className="text-sm font-medium text-destructive">Gagal load sheet</p>
-              <p className="max-w-md text-xs text-muted">{error}</p>
-              <button
-                type="button"
-                onClick={fetchData}
-                className="mt-2 rounded-lg bg-destructive px-4 py-2 text-xs font-medium text-white hover:bg-destructive/90"
-              >
-                Coba lagi
-              </button>
-            </div>
-          )}
-
-          {/* Data state */}
-          {data && !loading && (
-            <div className="space-y-4">
-              {/* Summary stats */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatCard label="Total Sheet" value={String(data.totalSheets)} />
-                <StatCard label="Total Rows" value={String(data.totalRows)} />
-                <StatCard label="Berhasil Parse" value={String(data.totalParsed)} />
-                <StatCard label="Durasi" value={`${data.durationSec}s`} />
-              </div>
-
-              {/* Errors global */}
-              {data.errors.length > 0 && (
-                <div className="rounded-xl border border-warning/30 bg-warning/5 p-3">
-                  <div className="flex items-center gap-2 text-xs font-medium text-warning">
-                    <AlertCircle className="h-4 w-4" />
-                    {data.errors.length} error saat fetch (kemungkinan sheet private)
-                  </div>
-                  <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-[11px] text-muted">
-                    {data.errors.slice(0, 5).map((e, i) => (
-                      <li key={i}>• {e}</li>
-                    ))}
-                  </ul>
+            {/* Errors global */}
+            {data.errors.length > 0 && (
+              <div className="rounded-xl border border-warning/30 bg-warning/5 p-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-warning">
+                  <AlertCircle className="h-4 w-4" />
+                  {data.errors.length} error saat fetch (kemungkinan sheet private)
                 </div>
-              )}
+                <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-[11px] text-muted">
+                  {data.errors.slice(0, 5).map((e, i) => (
+                    <li key={i}>• {e}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-              {/* Sheet list */}
-              <div className="space-y-2">
-                {data.sheets.map((sheet, idx) => {
-                  const expanded = expandedSheet === idx;
-                  const parseRate =
-                    sheet.rowCount > 0
-                      ? Math.round((sheet.parsedCount / sheet.rowCount) * 100)
-                      : 0;
-                  return (
-                    <div
-                      key={sheet.gid}
-                      className="overflow-hidden rounded-xl border border-border bg-surface"
+            {/* Sheet list */}
+            <div className="space-y-2">
+              {data.sheets.map((sheet, idx) => {
+                const expanded = expandedSheet === idx;
+                const parseRate =
+                  sheet.rowCount > 0
+                    ? Math.round((sheet.parsedCount / sheet.rowCount) * 100)
+                    : 0;
+                return (
+                  <div
+                    key={sheet.gid}
+                    className="overflow-hidden rounded-xl border border-border bg-surface"
+                  >
+                    {/* Sheet header (clickable) */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedSheet(expanded ? null : idx)}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/50"
                     >
-                      {/* Sheet header (clickable) */}
-                      <button
-                        type="button"
-                        onClick={() => setExpandedSheet(expanded ? null : idx)}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-muted/50"
-                      >
-                        <div className="flex items-center gap-3">
-                          {expanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted" />
-                          )}
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                            {idx + 1}
+                      <div className="flex items-center gap-3">
+                        {expanded ? (
+                          <ChevronDown className="h-4 w-4 text-muted" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted" />
+                        )}
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{sheet.name}</span>
+                            <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted">
+                              gid={sheet.gid}
+                            </span>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-foreground">{sheet.name}</span>
-                              <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted">
-                                gid={sheet.gid}
-                              </span>
-                            </div>
-                            <div className="mt-0.5 text-[11px] text-muted">
-                              {sheet.rowCount} rows • {sheet.parsedCount} ter-parse ({parseRate}%)
-                              {sheet.errors.length > 0 && (
-                                <span className="ml-2 text-warning">• {sheet.errors.length} parse error</span>
-                              )}
-                            </div>
+                          <div className="mt-0.5 text-[11px] text-muted">
+                            {sheet.rowCount} rows • {sheet.parsedCount} ter-parse ({parseRate}%)
+                            {sheet.errors.length > 0 && (
+                              <span className="ml-2 text-warning">• {sheet.errors.length} parse error</span>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          {parseRate >= 80 ? (
-                            <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                              ✓ Good
-                            </span>
-                          ) : parseRate >= 40 ? (
-                            <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                              ⚠ Partial
-                            </span>
-                          ) : (
-                            <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-                              ✗ Low
-                            </span>
-                          )}
-                        </div>
-                      </button>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {parseRate >= 80 ? (
+                          <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            ✓ Good
+                          </span>
+                        ) : parseRate >= 40 ? (
+                          <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                            ⚠ Partial
+                          </span>
+                        ) : (
+                          <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                            ✗ Low
+                          </span>
+                        )}
+                      </div>
+                    </button>
 
-                      {/* Sheet preview content */}
-                      {expanded && (
-                        <div className="border-t border-border bg-background/50 p-4">
-                          {/* Header row */}
-                          {sheet.headerRow.length > 0 && (
-                            <div className="mb-3">
-                              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                                Header Kolom
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {sheet.headerRow.map((h, i) => (
-                                  <span
-                                    key={i}
-                                    className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground"
-                                  >
-                                    {h || "(kosong)"}
-                                  </span>
-                                ))}
-                              </div>
+                    {/* Sheet preview content */}
+                    {expanded && (
+                      <div className="border-t border-border bg-background/50 p-4">
+                        {/* Header row */}
+                        {sheet.headerRow.length > 0 && (
+                          <div className="mb-3">
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                              Header Kolom
                             </div>
-                          )}
-
-                          {/* Preview rows */}
-                          {sheet.previewRows.length === 0 ? (
-                            <p className="py-4 text-center text-xs text-muted">
-                              Tidak ada row ter-parse di sheet ini (kemungkinan hanya header atau sheet kosong)
-                            </p>
-                          ) : (
-                            <div className="space-y-2">
-                              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-                                Preview {sheet.previewRows.length} row pertama
-                              </div>
-                              {sheet.previewRows.map((row) => (
-                                <RowPreviewCard key={row.rowIndex} row={row} />
+                            <div className="flex flex-wrap gap-1">
+                              {sheet.headerRow.map((h, i) => (
+                                <span
+                                  key={i}
+                                  className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground"
+                                >
+                                  {h || "(kosong)"}
+                                </span>
                               ))}
                             </div>
-                          )}
+                          </div>
+                        )}
 
-                          {/* Parse errors */}
-                          {sheet.errors.length > 0 && (
-                            <details className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-2 text-[11px]">
-                              <summary className="cursor-pointer font-medium text-warning">
-                                {sheet.errors.length} parse error di sheet ini
-                              </summary>
-                              <ul className="mt-2 max-h-40 space-y-0.5 overflow-y-auto text-muted">
-                                {sheet.errors.map((e, i) => (
-                                  <li key={i}>• {e}</li>
-                                ))}
-                              </ul>
-                            </details>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        {/* Preview rows */}
+                        {sheet.previewRows.length === 0 ? (
+                          <p className="py-4 text-center text-xs text-muted">
+                            Tidak ada row ter-parse di sheet ini (kemungkinan hanya header atau sheet kosong)
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                              Preview {sheet.previewRows.length} row pertama
+                            </div>
+                            {sheet.previewRows.map((row) => (
+                              <RowPreviewCard key={row.rowIndex} row={row} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Parse errors */}
+                        {sheet.errors.length > 0 && (
+                          <details className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-2 text-[11px]">
+                            <summary className="cursor-pointer font-medium text-warning">
+                              {sheet.errors.length} parse error di sheet ini
+                            </summary>
+                            <ul className="mt-2 max-h-40 space-y-0.5 overflow-y-auto text-muted">
+                              {sheet.errors.map((e, i) => (
+                                <li key={i}>• {e}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* ─── Footer ─── */}
-        <div className="border-t border-border bg-surface px-5 py-3 text-[11px] text-muted">
+        {/* Tip */}
+        <p className="border-t border-border pt-3 text-[11px] text-muted">
           💡 Tip: Setiap sheet tab (mis. &ldquo;Januari &lsquo;26&rdquo;) berisi weekly reports untuk bulan tersebut.
-          Klik tab untuk expand & lihat preview rows.
-          Untuk import semua, gunakan tombol <span className="font-semibold">Sync Now</span> di toolbar.
-        </div>
+          Klik tab untuk expand & lihat preview rows. Untuk import semua, gunakan tombol{" "}
+          <span className="font-semibold">Sync Now</span> di toolbar.
+        </p>
       </div>
-    </div>
+    </Modal>
   );
 }
 

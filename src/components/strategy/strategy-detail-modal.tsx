@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { X, Target, Edit3, Trash2, Calendar, FileText } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 interface StrategyDetail {
   id: string;
@@ -106,24 +107,13 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
     onClose();
   }
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-0 sm:p-4">
-        <div className="w-full max-w-lg rounded-none border-border bg-surface p-4 sm:rounded-lg sm:border sm:p-6">
-          <div className="skeleton h-8 w-3/4 mb-4" />
-          <div className="skeleton h-4 w-full mb-2" />
-          <div className="skeleton h-32 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!strategy) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-0 sm:p-4">
-      <div className="relative my-0 flex min-h-[100dvh] w-full max-w-lg flex-col overflow-hidden rounded-none border-border bg-surface shadow-xl sm:my-4 sm:min-h-0 sm:max-h-[calc(100dvh-2rem)] sm:rounded-lg sm:border">
-        {/* Header */}
+    <Modal
+      open={loading || !!strategy}
+      onClose={onClose}
+      size="md"
+      scrollable
+      header={
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-foreground">{isEditing ? "Edit Strategi" : "Strategi Detail"}</h2>
@@ -144,15 +134,20 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
                 )}
               </>
             )}
-            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground">
+            <button onClick={onClose} className="rounded p-2 text-muted hover:bg-background hover:text-foreground" aria-label="Tutup modal">
               <X size={18} />
             </button>
           </div>
         </div>
-
-        {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
-          {isEditing ? (
+      }
+    >
+      {loading ? (
+        <div className="py-2">
+          <div className="skeleton h-8 w-3/4 mb-4" />
+          <div className="skeleton h-4 w-full mb-2" />
+          <div className="skeleton h-32 w-full" />
+        </div>
+      ) : !strategy ? null : isEditing ? (
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Judul *</label>
@@ -171,7 +166,7 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
                 <button type="submit" disabled={saving} className="btn-primary">{saving ? "Menyimpan..." : "Simpan Perubahan"}</button>
               </div>
             </form>
-          ) : (
+      ) : (
             <div className="space-y-4">
               {/* Title */}
               <div className="flex items-start gap-3">
@@ -209,9 +204,7 @@ export function StrategyDetailModal({ strategyId, onClose, onUpdated, onDeleted 
                 Dibuat: {formatDate(strategy.created_at, { day: "numeric", month: "short", year: "numeric" })}
               </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }

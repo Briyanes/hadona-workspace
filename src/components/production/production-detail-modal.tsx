@@ -9,6 +9,7 @@ import {
   FileText, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface CrewMember { name: string; role: string; }
@@ -186,10 +187,13 @@ export function ProductionDetailModal({ production, onClose, onUpdated, onDelete
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-0 md:p-4">
-        <div className="my-0 flex min-h-full w-full max-w-2xl flex-col overflow-hidden bg-surface shadow-xl md:my-4 md:min-h-0 md:max-h-[calc(100dvh-2rem)] md:rounded-lg">
-          {/* Header */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-5 md:py-4">
+      <Modal
+        open
+        onClose={onClose}
+        size="lg"
+        scrollable
+        header={
+          <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-5 md:py-4">
             <div className="flex items-center gap-2">
               <StatusIcon className="text-primary" size={18} />
               <h2 className="text-base font-bold text-foreground md:text-lg">
@@ -207,15 +211,27 @@ export function ProductionDetailModal({ production, onClose, onUpdated, onDelete
                   </button>
                 </>
               )}
-              <button onClick={onClose} className="rounded p-1.5 text-muted hover:bg-background hover:text-foreground">
+              <button onClick={onClose} className="rounded p-1.5 text-muted hover:bg-background hover:text-foreground" aria-label="Tutup modal">
                 <X size={18} />
               </button>
             </div>
           </div>
-
-          {/* Content */}
-          {mode === "view" ? (
-            <div className="flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
+        }
+        footer={
+          mode === "edit" ? (
+            <>
+              <button onClick={() => setMode("view")} className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:bg-background hover:text-foreground">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center justify-center gap-1.5 disabled:opacity-50">
+                {saving && <Loader2 size={14} className="animate-spin" />}
+                Save Changes
+              </button>
+            </>
+          ) : undefined
+        }
+      >
+        {/* Content */}
+        {mode === "view" ? (
+          <div className="space-y-5">
               {/* Status Badge */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className={cn("px-2 py-1 text-xs font-medium", statusInfo?.color)}>
@@ -301,8 +317,7 @@ export function ProductionDetailModal({ production, onClose, onUpdated, onDelete
             </div>
           ) : (
             /* EDIT MODE */
-            <div className="flex-1 overflow-y-auto p-4 md:p-5">
-              <div className="space-y-4">
+            <div className="space-y-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted">Title <span className="text-danger">*</span></label>
                   <input
@@ -414,18 +429,8 @@ export function ProductionDetailModal({ production, onClose, onUpdated, onDelete
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
-                <button onClick={() => setMode("view")} className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:bg-background hover:text-foreground">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-1.5 disabled:opacity-50">
-                  {saving && <Loader2 size={14} className="animate-spin" />}
-                  Save Changes
-                </button>
-              </div>
-            </div>
           )}
-        </div>
-      </div>
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

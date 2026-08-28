@@ -743,65 +743,67 @@ export default function StrategyPage() {
       />
 
       {/* Modal Import dari Sheet */}
-      {showImport && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <form onSubmit={runImport} className="my-4 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="text-base font-bold text-foreground">Import Strategy dari Sheet</h2>
-              <button type="button" onClick={() => setShowImport(false)} className="rounded p-1 text-muted hover:bg-background hover:text-foreground"><X size={18} /></button>
-            </div>
-            <div className="space-y-4 px-5 py-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">URL Google Sheet (Published)</label>
-                <input type="url" required value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml" className="input" />
-                <p className="mt-1 text-xs text-muted">Sheet harus sudah di-publish (File → Share → Publish to web). Tab dikenali otomatis: Sosmed, Kompetitor, 4M/Principles, Initiatives/Strategy, OKR.</p>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-foreground">
-                <input type="checkbox" checked={importDryRun} onChange={(e) => setImportDryRun(e.target.checked)} className="h-4 w-4 rounded border-border" />
-                Dry run (validasi tanpa menulis data)
-              </label>
-              <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted">
-                Data lama per-client akan diganti dengan data sheet (replace). Pastikan tab pertama sheet berisi kolom <b>Client</b> untuk pemetaan.
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-              <button type="button" onClick={() => setShowImport(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
-              <button type="submit" disabled={importing} className="btn-primary">
-                {importing ? <><Loader2 size={14} className="animate-spin" /> Mengimpor...</> : <><FileSpreadsheet size={14} /> {importDryRun ? "Dry Run" : "Import"}</>}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <Modal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        title="Import Strategy dari Sheet"
+        size="lg"
+        scrollable
+        footer={
+          <>
+            <button type="button" onClick={() => setShowImport(false)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
+            <button type="submit" form="strategy-import-form" disabled={importing} className="btn-primary">
+              {importing ? <><Loader2 size={14} className="animate-spin" /> Mengimpor...</> : <><FileSpreadsheet size={14} /> {importDryRun ? "Dry Run" : "Import"}</>}
+            </button>
+          </>
+        }
+      >
+        <form id="strategy-import-form" onSubmit={runImport} className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">URL Google Sheet (Published)</label>
+            <input type="url" required value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml" className="input" />
+            <p className="mt-1 text-xs text-muted">Sheet harus sudah di-publish (File → Share → Publish to web). Tab dikenali otomatis: Sosmed, Kompetitor, 4M/Principles, Initiatives/Strategy, OKR.</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" checked={importDryRun} onChange={(e) => setImportDryRun(e.target.checked)} className="h-4 w-4 rounded border-border" />
+            Dry run (validasi tanpa menulis data)
+          </label>
+          <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted">
+            Data lama per-client akan diganti dengan data sheet (replace). Pastikan tab pertama sheet berisi kolom <b>Client</b> untuk pemetaan.
+          </div>
+        </form>
+      </Modal>
 
       {/* Check-in Modal */}
-      {checkinKr && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-          <form onSubmit={saveCheckin} className="my-4 w-full max-w-md overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="text-base font-bold text-foreground">Check-in KR</h2>
-              <button type="button" onClick={() => setCheckinKr(null)} className="rounded p-1 text-muted hover:bg-background hover:text-foreground"><X size={18} /></button>
-            </div>
-            <div className="space-y-4 px-5 py-4">
-              <p className="text-sm text-muted">{checkinKr.key_result}</p>
-              <p className="text-xs text-muted">
-                Baseline {checkinKr.baseline_value || 0} → Target {checkinKr.target_value} {checkinKr.unit || ""}
-              </p>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Nilai Aktual Saat Ini</label>
-                <input type="number" step="0.01" autoFocus className="input" value={checkinValue} onChange={(e) => setCheckinValue(e.target.value)} placeholder="0" />
-                <p className="mt-1 text-xs text-muted">Progress & status akan dihitung otomatis dari baseline → target.</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-              <button type="button" onClick={() => setCheckinKr(null)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
-              <button type="submit" disabled={checkinSaving} className="btn-primary">
-                {checkinSaving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : "Simpan Check-in"}
-              </button>
+      <Modal
+        open={!!checkinKr}
+        onClose={() => setCheckinKr(null)}
+        title="Check-in KR"
+        size="sm"
+        scrollable
+        footer={
+          <>
+            <button type="button" onClick={() => setCheckinKr(null)} className="px-4 py-2 text-sm text-muted hover:text-foreground">Batal</button>
+            <button type="submit" form="checkin-form" disabled={checkinSaving} className="btn-primary">
+              {checkinSaving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : "Simpan Check-in"}
+            </button>
+          </>
+        }
+      >
+        {checkinKr && (
+          <form id="checkin-form" onSubmit={saveCheckin} className="space-y-4">
+            <p className="text-sm text-muted">{checkinKr.key_result}</p>
+            <p className="text-xs text-muted">
+              Baseline {checkinKr.baseline_value || 0} → Target {checkinKr.target_value} {checkinKr.unit || ""}
+            </p>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Nilai Aktual Saat Ini</label>
+              <input type="number" step="0.01" autoFocus className="input" value={checkinValue} onChange={(e) => setCheckinValue(e.target.value)} placeholder="0" />
+              <p className="mt-1 text-xs text-muted">Progress & status akan dihitung otomatis dari baseline → target.</p>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Create/Edit Modal Agency OKR */}
       <Modal
