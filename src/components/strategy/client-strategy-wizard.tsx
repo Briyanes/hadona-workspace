@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   X, Loader2, Plus, Trash2, Building2, Share2, Swords, Target,
@@ -67,14 +67,22 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
   // Step 6: SOP
   const [includeSop, setIncludeSop] = useState(true);
 
-  if (!open) return null;
+  // Load team sekali saat modal dibuka — WAJIB useEffect sebelum early-return (Rules of Hooks)
+  useEffect(() => {
+    if (!open || team.length) return;
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .order("full_name")
+      .then(({ data }) => {
+        if (!cancelled) setTeam((data as unknown as TeamMember[]) || []);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
-  async function loadTeamOnce() {
-    if (team.length) return;
-    const { data } = await supabase.from("profiles").select("id, full_name").order("full_name");
-    setTeam((data as unknown as TeamMember[]) || []);
-  }
-  loadTeamOnce();
+  if (!open) return null;
 
   function validateStep(): string | null {
     if (step === 0 && !name.trim()) return "Nama client wajib diisi";
@@ -219,6 +227,19 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
       onClose={onClose}
       size="lg"
       scrollable
+      footer={
+        <>
+          <button type="button" onClick={onClose} className="btn-ghost text-sm text-muted hover:text-foreground">Batal</button>
+          {step > 0 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-ghost border border-border px-4 py-2 text-sm">← Kembali</button>}
+          {step < STEPS.length - 1 ? (
+            <button type="button" onClick={next} className="btn-primary px-4 py-2 text-sm">Lanjut →</button>
+          ) : (
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary px-4 py-2 text-sm">
+              {saving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : <><Check size={14} /> Buat Client + Canvas</>}
+            </button>
+          )}
+        </>
+      }
       header={
         <div className="shrink-0 border-b border-border bg-surface px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
@@ -442,19 +463,6 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
             </>
           )}
       </div>
-      footer={
-        <>
-          <button type="button" onClick={onClose} className="btn-ghost text-sm text-muted hover:text-foreground">Batal</button>
-          {step > 0 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-ghost border border-border px-4 py-2 text-sm">← Kembali</button>}
-          {step < STEPS.length - 1 ? (
-            <button type="button" onClick={next} className="btn-primary px-4 py-2 text-sm">Lanjut →</button>
-          ) : (
-            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary px-4 py-2 text-sm">
-              {saving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : <><Check size={14} /> Buat Client + Canvas</>}
-            </button>
-          )}
-        </>
-      }
     </Modal>
   );
 }
