@@ -503,3 +503,29 @@
   background-size: 16px 16px;
   padding-right: 2.25rem;
 }
+
+/* ===== Mobile form UX fixes ===== */
+
+/* 1. Stop iOS Safari auto-zoom on input focus.
+   iOS zooms in whenever a focused input has font-size < 16px.
+   16px on small screens only — desktop density unchanged.
+   (Chosen over maximum-scale=1 which blocks accessibility zoom.) */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* 2. Date/time inputs: prevent overflow past card borders in narrow columns.
+   Native date inputs have intrinsic width (~150-200px) which can exceed
+   their grid track on mobile. min-width:0 + width:100% lets them shrink
+   to the track like other inputs. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"] {
+  min-width: 0;
+  width: 100%;
+}
