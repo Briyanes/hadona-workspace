@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
     const supabase = createClient();
     const inserts = rows
       .filter((r) => r.pilar || r.tema || r.copy || r.caption || r.details)
-      .map((r) => ({
+      .map((r, i) => ({
         client_id: clientId,
         month,
         pilar: r.pilar || null,
@@ -250,6 +250,10 @@ export async function POST(req: NextRequest) {
         progress: normalizeProgress(r.progress),
         status: "active",
         services: [],
+        // Urutan baris permanen sesuai sheet: baris atas = created_at terbaru,
+        // karena UI mengurutkan created_at DESC (alternatif tanpa DDL — sort_order
+        // tidak bisa ditambahkan karena jalur DDL terblokir, lihat DEPLOY-V99.md)
+        created_at: new Date(Date.now() - i * 60_000).toISOString(),
       }));
 
     if (inserts.length === 0) {

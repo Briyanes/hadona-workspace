@@ -332,7 +332,7 @@ async function main() {
             progress: r.progress || "",
           }))
           .filter((r) => r.pilar || r.tema || r.copy || r.caption || r.details)
-          .map((r) => ({
+          .map((r, i) => ({
             client_id: client.id,
             month,
             pilar: r.pilar || null,
@@ -348,6 +348,10 @@ async function main() {
             progress: normalizeProgress(r.progress),
             status: "active",
             services: [],
+            // Urutan baris permanen sesuai sheet: baris atas = created_at terbaru,
+            // karena UI mengurutkan created_at DESC. (DDL sort_order terblokir —
+            // RPC exec_sql & /pg/query sudah dihapus Supabase, lihat DEPLOY-V99.md)
+            created_at: new Date(Date.now() - i * 60_000).toISOString(),
           }));
 
         if (inserts.length === 0) {
