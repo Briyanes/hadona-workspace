@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import {
   X,
   Loader2,
-  FileSpreadsheet,
   CheckCircle2,
   AlertTriangle,
   XCircle,
@@ -16,6 +15,7 @@ import {
   TableProperties,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 // ============================================================================
 // TYPES (sync dengan API route)
@@ -79,8 +79,6 @@ export function DashboardSheetImportModal({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ImportResponse | null>(null);
 
-  if (!open) return null;
-
   function handleClose() {
     setStep("url");
     setSheetUrl(defaultSheetUrl);
@@ -141,46 +139,59 @@ export function DashboardSheetImportModal({
     }
   }
 
+  // Footer kondisional — hanya tampil di step result (dirender sticky oleh shared <Modal>)
+  const footerNode =
+    step === "result" ? (
+      <button onClick={handleClose} className="btn-primary">
+        Selesai
+      </button>
+    ) : undefined;
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
-        {/* ─── Header ─── */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <Database className="text-primary" size={20} />
+    <Modal
+      open={open}
+      onClose={handleClose}
+      size="xl"
+      scrollable
+      footer={footerNode}
+      header={
+        <div className="shrink-0">
+          <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Database className="text-primary" size={20} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">
+                  Import Dashboard dari Google Sheet
+                </h2>
+                <p className="mt-0.5 text-xs text-muted">
+                  Auto-import semua sheet: clients, tasks, uploads, captions
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">
-                Import Dashboard dari Google Sheet
-              </h2>
-              <p className="text-xs text-muted">
-                Auto-import semua sheet: clients, tasks, uploads, captions
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-lg p-1.5 text-muted transition-colors hover:bg-background hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              aria-label="Tutup modal"
+            >
+              <X size={18} aria-hidden />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded p-1 text-muted hover:bg-background hover:text-foreground"
-          >
-            <X size={18} />
-          </button>
+          {/* ─── Stepper ─── */}
+          <div className="flex items-center gap-2 border-b border-border bg-background/50 px-4 py-2 text-xs sm:px-6">
+            <StepBadge
+              label="1. URL & Preview"
+              active={step === "url"}
+              done={step === "result"}
+            />
+            <div className="h-px w-6 bg-border" />
+            <StepBadge label="2. Result" active={step === "result"} done={false} />
+          </div>
         </div>
-
-        {/* ─── Stepper ─── */}
-        <div className="flex shrink-0 items-center gap-2 border-b border-border bg-background/50 px-4 py-2 text-xs">
-          <StepBadge
-            label="1. URL & Preview"
-            active={step === "url"}
-            done={step === "result"}
-          />
-          <div className="h-px w-6 bg-border" />
-          <StepBadge label="2. Result" active={step === "result"} done={false} />
-        </div>
-
-        {/* ─── Body ─── */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      }
+    >
           {step === "url" && (
             <form onSubmit={handleImport} className="space-y-4">
               {/* URL Input */}
@@ -322,18 +333,7 @@ export function DashboardSheetImportModal({
               loading={loading}
             />
           )}
-        </div>
-
-        {/* ─── Footer ─── */}
-        {step === "result" && (
-          <div className="flex shrink-0 justify-end gap-2 border-t border-border bg-background/50 p-3">
-            <button onClick={handleClose} className="btn-primary">
-              Selesai
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </Modal>
   );
 }
 

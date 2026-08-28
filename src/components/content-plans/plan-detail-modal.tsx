@@ -8,6 +8,7 @@
  */
 "use client";
 
+import { Modal } from "@/components/ui/modal";
 import { RichText } from "@/components/ui/rich-text";
 
 import { createClient } from "@/lib/supabase/client";
@@ -445,9 +446,12 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
   const pKey = getProgressKey(plan.progress);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-0 sm:p-4">
-      <div className="relative my-0 flex min-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-border bg-surface shadow-xl sm:my-4 sm:min-h-0 sm:max-h-[calc(100dvh-2rem)] sm:rounded-lg sm:border">
-        {/* ── Sticky Header ──────────────────────────────── */}
+    <Modal
+      open
+      onClose={onClose}
+      size="lg"
+      scrollable
+      header={
         <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">
@@ -497,6 +501,8 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
             </button>
           </div>
         </div>
+      }
+    >
 
         {/* ── Content ────────────────────────────────────── */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4">
@@ -873,7 +879,6 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
