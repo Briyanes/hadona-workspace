@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 /**
- * Import 4 Content Plan sheets client (TPDOC, SHUMI Japan, Threenine, Hadona)
- * langsung ke Supabase content_plans — dari terminal, bypass RLS (service role).
+ * Import Content Plan sheets client (TPDOC, SHUMI Japan, Threenine, Hadona, Moone)
+ * ke Supabase content_plans — dari terminal, bypass RLS (service role).
+ *
+ * MULTI-BULAN: tab bulan di tiap sheet di-discover otomatis (Agustus, September,
+ * Oktober, November, dst) via htmlview — tidak perlu hardcode gid lagi.
  *
  * Usage:
  *   node scripts/import-content-plans.mjs --dry-run          # preview saja
- *   node scripts/import-content-plans.mjs                    # insert
+ *   node scripts/import-content-plans.mjs                    # insert semua bulan (skip yang sudah ada)
  *   node scripts/import-content-plans.mjs --replace          # hapus bulan tsb dulu, lalu insert
- *   node scripts/import-content-plans.mjs --month 2026-09    # override bulan
+ *   node scripts/import-content-plans.mjs --month 2026-09    # hanya bulan tertentu
  *   node scripts/import-content-plans.mjs --client tpdoc     # satu client saja
+ *   node scripts/import-content-plans.mjs --year 2026        # default 2026
  *
  * Prasyarat: sheet di-share "Anyone with link → Viewer" atau Publish to web.
  * Env: NEXT_PUBLIC_SUPABASE_URL & SUPABASE_SERVICE_ROLE_KEY di .env.local
@@ -19,6 +23,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
+const UA = { "User-Agent": "Mozilla/5.0 (Macintosh)" };
 
 // ── Load .env.local ────────────────────────────────────────
 function loadEnv() {
@@ -45,31 +50,60 @@ const HEADERS = {
 };
 
 // ── CLI flags ──────────────────────────────────────────────
+function argOf(flag) {
+  return (
+    process.argv.find((a) => a.startsWith(`${flag}=`))?.split("=")[1] ||
+    (process.argv.indexOf(flag) >= 0 ? process.argv[process.argv.indexOf(flag) + 1] : null)
+  );
+}
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
 const REPLACE = args.includes("--replace");
-const MONTH =
-  args.find((a) => a.startsWith("--month="))?.split("=")[1] ||
-  (args.indexOf("--month") >= 0 ? args[args.indexOf("--month") + 1] : null) ||
-  new Date().toISOString().slice(0, 7); // default: bulan berjalan YYYY-MM
-const CLIENT_FILTER = (
-  args.find((a) => a.startsWith("--client="))?.split("=")[1] ||
-  (args.indexOf("--client") >= 0 ? args[args.indexOf("--client") + 1] : "") ||
-  ""
-).toLowerCase();
+const YEAR = argOf("--year") || "2026";
+const MONTH_FILTER = argOf("--month"); // mis. 2026-09 → hanya proses bulan itu
+const CLIENT_FILTER = (argOf("--client") || "").toLowerCase();
 
-// ── 4 sheet client ─────────────────────────────────────────
+// ── 5 sheet client ─────────────────────────────────────────
 const SHEETS = [
-  { key: "tpdoc", label: "TPDOC", sheetId: "1ZdxDJO9UB0UgCjgpxlR2HcF6v5mhZhFMijkKqEP_3XI", gid: "851155289", match: ["tpdoc"] },
-  { key: "shumi", label: "SHUMI Japan", sheetId: "1I21UCuSa0vCA8JgqNs46YzUK8nR182YwHX5RUIMtBWk", gid: "1294953188", match: ["shumi"] },
-  { key: "threenine", label: "Threenine", sheetId: "1Mv1rvTsiwi2OZPRvlL-Da-8TVpy5ESWJ5CB0ob9afiU", gid: "396219623", match: ["threenine", "three nine", "3nine", "tn"] },
-  { key: "hadona", label: "Hadona", sheetId: "1jiZivO_nNEdZ2vB_ZvGJ_EO2Rfp-fFcDbcOTr-7kQaI", gid: "702190412", match: ["hadona"] },
-  { key: "moone", label: "Moone Bakery and Caffe", sheetId: "1lnGh8nr14wTbxgSSkXZZ8w_Zsi4yHg8KxlQCy6feuTw", gid: "0", match: ["moone"] },
+  { key: "tpdoc", label: "TPDOC", sheetId: "1ZdxDJO9UB0UgCjgpxlR2HcF6v5mhZhFMijkKqEP_3XI", match: ["tpdoc"] },
+  { key: "shumi", label: "SHUMI Japan", sheetId: "1I21UCuSa0vCA8JgqNs46YzUK8nR182YwHX5RUIMtBWk", match: ["shumi"] },
+  { key: "threenine", label: "Threenine", sheetId: "1Mv1rvTsiwi2OZPRvlL-Da-8TVpy5ESWJ5CB0ob9afiU", match: ["threenine", "three nine", "3nine", "tn"] },
+  { key: "hadona", label: "Hadona", sheetId: "1jiZivO_nNEdZ2vB_ZvGJ_EO2Rfp-fFcDbcOTr-7kQaI", match: ["hadona"] },
+  { key: "moone", label: "Moone Bakery and Caffe", sheetId: "1lnGh8nr14wTbxgSSkXZZ8w_Zsi4yHg8KxlQCy6feuTw", match: ["moone"] },
 ].filter((s) => !CLIENT_FILTER || s.key.includes(CLIENT_FILTER) || s.label.toLowerCase().includes(CLIENT_FILTER) || s.match.some((m) => m.includes(CLIENT_FILTER)));
 
 if (SHEETS.length === 0) {
   console.error(`❌ Client "${CLIENT_FILTER}" tidak dikenal. Gunakan: tpdoc | shumi | threenine | hadona | moone`);
   process.exit(1);
+}
+
+// ── Tab discovery via htmlview ─────────────────────────────
+async function discoverTabs(sheetId) {
+  const res = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/htmlview`, { headers: UA });
+  if (!res.ok) throw new Error(`htmlview HTTP ${res.status}`);
+  const html = await res.text();
+  const seen = new Set();
+  const tabs = [];
+  for (const m of html.matchAll(/name:\s*"([^"]+)"[^}]*?gid:\s*"(\d+)"/g)) {
+    if (seen.has(m[2])) continue;
+    seen.add(m[2]);
+    tabs.push({ name: m[1].trim(), gid: m[2] });
+  }
+  return tabs;
+}
+
+// ── Nama tab bulan (ID/EN) → nomor bulan ───────────────────
+const MONTH_FULL = {
+  januari: 1, january: 1, februari: 2, february: 2, maret: 3, march: 3,
+  april: 4, mei: 5, may: 5, juni: 6, june: 6, juli: 7, july: 7,
+  agustus: 8, august: 8, september: 9, oktober: 10, october: 10,
+  november: 11, desember: 12, december: 12,
+};
+const MONTH_PREFIX = { jan: 1, feb: 2, mar: 3, apr: 4, mei: 5, may: 5, jun: 6, jul: 7, agu: 8, aug: 8, sep: 9, okt: 10, oct: 10, nov: 11, des: 12, dec: 12 };
+function monthFromTabName(name) {
+  const n = String(name).toLowerCase().replace(/[^a-z]/g, "");
+  if (MONTH_FULL[n]) return MONTH_FULL[n];
+  return MONTH_PREFIX[n.slice(0, 3)] || null;
 }
 
 // ── CSV fetch & parse (identik dengan API route) ───────────
@@ -83,7 +117,7 @@ function csvUrls(sheetId, gid) {
 async function fetchCsv(sheetId, gid, label) {
   for (const url of csvUrls(sheetId, gid)) {
     try {
-      const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (Macintosh)" } });
+      const res = await fetch(url, { redirect: "follow", headers: UA });
       if (!res.ok) continue;
       const text = await res.text();
       if (text.trim().startsWith("<") || !text.trim()) continue; // HTML login page
@@ -185,31 +219,6 @@ function normalizeProgress(v) {
   return "proses_edit";
 }
 
-const MONTHS_ID = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "aug", "sep", "okt", "oct", "nov", "des", "dec"];
-function normalizeDate(v) {
-  const t = String(v).trim();
-  if (!t) return null;
-  const iso = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
-  const dmy = t.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
-  const words = t.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
-  if (words) {
-    const lower = words[2].toLowerCase();
-    const mIdx = MONTHS_ID.indexOf(lower.slice(0, 3));
-    if (mIdx >= 0) {
-      let monthNum;
-      if (lower.startsWith("agu") || lower.startsWith("aug")) monthNum = "08";
-      else {
-        const m = (mIdx % 12) + 1;
-        monthNum = String(m).padStart(2, "0");
-      }
-      return `${words[3]}-${monthNum}-${words[1].padStart(2, "0")}`;
-    }
-  }
-  return null;
-}
-
 function normalizeUrl(v) {
   const t = String(v).trim();
   if (!t) return null;
@@ -231,6 +240,13 @@ async function resolveClientIds() {
     else console.warn(`⚠️  Client "${s.label}" tidak ditemukan di tabel clients (dilewati)`);
   }
   return byKey;
+}
+
+async function existingCount(clientId, month) {
+  const res = await fetch(`${REST}/content_plans?client_id=eq.${clientId}&month=eq.${month}&select=id`, { headers: HEADERS });
+  if (!res.ok) throw new Error(`cek existing gagal: HTTP ${res.status}`);
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows.length : 0;
 }
 
 async function insertWithFallback(inserts, label) {
@@ -259,14 +275,15 @@ async function insertWithFallback(inserts, label) {
 
 // ── Main ───────────────────────────────────────────────────
 async function main() {
-  console.log(`\n📦 Import Content Plans → Supabase`);
-  console.log(`   Mode    : ${DRY_RUN ? "🔮 DRY-RUN (tidak insert)" : REPLACE ? "🔄 REPLACE + INSERT" : "➕ INSERT"}`);
-  console.log(`   Bulan   : ${MONTH}`);
+  console.log(`\n📦 Import Content Plans (multi-bulan) → Supabase`);
+  console.log(`   Mode    : ${DRY_RUN ? "🔮 DRY-RUN (tidak insert)" : REPLACE ? "🔄 REPLACE + INSERT" : "➕ INSERT (skip yang sudah ada)"}`);
+  console.log(`   Tahun   : ${YEAR}${MONTH_FILTER ? ` | filter bulan: ${MONTH_FILTER}` : " | semua tab bulan"}`);
   console.log(`   Clients : ${SHEETS.map((s) => s.label).join(", ")}\n`);
 
   const clientMap = await resolveClientIds();
 
   let totalInserted = 0;
+  let totalSkipped = 0;
   const failures = [];
 
   for (const s of SHEETS) {
@@ -275,69 +292,96 @@ async function main() {
       failures.push(`${s.label}: client tidak ada di DB`);
       continue;
     }
-    process.stdout.write(`▶ ${s.label} … `);
+    console.log(`▶ ${s.label}`);
+    let tabs;
     try {
-      const csv = await fetchCsv(s.sheetId, s.gid, s.label);
-      const rows = extractRows(parseCsv(csv));
-      const inserts = rows
-        .map((r) => ({
-          pilar: r.pilar || "",
-          konten: r.konten || "",
-          tema: r.tema || "",
-          copy: r.copy || "",
-          details: r.details || "",
-          caption: r.caption || "",
-          thumbnail: r.thumbnail || "",
-          progress: r.progress || "",
-        }))
-        .filter((r) => r.pilar || r.tema || r.copy || r.caption || r.details)
-        .map((r) => ({
-          client_id: client.id,
-          month: MONTH,
-          pilar: r.pilar || null,
-          konten: r.konten || null,
-          tema: r.tema || null,
-          copy: r.copy || null,
-          details: r.details || null,
-          reference: null,
-          caption: r.caption || null,
-          thumbnail: r.thumbnail || null,
-          link_hasil: null,
-          tanggal_upload: null,
-          progress: normalizeProgress(r.progress),
-          status: "active",
-          services: [],
-        }));
-
-      if (inserts.length === 0) {
-        console.log(`⚠️  0 baris valid (header tidak dikenali?)`);
-        failures.push(`${s.label}: 0 baris valid`);
-        continue;
-      }
-
-      if (DRY_RUN) {
-        console.log(`✅ ${inserts.length} baris terdeteksi (dry-run, tidak diinsert)`);
-        // sample
-        inserts.slice(0, 3).forEach((r) => {
-          console.log(`   · pilar="${r.pilar}" konten="${(r.konten || "").slice(0, 30)}" progress=${r.progress}`);
-        });
-        continue;
-      }
-
-      if (REPLACE) {
-        const del = await fetch(
-          `${REST}/content_plans?client_id=eq.${client.id}&month=eq.${MONTH}`,
-          { method: "DELETE", headers: { ...HEADERS, Prefer: "return=minimal" } }
-        );
-        if (!del.ok) console.log(`\n   ⚠️ delete lama gagal: HTTP ${del.status} (lanjut insert)`);
-      }
-
-      const { count, skipped } = await insertWithFallback(inserts, s.label);
-      totalInserted += count;
-      console.log(`✅ ${count} baris diinsert${skipped.length ? ` (kolom ${skipped.join(", ")} dilewati)` : ""}`);
+      tabs = await discoverTabs(s.sheetId);
     } catch (err) {
-      console.log(`❌ ${err.message}`);
+      console.log(`   ❌ tab discovery gagal: ${err.message}`);
       failures.push(`${s.label}: ${err.message}`);
+      continue;
+    }
+    const monthTabs = tabs.map((t) => ({ ...t, num: monthFromTabName(t.name) }));
+    const ignored = monthTabs.filter((t) => !t.num).map((t) => `"${t.name}"`);
+    if (ignored.length) console.log(`   (tab diabaikan: ${ignored.join(", ")})`);
+    const valid = monthTabs.filter((t) => t.num);
+    if (!valid.length) {
+      console.log(`   ⚠️ tidak ada tab bulan yang dikenali`);
+      failures.push(`${s.label}: 0 tab bulan`);
+      continue;
+    }
+    for (const t of valid) {
+      const month = `${YEAR}-${String(t.num).padStart(2, "0")}`;
+      if (MONTH_FILTER && month !== MONTH_FILTER) {
+        console.log(`   · tab "${t.name}" → ${month} (di-skip --month ${MONTH_FILTER})`);
+        continue;
+      }
+      process.stdout.write(`   · tab "${t.name}" → ${month} … `);
+      try {
+        const csv = await fetchCsv(s.sheetId, t.gid, `${s.label}/${t.name}`);
+        const rows = extractRows(parseCsv(csv));
+        const inserts = rows
+          .map((r) => ({
+            pilar: r.pilar || "",
+            konten: r.konten || "",
+            tema: r.tema || "",
+            copy: r.copy || "",
+            details: r.details || "",
+            caption: r.caption || "",
+            thumbnail: r.thumbnail || "",
+            progress: r.progress || "",
+          }))
+          .filter((r) => r.pilar || r.tema || r.copy || r.caption || r.details)
+          .map((r) => ({
+            client_id: client.id,
+            month,
+            pilar: r.pilar || null,
+            konten: r.konten || null,
+            tema: r.tema || null,
+            copy: r.copy || null,
+            details: r.details || null,
+            reference: null,
+            caption: r.caption || null,
+            thumbnail: r.thumbnail || null,
+            link_hasil: null,
+            tanggal_upload: null,
+            progress: normalizeProgress(r.progress),
+            status: "active",
+            services: [],
+          }));
+
+        if (inserts.length === 0) {
+          console.log(`⚠️  0 baris valid (header tidak dikenali?)`);
+          continue;
+        }
+
+        if (DRY_RUN) {
+          console.log(`✅ ${inserts.length} baris terdeteksi (dry-run)`);
+          continue;
+        }
+
+        const existing = await existingCount(client.id, month);
+        if (existing > 0 && !REPLACE) {
+          console.log(`⏭️  skip — sudah ada ${existing} baris di DB (pakai --replace untuk timpa)`);
+          totalSkipped += existing;
+          continue;
+        }
+
+        if (REPLACE) {
+          const del = await fetch(`${REST}/content_plans?client_id=eq.${client.id}&month=eq.${month}`, {
+            method: "DELETE",
+            headers: { ...HEADERS, Prefer: "return=minimal" },
+          });
+          if (!del.ok) console.log(`\n   ⚠️ delete lama gagal: HTTP ${del.status} (lanjut insert)`);
+        }
+
+        const { count } = await insertWithFallback(inserts, `${s.label}/${t.name}`);
+        totalInserted += count;
+        console.log(`✅ ${count} baris diinsert`);
+      } catch (err) {
+        console.log(`❌ ${err.message}`);
+        failures.push(`${s.label} ${month}: ${err.message}`);
+      }
     }
   }
 
@@ -345,7 +389,7 @@ async function main() {
   if (DRY_RUN) {
     console.log(`🔮 Dry-run selesai. Jalankan tanpa --dry-run untuk insert asli.`);
   } else {
-    console.log(`🎉 Selesai: ${totalInserted} baris diinsert untuk bulan ${MONTH}.`);
+    console.log(`🎉 Selesai: ${totalInserted} baris diinsert${totalSkipped ? `, ${totalSkipped} baris lama di-skip` : ""}.`);
   }
   if (failures.length) {
     console.log(`\n⚠️  Gagal (${failures.length}):`);
