@@ -1125,7 +1125,7 @@ export default function ClientsPage() {
                         <label className="mb-1 block text-xs font-medium text-foreground">Nama Client *</label>
                         <input type="text" required autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: PT Maju Jaya" className="input" />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-foreground">Industri</label>
                           <input type="text" value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} placeholder="F&B, Fashion" className="input" />
@@ -1169,7 +1169,7 @@ export default function ClientsPage() {
                           ))}
                         </select>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-foreground">Mulai Kontrak</label>
                           <input type="date" value={form.contract_start} onChange={(e) => setForm({ ...form, contract_start: e.target.value })} className="input" />
