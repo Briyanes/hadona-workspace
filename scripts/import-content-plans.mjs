@@ -64,10 +64,11 @@ const SHEETS = [
   { key: "shumi", label: "SHUMI Japan", sheetId: "1I21UCuSa0vCA8JgqNs46YzUK8nR182YwHX5RUIMtBWk", gid: "1294953188", match: ["shumi"] },
   { key: "threenine", label: "Threenine", sheetId: "1Mv1rvTsiwi2OZPRvlL-Da-8TVpy5ESWJ5CB0ob9afiU", gid: "396219623", match: ["threenine", "three nine", "3nine", "tn"] },
   { key: "hadona", label: "Hadona", sheetId: "1jiZivO_nNEdZ2vB_ZvGJ_EO2Rfp-fFcDbcOTr-7kQaI", gid: "702190412", match: ["hadona"] },
+  { key: "moone", label: "Moone Bakery and Caffe", sheetId: "1lnGh8nr14wTbxgSSkXZZ8w_Zsi4yHg8KxlQCy6feuTw", gid: "0", match: ["moone"] },
 ].filter((s) => !CLIENT_FILTER || s.key.includes(CLIENT_FILTER) || s.label.toLowerCase().includes(CLIENT_FILTER) || s.match.some((m) => m.includes(CLIENT_FILTER)));
 
 if (SHEETS.length === 0) {
-  console.error(`❌ Client "${CLIENT_FILTER}" tidak dikenal. Gunakan: tpdoc | shumi | threenine | hadona`);
+  console.error(`❌ Client "${CLIENT_FILTER}" tidak dikenal. Gunakan: tpdoc | shumi | threenine | hadona | moone`);
   process.exit(1);
 }
 
