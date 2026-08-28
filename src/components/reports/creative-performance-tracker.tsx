@@ -279,7 +279,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
 
       {showForm && (
         <form onSubmit={handleAdd} className="mb-3 space-y-2 rounded-md border border-border bg-surface p-3">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <input
               type="text"
               required
@@ -298,7 +298,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {[
               { key: "spend", label: "Spend", placeholder: "Rp" },
               { key: "impressions", label: "Impressions", placeholder: "0" },

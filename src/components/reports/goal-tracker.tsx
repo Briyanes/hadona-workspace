@@ -195,7 +195,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
       {/* Add Goal Form */}
       {showForm && (
         <form onSubmit={handleAddGoal} className="mb-3 rounded-md border border-border bg-surface p-2">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             <select
               value={newGoal.goal_type}
               onChange={(e) => setNewGoal({ ...newGoal, goal_type: e.target.value as Goal["goal_type"] })}

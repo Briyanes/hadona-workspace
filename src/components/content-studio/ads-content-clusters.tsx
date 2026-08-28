@@ -649,7 +649,7 @@ export default function AdsContentClusters() {
               </div>
               <div>
                 <label className="label">Jenis Posting *</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   {POST_TYPE_OPTIONS.map((t) => (
                     <button
                       key={t}

@@ -786,7 +786,7 @@ export default function InvoicesPage() {
                     <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-primary">
                       <UserPlus size={14} /> Client Baru
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid gap-2 sm:grid-cols-3">
                       <div className="col-span-3 sm:col-span-1">
                         <label className="mb-1 block text-xs text-muted">Nama *</label>
                         <input

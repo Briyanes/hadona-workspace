@@ -856,7 +856,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     <BarChart3 size={16} className="text-primary" />
                     <p className="text-xs font-semibold text-foreground">Upload Monthly Report</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-2 sm:grid-cols-2">
                     <select
                       value={reportPeriod.month}
                       onChange={(e) => setReportPeriod({ ...reportPeriod, month: Number(e.target.value) })}

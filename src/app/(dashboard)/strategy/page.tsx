@@ -854,7 +854,7 @@ export default function StrategyPage() {
                     {team.map((t) => <option key={t.id} value={t.id}>{t.full_name || "Unknown"}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Target</label>
                     <input type="number" step="0.01" value={form.target_value} onChange={(e) => setForm({ ...form, target_value: e.target.value })} placeholder="100" className="input" />

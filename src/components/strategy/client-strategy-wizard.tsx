@@ -319,7 +319,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                     </select>
                     <input className="input" placeholder="@handle" value={c.handle} onChange={(e) => setCompetitors((p) => p.map((r, x) => x === i ? { ...r, handle: e.target.value } : r))} />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-3">
                     <input type="number" className="input" placeholder="Followers" value={c.followers} onChange={(e) => setCompetitors((p) => p.map((r, x) => x === i ? { ...r, followers: e.target.value } : r))} />
                     <input type="number" step="0.1" className="input" placeholder="ER %" value={c.engagement_rate} onChange={(e) => setCompetitors((p) => p.map((r, x) => x === i ? { ...r, engagement_rate: e.target.value } : r))} />
                     <input className="input" placeholder="4x/minggu" value={c.posting_freq} onChange={(e) => setCompetitors((p) => p.map((r, x) => x === i ? { ...r, posting_freq: e.target.value } : r))} />
@@ -365,7 +365,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                         <input type="number" step="0.01" className="input" placeholder="Target *" value={kr.target} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, target: e.target.value } : k) } : r))} />
                         <input className="input" placeholder="Unit (x, IDR)" value={kr.unit} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, unit: e.target.value } : k) } : r))} />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <select className="input" value={kr.kr_type} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, kr_type: e.target.value as "leading" | "lagging" } : k) } : r))}>
                           <option value="lagging">Lagging (hasil akhir)</option>
                           <option value="leading">Leading (indikator dini)</option>

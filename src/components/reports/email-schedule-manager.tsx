@@ -178,7 +178,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
       {/* Create Form */}
       {showForm && (
         <form onSubmit={handleCreate} className="mb-3 space-y-2 rounded-md border border-border bg-background p-3">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <select
               required
               value={newSched.clientId}
@@ -206,7 +206,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
             onChange={(e) => setNewSched({ ...newSched, ccEmails: e.target.value })}
             className="input text-xs"
           />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div>
               <label className="mb-0.5 block text-[10px] text-muted">Hari</label>
               <select

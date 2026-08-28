@@ -1367,7 +1367,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Bank</label>
                   <select
@@ -1706,7 +1706,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-foreground">Bank</label>
                   <select
