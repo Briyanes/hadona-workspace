@@ -226,7 +226,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
             <button onClick={onClose} className="rounded p-1 text-muted hover:bg-background hover:text-foreground"><X size={18} /></button>
           </div>
           {/* Step indicator */}
-          <div className="mt-3 flex items-center gap-1 overflow-x-auto">
+          <div className="mt-3 flex items-center gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {STEPS.map((s, i) => {
               const Icon = s.icon;
               return (
@@ -290,8 +290,8 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                     <input className="input" placeholder="@handle" value={s.handle} onChange={(e) => setSocials((p) => p.map((r, x) => x === i ? { ...r, handle: e.target.value } : r))} />
                   </div>
                   <input className="input" placeholder="URL (opsional)" value={s.url} onChange={(e) => setSocials((p) => p.map((r, x) => x === i ? { ...r, url: e.target.value } : r))} />
-                  <div className="flex items-center gap-3">
-                    <input type="number" className="input flex-1" placeholder="Followers baseline" value={s.followers} onChange={(e) => setSocials((p) => p.map((r, x) => x === i ? { ...r, followers: e.target.value } : r))} />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <input type="number" className="input sm:flex-1" placeholder="Followers baseline" value={s.followers} onChange={(e) => setSocials((p) => p.map((r, x) => x === i ? { ...r, followers: e.target.value } : r))} />
                     <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
                       <input type="checkbox" checked={s.ads_connected} onChange={(e) => setSocials((p) => p.map((r, x) => x === i ? { ...r, ads_connected: e.target.checked } : r))} className="h-4 w-4 accent-primary" />
                       Terhubung ads
@@ -432,8 +432,8 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
               {includeSop && (
                 <div className="card divide-y divide-border p-0">
                   {sopPreview.map((t, i) => (
-                    <div key={i} className="flex items-center justify-between gap-2 px-4 py-2 text-xs">
-                      <span className="text-foreground">{i + 1}. {t.title}</span>
+                    <div key={i} className="flex flex-col gap-0.5 px-4 py-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                      <span className="min-w-0 break-words text-foreground">{i + 1}. {t.title}</span>
                       <span className="shrink-0 text-muted">{t.start_date} → {t.due_date}</span>
                     </div>
                   ))}
