@@ -348,9 +348,10 @@ async function main() {
             progress: normalizeProgress(r.progress),
             status: "active",
             services: [],
-            // Urutan baris permanen sesuai sheet: baris atas = created_at terbaru,
-            // karena UI mengurutkan created_at DESC. (DDL sort_order terblokir —
-            // RPC exec_sql & /pg/query sudah dihapus Supabase, lihat DEPLOY-V99.md)
+            // Urutan baris permanen sesuai sheet: sort_order = index baris (v100).
+            // created_at sekuensial dipertahankan sebagai fallback untuk DB yang
+            // belum menjalankan v100 (insertWithFallback akan strip sort_order).
+            sort_order: i,
             created_at: new Date(Date.now() - i * 60_000).toISOString(),
           }));
 

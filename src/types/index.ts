@@ -76,6 +76,7 @@ export interface Client {
   services: string[];
   notes: string | null;
   created_at: string;
+  sort_order?: number | null;
 }
 
 export interface Task {

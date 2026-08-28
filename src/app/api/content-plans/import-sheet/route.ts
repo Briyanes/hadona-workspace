@@ -250,9 +250,10 @@ export async function POST(req: NextRequest) {
         progress: normalizeProgress(r.progress),
         status: "active",
         services: [],
-        // Urutan baris permanen sesuai sheet: baris atas = created_at terbaru,
-        // karena UI mengurutkan created_at DESC (alternatif tanpa DDL — sort_order
-        // tidak bisa ditambahkan karena jalur DDL terblokir, lihat DEPLOY-V99.md)
+        // Urutan baris permanen sesuai sheet: sort_order = index baris (v100).
+        // Loop fallback di bawah otomatis strip sort_order bila kolom belum ada
+        // (pre-migration) — urutan tetap aman via created_at sekuensial.
+        sort_order: i,
         created_at: new Date(Date.now() - i * 60_000).toISOString(),
       }));
 
@@ -285,7 +286,7 @@ export async function POST(req: NextRequest) {
     }
     const warn =
       skippedCols.size > 0
-        ? ` Kolom [${Array.from(skippedCols).join(", ")}] dilewati — jalankan supabase/migration-v88.sql di Supabase SQL Editor.`
+        ? ` Kolom [${Array.from(skippedCols).join(", ")}] dilewati — jalankan migration terkini (v88+ / v100, lihat supabase/MIGRATIONS.md) di Supabase SQL Editor.`
         : "";
 
     return NextResponse.json({ count: current.length, rows: current.length, warning: warn });

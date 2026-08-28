@@ -30,6 +30,7 @@ import { PlanDetailModal } from "@/components/content-plans/plan-detail-modal";
 import { ImportSheetModal } from "@/components/content-plans/import-sheet-modal";
 
 interface ContentPlan {
+  sort_order?: number | null;
   id: string;
   client_id: string;
   month: string;
@@ -219,7 +220,21 @@ export default function ContentPlansPage() {
         .select("*, client:clients(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setPlans((data as unknown as ContentPlan[]) || []);
+      // v100: urutan permanen via sort_order per (client, bulan). Fallback aman ke
+      // created_at DESC bila kolom belum ada (pre-migration) atau bernilai null.
+      const rows = ((data as unknown as ContentPlan[]) || []).slice();
+      rows.sort((a, b) => {
+        if (
+          a.client_id === b.client_id &&
+          a.month === b.month &&
+          typeof a.sort_order === "number" &&
+          typeof b.sort_order === "number"
+        ) {
+          return a.sort_order - b.sort_order;
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      setPlans(rows);
     } catch (err) {
       const msg = err instanceof Error ? err.message : (err as Record<string, unknown>)?.message as string || "Unknown error";
       console.error("Load plans error:", err);

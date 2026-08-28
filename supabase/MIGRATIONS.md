@@ -74,6 +74,8 @@
 | v91–v93 (+v92-dashboard) | Chat v2, grup chat fixes | chat |
 | v94–v97 | Ads Content Studio rework + requests | content |
 | v98 | **Client delete protection & audit trail** (insiden 21 Agu 2026) | security |
+| v99 | Chat & penghapusan jalur DDL exec_sql (lihat DEPLOY-V99.md) | chat |
+| v100 | **content_plans.sort_order** — urutan baris permanen + trigger auto-assign max+1 | content |
 
 **Catatan:** v7 & v70 tidak ada filenya di repo (v7 dilewati historis; v70 di dalam `migration` tanpa isi signifikan). `migration-all.sql` dan `migration-production-fix.sql` adalah bundel lama — JANGAN dipakai untuk fresh install tanpa review (tidak merepresentasikan state terkini).
 
