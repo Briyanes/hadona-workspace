@@ -359,7 +359,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
                         )}
                       </div>
                       <input className="input" placeholder="Contoh: Mencapai ROAS 5" value={kr.key_result} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, key_result: e.target.value } : k) } : r))} />
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
                         <input className="input" placeholder="Metrik (ROAS)" value={kr.metric_name} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, metric_name: e.target.value } : k) } : r))} />
                         <input type="number" step="0.01" className="input" placeholder="Baseline" value={kr.baseline} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, baseline: e.target.value } : k) } : r))} />
                         <input type="number" step="0.01" className="input" placeholder="Target *" value={kr.target} onChange={(e) => setOkrs((p) => p.map((r, x) => x === oi ? { ...r, krs: r.krs.map((k, y) => y === ki ? { ...k, target: e.target.value } : k) } : r))} />
