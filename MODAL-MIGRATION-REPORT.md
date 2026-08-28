@@ -42,7 +42,7 @@ Audit menemukan 40+ implementasi modal duplicat dengan pola berbeda-beda:
 | `b111e47` | Ads-spend (4 modals: spend-log, import-sheet, manual-token, ad-account) |
 | `7ec9b85` | QA script: test-mobile-modal BASE_URL overridable |
 
-**Total: ±35 modal dimigrasi**, net -700+ baris duplikasi.
+**Total: ±44 modal dimigrasi**, net -750+ baris duplikasi.
 
 ## 4. Verifikasi
 
@@ -55,22 +55,26 @@ Audit menemukan 40+ implementasi modal duplicat dengan pola berbeda-beda:
   BASE_URL=http://localhost:3000 TEST_EMAIL=... TEST_PASSWORD=... node scripts/test-mobile-modal.mjs
   ```
 
-## 5. Modal yang Belum Dimigrasi (Technical Debt)
+## 5. Batch 8 (commit `74f2b58`)
 
-8 modal legacy tersisa — semuanya sudah mobile-safe (overlay scrollable + max-height) tetapi belum memakai shared Modal:
+9 file, net -64 baris — semua tsc/eslint PASS:
 
-1. `src/components/reports/report-detail-modal.tsx` (kompleks — banyak tab)
-2. `src/components/reports/sheet-preview-modal.tsx`
-3. `src/components/reports/import-sheet-modal.tsx`
-4. `src/components/reports/compare-view.tsx`
-5. `src/components/monthly-reports/monthly-reports-manager.tsx` (inline modal)
-6. `src/components/dashboard/dashboard-sheet-import-modal.tsx`
-7. `src/components/content-plans/import-sheet-modal.tsx`
-8. `src/components/content-plans/plan-detail-modal.tsx`
+- `src/components/production/production-detail-modal.tsx`
+- `src/components/strategy/strategy-detail-modal.tsx` + 2 modal inline di `src/app/(dashboard)/strategy/page.tsx`
+- `src/app/(dashboard)/approvals/page.tsx` (review dialog → Modal)
+- `src/app/(dashboard)/clients/[id]/page.tsx` (delete → ConfirmDialog)
+- `src/app/(dashboard)/chat/page.tsx` (CreateGroup, InviteMember, NewDM → Modal)
+- `src/components/reports/report-detail-modal.tsx` + `sheet-preview-modal.tsx` (konsistensi footer/size)
+- `src/components/content-plans/import-sheet-modal.tsx` (konsistensi footer)
 
-Prioritas migrasi berikutnya: report-detail-modal (paling sering dipakai oleh Performance division).
+## 6. Modal yang Belum Dimigrasi (Technical Debt)
 
-## 6. Yang Masih Perlu Verifikasi Manual
+2 modal legacy tersisa — semuanya sudah mobile-safe (overlay scrollable + max-height) tetapi belum memakai shared Modal:
+
+1. `src/components/reports/compare-view.tsx`
+2. `src/components/monthly-reports/monthly-reports-manager.tsx` (inline modal)
+
+## 7. Yang Masih Perlu Verifikasi Manual
 
 1. Login sebagai tiap role → buka halaman ber-modal → pastikan fokus, Esc, dan footer button di mobile
 2. Test bottom-sheet di iPhone dengan home indicator (safe-area)
