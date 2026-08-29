@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { syncTaskForPlan, type PlanTaskInfo } from "@/lib/content-plan-sync";
 
 // ── Convert any Google Sheets URL to a CSV export URL ──────
 function toCsvUrl(rawUrl: string): string | null {
@@ -232,6 +233,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createClient();
+    const importStart = new Date();
     const inserts = rows
       .filter((r) => r.pilar || r.tema || r.copy || r.caption || r.details)
       .map((r, i) => ({
@@ -289,7 +291,29 @@ export async function POST(req: NextRequest) {
         ? ` Kolom [${Array.from(skippedCols).join(", ")}] dilewati — jalankan migration terkini (v88+ / v100, lihat supabase/MIGRATIONS.md) di Supabase SQL Editor.`
         : "";
 
-    return NextResponse.json({ count: current.length, rows: current.length, warning: warn });
+    // ── Workflow sync: baris "Proses Edit" → task Editor di Task Manager ──
+    // Idempoten: syncTaskForPlan cek duplikat via tasks.sheet_row_id sebelum insert.
+    // Failure non-blocking: import tetap sukses walau pembuatan task gagal.
+    let tasksCreated = 0;
+    try {
+      const { data: freshPlans, error: qErr } = await supabase
+        .from("content_plans")
+        .select("id, client_id, pilar, konten, tema, details, reference, tanggal_upload, progress, client:clients(name)")
+        .eq("client_id", clientId)
+        .eq("month", month)
+        .gte("created_at", importStart.toISOString())
+        .eq("progress", "proses_edit");
+      if (qErr) throw new Error(qErr.message);
+      for (const plan of (freshPlans as unknown as (PlanTaskInfo & { progress: string })[]) || []) {
+        const res = await syncTaskForPlan(supabase, plan, "proses_edit");
+        if (res.action === "created") tasksCreated++;
+      }
+    } catch (syncErr) {
+      const msg = syncErr instanceof Error ? syncErr.message : "Unknown error";
+      console.error("[content-plan-import] Sync task editor gagal:", msg);
+    }
+
+    return NextResponse.json({ count: current.length, rows: current.length, tasksCreated, warning: warn });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });

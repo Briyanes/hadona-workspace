@@ -28,6 +28,11 @@ import {
 import { cn, formatDate } from "@/lib/utils";
 import { PlanDetailModal } from "@/components/content-plans/plan-detail-modal";
 import { ImportSheetModal } from "@/components/content-plans/import-sheet-modal";
+import {
+  syncTaskForPlan as syncPlanTask,
+  toastSyncResult,
+  type PlanTaskInfo,
+} from "@/lib/content-plan-sync";
 
 interface ContentPlan {
   sort_order?: number | null;
@@ -362,41 +367,24 @@ export default function ContentPlansPage() {
         );
       }
 
-      // Workflow trigger: Proses Edit = buat task editor; Done = selesaikan task
+      // Workflow sync: proses_edit → buat/reopen task editor; done/cancel →
+      // selesaikan/hold task; draft → reopen. (src/lib/content-plan-sync.ts)
       const newKey = getProgressKey(form.progress);
       const clientName = clients.find((c) => c.id === form.client_id)?.name;
       const oldPlan = editingId ? plans.find((p) => p.id === editingId) : null;
-      if (newKey === "proses_edit") {
-        await syncTaskForPlan(
-          {
-            id: editingId || savedId || "",
-            client_id: form.client_id,
-            client_name: clientName,
-            pilar: payload.pilar,
-            konten: payload.konten,
-            tema: payload.tema,
-            details: payload.details,
-            reference: payload.reference,
-            tanggal_upload: payload.tanggal_upload,
-          },
-          newKey
-        );
-      } else if (oldPlan) {
-        await syncTaskForPlan(
-          {
-            id: oldPlan.id,
-            client_id: oldPlan.client_id,
-            client_name: oldPlan.client?.name,
-            pilar: oldPlan.pilar,
-            konten: oldPlan.konten,
-            tema: oldPlan.tema,
-            details: oldPlan.details,
-            reference: oldPlan.reference,
-            tanggal_upload: oldPlan.tanggal_upload,
-          },
-          newKey
-        );
-      }
+      const syncBase: PlanTaskInfo = {
+        id: editingId || savedId || "",
+        client_id: form.client_id,
+        client_name: clientName ?? oldPlan?.client?.name,
+        pilar: payload.pilar,
+        konten: payload.konten,
+        tema: payload.tema,
+        details: payload.details,
+        reference: payload.reference,
+        tanggal_upload: payload.tanggal_upload,
+      };
+      const syncRes = await syncPlanTask(supabase, syncBase, newKey);
+      toastSyncResult(syncRes, toast);
 
       setForm(emptyForm);
       setEditingId(null);
@@ -435,81 +423,14 @@ export default function ContentPlansPage() {
         .eq("id", plan.id);
       if (error) throw error;
       toast.success("Progress diperbarui");
-      // Workflow: Proses Edit → buat task editor; Done → selesaikan task
-      await syncTaskForPlan(plan, key);
+      // Workflow sync via modul bersama (proses_edit/done/cancel/draft)
+      const syncRes = await syncPlanTask(supabase, plan, key);
+      toastSyncResult(syncRes, toast);
       loadPlans();
     } catch (err) {
       const msg = err instanceof Error ? err.message : (err as { message?: string })?.message || "Unknown error";
       console.error("Quick update error:", err);
       toast.error("Gagal update progress: " + msg);
-    }
-  }
-
-  // ── Workflow trigger: sinkronisasi plan → Task Manager ──
-  // Proses Edit → buat task editor (division: Editor — antrean kerja tim Editor)
-  // Done → task editor ikut selesai
-  async function syncTaskForPlan(
-    plan: {
-      id: string;
-      client_id: string;
-      client_name?: string;
-      pilar?: string | null;
-      konten?: string | null;
-      tema?: string | null;
-      details?: string | null;
-      reference?: string | null;
-      tanggal_upload?: string | null;
-    },
-    newKey: string
-  ) {
-    try {
-      if (!plan.id) return;
-      // Link plan ↔ task via tasks.sheet_row_id (kolom sudah ada — tanpa migration)
-      const linkKey = `content_plan:${plan.id}`;
-      if (newKey === "proses_edit") {
-        // Hindari duplikat task editor untuk plan yang sama
-        const { data: existing } = await supabase
-          .from("tasks")
-          .select("id")
-          .eq("sheet_row_id", linkKey)
-          .limit(1)
-          .maybeSingle();
-        if (existing) return;
-        const { data: userData } = await supabase.auth.getUser();
-        const descParts: string[] = [];
-        if (plan.pilar) descParts.push(`Pilar: ${plan.pilar}`);
-        if (plan.konten) descParts.push(`Konten: ${plan.konten}`);
-        if (plan.tema) descParts.push(`Tema: ${plan.tema}`);
-        if (plan.details) descParts.push("", "Details:", plan.details);
-        if (plan.reference) descParts.push("", `Reference: ${plan.reference}`);
-        const { data: task, error } = await supabase
-          .from("tasks")
-          .insert({
-            title: `[Content] ${plan.client_name || "Client"} — ${plan.tema || plan.konten || "Content Plan"}`,
-            description: descParts.join("\n") || null,
-            client_id: plan.client_id || null,
-            priority: "medium",
-            status: "todo",
-            division: "Editor",
-            due_date: plan.tanggal_upload || null,
-            created_by: userData.user?.id,
-            sheet_row_id: linkKey,
-          } as never)
-          .select("id")
-          .single();
-        if (error) throw error;
-        if (task) toast.success("Task editor dibuat di Task Manager (divisi Editor)");
-      } else if (newKey === "done") {
-        const { error } = await supabase
-          .from("tasks")
-          .update({ status: "done" } as never)
-          .eq("sheet_row_id", linkKey);
-        if (!error) toast.success("Task editor ditandai selesai");
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      console.error("Sync task error:", err);
-      toast.warning("Plan tersimpan, tapi sinkronisasi task editor gagal: " + msg);
     }
   }
 

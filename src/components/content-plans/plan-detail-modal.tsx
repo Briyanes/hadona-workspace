@@ -14,6 +14,7 @@ import { RichText } from "@/components/ui/rich-text";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { syncTaskForPlan, toastSyncResult } from "@/lib/content-plan-sync";
 import {
   X,
   Edit3,
@@ -360,51 +361,25 @@ export function PlanDetailModal({ plan, onClose, onUpdated, onDeleted }: PlanDet
 
       if (error) throw error;
 
-      // Workflow trigger: Proses Edit = buat task editor; Done = selesaikan task
-      // Link plan ↔ task via tasks.sheet_row_id (tanpa migration tambahan)
+      // Workflow sync: proses_edit → buat/reopen task editor; done/cancel →
+      // selesaikan/hold task; draft → reopen. (src/lib/content-plan-sync.ts)
       const newKey = getProgressKey(editForm.progress);
-      const linkKey = `content_plan:${plan.id}`;
-      if (newKey === "proses_edit") {
-        const { data: existing } = await supabase
-          .from("tasks")
-          .select("id")
-          .eq("sheet_row_id", linkKey)
-          .limit(1)
-          .maybeSingle();
-        if (!existing) {
-          const { data: userData } = await supabase.auth.getUser();
-          const descParts: string[] = [];
-          if (plan.pilar) descParts.push(`Pilar: ${plan.pilar}`);
-          if (plan.konten) descParts.push(`Konten: ${plan.konten}`);
-          if (plan.tema) descParts.push(`Tema: ${plan.tema}`);
-          if (editForm.details) descParts.push("", "Details:", editForm.details);
-          if (editForm.reference) descParts.push("", `Reference: ${editForm.reference}`);
-          const { data: task, error: taskError } = await supabase
-            .from("tasks")
-            .insert({
-              title: `[Content] ${plan.client?.name || "Client"} — ${plan.tema || editForm.konten || "Content Plan"}`,
-              description: descParts.join("\n") || null,
-              client_id: plan.client_id || null,
-              priority: "medium",
-              status: "todo",
-              division: "Editor",
-              due_date: editForm.tanggal_upload || null,
-              created_by: userData.user?.id,
-              sheet_row_id: linkKey,
-            } as never)
-            .select("id")
-            .single();
-          if (!taskError && task) {
-            toast.success("Task editor dibuat di Task Manager (divisi Editor)");
-          }
-        }
-      } else if (newKey === "done") {
-        const { error: taskError } = await supabase
-          .from("tasks")
-          .update({ status: "done" } as never)
-          .eq("sheet_row_id", linkKey);
-        if (!taskError) toast.success("Task editor ditandai selesai");
-      }
+      const syncRes = await syncTaskForPlan(
+        supabase,
+        {
+          id: plan.id,
+          client_id: plan.client_id || "",
+          client_name: plan.client?.name,
+          pilar: editForm.pilar,
+          konten: editForm.konten,
+          tema: plan.tema,
+          details: editForm.details,
+          reference: editForm.reference,
+          tanggal_upload: editForm.tanggal_upload || null,
+        },
+        newKey
+      );
+      toastSyncResult(syncRes, toast);
 
       toast.success("Content plan diupdate!");
       setIsEditing(false);
