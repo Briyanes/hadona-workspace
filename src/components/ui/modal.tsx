@@ -45,6 +45,17 @@ export function Modal({
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Latest-ref pattern: keep `onClose` fresh without adding it to the keydown
+  // effect deps. Callers pass inline arrow functions (new identity per render);
+  // if `onClose` were an effect dependency, every parent re-render would re-run
+  // the effect cleanup, which calls `previouslyFocused.current?.focus()` and
+  // steals focus from inputs — causing the mobile keyboard to hide on every
+  // keystroke (bug: typing in "Judul Event" dismissed the keyboard).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   /**
    * Portal target guard — render on client only (SSR-safe).
    * Portal ke document.body memastikan overlay `fixed inset-0` tidak
@@ -110,7 +121,7 @@ export function Modal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       } else {
         handleTabKey(e);
       }
@@ -125,7 +136,9 @@ export function Modal({
       // Restore focus to the element that opened the modal
       previouslyFocused.current?.focus();
     };
-  }, [open, onClose, handleTabKey]);
+    // NOTE: `onClose` intentionally omitted — read via onCloseRef (latest-ref
+    // pattern) so inline arrow props don't re-trigger this effect per render.
+  }, [open, handleTabKey]);
 
   // Focus first focusable element or close button on open
   useEffect(() => {
