@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/modal";
 
 import { createClient } from "@/lib/supabase/client";
 import { uploadFile } from "@/lib/upload";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   X,
@@ -23,6 +23,8 @@ import {
   XCircle,
   FileText,
   Download,
+  Paperclip,
+  ExternalLink,
   BarChart3,
   Upload,
   Loader2,
@@ -80,6 +82,18 @@ interface TimeLog {
   date: string;
   billable: boolean;
   user?: { full_name: string; avatar_url: string | null };
+}
+
+interface TaskDeliverable {
+  id: string;
+  version: number;
+  file_name: string;
+  file_size: number | null;
+  mime_type: string | null;
+  drive_web_view_link: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+  user?: { full_name: string } | null;
 }
 
 const statusOptions = [
@@ -192,6 +206,89 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
   });
   const [uploadingReport, setUploadingReport] = useState(false);
 
+  // Lampiran file via Google Drive (video / file besar)
+  const [taskFiles, setTaskFiles] = useState<TaskDeliverable[]>([]);
+  const [attachFile, setAttachFile] = useState<File | null>(null);
+  const [uploadingAttach, setUploadingAttach] = useState(false);
+  const [attachProgress, setAttachProgress] = useState(0);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+
+  const loadTaskDeliverables = async () => {
+    try {
+      const { data } = await (supabase
+        .from("task_deliverables") as unknown as {
+        select: (cols: string) => { eq: (c: string, v: string) => { order: (c: string, o: { ascending: boolean }) => Promise<{ data: TaskDeliverable[] | null }> } };
+      }).select("id, version, file_name, file_size, mime_type, drive_web_view_link, uploaded_by, created_at, user:profiles(full_name)")
+        .eq("task_id", taskId)
+        .order("version", { ascending: false });
+      setTaskFiles(data || []);
+    } catch {
+      setTaskFiles([]);
+    }
+  };
+
+  async function handleAttachFile() {
+    if (!attachFile) {
+      toast.error("Pilih file terlebih dahulu");
+      return;
+    }
+    setUploadingAttach(true);
+    setAttachProgress(0);
+    try {
+      // 1. Init resumable session (mode task_id)
+      const initRes = await fetch("/api/google/drive/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: taskId,
+          file_name: attachFile.name,
+          mime_type: attachFile.type || "application/octet-stream",
+          file_size: attachFile.size,
+        }),
+      });
+      const initData = await initRes.json();
+      if (!initRes.ok) throw new Error(initData.error || "Gagal memulai upload");
+
+      // 2. PUT file langsung ke Google (progress via XHR)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", initData.session_url, true);
+        xhr.setRequestHeader("Content-Type", attachFile.type || "application/octet-stream");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setAttachProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload gagal (${xhr.status})`)));
+        xhr.onerror = () => reject(new Error("Koneksi terputus saat upload"));
+        xhr.send(attachFile);
+      });
+
+      // 3. Simpan metadata + notifikasi ke creator & assignee
+      const completeRes = await fetch("/api/google/drive/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: taskId,
+          file_name: attachFile.name,
+          file_size: attachFile.size,
+          mime_type: attachFile.type || null,
+        }),
+      });
+      const completeData = await completeRes.json();
+      if (!completeRes.ok) throw new Error(completeData.error || "Gagal menyimpan metadata file");
+
+      toast.success(`File tersimpan ke Google Drive (v${completeData.version}) 📎`);
+      setAttachFile(null);
+      setAttachProgress(0);
+      if (attachInputRef.current) attachInputRef.current.value = "";
+      await loadTaskDeliverables();
+      onUpdated();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload gagal");
+    } finally {
+      setUploadingAttach(false);
+    }
+  }
+
   async function handleUploadReport() {
     if (!reportFile) {
       toast.error("Pilih file report terlebih dahulu");
@@ -249,6 +346,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
     loadCurrentUser();
     loadTimeLogs();
     loadLinkedReport();
+    loadTaskDeliverables();
 
     // Realtime subscriptions
     const commentChannel = supabase
@@ -820,6 +918,69 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   )}
                 </div>
               )}
+
+              {/* Lampiran File via Google Drive (video / file besar) */}
+              <div className="rounded-lg border border-border bg-background p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <Paperclip size={16} className="text-primary" />
+                  <p className="text-xs font-semibold text-foreground">Lampiran File (Google Drive)</p>
+                  {taskFiles.length > 0 && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{taskFiles.length} file</span>
+                  )}
+                </div>
+                {taskFiles.length > 0 && (
+                  <div className="mb-2 space-y-1.5">
+                    {taskFiles.map((f) => (
+                      <a
+                        key={f.id}
+                        href={f.drive_web_view_link || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-md border border-border bg-surface p-2 transition-colors hover:border-primary/40"
+                      >
+                        <FileText size={14} className="shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1 truncate text-xs text-foreground" title={f.file_name}>{f.file_name}</span>
+                        <span className="shrink-0 text-[10px] text-muted">v{f.version}</span>
+                        {f.file_size != null && (
+                          <span className="shrink-0 text-[10px] text-muted">{(f.file_size / (1024 * 1024)).toFixed(1)}MB</span>
+                        )}
+                        <ExternalLink size={12} className="shrink-0 text-muted" />
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {uploadingAttach ? (
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-[11px] text-muted">
+                      <span className="truncate">Mengupload {attachFile?.name}…</span>
+                      <span className="shrink-0">{attachProgress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-surface">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${attachProgress}%` }} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      ref={attachInputRef}
+                      type="file"
+                      accept="video/*,image/*,audio/*,.pdf,.zip,.rar,.ai,.psd,.ae,.prproj,.mp4,.mov"
+                      onChange={(e) => setAttachFile(e.target.files?.[0] || null)}
+                      className="input flex-1 p-1.5 text-xs"
+                    />
+                    <button
+                      onClick={handleAttachFile}
+                      disabled={!attachFile}
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      <Upload size={13} /> Upload ke Drive
+                    </button>
+                  </div>
+                )}
+                <p className="mt-1.5 text-[11px] text-muted">
+                  Cocok untuk video & file besar (hingga 5GB). Tersimpan rapi di Google Drive per client, tim dapat notifikasi otomatis.
+                </p>
+              </div>
 
               {/* Monthly Report: download jika sudah ada, upload jika belum */}
               {linkedReport ? (

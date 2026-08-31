@@ -8,7 +8,9 @@ const ROOT_FOLDER_NAME = "Hadona Creative";
 /**
  * POST /api/google/drive/upload
  * Inisiasi resumable upload session ke Google Drive.
- * Body: { file_name, mime_type, file_size, creative_request_id }
+ * Body: { file_name, mime_type, file_size, creative_request_id? , task_id? }
+ *  - creative_request_id: upload untuk creative request (Content Studio)
+ *  - task_id: upload attachment file besar (mis. video) untuk task
  * Return: { session_url, folder_id }
  * Browser lalu PUT chunk langsung ke session_url (Google mengizinkan CORS PUT).
  */
@@ -35,28 +37,57 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { file_name, mime_type, file_size, creative_request_id } = body as {
+    const { file_name, mime_type, file_size, creative_request_id, task_id } = body as {
       file_name: string;
       mime_type: string;
       file_size: number;
-      creative_request_id: string;
+      creative_request_id?: string;
+      task_id?: string;
     };
 
-    if (!file_name || !creative_request_id) {
+    if (!file_name || (!creative_request_id && !task_id)) {
       return NextResponse.json(
-        { error: "file_name dan creative_request_id wajib diisi" },
+        { error: "file_name dan salah satu dari creative_request_id / task_id wajib diisi" },
         { status: 400 }
       );
     }
 
-    // Verifikasi creative request + ambil nama client untuk struktur folder
-    const { data: reqRow } = await (supabase
-      .from("creative_requests") as unknown as {
-      select: (_cols?: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: { client_id: string | null; objective_campaign: string | null; client?: { name: string | null } | { name: string | null }[] } | null }> } };
-    }).select("client_id, objective_campaign, client:clients(name)").eq("id", creative_request_id).maybeSingle();
+    // Resolve nama client untuk struktur folder — dari creative request ATAU task
+    let clientName: string | null = null;
+    let appProps: Record<string, string>;
 
-    if (!reqRow) {
-      return NextResponse.json({ error: "Creative request tidak ditemukan" }, { status: 404 });
+    if (creative_request_id) {
+      const { data: reqRow } = await (supabase
+        .from("creative_requests") as unknown as {
+        select: (_cols?: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: { client_id: string | null; objective_campaign: string | null; client?: { name: string | null } | { name: string | null }[] } | null }> } };
+      }).select("client_id, objective_campaign, client:clients(name)").eq("id", creative_request_id).maybeSingle();
+
+      if (!reqRow) {
+        return NextResponse.json({ error: "Creative request tidak ditemukan" }, { status: 404 });
+      }
+      const clientObj = Array.isArray(reqRow.client) ? reqRow.client[0] : reqRow.client;
+      clientName = clientObj?.name || null;
+      appProps = {
+        creative_request_id,
+        uploaded_by: user.id,
+        source: "hadona-workspace",
+      };
+    } else {
+      const { data: taskRow } = await (supabase
+        .from("tasks") as unknown as {
+        select: (_cols?: string) => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: { client_id: string | null; client?: { name: string | null } | { name: string | null }[] } | null }> } };
+      }).select("client_id, client:clients(name)").eq("id", task_id!).maybeSingle();
+
+      if (!taskRow) {
+        return NextResponse.json({ error: "Task tidak ditemukan" }, { status: 404 });
+      }
+      const clientObj = Array.isArray(taskRow.client) ? taskRow.client[0] : taskRow.client;
+      clientName = clientObj?.name || null;
+      appProps = {
+        task_id: task_id!,
+        uploaded_by: user.id,
+        source: "hadona-workspace",
+      };
     }
 
     const oauth2Client = getOAuthClientFromTokens(tokenRow);
@@ -104,8 +135,6 @@ export async function POST(request: NextRequest) {
 
     const rootId = await ensureFolder(ROOT_FOLDER_NAME, undefined, { hadona_root: "true" });
     let folderId = rootId;
-    const clientObj = Array.isArray(reqRow.client) ? reqRow.client[0] : reqRow.client;
-    const clientName = clientObj?.name;
     if (clientName) {
       folderId = await ensureFolder(clientName, rootId, { hadona_client_folder: "true" });
     }
@@ -126,11 +155,7 @@ export async function POST(request: NextRequest) {
           name: file_name,
           mimeType: mime_type || "application/octet-stream",
           parents: [folderId],
-          appProperties: {
-            creative_request_id,
-            uploaded_by: user.id,
-            source: "hadona-workspace",
-          },
+          appProperties: appProps,
         }),
       }
     );
