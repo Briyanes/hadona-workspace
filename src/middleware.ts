@@ -47,6 +47,11 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Allow public legal pages (required by Google OAuth consent screen)
+  if (pathname === "/privacy" || pathname === "/terms") {
+    return supabaseResponse;
+  }
+
   // Allow public metadata files (SEO crawlers & PWA install)
   // Without this, /sitemap.xml & /manifest.webmanifest redirect to /login,
   // breaking search engine crawling and "Add to Home Screen"
