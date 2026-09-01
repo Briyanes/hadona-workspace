@@ -50,6 +50,12 @@ export function PushManager() {
       const perm = await Notification.requestPermission();
       if (perm !== "granted") { toast.error("Izin notifikasi ditolak browser"); setBusy(false); return; }
       const reg = await navigator.serviceWorker.ready;
+      // Bersihkan subscription lama (VAPID key sebelumnya) agar tidak konflik —
+      // Chrome error "push service error" jika subscribe dengan key beda saat sub lama masih ada
+      try {
+        const stale = await reg.pushManager.getSubscription();
+        if (stale) await stale.unsubscribe();
+      } catch { /* abaikan jika tidak ada */ }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(pubKey),
@@ -63,7 +69,11 @@ export function PushManager() {
       setEnabled(true);
       toast.success("Push notification aktif di device ini");
     } catch (e) {
-      toast.error(`Gagal mengaktifkan push: ${e instanceof Error ? e.message : "unknown"}`);
+      const msg = e instanceof Error ? e.message : "unknown";
+      const hint = msg.includes("push service")
+        ? " — cek izin notifikasi OS (macOS: System Settings → Notifications → izinkan browser; iOS: Add to Home Screen dulu), lalu reload & coba lagi"
+        : "";
+      toast.error(`Gagal mengaktifkan push: ${msg}${hint}`);
     } finally {
       setBusy(false);
     }
