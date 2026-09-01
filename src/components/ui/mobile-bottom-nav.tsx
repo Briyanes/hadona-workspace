@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, CheckSquare, MessageCircle, Users as UsersIcon, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar-context";
+import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 
 const primaryItems = [
   { label: "Home", href: "/", icon: LayoutDashboard },
@@ -17,6 +18,7 @@ const primaryItems = [
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { openMobile } = useSidebar();
+  const { chatCount } = useUnreadNotifications();
 
   // Chat page (mobile) memberi tahu state fullscreen via custom event:
   // - Daftar channel (layar utama) → nav tetap tampil
@@ -72,6 +74,11 @@ export function MobileBottomNav() {
             >
               <Icon size={22} className="shrink-0" strokeWidth={isActive ? 2.4 : 2} />
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              {item.href === "/chat" && chatCount > 0 && (
+                <span className="absolute right-2 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white shadow">
+                  {chatCount > 99 ? "99+" : chatCount}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -33,12 +33,14 @@
     "recharts": "^2.12.7",
     "remark-gfm": "^4.0.1",
     "sonner": "^1.5.0",
-    "tailwind-merge": "^2.5.2"
+    "tailwind-merge": "^2.5.2",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.16.5",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.4.2",
     "eslint": "^8.57.0",

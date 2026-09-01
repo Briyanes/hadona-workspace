@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 
 /**
  * Floating Chat Button (desktop only).
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 export function FloatingChatButton() {
   const pathname = usePathname();
   const isChatPage = pathname === "/chat" || pathname.startsWith("/chat/");
+  const { chatCount } = useUnreadNotifications();
 
   if (isChatPage) return null;
 
@@ -37,6 +39,11 @@ export function FloatingChatButton() {
       )}
     >
       <MessageCircle size={22} strokeWidth={2.2} className="shrink-0" />
+      {chatCount > 0 && (
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-semibold text-white shadow">
+          {chatCount > 99 ? "99+" : chatCount}
+        </span>
+      )}
     </Link>
   );
 }

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Save, Bell, Send, MessageSquare } from "lucide-react";
 import type { NotificationPrefs } from "@/types";
 import { Toggle } from "@/components/ui/toggle";
+import { PushManager } from "@/components/settings/push-manager";
 
 export default function NotificationsSettingsPage() {
   const supabase = createClient();
@@ -61,6 +62,13 @@ export default function NotificationsSettingsPage() {
             ✅ <strong>In-app notifications</strong> aktif (🔔 di header) · <strong>Email digest</strong> aktif (Daily 07:00 & Weekly Senin via cron) · Telegram webhook coming soon.
           </p>
         </div>
+      </div>
+
+      {/* Push Notification (per-device opt-in) */}
+      <div className="card p-6">
+        <h3 className="mb-2 text-sm font-semibold text-foreground">Push Notification</h3>
+        <p className="mb-3 text-xs text-muted">Aktifkan push di setiap device (browser/HP) yang Anda pakai.</p>
+        <PushManager />
       </div>
 
       {/* Email Notifications */}

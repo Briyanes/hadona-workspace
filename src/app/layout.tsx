@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemedToaster } from "@/components/ui/themed-toaster";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 import "./globals.css";
 
 // Anti-flicker: apply dark class before React hydrates
@@ -99,6 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           {children}
           <ThemedToaster />
+          <ServiceWorkerRegister />
         </ThemeProvider>
       </body>
     </html>
