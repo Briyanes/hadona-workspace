@@ -919,28 +919,14 @@ export default function CalendarPage() {
                 );
                 const isUrgent = days <= 2;
                 const isPast = days < 0;
-                const AgendaWrapper = (props: { children: React.ReactNode; className?: string }) => {
-                  if (e.type === "meeting" && e.rawId) {
-                    return (
-                      <button onClick={() => setDetailEvent(e)} className={props.className}>
-                        {props.children}
-                      </button>
-                    );
-                  }
-                  return (
-                    <Link href={e.href} className={props.className}>
-                      {props.children}
-                    </Link>
-                  );
-                };
-                return (
-                  <AgendaWrapper
-                    key={e.id}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary hover:bg-primary/5",
-                      isPast && "opacity-50"
-                    )}
-                  >
+                // Inline conditional render (bukan komponen terpisah) supaya React
+                // tidak remount subtree list agenda di setiap re-render halaman.
+                const rowClass = cn(
+                  "flex w-full items-center gap-3 rounded-lg border border-border bg-background p-3 transition-colors hover:border-primary hover:bg-primary/5",
+                  isPast && "opacity-50"
+                );
+                const rowContent = (
+                  <>
                     {/* Date Block */}
                     <div className={cn(
                       "flex w-12 shrink-0 flex-col items-center rounded-md py-1.5",
@@ -989,7 +975,19 @@ export default function CalendarPage() {
                             ? "Besok"
                             : `${days}h`}
                     </span>
-                  </AgendaWrapper>
+                  </>
+                );
+                if (e.type === "meeting" && e.rawId) {
+                  return (
+                    <button key={e.id} onClick={() => setDetailEvent(e)} className={rowClass}>
+                      {rowContent}
+                    </button>
+                  );
+                }
+                return (
+                  <Link key={e.id} href={e.href} className={rowClass}>
+                    {rowContent}
+                  </Link>
                 );
               })}
             </div>
@@ -1206,28 +1204,11 @@ export default function CalendarPage() {
                   {selectedEvents.map((e) => {
                     const cfg = typeConfig[e.type];
                     const Icon = cfg.icon;
-                    const EventWrapper = (props: { children: React.ReactNode; className?: string }) => {
-                      if (e.type === "meeting" && e.rawId) {
-                        return (
-                          <button
-                            onClick={() => setDetailEvent(e)}
-                            className={props.className}
-                          >
-                            {props.children}
-                          </button>
-                        );
-                      }
-                      return (
-                        <Link href={e.href} className={props.className}>
-                          {props.children}
-                        </Link>
-                      );
-                    };
-                    return (
-                      <EventWrapper
-                        key={e.id}
-                        className="flex items-start gap-2 rounded-md border border-border bg-background p-2 transition-colors hover:border-primary hover:bg-primary/5"
-                      >
+                    // Inline conditional render (bukan komponen terpisah) supaya
+                    // React tidak remount row di setiap re-render halaman.
+                    const eventRowClass = "flex items-start gap-2 rounded-md border border-border bg-background p-2 transition-colors hover:border-primary hover:bg-primary/5";
+                    const eventRowContent = (
+                      <>
                         <div className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded", cfg.bg)}>
                           <Icon size={12} />
                         </div>
@@ -1243,7 +1224,19 @@ export default function CalendarPage() {
                             )}
                           </div>
                         </div>
-                      </EventWrapper>
+                      </>
+                    );
+                    if (e.type === "meeting" && e.rawId) {
+                      return (
+                        <button key={e.id} onClick={() => setDetailEvent(e)} className={eventRowClass}>
+                          {eventRowContent}
+                        </button>
+                      );
+                    }
+                    return (
+                      <Link key={e.id} href={e.href} className={eventRowClass}>
+                        {eventRowContent}
+                      </Link>
                     );
                   })}
                 </div>
@@ -1283,25 +1276,11 @@ export default function CalendarPage() {
                             (new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
                           );
                           const isUrgent = days <= 2;
-                          const UpcomingWrapper = (props: { children: React.ReactNode; className?: string }) => {
-                            if (e.type === "meeting" && e.rawId) {
-                              return (
-                                <button onClick={() => setDetailEvent(e)} className={props.className}>
-                                  {props.children}
-                                </button>
-                              );
-                            }
-                            return (
-                              <Link href={e.href} className={props.className}>
-                                {props.children}
-                              </Link>
-                            );
-                          };
-                          return (
-                            <UpcomingWrapper
-                              key={e.id}
-                              className="flex w-full items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-background"
-                            >
+                          // Inline conditional render (bukan komponen terpisah) supaya
+                          // React tidak remount row di setiap re-render halaman.
+                          const upcomingRowClass = "flex w-full items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-background";
+                          const upcomingRowContent = (
+                            <>
                               <div className={cn(
                                 "flex h-5 w-5 shrink-0 items-center justify-center rounded",
                                 cfg.bg
@@ -1317,7 +1296,19 @@ export default function CalendarPage() {
                                   {days === 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
                                 </span>
                               )}
-                            </UpcomingWrapper>
+                            </>
+                          );
+                          if (e.type === "meeting" && e.rawId) {
+                            return (
+                              <button key={e.id} onClick={() => setDetailEvent(e)} className={upcomingRowClass}>
+                                {upcomingRowContent}
+                              </button>
+                            );
+                          }
+                          return (
+                            <Link key={e.id} href={e.href} className={upcomingRowClass}>
+                              {upcomingRowContent}
+                            </Link>
                           );
                         })}
                       </div>
