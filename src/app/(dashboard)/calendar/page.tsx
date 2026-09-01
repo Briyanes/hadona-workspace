@@ -1636,16 +1636,38 @@ export default function CalendarPage() {
 
               {/* Meeting Link */}
               {detailEvent.meetingLink && (
-                <div className="flex items-center gap-2 text-xs">
-                  <Video size={14} className="text-muted" />
-                  <a
-                    href={detailEvent.meetingLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-blue-600 hover:underline"
-                  >
-                    Join Google Meet <ExternalLink size={10} />
-                  </a>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Video size={14} className="text-muted" />
+                    <a
+                      href={detailEvent.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-blue-600 hover:underline"
+                    >
+                      Join Google Meet <ExternalLink size={10} />
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={detailEvent.meetingLink}
+                      className="input flex-1 text-xs"
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      title="Klik untuk select all, atau tekan Copy"
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(detailEvent.meetingLink ?? "");
+                        toast.success("Link disalin ke clipboard!");
+                      }}
+                      className="btn-secondary text-xs whitespace-nowrap"
+                      title="Copy link untuk dikirim ke client"
+                    >
+                      <Copy size={14} /> Copy
+                    </button>
+                  </div>
                 </div>
               )}
 
