@@ -130,7 +130,15 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
   const cronSecret = request.headers.get("x-cron-secret");
   const cronSecretValid =
     !!cronSecret && !!process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET;
-  if (authHeader || cronSecretValid) {
+  // Push relay: DB trigger (pg_net) POSTs to /api/push/relay without
+  // Origin/Referer — bypass CSRF only when secret matches (fail-closed,
+  // mirrors relay route auth: PUSH_RELAY_SECRET || CRON_SECRET).
+  const relaySecret = request.headers.get("x-relay-secret");
+  const relaySecretValid =
+    !!relaySecret &&
+    ((!!process.env.PUSH_RELAY_SECRET && relaySecret === process.env.PUSH_RELAY_SECRET) ||
+      (!!process.env.CRON_SECRET && relaySecret === process.env.CRON_SECRET));
+  if (authHeader || cronSecretValid || relaySecretValid) {
     return null; // Server-to-server, skip CSRF
   }
 

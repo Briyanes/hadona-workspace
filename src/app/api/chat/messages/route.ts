@@ -179,28 +179,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Mention notifications (graceful — requires service role key; never blocks the message)
-    try {
-      const targetIds = allMentions.filter((id: string) => id !== user.id);
-      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (targetIds.length > 0 && serviceKey) {
-        const { createClient: createServiceClient } = await import("@supabase/supabase-js");
-        const service = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
-        await service.from("notifications").insert(
-          targetIds.map((mentionedId: string) => ({
-            user_id: mentionedId,
-            type: "chat_mention",
-            title: `💬 ${profile?.full_name || "Seseorang"} menyebut Anda di chat`,
-            body: `${sanitizePlainText(content).slice(0, 100)} — buka chat untuk membalas.`,
-            link: "/chat",
-          }))
-        );
-      }
-    } catch (notifErr: any) {
-      console.warn("[chat/messages POST] Mention notification skipped:", notifErr?.message || notifErr);
-    }
+    // Mention & member notifications are handled by DB trigger
+    // trg_notify_chat_members (migration-v104) — no service-role key needed,
+    // works even when SUPABASE_SERVICE_ROLE_KEY is absent on Vercel, and
+    // fires for messages inserted from ANY client (app, edge, scripts).
 
     return NextResponse.json({
       message: {

@@ -76,6 +76,10 @@
 | v98 | **Client delete protection & audit trail** (insiden 21 Agu 2026) | security |
 | v99 | Chat & penghapusan jalur DDL exec_sql (lihat DEPLOY-V99.md) | chat |
 | v100 | **content_plans.sort_order** — urutan baris permanen + trigger auto-assign max+1 | content |
+| v101 | Content plan → task sync (backfill editor tasks) | content |
+| v102 | Meeting/Calendar flow (lihat scripts/run-migration-v102.mjs) | calendar |
+| v103 | Push notif infra: push_subscriptions + RLS, RPC get_chat_unread_total, trigger pg_net relay | notif |
+| v104 | **Fix notif chat/mention** (kolom salah di v103) + `push_config` (relay URL/secret via REST, bukan placeholder SQL) | notif |
 
 **Catatan:** v7 & v70 tidak ada filenya di repo (v7 dilewati historis; v70 di dalam `migration` tanpa isi signifikan). `migration-all.sql` dan `migration-production-fix.sql` adalah bundel lama — JANGAN dipakai untuk fresh install tanpa review (tidak merepresentasikan state terkini).
 
