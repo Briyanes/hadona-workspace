@@ -63,8 +63,11 @@ export async function DELETE(request: NextRequest) {
     const fileName = keyParts.slice(1).join("/");
 
     const selfServiceFolders = ["avatar-assets", "client-logos"];
-    if (!fileData && selfServiceFolders.includes(folder)) {
-      if (!fileName.includes(user.id) && !(await checkIsAdmin())) {
+    if (!fileData) {
+      // GAP FIX: file untracked non-self-service dulu lolos semua check → kini admin-only
+      const isSelfService =
+        selfServiceFolders.includes(folder) && fileName.includes(user.id);
+      if (!isSelfService && !(await checkIsAdmin())) {
         return NextResponse.json(
           { error: "Forbidden — you can only delete your own files" },
           { status: 403 }

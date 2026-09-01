@@ -18,19 +18,19 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB (presigned URL limit)
 // 🔒 MIME type whitelist — blocks dangerous file types
 const ALLOWED_MIME_TYPES: Record<string, string[]> = {
   "client-attachments": [
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "image/jpeg", "image/png", "image/gif", "image/webp",
     "application/pdf", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "text/csv", "text/plain", "application/zip",
   ],
   "weekly-report-pdfs": ["application/pdf"],
   "creative-assets": [
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "image/jpeg", "image/png", "image/gif", "image/webp",
     "video/mp4", "video/quicktime",
     "application/zip", "application/x-zip-compressed",
   ],
   "avatar-assets": ["image/jpeg", "image/png", "image/webp"],
-  "client-logos": ["image/jpeg", "image/png", "image/svg+xml", "image/webp"],
+  "client-logos": ["image/jpeg", "image/png", "image/webp"],
   "task-attachments": [
     "image/jpeg", "image/png", "image/gif", "image/webp",
     "application/pdf",
@@ -39,7 +39,7 @@ const ALLOWED_MIME_TYPES: Record<string, string[]> = {
     "text/csv", "text/plain", "application/zip",
   ],
   "uploads": [
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+    "image/jpeg", "image/png", "image/gif", "image/webp",
     "application/pdf", "text/csv", "text/plain",
   ],
 };
