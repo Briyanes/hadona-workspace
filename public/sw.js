@@ -10,6 +10,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Terima perintah SKIP_WAITING dari page — percepat SW waiting menjadi aktif
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
+});
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {

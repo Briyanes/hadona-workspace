@@ -83,17 +83,79 @@ export function PushManager() {
     checkFcm();
   }, [check, checkFcm]);
 
+  // Pastikan ada service worker yang benar-benar ACTIVE sebelum subscribe.
+  // Mencegah error "no active Service Worker" saat SW masih installing/waiting.
+  const ensureActiveSW = async (): Promise<ServiceWorkerRegistration> => {
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      reg = await navigator.serviceWorker.register("/sw.js");
+    }
+    // Dorong SW waiting agar segera aktif (sw.js punya listener SKIP_WAITING)
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
+    if (reg.active && navigator.serviceWorker.controller) return reg;
+
+    const sw = reg.installing || reg.waiting || reg.active;
+    if (sw) {
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          sw.removeEventListener("statechange", onChanged);
+          reject(new Error("Service worker belum aktif (timeout 15 dtk) — reload halaman lalu coba lagi"));
+        }, 15000);
+        const onChanged = () => {
+          if (sw.state === "activated") {
+            clearTimeout(timer);
+            sw.removeEventListener("statechange", onChanged);
+            resolve();
+          }
+        };
+        sw.addEventListener("statechange", onChanged);
+        if (sw.state === "activated") {
+          clearTimeout(timer);
+          sw.removeEventListener("statechange", onChanged);
+          resolve();
+        }
+      });
+      // Tunggu claim controller (max 3 dtk agar tidak menggantung selamanya)
+      if (!navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => {
+          const t = setTimeout(resolve, 3000);
+          navigator.serviceWorker.addEventListener(
+            "controllerchange",
+            () => { clearTimeout(t); resolve(); },
+            { once: true }
+          );
+        });
+      }
+    }
+    return reg;
+  };
+
   const subscribeOnce = async (pubKey: string) => {
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await ensureActiveSW();
     // Bersihkan subscription lama (VAPID key sebelumnya) agar tidak konflik
     try {
       const stale = await reg.pushManager.getSubscription();
       if (stale) await stale.unsubscribe();
     } catch { /* abaikan */ }
-    return reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(pubKey),
-    });
+    try {
+      return await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(pubKey),
+      });
+    } catch (e) {
+      // Retry sekali — beberapa browser butuh momen singkat pasca-aktivasi SW
+      const msg = e instanceof Error ? e.message : "";
+      if (/no active service\s?worker/i.test(msg)) {
+        await new Promise((r) => setTimeout(r, 600));
+        return reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pubKey),
+        });
+      }
+      throw e;
+    }
   };
 
   const enable = async () => {
@@ -117,9 +179,8 @@ export function PushManager() {
         try {
           const regs = await navigator.serviceWorker.getRegistrations();
           for (const r of regs) await r.unregister();
-          await navigator.serviceWorker.register("/sw.js");
-          await navigator.serviceWorker.ready;
-          sub = await subscribeOnce(pubKey);
+          await new Promise((r) => setTimeout(r, 300)); // beri waktu browser benar-benar unregister
+          sub = await subscribeOnce(pubKey); // subscribeOnce → ensureActiveSW register ulang & tunggu aktif
         } catch (secondErr) {
           throw secondErr instanceof Error ? secondErr : firstErr;
         }
@@ -141,6 +202,8 @@ export function PushManager() {
         hint = " — Brave: buka brave://settings/privacy → aktifkan “Use Google services for push messaging” → reload halaman → coba lagi. Atau klik ikon singa di address bar → turunkan Shields untuk situs ini.";
       } else if (isPushServiceErr) {
         hint = ` — cek: (1) izin OS: System Settings → Notifications → ${browser?.name ?? "browser"} → Allow; (2) jaringan tidak memblokir fcm.googleapis.com (cek indikator koneksi di bawah); lalu reload & coba lagi.`;
+      } else if (msg.toLowerCase().includes("no active service")) {
+        hint = " — service worker belum aktif. Reload halaman (Cmd/Ctrl+Shift+R), tunggu 3 detik, lalu coba lagi.";
       } else if (msg.toLowerCase().includes("permission")) {
         hint = " — buka pengaturan site (ikon di kiri address bar) → Notifications → Allow.";
       }
