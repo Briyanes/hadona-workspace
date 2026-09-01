@@ -29,14 +29,19 @@ export async function PATCH(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { event_id, start_datetime, end_datetime } = body as {
+    const { event_id, start_datetime, end_datetime, meeting_link, google_event_id } = body as {
       event_id: string;
-      start_datetime: string;
+      start_datetime?: string;
       end_datetime?: string;
+      meeting_link?: string | null;
+      google_event_id?: string | null;
     };
 
-    if (!event_id || !start_datetime) {
-      return NextResponse.json({ error: "event_id and start_datetime are required" }, { status: 400 });
+    // Link-only update (retroactive Meet generation) doesn't require start_datetime
+    const isLinkUpdate = meeting_link !== undefined || google_event_id !== undefined;
+
+    if (!event_id || (!start_datetime && !isLinkUpdate)) {
+      return NextResponse.json({ error: "event_id is required (start_datetime required for reschedule)" }, { status: 400 });
     }
 
     // ─── Fetch event from DB ───
@@ -50,14 +55,18 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    const newStartIso = new Date(start_datetime).toISOString();
-    const newEndIso = end_datetime
-      ? new Date(end_datetime).toISOString()
-      : new Date(new Date(start_datetime).getTime() + 60 * 60 * 1000).toISOString();
+    let newStartIso: string | null = null;
+    let newEndIso: string | null = null;
+    if (start_datetime) {
+      newStartIso = new Date(start_datetime).toISOString();
+      newEndIso = end_datetime
+        ? new Date(end_datetime).toISOString()
+        : new Date(new Date(start_datetime).getTime() + 60 * 60 * 1000).toISOString();
+    }
 
     // ─── Update Google Calendar if linked ───
     const googleEventId = eventRow?.google_event_id;
-    if (googleEventId) {
+    if (googleEventId && newStartIso && newEndIso) {
       // Load Google OAuth token
       const { data: tokenRow } = await (supabase
         .from("google_oauth_tokens") as unknown as {
@@ -86,21 +95,27 @@ export async function PATCH(req: NextRequest) {
     }
 
     // ─── Update DB ───
+    const updatePayload: Record<string, unknown> = {};
+    if (newStartIso && newEndIso) {
+      updatePayload.start_datetime = newStartIso;
+      updatePayload.end_datetime = newEndIso;
+    }
+    if (meeting_link !== undefined) updatePayload.meeting_link = meeting_link;
+    if (google_event_id !== undefined) updatePayload.google_event_id = google_event_id;
+
     const { error: updateErr } = await (supabase
       .from("calendar_events") as unknown as {
       update: (row: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<{ error: unknown }> };
-    }).update({
-      start_datetime: newStartIso,
-      end_datetime: newEndIso,
-    }).eq("id", event_id);
+    }).update(updatePayload).eq("id", event_id);
 
     if (updateErr) {
       const errMsg = (updateErr as { message?: string }).message || "Unknown DB error";
       return NextResponse.json({ error: "Failed to update event: " + errMsg }, { status: 500 });
     }
 
-    // ─── Notify PM via in-app notification (if linked_task exists) ───
+    // ─── Notify PM via in-app notification (only on reschedule, if linked_task exists) ───
     try {
+      if (newStartIso) {
       const admin = createSupabaseAdmin(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -135,13 +150,16 @@ export async function PATCH(req: NextRequest) {
           });
         }
       }
+      }
     } catch {
       // Non-critical
     }
 
     return NextResponse.json({
       success: true,
-      message: "Meeting rescheduled successfully. Attendees notified via email.",
+      message: newStartIso
+        ? "Meeting rescheduled successfully. Attendees notified via email."
+        : "Meeting link updated successfully.",
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

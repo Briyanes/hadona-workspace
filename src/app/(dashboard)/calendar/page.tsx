@@ -48,6 +48,9 @@ interface CalendarEvent {
   rawId?: string;
   googleEventId?: string;
   meetingLink?: string | null;
+  clientId?: string | null;
+  clientEmail?: string | null;
+  clientPhone?: string | null;
   description?: string | null;
   location?: string | null;
   startDatetime?: string;
@@ -212,7 +215,7 @@ export default function CalendarPage() {
           .not("contract_end", "is", null),
         supabase
           .from("calendar_events")
-          .select("id, title, description, event_type, start_datetime, end_datetime, all_day, location, meeting_link, google_event_id, status, client:clients(name)")
+          .select("id, title, description, event_type, start_datetime, end_datetime, all_day, location, meeting_link, google_event_id, status, client_id, client:clients(name, contact_email, contact_phone)")
           .order("start_datetime"),
         supabase
           .from("profiles")
@@ -287,8 +290,8 @@ export default function CalendarPage() {
         id: string; title: string; description: string | null;
         event_type: string; start_datetime: string; end_datetime: string | null;
         all_day: boolean; location: string | null; meeting_link: string | null;
-        google_event_id: string | null; status: string | null;
-        client?: { name: string };
+        google_event_id: string | null; status: string | null; client_id: string | null;
+        client?: { name: string; contact_email?: string | null; contact_phone?: string | null };
       }
       ((calEvents.data as unknown as CalEventRow[]) || []).forEach((ev) => {
         // Skip cancelled meetings
@@ -306,6 +309,9 @@ export default function CalendarPage() {
           href: "#",
           googleEventId: ev.google_event_id || undefined,
           meetingLink: ev.meeting_link,
+          clientId: ev.client_id,
+          clientEmail: ev.client?.contact_email ?? null,
+          clientPhone: ev.client?.contact_phone ?? null,
           description: ev.description,
           location: ev.location,
           startDatetime: ev.start_datetime,
@@ -549,6 +555,63 @@ export default function CalendarPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       toast.error("Gagal batalkan: " + msg);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // ============================================
+  // Generate Meet Link for existing event (retroactive)
+  // ============================================
+  async function handleGenerateMeetLink() {
+    if (!detailEvent?.rawId || !detailEvent.startDatetime) return;
+    setActionLoading(true);
+    try {
+      const attendees: string[] = [];
+      if (detailEvent.clientEmail) attendees.push(detailEvent.clientEmail);
+
+      const meetRes = await fetch("/api/google/create-meet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: detailEvent.title,
+          description: detailEvent.description || undefined,
+          start_datetime: detailEvent.startDatetime,
+          end_datetime: detailEvent.endDatetime || undefined,
+          location: detailEvent.location || undefined,
+          attendees_emails: attendees,
+        }),
+      });
+      const meetData = await meetRes.json();
+      if (!meetRes.ok) throw new Error(meetData.error || "Failed to create Meet");
+
+      // Persist link + google_event_id to DB (link-only PATCH)
+      const patchRes = await fetch("/api/calendar/events", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: detailEvent.rawId,
+          meeting_link: meetData.google_meet_code || null,
+          google_event_id: meetData.google_event_id || null,
+        }),
+      });
+      if (!patchRes.ok) {
+        const patchData = await patchRes.json();
+        throw new Error(patchData.error || "Failed to save Meet link");
+      }
+
+      toast.success("✅ Meet link berhasil dibuat & tersimpan!");
+      setMeetSuccess({
+        link: meetData.google_meet_code || "",
+        clientName: detailEvent.clientName || null,
+        clientPhone: detailEvent.clientPhone || null,
+        clientEmail: detailEvent.clientEmail || null,
+      });
+      setDetailEvent(null);
+      loadAll();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error("Gagal generate Meet link: " + msg);
     } finally {
       setActionLoading(false);
     }
@@ -1669,6 +1732,24 @@ export default function CalendarPage() {
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* Generate Meet Link (retroactive — event created without Meet) */}
+              {!detailEvent.meetingLink && detailEvent.type === "meeting" && (
+                googleConnected ? (
+                  <button
+                    onClick={handleGenerateMeetLink}
+                    disabled={actionLoading}
+                    className="btn-secondary w-full justify-center text-xs disabled:opacity-50"
+                  >
+                    {actionLoading ? <Loader2 size={14} className="animate-spin" /> : <Video size={14} />}
+                    Generate Google Meet Link
+                  </button>
+                ) : (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[10px] text-amber-700">
+                    Hubungkan Google di Settings → Integrations untuk generate Meet link.
+                  </div>
+                )
               )}
 
               {/* Description */}
