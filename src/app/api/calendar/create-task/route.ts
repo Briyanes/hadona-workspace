@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sanitizePlainText, sanitizeHtml } from "@/lib/sanitize";
+import { getAuthenticatedUser } from "@/lib/auth-api";
 
 /**
  * POST /api/calendar/create-task
  *
  * Creates a task + assigns it to a PM (task_assignees) server-side.
  * Uses service role key to bypass RLS policies that block client-side inserts.
+ * Protected by auth guard — service role MUST NOT be reachable anonymously.
  *
  * Body:
  *   title: string
@@ -15,12 +17,19 @@ import { sanitizePlainText, sanitizeHtml } from "@/lib/sanitize";
  *   client_id?: string | null
  *   pm_user_id: string
  *   event_id?: string  (to link back to calendar_events.linked_task_id)
- *   created_by?: string | null
+ *   created_by is IGNORED — always set to the authenticated user server-side.
  */
 export async function POST(req: NextRequest) {
   try {
+    // ─── Auth guard (WAJIB: route ini memakai service role key) ───
+    const auth = await getAuthenticatedUser(req);
+    if (!auth.user || auth.error) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const authUserId = auth.user.id;
+
     const body = await req.json();
-    const { title, description, due_date, client_id, pm_user_id, event_id, created_by } = body;
+    const { title, description, due_date, client_id, pm_user_id, event_id } = body;
 
     if (!title || !due_date || !pm_user_id) {
       return NextResponse.json(
@@ -46,7 +55,8 @@ export async function POST(req: NextRequest) {
         status: "todo",
         priority: "medium",
         client_id: client_id || null,
-        created_by: created_by || null,
+        // Security: selalu pakai identitas user terautentikasi, abaikan input klien
+        created_by: authUserId,
       })
       .select("id")
       .single();
