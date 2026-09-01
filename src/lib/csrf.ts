@@ -121,10 +121,16 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
   }
 
   // No Origin and no Referer on a mutation request — suspicious.
-  // Allow only if it's a server-to-server call (e.g., cron with secret)
+  // Allow only if it's a server-to-server call (e.g., cron with secret).
+  // - Authorization header: presence check only (the actual value/JWT is
+  //   verified by route handlers via verifyCronSecret or Supabase auth).
+  // - x-cron-secret: value MUST match CRON_SECRET (fail-closed). Previously
+  //   mere header presence bypassed CSRF — any junk value could skip the check.
   const authHeader = request.headers.get("authorization");
   const cronSecret = request.headers.get("x-cron-secret");
-  if (authHeader || cronSecret) {
+  const cronSecretValid =
+    !!cronSecret && !!process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET;
+  if (authHeader || cronSecretValid) {
     return null; // Server-to-server, skip CSRF
   }
 

@@ -96,7 +96,12 @@ function normalizeProgress(v: string): string {
   return "proses_edit";
 }
 
-const MONTHS_ID = ["jan", "feb", "mar", "apr", "mei", "jun", "jul", "agu", "aug", "sep", "okt", "oct", "nov", "des", "dec"];
+// Direct month lookup (ID + EN aliases). Previously used indexOf() % 12 on a
+// 15-entry alias array, which silently corrupted Okt→Sep, Nov→Jan, Des→Feb.
+const MONTH_MAP: Record<string, string> = {
+  jan: "01", feb: "02", mar: "03", apr: "04", mei: "05", may: "05", jun: "06",
+  jul: "07", agu: "08", aug: "08", sep: "09", okt: "10", oct: "10", nov: "11", des: "12", dec: "12",
+};
 
 function normalizeDate(v: string): string | null {
   const t = v.trim();
@@ -107,14 +112,11 @@ function normalizeDate(v: string): string | null {
   // dd/mm/yyyy or dd-mm-yyyy
   const dmy = t.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (dmy) return `${dmy[3]}-${dmy[2].padStart(2, "0")}-${dmy[1].padStart(2, "0")}`;
-  // "12 Agu 2025" (Indonesian)
+  // "12 Agu 2025" (Indonesian) / "12 Aug 2025" (English)
   const words = t.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
   if (words) {
-    const mIdx = MONTHS_ID.indexOf(words[2].toLowerCase().slice(0, 3));
-    if (mIdx >= 0) {
-      const m = (mIdx % 12) + 1 > 9 ? "9" : String((mIdx % 12) + 1);
-      // agu/aug both index 7 → month 8
-      const monthNum = words[2].toLowerCase().startsWith("agu") || words[2].toLowerCase().startsWith("aug") ? "08" : m.padStart(2, "0");
+    const monthNum = MONTH_MAP[words[2].toLowerCase().slice(0, 3)];
+    if (monthNum) {
       return `${words[3]}-${monthNum}-${words[1].padStart(2, "0")}`;
     }
   }
@@ -167,6 +169,17 @@ function extractRows(grid: string[][]): Record<string, string>[] {
 // ── POST handler ──────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
+    // Auth guard — konsisten dengan route import lain (import/sheet, reports/import-sheet,
+    // import/dashboard-sheet). Middleware /api/* hanya enforce CSRF, bukan auth: RLS masih
+    // melindungi insert, tapi previewOnly akan membocorkan isi sheet ke user belum login.
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const url: string = body.url || "";
     const previewOnly: boolean = !!body.previewOnly;
@@ -232,7 +245,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "clientId dan month wajib diisi" }, { status: 400 });
     }
 
-    const supabase = createClient();
     const importStart = new Date();
     const inserts = rows
       .filter((r) => r.pilar || r.tema || r.copy || r.caption || r.details)
