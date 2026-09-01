@@ -67,6 +67,13 @@ export async function updateSession(request: NextRequest) {
   // Critical for OAuth callbacks (e.g., /api/meta/callback) where
   // cross-domain redirects may cause cookie/session timing issues
   if (pathname.startsWith("/api/")) {
+    // Push relay: called server-to-server by DB trigger (pg_net) with
+    // x-relay-secret. No browser cookies involved, so CSRF checks don't
+    // apply — the route enforces its own fail-closed secret auth against
+    // push_config (DB) / PUSH_RELAY_SECRET env.
+    if (pathname === "/api/push/relay") {
+      return supabaseResponse;
+    }
     // CSRF check for mutation methods (POST, PUT, PATCH, DELETE)
     const csrfError = validateCsrf(request);
     if (csrfError) {
