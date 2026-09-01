@@ -371,7 +371,7 @@ export default function ProductionPage() {
                         value={p.status}
                         onChange={(e) => { e.stopPropagation(); handleStatusChange(p.id, e.target.value); }}
                         onClick={(e) => e.stopPropagation()}
-                        className={cn("cursor-pointer border-0 text-xs font-medium outline-none", status?.color)}
+                        className={cn("status-pill cursor-pointer border-0 text-xs font-medium outline-none", status?.color)}
                       >
                         {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>

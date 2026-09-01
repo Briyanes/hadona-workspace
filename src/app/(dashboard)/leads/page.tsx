@@ -457,7 +457,7 @@ export default function LeadsPage() {
                       value={lead.stage}
                       onChange={(e) => handleStageChange(lead.id, e.target.value)}
                       className={cn(
-                        "cursor-pointer border-0 text-xs font-medium outline-none",
+                        "status-pill cursor-pointer border-0 text-xs font-medium outline-none",
                         STAGES.find((s) => s.value === lead.stage)?.color || ""
                       )}
                     >

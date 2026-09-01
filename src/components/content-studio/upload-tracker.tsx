@@ -344,7 +344,7 @@ export default function UploadTracker() {
                   <select
                     value={u.status}
                     onChange={(e) => updateStatus(u.id, e.target.value)}
-                    className="rounded-md border-0 bg-background px-2 py-1 text-xs font-medium"
+                    className="status-pill rounded-md border-0 bg-background px-2 py-1 pr-6 text-xs font-medium"
                   >
                     <option value="todo">To Do</option>
                     <option value="in-progress">In Progress</option>

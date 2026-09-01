@@ -351,7 +351,7 @@ export default function CaptionBank() {
                   <select
                     value={c.performance}
                     onChange={(e) => updatePerformance(c.id, e.target.value)}
-                    className="rounded-md border-0 bg-background px-2 py-1 text-xs font-medium"
+                    className="status-pill rounded-md border-0 bg-background px-2 py-1 pr-6 text-xs font-medium"
                   >
                     <option value="untested">Untested</option>
                     <option value="good">Good</option>

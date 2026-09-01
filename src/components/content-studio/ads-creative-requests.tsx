@@ -377,7 +377,11 @@ export default function AdsCreativeRequests() {
                       <select
                         value={it.status}
                         onChange={(e) => quickStatus(it, e.target.value)}
-                        className={cn("rounded-full border px-2.5 py-1 text-xs font-medium cursor-pointer bg-transparent", sm.cls)}
+                        title="Ubah status"
+                        className={cn(
+                          "status-pill rounded-full border px-2.5 py-1 pr-6 text-xs font-medium cursor-pointer bg-transparent min-w-[118px]",
+                          sm.cls
+                        )}
                       >
                         {STATUS_OPTIONS.map((s) => (
                           <option key={s.value} value={s.value}>

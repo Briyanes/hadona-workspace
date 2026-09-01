@@ -289,6 +289,32 @@
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFD60A' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
   }
 
+  /* Pill-style status select (in tables): consistent custom chevron arrow.
+     Works on any tinted background (amber/blue/purple/emerald/teal) because
+     it inherits nothing from .input and uses a neutral gray arrow. */
+  select.status-pill {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.75rem;
+    padding-right: 1.5rem;
+    cursor: pointer;
+  }
+  .dark select.status-pill {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e1' stroke-width='2'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3e%3c/svg%3e");
+  }
+  select.status-pill option {
+    background-color: #ffffff;
+    color: #18181b;
+  }
+  .dark select.status-pill option {
+    background-color: #1e293b;
+    color: #f1f5f9;
+  }
+
   /* Disable default IE arrow */
   select.input::-ms-expand {
     display: none;

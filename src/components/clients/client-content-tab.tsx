@@ -368,7 +368,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                     value={item.status}
                     onChange={(e) => handleUpdateUploadStatus(item.id, e.target.value)}
                     className={cn(
-                      "shrink-0 rounded border-0 px-2 py-1 text-xs font-medium outline-none",
+                      "status-pill shrink-0 rounded border-0 px-2 py-1 text-xs font-medium outline-none",
                       uploadStatusColors[item.status] || uploadStatusColors.todo
                     )}
                   >
@@ -423,7 +423,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                     value={item.performance}
                     onChange={(e) => handleUpdateCaptionPerformance(item.id, e.target.value)}
                     className={cn(
-                      "shrink-0 rounded border-0 px-2 py-1 text-xs font-medium outline-none",
+                      "status-pill shrink-0 rounded border-0 px-2 py-1 text-xs font-medium outline-none",
                       performanceColors[item.performance] || performanceColors.untested
                     )}
                   >
