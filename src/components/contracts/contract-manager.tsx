@@ -1,28 +1,11 @@
 "use client";
 
+import { AlertCircle, AlertTriangle, Calendar, CheckCircle, Clock, CreditCard, DollarSign, Download, FileText, Lightbulb, Loader2, Plus, RefreshCw, Trash2, TrendingUp, Upload, Wallet, X, Zap } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
-import {
-  FileText,
-  Plus,
-  X,
-  Loader2,
-  Trash2,
-  DollarSign,
-  Calendar,
-  TrendingUp,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  CreditCard,
-  Upload,
-  Download,
-  RefreshCw,
-  Wallet,
-  AlertTriangle,
-} from "lucide-react";
+
 import { cn, formatIDR, formatDate } from "@/lib/utils";
 
 // ============================================
@@ -792,7 +775,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
           {prepaidContracts.length > 0 && (
             <div className="rounded-lg border border-primary/30 bg-primary/10 p-3">
               <div className="flex items-center gap-2">
-                <span className="text-lg">⚡</span>
+                <Zap size={18} />
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-primary">Prepaid Contracts Active</p>
                   <p className="text-[10px] text-muted">
@@ -872,7 +855,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 <p className="text-xs">
                   {nextDue.daysLeft < 0 ? (
                     <span className="text-danger font-medium">
-                      ⚠️ Jatuh tempo {formatDate(nextDue.date)} sudah lewat {Math.abs(nextDue.daysLeft)} hari!
+                      <AlertTriangle size={12} className="inline" /> Jatuh tempo {formatDate(nextDue.date)} sudah lewat {Math.abs(nextDue.daysLeft)} hari!
                     </span>
                   ) : nextDue.daysLeft === 0 ? (
                     <span className="text-warning font-medium">
@@ -880,7 +863,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     </span>
                   ) : (
                     <span className="text-muted">
-                      📅 Jatuh tempo terdekat: {formatDate(nextDue.date)} ({nextDue.daysLeft} hari lagi)
+                      <Calendar size={12} className="inline" /> Jatuh tempo terdekat: {formatDate(nextDue.date)} ({nextDue.daysLeft} hari lagi)
                     </span>
                   )}
                 </p>
@@ -930,7 +913,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     </span>
                     {contract.is_prepaid && (
                       <span className="badge bg-primary/20 text-primary text-[10px]">
-                        ⚡ Prepaid {contract.total_months_prepaid} bln
+                        <Zap size={12} className="inline" /> Prepaid {contract.total_months_prepaid} bln
                       </span>
                     )}
                   </div>
@@ -1330,7 +1313,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       </p>
                     </div>
                     <p className="mt-2 text-[10px] text-primary">
-                      💡 Client membayar penuh di awal. Dashboard akan menampilkan total prepaid, bukan per bulan.
+                      <Lightbulb size={12} className="inline" /> Client membayar penuh di awal. Dashboard akan menampilkan total prepaid, bukan per bulan.
                       Auto-billing akan skip kontrak ini selama periode prepaid.
                     </p>
                   </>

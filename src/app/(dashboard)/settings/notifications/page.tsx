@@ -1,9 +1,10 @@
 "use client";
 
+import { Bell, CheckCircle2, Loader2, MessageSquare, Save, Send } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Bell, Send, MessageSquare } from "lucide-react";
+
 import type { NotificationPrefs } from "@/types";
 import { Toggle } from "@/components/ui/toggle";
 import { PushManager } from "@/components/settings/push-manager";
@@ -61,7 +62,7 @@ export default function NotificationsSettingsPage() {
         <div className="flex items-start gap-2">
           <span className="badge bg-success/15 text-success shrink-0 text-[10px]">Active</span>
           <p className="text-xs text-muted">
-            ✅ <strong>In-app notifications</strong> aktif (🔔 di header) · <strong>Email digest</strong> aktif (Daily 07:00 & Weekly Senin via cron) · Telegram webhook coming soon.
+            <CheckCircle2 size={12} className="inline" /> <strong>In-app notifications</strong> aktif (<Bell size={12} className="inline" /> di header) · <strong>Email digest</strong> aktif (Daily 07:00 & Weekly Senin via cron) · Telegram webhook coming soon.
           </p>
         </div>
       </div>

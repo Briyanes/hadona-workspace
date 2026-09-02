@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Share2, Copy, Check, ExternalLink } from "lucide-react";
+import { Check, Copy, ExternalLink, Minus, Share2, TrendingDown, TrendingUp } from 'lucide-react';
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+
 // BATCH 2 Sesi 2: types + METRIC_DEFS + formatMetric diimpor dari modul shared
 // (single source of truth; sebelumnya duplikat 9-metrik versi lama di sini).
 import { type Report, METRIC_DEFS, formatMetric } from "@/components/reports/metrics";

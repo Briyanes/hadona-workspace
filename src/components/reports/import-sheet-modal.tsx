@@ -21,21 +21,10 @@
 
 "use client";
 
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Download, FileSpreadsheet, Lightbulb, Link2, Loader2, Sparkles, X, XCircle } from 'lucide-react';
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  X,
-  Loader2,
-  FileSpreadsheet,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  ChevronDown,
-  ChevronRight,
-  Link2,
-  Sparkles,
-  Download,
-} from "lucide-react";
+
 import { cn, formatDate, formatIDR, formatCompact } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 
@@ -1430,7 +1419,7 @@ function UnmatchedResolverCard({
                   {/* Suggestion chips */}
                   {suggestions.length > 0 ? (
                     <div>
-                      <p className="mb-1 text-[10px] text-muted">💡 Saran client:</p>
+                      <p className="mb-1 text-[10px] text-muted"><Lightbulb size={12} className="inline" /> Saran client:</p>
                       <div className="flex flex-wrap gap-1">
                         {suggestions.map(({ client, score, reason }) => (
                           <button
@@ -1453,7 +1442,7 @@ function UnmatchedResolverCard({
                     </div>
                   ) : (
                     <p className="text-[10px] text-warning">
-                      ⚠️ Tidak ada suggestion yang cocok. Cari manual di bawah.
+                      <AlertTriangle size={12} className="inline" /> Tidak ada suggestion yang cocok. Cari manual di bawah.
                     </p>
                   )}
 
@@ -1508,7 +1497,7 @@ function UnmatchedResolverCard({
       {/* Hint */}
       {allResolved && !reimporting && (
         <p className="mt-1.5 text-[10px] text-success">
-          ✅ Semua row sudah di-assign. Klik "Re-import" untuk memproses ulang.
+          <CheckCircle2 size={12} className="inline" /> Semua row sudah di-assign. Klik "Re-import" untuk memproses ulang.
         </p>
       )}
     </div>

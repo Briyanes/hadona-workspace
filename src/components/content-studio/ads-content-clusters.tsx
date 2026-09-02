@@ -1,21 +1,10 @@
 "use client";
 
+import { AlertTriangle, Boxes, Calendar, Copy, ExternalLink, LayoutGrid, List, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  Boxes,
-  Plus,
-  Trash2,
-  Search,
-  Pencil,
-  Loader2,
-  LayoutGrid,
-  List,
-  Calendar,
-  ExternalLink,
-  Copy,
-} from "lucide-react";
+
 import { cn, extractError } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -523,7 +512,7 @@ export default function AdsContentClusters() {
                   const extra = completeness(it).missing.filter((m) => m !== "Link");
                   return (
                     <span className="inline-flex w-fit items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-600">
-                      ⚠ Link belum ada{extra.length ? ` (+${extra.length})` : ""}
+                      <AlertTriangle size={12} className="inline" /> Link belum ada{extra.length ? ` (+${extra.length})` : ""}
                     </span>
                   );
                 })()

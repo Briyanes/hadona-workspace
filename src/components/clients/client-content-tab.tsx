@@ -1,20 +1,11 @@
 // @ts-nocheck — table content_uploads & caption_bank belum ada di generated types
 "use client";
 
+import { Calendar, CheckCircle, Clock, ExternalLink, FileText, MessageSquare, Plus, Tag, Upload } from 'lucide-react';
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Upload,
-  FileText,
-  Tag,
-  ExternalLink,
-  Plus,
-  Calendar,
-  CheckCircle,
-  Clock,
-  MessageSquare,
-} from "lucide-react";
+
 import { formatDate, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -361,7 +352,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                       </a>
                     )}
                     {item.notes && (
-                      <p className="mt-1 text-xs text-muted">📝 {item.notes}</p>
+                      <p className="mt-1 text-xs text-muted"><FileText size={12} className="inline" /> {item.notes}</p>
                     )}
                   </div>
                   <select

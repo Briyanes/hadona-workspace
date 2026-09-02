@@ -1,9 +1,10 @@
 "use client";
 
+import { AlertTriangle, Check, ChevronDown, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getInitials, cn } from "@/lib/utils";
-import { Check, ChevronDown, X, UserPlus, Users } from "lucide-react";
+
 import { Avatar } from "@/components/ui/avatar";
 
 interface User {
@@ -145,7 +146,7 @@ export function AssigneePicker({
       {/* Info: division filter active */}
       {divisionFilter && users.length === 0 && (
         <p className="mt-1.5 text-xs text-muted">
-          ⚠️ Belum ada member di divisi <strong>{divisionFilter}</strong>. 
+          <AlertTriangle size={12} className="inline" /> Belum ada member di divisi <strong>{divisionFilter}</strong>. 
           Tambahkan user ke divisi ini via User Management.
         </p>
       )}

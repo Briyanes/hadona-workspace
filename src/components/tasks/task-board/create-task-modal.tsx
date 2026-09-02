@@ -1,6 +1,7 @@
 "use client";
 
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Lock } from 'lucide-react';
+
 import { Modal } from "@/components/ui/modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import type { Client, TaskForm } from "./types";
@@ -174,7 +175,7 @@ export function CreateTaskModal({
               <option value="Developer">Developer</option>
             </select>
             {activeDivision && (
-              <p className="mt-1 text-xs text-muted">🔒 Division terkunci: <strong>{activeDivision}</strong></p>
+              <p className="mt-1 text-xs text-muted"><Lock size={12} className="inline" /> Division terkunci: <strong>{activeDivision}</strong></p>
             )}
           </div>
 

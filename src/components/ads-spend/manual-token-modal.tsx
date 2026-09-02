@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, KeyRound, ExternalLink, Shield, Zap } from "lucide-react";
+import { AlertTriangle, ExternalLink, KeyRound, Lightbulb, Loader2, Shield, Star, Zap } from 'lucide-react';
+
 import { Modal } from "@/components/ui/modal";
 
 interface ManualTokenModalProps {
@@ -53,7 +54,7 @@ export function ManualTokenModal({
           <div className="mb-2 flex items-center gap-1.5">
             <Shield className="text-green-600" size={14} />
             <span className="text-sm font-bold text-green-800 dark:text-green-400">
-              ⭐ REKOMENDASI: System User Token (Permanent)
+              <Star size={12} className="inline text-warning" /> REKOMENDASI: System User Token (Permanent)
             </span>
           </div>
           <p className="mb-2 text-[11px] text-muted dark:text-border">
@@ -126,7 +127,7 @@ export function ManualTokenModal({
             <li>Copy token, paste di bawah</li>
           </ol>
           <p className="mt-2 text-[10px] text-muted">
-            ⚠️ Token ini akan di-exchange jadi long-lived (60 hari). Setelah expired, harus diulang.
+            <AlertTriangle size={12} className="inline" /> Token ini akan di-exchange jadi long-lived (60 hari). Setelah expired, harus diulang.
           </p>
         </details>
 
@@ -143,7 +144,7 @@ export function ManualTokenModal({
             disabled={savingToken}
           />
           <p className="mt-1 text-[10px] text-muted">
-            💡 Paste token di sini. Sistem akan otomatis deteksi apakah token permanent (System User)
+            <Lightbulb size={12} className="inline" /> Paste token di sini. Sistem akan otomatis deteksi apakah token permanent (System User)
             atau perlu di-exchange.
           </p>
         </div>

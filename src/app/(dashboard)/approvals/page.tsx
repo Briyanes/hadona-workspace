@@ -1,12 +1,10 @@
 "use client";
 
+import { AlertCircle, AlertTriangle, Building2, Calendar, CheckCircle, CheckCircle2, Clock, ExternalLink, FileText, Loader2, MoreVertical, Pencil, Plus, Search, Trash2, User, X, XCircle } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import {
-  Plus, Search, X, Clock, CheckCircle, XCircle, AlertCircle,
-  FileText, MoreVertical, Pencil, Trash2, Loader2, ExternalLink,
-} from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -387,20 +385,20 @@ export default function ApprovalsPage() {
                       <span className={cn(status?.color)}>{status?.label}</span>
                       <span className={cn(PRIORITIES[a.priority] || PRIORITIES.medium)}>{a.priority}</span>
                       {isOverdue && (
-                        <span className="badge bg-danger/20 text-danger animate-pulse">⚠ OVERDUE</span>
+                        <span className="badge bg-danger/20 text-danger animate-pulse"><AlertTriangle size={12} className="inline" /> OVERDUE</span>
                       )}
                     </div>
                     {a.description && <p className="text-sm text-muted">{a.description}</p>}
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-muted">
-                      {a.client_name && <span>🏢 {a.client_name}</span>}
-                      {a.submitter_name && <span>👤 {a.submitter_name}</span>}
-                      {a.reviewer_name && <span>✅ Reviewed by: {a.reviewer_name}</span>}
+                      {a.client_name && <span><Building2 size={12} className="inline" /> {a.client_name}</span>}
+                      {a.submitter_name && <span><User size={12} className="inline" /> {a.submitter_name}</span>}
+                      {a.reviewer_name && <span><CheckCircle2 size={12} className="inline" /> Reviewed by: {a.reviewer_name}</span>}
                       {a.due_date && (
                         <span className={isOverdue ? "font-bold text-danger" : ""}>
-                          📅 Due: {new Date(a.due_date).toLocaleDateString("id-ID")}
+                          <Calendar size={12} className="inline" /> Due: {new Date(a.due_date).toLocaleDateString("id-ID")}
                         </span>
                       )}
-                      <span>🕐 {new Date(a.created_at).toLocaleDateString("id-ID")}</span>
+                      <span><Clock size={12} className="inline" /> {new Date(a.created_at).toLocaleDateString("id-ID")}</span>
                     </div>
                     {a.review_notes && (
                       <div className="mt-2 rounded-md bg-background p-2 text-xs text-muted">

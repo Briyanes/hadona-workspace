@@ -1,7 +1,8 @@
 "use client";
 
+import { AlertTriangle, CheckCircle2, ClipboardList, Loader2, Users, Zap } from 'lucide-react';
 import { useEffect, useState } from "react";
-import { Users, Loader2, AlertTriangle } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface DivisionStat {
@@ -141,9 +142,9 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
 
               {/* Stats breakdown */}
               <div className="mt-1 flex gap-2 text-[9px] text-muted">
-                <span className="text-muted">📋 {div.todo} todo</span>
-                <span className="text-muted">⚡ {div.in_progress} in progress</span>
-                <span className="text-success">✅ {div.done} done</span>
+                <span className="text-muted"><ClipboardList size={12} className="inline" /> {div.todo} todo</span>
+                <span className="text-muted"><Zap size={12} className="inline" /> {div.in_progress} in progress</span>
+                <span className="text-success"><CheckCircle2 size={12} className="inline" /> {div.done} done</span>
               </div>
             </div>
           );

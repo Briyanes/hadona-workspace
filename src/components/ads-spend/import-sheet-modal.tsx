@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Download } from "lucide-react";
+import { AlertTriangle, BarChart3, Bot, CheckCircle2, ClipboardList, Download, Inbox, Lightbulb, Loader2, RefreshCw } from 'lucide-react';
+
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 import type { AssignResult } from "./types";
@@ -70,7 +71,7 @@ export function ImportSheetModal({
               </>
             ) : importMode === "assign" ? (
               assignResult ? (
-                <>🔄 Run Again</>
+                <><RefreshCw size={12} className="inline" /> Run Again</>
               ) : (
                 <>
                   <Download size={14} className="rotate-180" /> Auto-Assign Now
@@ -100,7 +101,7 @@ export function ImportSheetModal({
               : "text-muted hover:text-foreground"
           )}
         >
-          🤖 Auto-Assign Client (Rekomendasi)
+          <Bot size={12} className="inline" /> Auto-Assign Client (Rekomendasi)
         </button>
         <button
           type="button"
@@ -115,7 +116,7 @@ export function ImportSheetModal({
               : "text-muted hover:text-foreground"
           )}
         >
-          📥 Import Account Baru
+          <Inbox size={12} className="inline" /> Import Account Baru
         </button>
       </div>
 
@@ -123,7 +124,7 @@ export function ImportSheetModal({
         <>
           {/* Auto-Assign Mode Info */}
           <div className="mb-4 rounded-lg bg-success/5 p-3 text-xs text-muted">
-            <p className="mb-1 font-semibold text-success">🤖 Cara kerja Auto-Assign:</p>
+            <p className="mb-1 font-semibold text-success"><Bot size={12} className="inline" /> Cara kerja Auto-Assign:</p>
             <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
               <li>
                 Baca kolom <strong>Client</strong> (B) & <strong>Nomor Akun</strong> (F)
@@ -196,7 +197,7 @@ export function ImportSheetModal({
             {/* Results Report */}
             {assignResult && (
               <div className="space-y-3 rounded-lg border border-border bg-background p-4">
-                <p className="text-sm font-bold text-foreground">📊 Hasil Auto-Assign:</p>
+                <p className="text-sm font-bold text-foreground"><BarChart3 size={12} className="inline" /> Hasil Auto-Assign:</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div className="rounded-lg bg-success/10 p-2 text-center">
@@ -225,7 +226,7 @@ export function ImportSheetModal({
                 {assignResult.matched_details.length > 0 && (
                   <div>
                     <p className="mb-1 text-[11px] font-semibold text-success">
-                      ✅ Berhasil ({assignResult.matched_details.length}):
+                      <CheckCircle2 size={12} className="inline" /> Berhasil ({assignResult.matched_details.length}):
                     </p>
                     <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2">
                       {assignResult.matched_details.map((d, i) => (
@@ -248,7 +249,7 @@ export function ImportSheetModal({
                 {assignResult.no_match_details.length > 0 && (
                   <div>
                     <p className="mb-1 text-[11px] font-semibold text-danger">
-                      ⚠️ Tidak ditemukan match ({assignResult.no_match_details.length}):
+                      <AlertTriangle size={12} className="inline" /> Tidak ditemukan match ({assignResult.no_match_details.length}):
                     </p>
                     <div className="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2">
                       {assignResult.no_match_details.map((d, i) => (
@@ -265,7 +266,7 @@ export function ImportSheetModal({
                       ))}
                     </div>
                     <p className="mt-1 text-[10px] text-muted">
-                      💡 Akun-akun ini mungkin sudah tidak aktif atau nama di sheet berbeda dengan
+                      <Lightbulb size={12} className="inline" /> Akun-akun ini mungkin sudah tidak aktif atau nama di sheet berbeda dengan
                       di database.
                     </p>
                   </div>
@@ -278,7 +279,7 @@ export function ImportSheetModal({
         <>
           {/* Import Mode Info */}
           <div className="mb-4 rounded-lg bg-primary/5 p-3 text-xs text-muted">
-            <p className="mb-1 font-semibold">📋 Cara kerja Import:</p>
+            <p className="mb-1 font-semibold"><ClipboardList size={12} className="inline" /> Cara kerja Import:</p>
             <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted">
               <li>Pilih kolom yang berisi nama ad account (default: E)</li>
               <li>Sistem akan parse dan import semua nama ke database</li>

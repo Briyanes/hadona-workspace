@@ -1,36 +1,12 @@
 "use client";
 
+import { AlertCircle, AlertTriangle, Calendar as CalendarIcon, CalendarClock, CalendarDays, CalendarX, CheckCircle2, CheckSquare, ChevronLeft, ChevronRight, ClipboardList, Clock, Copy, DollarSign, ExternalLink, FileText, LayoutGrid, Lightbulb, Link2, List, Loader2, MapPin, MessageCircle, Pencil, Plus, Trash2, Users, Video, X } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-  CheckSquare,
-  FileText,
-  DollarSign,
-  CalendarClock,
-  LayoutGrid,
-  List,
-  CalendarDays,
-  AlertCircle,
-  Clock,
-  CheckCircle2,
-  Plus,
-  X,
-  Video,
-  MapPin,
-  Users,
-  Copy,
-  MessageCircle,
-  Pencil,
-  Trash2,
-  CalendarX,
-  ExternalLink,
-} from "lucide-react";
+
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+
 import { cn, formatIDR, stripUrls } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
@@ -1401,7 +1377,7 @@ export default function CalendarPage() {
               {/* Meet Link */}
               {meetSuccess.link && (
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-muted">🔗 Google Meet Link</label>
+                  <label className="mb-1 block text-xs font-medium text-muted"><Link2 size={12} className="inline" /> Google Meet Link</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
@@ -1426,12 +1402,12 @@ export default function CalendarPage() {
               {/* Invite status: email sent OR WA fallback */}
               {meetSuccess.clientEmail ? (
                 <div className="rounded-md border border-green-200 bg-green-50 p-2.5 text-xs text-green-800">
-                  ✅ Invite Google Meet sudah dikirim ke email <strong>{meetSuccess.clientName}</strong> ({meetSuccess.clientEmail})
+                  <CheckCircle2 size={12} className="inline" /> Invite Google Meet sudah dikirim ke email <strong>{meetSuccess.clientName}</strong> ({meetSuccess.clientEmail})
                 </div>
               ) : meetSuccess.clientPhone ? (
                 <div className="space-y-2">
                   <div className="rounded-md border border-yellow-200 bg-yellow-50 p-2.5 text-xs text-yellow-800">
-                    ⚠️ Client tidak punya email. Copy link di atas, lalu kirim via WhatsApp.
+                    <AlertTriangle size={12} className="inline" /> Client tidak punya email. Copy link di atas, lalu kirim via WhatsApp.
                   </div>
                   <a
                     href={`https://wa.me/${meetSuccess.clientPhone.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=Halo ${encodeURIComponent(meetSuccess.clientName || "")}, berikut link meeting kita: ${encodeURIComponent(meetSuccess.link)}`}
@@ -1444,7 +1420,7 @@ export default function CalendarPage() {
                 </div>
               ) : (
                 <div className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800">
-                  📋 Copy link di atas untuk dibagikan ke peserta meeting.
+                  <ClipboardList size={12} className="inline" /> Copy link di atas untuk dibagikan ke peserta meeting.
                 </div>
               )}
 
@@ -1583,7 +1559,7 @@ export default function CalendarPage() {
               )}
               {!googleConnected && !eventForm.all_day && (
                 <p className="text-[10px] text-muted">
-                  💡 Hubungkan Google Calendar di Settings → Integrations untuk auto-generate Meet link
+                  <Lightbulb size={12} className="inline" /> Hubungkan Google Calendar di Settings → Integrations untuk auto-generate Meet link
                 </p>
               )}
 

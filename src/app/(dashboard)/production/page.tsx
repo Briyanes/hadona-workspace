@@ -1,12 +1,10 @@
 "use client";
 
+import { AlertCircle, Building2, Calendar, Camera, Clapperboard, Clock, Loader2, MapPin, MoreVertical, Pencil, Plus, Search, Settings, Trash2, User, Users, Video, X } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import {
-  Plus, Search, X, Calendar, Clock, MapPin, Camera, Video, MoreVertical,
-  Pencil, Trash2, AlertCircle, Loader2, Clapperboard, Settings,
-} from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -375,18 +373,18 @@ export default function ProductionPage() {
                       >
                         {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>
-                      {isUpcoming && <span className="badge bg-primary/10 text-primary">📅 Upcoming</span>}
+                      {isUpcoming && <span className="badge bg-primary/10 text-primary"><Calendar size={12} className="inline" /> Upcoming</span>}
                     </div>
                     {p.description && <p className="text-sm text-muted">{p.description}</p>}
                     <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-muted">
-                      {p.client_name && <span>🏢 {p.client_name}</span>}
+                      {p.client_name && <span><Building2 size={12} className="inline" /> {p.client_name}</span>}
                       {p.shoot_date && (
                         <span className={isUpcoming ? "font-bold text-primary" : ""}>
                           <Calendar size={9} className="inline" /> {new Date(p.shoot_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                         </span>
                       )}
                       {p.shoot_location && <span><MapPin size={9} className="inline" /> {p.shoot_location}</span>}
-                      {p.assignee_name && <span>👤 {p.assignee_name}</span>}
+                      {p.assignee_name && <span><User size={12} className="inline" /> {p.assignee_name}</span>}
                     </div>
                     {Array.isArray(p.deliverables) && p.deliverables.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -400,7 +398,7 @@ export default function ProductionPage() {
                           const role = typeof c === "string" ? "" : c?.role;
                           return name ? (
                             <span key={i} className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">
-                              👥 {name}{role ? ` (${role})` : ""}
+                              <Users size={12} className="inline" /> {name}{role ? ` (${role})` : ""}
                             </span>
                           ) : null;
                         })}

@@ -1,12 +1,10 @@
 "use client";
 
+import { ArrowRight, Building2, CalendarClock, Check, Layers, Loader2, Plus, Share2, Swords, Target, Trash2, X } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  X, Loader2, Plus, Trash2, Building2, Share2, Swords, Target,
-  Layers, CalendarClock, Check,
-} from "lucide-react";
+
 import { cn, extractError } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 import { sopTasksToPayload } from "@/lib/sop-templates";
@@ -232,7 +230,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
           <button type="button" onClick={onClose} className="btn-ghost text-sm text-muted hover:text-foreground">Batal</button>
           {step > 0 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-ghost border border-border px-4 py-2 text-sm">← Kembali</button>}
           {step < STEPS.length - 1 ? (
-            <button type="button" onClick={next} className="btn-primary px-4 py-2 text-sm">Lanjut →</button>
+            <button type="button" onClick={next} className="btn-primary px-4 py-2 text-sm">Lanjut <ArrowRight size={12} className="inline" /></button>
           ) : (
             <button type="button" onClick={handleSave} disabled={saving} className="btn-primary px-4 py-2 text-sm">
               {saving ? <><Loader2 size={14} className="animate-spin" /> Menyimpan...</> : <><Check size={14} /> Buat Client + Canvas</>}

@@ -3,19 +3,10 @@
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  Clock,
-  Plus,
-  Pencil,
-  Trash2,
-  Search,
-  Loader2,
-  DollarSign,
-  Calendar,
-} from "lucide-react";
+import { Calendar, Clock, DollarSign, Loader2, Pencil, Play, Plus, Search, Square, Timer as TimerIcon, Trash2 } from 'lucide-react';
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
 import { useTimer, formatTimerTime } from "@/hooks/use-timer";
-import { Play, Square, Timer as TimerIcon } from "lucide-react";
+
 import { Modal } from "@/components/ui/modal";
 
 interface Timesheet {

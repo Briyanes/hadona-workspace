@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle, BarChart3, Calendar, CheckCircle2, CheckSquare, Clock, Download, Edit3, ExternalLink, FileText, Flag, Lightbulb, Loader2, MessageCircle, Paperclip, Plus, Square, Trash2, Upload, X, XCircle } from 'lucide-react';
 import { RichText } from "@/components/ui/rich-text";
 import { Modal } from "@/components/ui/modal";
 
@@ -7,28 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadFile } from "@/lib/upload";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  X,
-  Edit3,
-  Trash2,
-  Calendar,
-  Flag,
-  MessageCircle,
-  CheckSquare,
-  Square,
-  Plus,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  FileText,
-  Download,
-  Paperclip,
-  ExternalLink,
-  BarChart3,
-  Upload,
-  Loader2,
-} from "lucide-react";
+
 import { formatDate, timeUntil, getInitials, cn, stripUrls } from "@/lib/utils";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { Avatar } from "@/components/ui/avatar";
@@ -827,7 +807,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
               />
               {editForm.division && (
                 <p className="-mt-2 text-xs text-muted">
-                  💡 Assignee difilter berdasarkan divisi <strong>{editForm.division}</strong>
+                  <Lightbulb size={12} className="inline" /> Assignee difilter berdasarkan divisi <strong>{editForm.division}</strong>
                 </p>
               )}
 
@@ -1091,11 +1071,11 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
 
                   {task.approval_status === "approved" ? (
                     <p className="text-sm text-muted">
-                      ✅ Task ini sudah di-approve
+                      <CheckCircle2 size={12} className="inline" /> Task ini sudah di-approve
                       {task.approved_at && ` pada ${formatDate(task.approved_at, { day: "numeric", month: "short", year: "numeric" })}`}
                     </p>
                   ) : task.approval_status === "rejected" ? (
-                    <p className="text-sm text-danger">❌ Task ditolak. Silakan revisi dan resubmit.</p>
+                    <p className="text-sm text-danger"><XCircle size={12} className="inline" /> Task ditolak. Silakan revisi dan resubmit.</p>
                   ) : (
                     <div className="space-y-3">
                       <div>

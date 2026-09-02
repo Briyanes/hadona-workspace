@@ -1,34 +1,11 @@
 "use client";
 
+import { Activity as ActivityIcon, AlertCircle, AlertTriangle, ArrowLeft, Briefcase, Building2, Calendar, CheckCircle, CheckSquare, ClipboardList, Clock, DollarSign, FileText, Mail, Megaphone, MessageSquare, PencilLine, Phone, Plus, Target, Trash, TrendingUp, Upload, User } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Building2,
-  Phone,
-  Mail,
-  User,
-  Briefcase,
-  CheckSquare,
-  FileText,
-  Target,
-  Megaphone,
-  AlertCircle,
-  Plus,
-  Calendar,
-  DollarSign,
-  AlertTriangle,
-  Activity as ActivityIcon,
-  MessageSquare,
-  CheckCircle,
-  Upload,
-  PencilLine,
-  Trash,
-  TrendingUp,
-  Clock,
-} from "lucide-react";
+
 import { formatDate, formatIDR, cn, getInitials } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ContractManager } from "@/components/contracts/contract-manager";
@@ -339,7 +316,7 @@ export default function ClientDetailPage() {
         {/* Section: KONTAK */}
         {(client.contact_person || client.contact_phone || client.contact_email || client.account_manager) && (
           <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">📋 Kontak</p>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted"><ClipboardList size={12} className="inline" /> Kontak</p>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
               {client.account_manager && (
                 <div className="flex items-center gap-2 text-sm">
@@ -379,7 +356,7 @@ export default function ClientDetailPage() {
         {/* Section: KONTRAK + MRR */}
         {(financial.real_mrr > 0 || client.contract_start || client.contract_end) && (
           <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted">📅 Kontrak</p>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted"><Calendar size={12} className="inline" /> Kontrak</p>
             {client.contract_start && client.contract_end && (
               <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
                 <div className="flex items-center gap-2">
@@ -415,7 +392,7 @@ export default function ClientDetailPage() {
         {/* Section: CATATAN */}
         {client.notes && (
           <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted">📝 Catatan</p>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted"><FileText size={12} className="inline" /> Catatan</p>
             <p className="text-sm text-muted">{client.notes}</p>
           </div>
         )}

@@ -1,8 +1,9 @@
 "use client";
 
+import { AlertTriangle, Check, CheckCircle2, ExternalLink, Loader2, Plug, XCircle } from 'lucide-react';
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plug, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Loader2 } from "lucide-react";
+
 import { toast } from "sonner";
 
 export default function IntegrationsSettingsPage() {
@@ -125,7 +126,7 @@ export default function IntegrationsSettingsPage() {
           <div className="mt-3 flex items-start gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 p-3 text-xs text-blue-700 dark:text-blue-400">
             <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
             <span>
-              ✓ Saat membuat event "Meeting" di Calendar, Google Meet link akan dibuat otomatis. Invite email dikirim ke attendee + assigned PM.
+              <Check size={12} className="inline" /> Saat membuat event "Meeting" di Calendar, Google Meet link akan dibuat otomatis. Invite email dikirim ke attendee + assigned PM.
             </span>
           </div>
         )}

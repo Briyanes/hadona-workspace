@@ -1,39 +1,17 @@
 "use client";
 
+import { AlertCircle, AlertTriangle, Building2, CheckCircle, ChevronDown, Clock, DollarSign, Filter, ImagePlus, LayoutGrid, Lightbulb, List, Loader2, Mail, PauseCircle, Pencil, Phone, Plus, Search, Trash2, TrendingUp, User, Wallet, X } from 'lucide-react';
 import { Modal } from "@/components/ui/modal";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import {
-  Search,
-  Building2,
-  Plus,
-  X,
-  Pencil,
-  Trash2,
-  AlertCircle,
-  Phone,
-  Mail,
-  Loader2,
-  LayoutGrid,
-  List,
-  Filter,
-  CheckCircle,
-  Clock,
-  PauseCircle,
-  DollarSign,
-  Wallet,
-  TrendingUp,
-  AlertTriangle,
-  User,
-  ChevronDown,
-} from "lucide-react";
+
 import Link from "next/link";
 import { cn, formatIDR, getInitials } from "@/lib/utils";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 import { uploadFile } from "@/lib/upload";
-import { ImagePlus } from "lucide-react";
+
 import Image from "next/image";
 
 interface Client {
@@ -852,7 +830,7 @@ export default function ClientsPage() {
 
                   {(c.contact_person || c.contact_phone || c.contact_email) && (
                     <div className="mb-3 space-y-1 border-t border-border pt-3 text-xs text-muted">
-                      {c.contact_person && <p>👤 {c.contact_person}</p>}
+                      {c.contact_person && <p><User size={12} className="inline" /> {c.contact_person}</p>}
                       {c.contact_phone && (
                         <p className="flex items-center gap-1">
                           <Phone size={10} /> {c.contact_phone}
@@ -1153,7 +1131,7 @@ export default function ClientsPage() {
                       </span>
                     </div>
                     <div className="mb-3 rounded-md bg-primary/5 p-2 text-[10px] text-muted">
-                      💡 Estimasi untuk onboarding cepat. Setelah client dibuat, gunakan tab "Kontrak" di detail client untuk kontrak detail & billing per-service. Sistem otomatis update field ini.
+                      <Lightbulb size={12} className="inline" /> Estimasi untuk onboarding cepat. Setelah client dibuat, gunakan tab "Kontrak" di detail client untuk kontrak detail & billing per-service. Sistem otomatis update field ini.
                     </div>
                     <div className="space-y-2">
                       <div>

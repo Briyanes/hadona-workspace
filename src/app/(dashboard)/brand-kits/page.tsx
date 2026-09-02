@@ -1,12 +1,10 @@
 "use client";
 
+import { AlertCircle, Building2, ExternalLink, FileText, ImageIcon, Loader2, MoreVertical, Palette, Pencil, Plus, Search, Trash2, Type, Upload, X } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
-import {
-  Plus, Search, X, Palette, FileText, ImageIcon, Type, Loader2,
-  MoreVertical, Pencil, Trash2, AlertCircle, ExternalLink, Upload,
-} from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -328,7 +326,7 @@ export default function BrandKitsPage() {
                 <div className="mb-2 flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="font-semibold text-foreground">{k.name}</h3>
-                    {k.client_name && <p className="text-xs text-muted">🏢 {k.client_name}</p>}
+                    {k.client_name && <p className="text-xs text-muted"><Building2 size={12} className="inline" /> {k.client_name}</p>}
                   </div>
                   <div className="relative">
                     <button onClick={() => setMenuOpenId(menuOpenId === k.id ? null : k.id)} className="rounded p-1.5 text-muted hover:bg-background hover:text-primary">

@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Trash2 } from "lucide-react";
+import { Lightbulb, Loader2, Trash2 } from 'lucide-react';
+
 import { cn, formatIDR } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 import type { AdAccount, SpendForm, SpendLog } from "./types";
@@ -195,7 +196,7 @@ export function SpendLogModal({
       </div>
 
       <div className="mt-4 rounded-md bg-primary/5 p-3 text-[10px] text-muted">
-        💡 <strong>Auto-update:</strong> Saat spend log disimpan, remaining budget ad account akan
+        <Lightbulb size={12} className="inline" /> <strong>Auto-update:</strong> Saat spend log disimpan, remaining budget ad account akan
         otomatis berkurang sesuai spend hari ini.
       </div>
     </Modal>

@@ -1,37 +1,10 @@
 "use client";
 
+import { AlertCircle, AlertTriangle, BarChart3, CheckCircle, CheckCircle2, CheckSquare, ChevronDown, ClipboardList, Clock, Copy, Download, Eye, FileSpreadsheet, FileText, Files, Info, Layers, LayoutGrid, Loader2, Mail, Minus, MoreHorizontal, Pencil, Plus, RefreshCw, Search, Send, Sparkles, Table2, Target, Trash2, TrendingDown, TrendingUp, X, XCircle, Zap } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import {
-  Plus,
-  FileText,
-  X,
-  Pencil,
-  Trash2,
-  AlertCircle,
-  Search,
-  Clock,
-  CheckCircle,
-  Send,
-  Loader2,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Download,
-  Sparkles,
-  BarChart3,
-  Copy,
-  Mail,
-  Eye,
-  ChevronDown,
-  LayoutGrid,
-  Table2,
-  CheckSquare,
-  Layers,
-  MoreHorizontal,
-} from "lucide-react";
+
 import { formatDate, formatIDR, formatCompact, cn, extractError } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { ShareButton } from "@/components/reports/share-button";
@@ -81,8 +54,6 @@ import {
   createEmptyReportForm,
 } from "@/components/reports/metrics";
 import { generateReportText } from "@/lib/report-generator";
-import { FileSpreadsheet } from "lucide-react";
-
 
 // ============================================
 // MAIN COMPONENT
@@ -1443,7 +1414,7 @@ export default function ReportsPage() {
           >
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div>
-                <h2 className="text-lg font-bold text-foreground">🔄 Hasil Sinkronisasi</h2>
+                <h2 className="text-lg font-bold text-foreground"><RefreshCw size={12} className="inline" /> Hasil Sinkronisasi</h2>
                 <p className="text-xs text-muted">
                   Selesai dalam {syncResult.summary.durationSec}s • {syncResult.summary.totalRows} rows diproses
                 </p>
@@ -1527,7 +1498,7 @@ export default function ReportsPage() {
               {syncResult.summary.skippedBreakdown && syncResult.summary.skipped > 0 && (
                 <div className="rounded-md border border-info/30 bg-info/5 p-3">
                   <p className="mb-1.5 text-xs font-semibold text-info">
-                    ℹ️ Mengapa {syncResult.summary.skipped} row di-skip?
+                    <Info size={12} className="inline" /> Mengapa {syncResult.summary.skipped} row di-skip?
                   </p>
                   <p className="mb-2 text-[10px] text-muted">
                     Breakdown alasan skip — bukan error, melainkan baris yang sengaja tidak diproses.
@@ -1602,7 +1573,7 @@ export default function ReportsPage() {
               {/* Per-sheet breakdown */}
               {syncResult.summary.sheets && syncResult.summary.sheets.length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase text-muted">📑 Breakdown per Sheet Tab</p>
+                  <p className="mb-2 text-xs font-semibold uppercase text-muted"><Files size={12} className="inline" /> Breakdown per Sheet Tab</p>
                   <div className="space-y-1.5">
                     {syncResult.summary.sheets.map((s) => (
                       <div
@@ -1627,7 +1598,7 @@ export default function ReportsPage() {
               {syncResult.unmatchedClients.length > 0 && (
                 <div className="rounded-md border border-warning/30 bg-warning/5 p-3">
                   <p className="mb-1.5 text-xs font-semibold text-warning">
-                    ⚠️ Client tidak dikenali ({syncResult.unmatchedClients.length})
+                    <AlertTriangle size={12} className="inline" /> Client tidak dikenali ({syncResult.unmatchedClients.length})
                   </p>
                   <p className="mb-2 text-[10px] text-muted">
                     Nama di sheet tidak match dengan DB. Tambahkan ke Clients atau ubah nama di sheet.
@@ -1649,7 +1620,7 @@ export default function ReportsPage() {
               {syncResult.errors_detail.length > 0 && (
                 <div className="rounded-md border border-danger/30 bg-danger/5 p-3">
                   <p className="mb-1.5 text-xs font-semibold text-danger">
-                    ❌ Detail Error ({syncResult.errors_detail.length})
+                    <XCircle size={12} className="inline" /> Detail Error ({syncResult.errors_detail.length})
                   </p>
                   <ul className="space-y-1 text-[10px] text-muted">
                     {syncResult.errors_detail.slice(0, 10).map((e, i) => (
@@ -1741,7 +1712,7 @@ export default function ReportsPage() {
           {syncProgress.perTabResults.length > 0 && (
             <div className="mt-3 space-y-1">
               <p className="text-[10px] font-semibold uppercase text-muted">
-                ✅ Selesai ({syncProgress.perTabResults.length}):
+                <CheckCircle2 size={12} className="inline" /> Selesai ({syncProgress.perTabResults.length}):
               </p>
               <div className="max-h-32 space-y-0.5 overflow-y-auto">
                 {syncProgress.perTabResults.slice(-5).reverse().map((r, i) => (
@@ -1831,16 +1802,16 @@ export default function ReportsPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <EmailScheduleManager clients={clients} />
           <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="mb-3 text-sm font-semibold text-foreground">📋 Tentang Auto Email</p>
+            <p className="mb-3 text-sm font-semibold text-foreground"><ClipboardList size={12} className="inline" /> Tentang Auto Email</p>
             <div className="space-y-2 text-xs text-muted">
-              <p>✅ Email otomatis dikirim setiap minggu sesuai jadwal yang diatur.</p>
-              <p>✅ Cron job berjalan setiap jam untuk cek schedule yang aktif.</p>
-              <p>✅ Email berisi link share report (berlaku 30 hari).</p>
-              <p>✅ Sistem auto-skip jika report belum dibuat atau sudah dikirim.</p>
-              <p>✅ Log pengiriman tersimpan di database untuk audit.</p>
+              <p><CheckCircle2 size={12} className="inline" /> Email otomatis dikirim setiap minggu sesuai jadwal yang diatur.</p>
+              <p><CheckCircle2 size={12} className="inline" /> Cron job berjalan setiap jam untuk cek schedule yang aktif.</p>
+              <p><CheckCircle2 size={12} className="inline" /> Email berisi link share report (berlaku 30 hari).</p>
+              <p><CheckCircle2 size={12} className="inline" /> Sistem auto-skip jika report belum dibuat atau sudah dikirim.</p>
+              <p><CheckCircle2 size={12} className="inline" /> Log pengiriman tersimpan di database untuk audit.</p>
             </div>
             <div className="mt-4 rounded-md bg-warning/10 p-3 text-xs text-warning">
-              ⚠️ <strong>Setup Required:</strong> Set <code className="rounded bg-warning/20 px-1">RESEND_API_KEY</code> dan <code className="rounded bg-warning/20 px-1">CRON_SECRET</code> di Vercel env variables.
+              <AlertTriangle size={12} className="inline" /> <strong>Setup Required:</strong> Set <code className="rounded bg-warning/20 px-1">RESEND_API_KEY</code> dan <code className="rounded bg-warning/20 px-1">CRON_SECRET</code> di Vercel env variables.
             </div>
           </div>
         </div>
@@ -1955,7 +1926,6 @@ export default function ReportsPage() {
           </button>
         </div>
       </div>
-
 
       {/* ════════════════════════════════════════════ */}
       {/* 🆕 STICKY BULK ACTION BAR — muncul saat ada selection */}
@@ -2449,12 +2419,12 @@ export default function ReportsPage() {
                 </div>
                 {/* Bug fix B4: validation hint */}
                 {form.period_start && form.period_end && new Date(form.period_start) > new Date(form.period_end) && (
-                  <p className="text-xs text-danger">⚠️ Periode mulai tidak boleh setelah periode selesai</p>
+                  <p className="text-xs text-danger"><AlertTriangle size={12} className="inline" /> Periode mulai tidak boleh setelah periode selesai</p>
                 )}
 
                 {/* P11: Objective Selector */}
                 <div className="border-t border-border pt-3">
-                  <label className="mb-1 block text-xs font-medium text-muted">🎯 Campaign Objective</label>
+                  <label className="mb-1 block text-xs font-medium text-muted"><Target size={12} className="inline" /> Campaign Objective</label>
                   <ObjectiveSelector
                     value={form.objective}
                     onChange={(obj) => setForm({ ...form, objective: obj })}
@@ -2481,7 +2451,7 @@ export default function ReportsPage() {
                   </button>
                   {pulledData?.hasData && (
                     <span className="badge bg-success/20 text-success">
-                      ✅ {pulledData.accountCount} akun • {formatIDR(pulledData.metrics.spend)}
+                      <CheckCircle2 size={12} className="inline" /> {pulledData.accountCount} akun • {formatIDR(pulledData.metrics.spend)}
                     </span>
                   )}
                   {loadingPrevious && (
@@ -2529,12 +2499,12 @@ export default function ReportsPage() {
               {pulledData?.hasData && pulledData.budgetPacing && pulledData.budgetPacing.targetSpend > 0 && (
                 <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-primary/5 p-3">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase text-muted">🎯 Budget Pacing</p>
+                    <p className="text-xs font-semibold uppercase text-muted"><Target size={12} className="inline" /> Budget Pacing</p>
                     <span className="text-[10px] text-muted">
                       {pulledData.metrics.frequency > 0 && (
                         <>
                           {pulledData.metrics.frequency > 3 ? (
-                            <span className="text-danger font-semibold">⚠️ Frequency {pulledData.metrics.frequency}x — Audience Jenuh!</span>
+                            <span className="text-danger font-semibold"><AlertTriangle size={12} className="inline" /> Frequency {pulledData.metrics.frequency}x — Audience Jenuh!</span>
                           ) : (
                             <span className="text-success">Frequency {pulledData.metrics.frequency}x — OK</span>
                           )}
@@ -2582,17 +2552,17 @@ export default function ReportsPage() {
                         {/* Status alert */}
                         {bp.pacingPercent < 40 && (
                           <p className="text-center text-[10px] text-danger font-medium">
-                            ⚠️ Spending terlalu lambat! Hanya {bp.pacingPercent}% dari target ({bp.activeAccountCount} akun aktif, {bp.periodDays} hari)
+                            <AlertTriangle size={12} className="inline" /> Spending terlalu lambat! Hanya {bp.pacingPercent}% dari target ({bp.activeAccountCount} akun aktif, {bp.periodDays} hari)
                           </p>
                         )}
                         {bp.pacingPercent >= 95 && bp.pacingPercent <= 105 && (
                           <p className="text-center text-[10px] text-success font-medium">
-                            ✅ Pacing on-track! Spend optimal sesuai target harian
+                            <CheckCircle2 size={12} className="inline" /> Pacing on-track! Spend optimal sesuai target harian
                           </p>
                         )}
                         {bp.pacingPercent > 105 && (
                           <p className="text-center text-[10px] text-warning font-medium">
-                            🔴 Overspending! {bp.pacingPercent}% dari target ({bp.periodDays} hari)
+                            <AlertCircle size={12} className="inline" /> Overspending! {bp.pacingPercent}% dari target ({bp.periodDays} hari)
                           </p>
                         )}
                       </div>
@@ -2604,7 +2574,7 @@ export default function ReportsPage() {
               {/* ─── F1: Funnel Visualization ─── */}
               {pulledData?.hasData && (
                 <div className="rounded-lg border border-border p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase text-muted">🔻 Funnel Visualization</p>
+                  <p className="mb-2 text-xs font-semibold uppercase text-muted"><TrendingDown size={12} className="inline" /> Funnel Visualization</p>
                   {(() => {
                     const m = pulledData.metrics;
                     const steps = [
@@ -2671,7 +2641,7 @@ export default function ReportsPage() {
                   </p>
                   {Object.keys(previousMetrics).length > 0 && (
                     <span className="badge bg-primary/10 text-primary text-[10px]">
-                      📊 WoW comparison aktif
+                      <BarChart3 size={12} className="inline" /> WoW comparison aktif
                     </span>
                   )}
                 </div>
@@ -2734,7 +2704,7 @@ export default function ReportsPage() {
               {/* ─── P1: AI Generate Button ─── */}
               <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 p-3">
                 <div>
-                  <p className="text-xs font-semibold text-foreground">⚡ Auto-Generate Naratif</p>
+                  <p className="text-xs font-semibold text-foreground"><Zap size={12} className="inline" /> Auto-Generate Naratif</p>
                   <p className="text-[10px] text-muted">Buat ringkasan, kesimpulan & action plan otomatis dari metrik</p>
                 </div>
                 <button
@@ -2907,7 +2877,7 @@ export default function ReportsPage() {
             {/* Metrics Display */}
             {detailReport.report_metrics && detailReport.report_metrics.length > 0 && (
               <div className="print-card mb-4 rounded-lg border border-border bg-background p-3">
-                <p className="mb-2 text-xs font-semibold uppercase text-muted">📊 Metrik Iklan</p>
+                <p className="mb-2 text-xs font-semibold uppercase text-muted"><BarChart3 size={12} className="inline" /> Metrik Iklan</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {METRIC_DEFS.map((m) => {
                     const metricVals = detailReport.report_metrics!.filter((x) => x.metric_type === m.key);
@@ -2923,7 +2893,7 @@ export default function ReportsPage() {
                       <div key={m.key} className="rounded border border-border bg-surface p-2 text-center">
                         <p className="text-[9px] text-muted">
                           {m.label}
-                          {isAnomaly && <span className="ml-0.5 text-warning" title="Anomali: perubahan >30% vs minggu lalu">⚠️</span>}
+                          {isAnomaly && <span className="ml-0.5 text-warning" title="Anomali: perubahan >30% vs minggu lalu"><AlertTriangle size={12} className="inline" /></span>}
                         </p>
                         <p className="text-sm font-bold text-foreground">{formatMetric(val, m.unit)}</p>
                         {delta !== null && (
@@ -2948,7 +2918,7 @@ export default function ReportsPage() {
             {/* Trend Chart — FASE 2 (refactor: pakai SpendRevenueChart reusable, lazy-loaded) */}
             {chartData.length > 1 && (
               <div className="mb-4 rounded-lg border border-border p-3">
-                <p className="mb-2 text-xs font-semibold uppercase text-muted">📈 Trend 8 Minggu Terakhir</p>
+                <p className="mb-2 text-xs font-semibold uppercase text-muted"><TrendingUp size={12} className="inline" /> Trend 8 Minggu Terakhir</p>
                 <SpendRevenueChart
                   data={chartData}
                   xKey="period"

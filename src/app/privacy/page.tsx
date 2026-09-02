@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react';
 export const metadata = {
   title: "Kebijakan Privasi — Hadona Workspace",
   description: "Kebijakan privasi penggunaan aplikasi Hadona Workspace.",
@@ -70,7 +71,7 @@ export default function PrivacyPage() {
           href="/"
           className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
-          ← Kembali ke Hadona Workspace
+          <ArrowLeft size={12} className="inline" /> Kembali ke Hadona Workspace
         </a>
         <h1 className="mb-2 text-3xl font-bold">Kebijakan Privasi</h1>
         <p className="mb-10 text-sm text-muted-foreground">

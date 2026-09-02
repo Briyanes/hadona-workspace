@@ -1,9 +1,10 @@
 "use client";
 
+import { Clock, Construction, Globe, Loader2, Moon, Save, Sparkles, Sun } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Sun, Moon, Globe, Clock, Sparkles } from "lucide-react";
+
 import type { UserPreferences } from "@/types";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
@@ -134,7 +135,7 @@ export default function PreferencesSettingsPage() {
           })}
         </div>
         <p className="mt-3 text-[11px] text-muted">
-          🚧 Dukungan multi-bahasa sedang dalam pengembangan dan akan tersedia segera.
+          <Construction size={12} className="inline" /> Dukungan multi-bahasa sedang dalam pengembangan dan akan tersedia segera.
         </p>
       </div>
 

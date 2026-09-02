@@ -1,13 +1,11 @@
 "use client";
 
+import { AlertCircle, BarChart3, Building2, Calculator, Check, ExternalLink, FileSpreadsheet, Layers, Loader2, MapPin, Palette, Pencil, Plus, Share2, Swords, Target, Trash2, TrendingUp, User, X, Zap } from 'lucide-react';
 import { Modal } from "@/components/ui/modal";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import {
-  Target, Plus, X, Pencil, Trash2, Loader2, TrendingUp, AlertCircle,
-  Building2, Share2, Swords, Layers, Zap, FileSpreadsheet, Palette, ExternalLink,
-} from "lucide-react";
+
 import { cn, extractError } from "@/lib/utils";
 import ClientStrategyWizard from "@/components/strategy/client-strategy-wizard";
 import { ClientPicker } from "@/components/strategy/client-picker";
@@ -393,12 +391,12 @@ export default function StrategyPage() {
             )}
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted">
-            {kr.owner?.full_name && <span>👤 {kr.owner.full_name}</span>}
+            {kr.owner?.full_name && <span><User size={12} className="inline" /> {kr.owner.full_name}</span>}
             {kr.target_value !== null && (
-              <span>📊 {kr.actual_value ?? 0} / {kr.target_value} {kr.unit || ""}</span>
+              <span><BarChart3 size={12} className="inline" /> {kr.actual_value ?? 0} / {kr.target_value} {kr.unit || ""}</span>
             )}
             {kr.baseline_value ? <span>⏱ Baseline: {kr.baseline_value}</span> : null}
-            {kr.metric_name && <span>🧮 {kr.metric_name}</span>}
+            {kr.metric_name && <span><Calculator size={12} className="inline" /> {kr.metric_name}</span>}
           </div>
         </div>
 
@@ -504,7 +502,7 @@ export default function StrategyPage() {
                 <div className="card p-5">
                   <div className="flex items-center gap-2 text-muted"><Building2 size={14} /><span className="text-xs font-semibold uppercase">Profil</span></div>
                   <h3 className="mt-2 font-bold text-foreground">{selectedClient.name}</h3>
-                  {selectedClient.location && <p className="mt-1 text-xs text-muted">📍 {selectedClient.location}</p>}
+                  {selectedClient.location && <p className="mt-1 text-xs text-muted"><MapPin size={12} className="inline" /> {selectedClient.location}</p>}
                   {selectedClient.notes && <p className="mt-2 text-xs leading-relaxed text-muted">{renderWithLinks(selectedClient.notes)}</p>}
                   {selectedClient.services?.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
@@ -525,7 +523,7 @@ export default function StrategyPage() {
                             <p className="truncate text-xs font-medium text-foreground capitalize">{s.platform} {s.handle ? `· ${s.handle}` : ""}</p>
                             {s.followers > 0 && <p className="text-[10px] text-muted">{fmtNum(s.followers)} followers</p>}
                           </div>
-                          {s.ads_connected && <span className="badge bg-success/15 text-success text-[10px]">Ads ✓</span>}
+                          {s.ads_connected && <span className="badge bg-success/15 text-success text-[10px]"><Check size={12} className="inline" /></span>}
                         </div>
                       ))}
                     </div>
@@ -684,7 +682,7 @@ export default function StrategyPage() {
                   <p className="mt-1 text-2xl font-bold text-foreground">{completedCount}<span className="text-sm text-muted"> / {totalOKRs}</span></p>
                 </div>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success/20">
-                  <span className="text-sm font-bold text-success">✓</span>
+                  <span className="text-sm font-bold text-success"><Check size={12} className="inline" /></span>
                 </div>
               </div>
             </div>

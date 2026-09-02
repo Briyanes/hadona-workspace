@@ -1,32 +1,10 @@
 "use client";
 
+import { Activity, AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, ClipboardList, DollarSign, Download, ExternalLink, KeyRound, Link2, Loader2, Megaphone, Pencil, Plus, RefreshCw, Search, Star, Trash2, TrendingDown, TrendingUp, Unlink, User, X, XCircle } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  AlertCircle,
-  Search,
-  Plus,
-  X,
-  Pencil,
-  Trash2,
-  Megaphone,
-  Loader2,
-  Download,
-  User,
-  TrendingDown,
-  DollarSign,
-  Activity,
-  ClipboardList,
-  TrendingUp,
-  RefreshCw,
-  CheckCircle2,
-  Link2,
-  Unlink,
-  KeyRound,
-  ExternalLink,
-} from "lucide-react";
+
 import dynamic from "next/dynamic";
 
 // Chart di-load client-side saja agar recharts tidak masuk initial bundle halaman
@@ -1194,7 +1172,7 @@ export default function AdsSpendPage() {
                     Meta Ads Terhubung: {metaConnection.fb_user_name || "Facebook User"}
                     {isTokenInvalid && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
-                        ⚠️ TOKEN INVALID
+                        <AlertTriangle size={12} className="inline" /> TOKEN INVALID
                       </span>
                     )}
                     {isTokenExpiring && !isTokenInvalid && (
@@ -1228,7 +1206,7 @@ export default function AdsSpendPage() {
                     )}
                     {(metaConnection.last_sync_status === "error" || metaConnection.last_sync_status === "token_invalid") && metaConnection.last_sync_error && (
                       <span className="text-danger block mt-0.5">
-                        ❌ {metaConnection.last_sync_error}
+                        <XCircle size={12} className="inline" /> {metaConnection.last_sync_error}
                       </span>
                     )}
                   </p>
@@ -1284,7 +1262,7 @@ export default function AdsSpendPage() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <a href="/api/meta/auth" className="btn-primary" title="Login dengan Facebook — otomatis sinkron ad accounts Anda">
-              <Link2 size={14} /> Connect dengan Facebook ⭐
+              <Link2 size={14} /> Connect dengan Facebook <Star size={12} className="inline text-warning" />
             </a>
             <button
               onClick={() => setShowTokenModal(true)}
@@ -1303,7 +1281,7 @@ export default function AdsSpendPage() {
           <AlertTriangle className="mt-0.5 shrink-0 text-danger" size={18} />
           <div className="flex-1">
             <p className="text-sm font-medium text-danger">
-              ⚠️ {lowBudgetCount} akun budget menipis (≤ 3 hari)!
+              <AlertTriangle size={12} className="inline" /> {lowBudgetCount} akun budget menipis (≤ 3 hari)!
             </p>
             <p className="mt-0.5 text-xs text-muted">
               Gunakan filter status "Active" untuk melihat akun yang perlu top-up. Klik akun di tabel untuk detail budget.
@@ -1476,7 +1454,7 @@ export default function AdsSpendPage() {
       {selectedIds.size > 0 && (
         <div className="sticky bottom-4 z-40 mx-auto flex max-w-3xl flex-col gap-3 rounded-lg border border-primary/30 bg-surface p-3 shadow-xl sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            <span className="badge bg-primary/20 text-primary">✓ {selectedIds.size} dipilih</span>
+            <span className="badge bg-primary/20 text-primary"><Check size={12} className="inline" /> {selectedIds.size} dipilih</span>
             <button
               onClick={clearSelection}
               className="text-xs text-muted hover:text-danger"
@@ -1842,7 +1820,7 @@ export default function AdsSpendPage() {
               disabled={currentPage === 1}
               className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted hover:bg-background disabled:opacity-50"
             >
-              ← Prev
+              <ArrowLeft size={12} className="inline" /> Prev
             </button>
             <span className="text-xs font-medium text-foreground">
               {currentPage} / {totalPages}
@@ -1852,7 +1830,7 @@ export default function AdsSpendPage() {
               disabled={currentPage === totalPages}
               className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted hover:bg-background disabled:opacity-50"
             >
-              Next →
+              Next <ArrowRight size={12} className="inline" />
             </button>
           </div>
         </div>
