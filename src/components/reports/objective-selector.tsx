@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ObjectiveKey, OBJECTIVE_MAP, OBJECTIVE_GROUPS } from "@/lib/ad-objectives";
 import { Target, ChevronDown, Search } from "lucide-react";
+import { ObjectiveIcon } from "@/components/ui/objective-icon";
 import { cn } from "@/lib/utils";
 
 interface ObjectiveSelectorProps {
@@ -56,7 +57,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
         )}
       >
         <span className="flex items-center gap-2">
-          <Target size={14} className="text-primary" />
+          {value ? <ObjectiveIcon id={value} size={14} className="text-primary" /> : <Target size={14} className="text-primary" />}
           <span className="font-medium text-foreground">
             {selected?.label || "Select Objective"}
           </span>
@@ -115,7 +116,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs sm:text-xs font-medium text-foreground leading-tight">{obj.label}</span>
+                          <span className="flex items-center gap-1.5 text-xs sm:text-xs font-medium text-foreground leading-tight"><ObjectiveIcon id={objKey} size={12} className="text-muted" />{obj.label}</span>
                           <span className="badge bg-surface text-muted text-[9px] sm:text-[8px] shrink-0">
                             {obj.platform}
                           </span>

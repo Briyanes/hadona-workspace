@@ -603,17 +603,17 @@ export const OBJECTIVE_GROUPS: Array<{
   objectives: string[];
 }> = [
   {
-    label: "🔵 Meta Ads",
+    label: "Meta Ads",
     platform: "meta",
     objectives: META_OBJECTIVES.map((o) => o.id),
   },
   {
-    label: "🟢 Google Ads",
+    label: "Google Ads",
     platform: "google",
     objectives: GOOGLE_OBJECTIVES.map((o) => o.id),
   },
   {
-    label: "🔴 TikTok Ads",
+    label: "TikTok Ads",
     platform: "tiktok",
     objectives: TIKTOK_OBJECTIVES.map((o) => o.id),
   },

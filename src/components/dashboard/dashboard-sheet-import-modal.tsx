@@ -13,6 +13,15 @@ import {
   Download,
   Database,
   TableProperties,
+  FolderOpen,
+  Clapperboard,
+  Palette,
+  Smartphone,
+  Scissors,
+  Upload,
+  Banknote,
+  FileText,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
@@ -50,14 +59,14 @@ interface Props {
 }
 
 // Sheet mapping info untuk display
-const SHEET_MAPPING = [
-  { sheet: "Dashboard Client", table: "clients", icon: "📁", color: "text-blue-500" },
-  { sheet: "Content Production", table: "tasks", icon: "🎬", color: "text-purple-500" },
-  { sheet: "Creative Director", table: "tasks", icon: "🎨", color: "text-pink-500" },
-  { sheet: "Social Media Manager", table: "tasks", icon: "📱", color: "text-green-500" },
-  { sheet: "Editor", table: "tasks", icon: "✂️", color: "text-orange-500" },
-  { sheet: "SMM Upload", table: "content_uploads", icon: "📤", color: "text-cyan-500" },
-  { sheet: "Bank Caption Ads", table: "caption_bank", icon: "💰", color: "text-yellow-500" },
+const SHEET_MAPPING: Array<{ sheet: string; table: string; icon: LucideIcon; color: string }> = [
+  { sheet: "Dashboard Client", table: "clients", icon: FolderOpen, color: "text-blue-500" },
+  { sheet: "Content Production", table: "tasks", icon: Clapperboard, color: "text-purple-500" },
+  { sheet: "Creative Director", table: "tasks", icon: Palette, color: "text-pink-500" },
+  { sheet: "Social Media Manager", table: "tasks", icon: Smartphone, color: "text-green-500" },
+  { sheet: "Editor", table: "tasks", icon: Scissors, color: "text-orange-500" },
+  { sheet: "SMM Upload", table: "content_uploads", icon: Upload, color: "text-cyan-500" },
+  { sheet: "Bank Caption Ads", table: "caption_bank", icon: Banknote, color: "text-yellow-500" },
 ];
 
 const DEFAULT_SHEET_URL =
@@ -230,7 +239,7 @@ export function DashboardSheetImportModal({
                       key={i}
                       className="flex items-center gap-2 rounded bg-surface px-2 py-1.5 text-xs"
                     >
-                      <span>{m.icon}</span>
+                      <m.icon size={12} className="text-muted" />
                       <span className="text-muted">{m.sheet}</span>
                       <span className="text-border">→</span>
                       <code className={cn("font-mono font-semibold", m.color)}>
@@ -447,7 +456,7 @@ function ResultStep({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span>{mapping?.icon || "📄"}</span>
+                    <span className="text-muted">{mapping ? <mapping.icon size={12} /> : <FileText size={12} />}</span>
                     <div>
                       <p className="text-sm font-semibold text-foreground">
                         {s.sheet}

@@ -8,6 +8,7 @@ import {
   getMetricHealth,
 } from "@/lib/ad-objectives";
 import { TrendingUp, TrendingDown, Minus, ArrowRight, Filter } from "lucide-react";
+import { ObjectiveIcon } from "@/components/ui/objective-icon";
 import { cn } from "@/lib/utils";
 
 interface KPICardProps {
@@ -239,7 +240,7 @@ export function ObjectiveKPIBar({ objectiveId, metrics, previousMetrics, classNa
       {/* Hero KPI Bar — Primary metrics dengan size besar */}
       <div>
         <p className="mb-1 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted">
-          {obj.icon} {obj.label} — Primary KPIs
+          <ObjectiveIcon id={objectiveId} size={10} className="inline" /> {obj.label} — Primary KPIs
         </p>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {obj.primaryMetrics.map((metric) => (

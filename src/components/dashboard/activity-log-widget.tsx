@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, Loader2, ClipboardList, Building2, BarChart3, Megaphone, Palette, Pin, type LucideIcon } from "lucide-react";
 import { cn, timeUntil, getInitials } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 
@@ -25,12 +25,12 @@ const actionColors: Record<string, string> = {
   approve: "bg-success/10 text-success",
 };
 
-const entityIcons: Record<string, string> = {
-  task: "📋",
-  client: "🏢",
-  report: "📊",
-  ad_account: "📢",
-  creative_request: "🎨",
+const entityIcons: Record<string, LucideIcon> = {
+  task: ClipboardList,
+  client: Building2,
+  report: BarChart3,
+  ad_account: Megaphone,
+  creative_request: Palette,
 };
 
 export function ActivityLogWidget() {
@@ -100,7 +100,7 @@ export function ActivityLogWidget() {
         <div className="space-y-2.5 max-h-[400px] overflow-y-auto">
           {logs.map((log) => {
             const actionColor = actionColors[log.action] || "bg-muted/10 text-muted";
-            const entityIcon = entityIcons[log.entity_type] || "📌";
+            const EntityIcon = entityIcons[log.entity_type] || Pin;
 
             return (
               <div key={log.id} className="flex items-start gap-2.5">
@@ -118,7 +118,7 @@ export function ActivityLogWidget() {
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">{entityIcon}</span>
+                    <EntityIcon size={10} className="text-muted" />
                     <span className="truncate text-xs font-medium text-foreground">
                       {log.user?.full_name || "Unknown"}
                     </span>
