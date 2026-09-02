@@ -13,7 +13,7 @@ import { Avatar } from "@/components/ui/avatar";
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 const ROLES = [
-  { value: "super_admin", label: "Super Admin", color: "text-danger" },
+  { value: "super_admin", label: "Super Admin", color: "text-red-600" },
   { value: "project_manager", label: "Project Manager", color: "text-warning" },
   { value: "creative_director", label: "Creative Director", color: "text-primary" },
   { value: "advertiser", label: "Advertiser", color: "text-success" },
@@ -382,7 +382,7 @@ export default function UsersPage() {
                     {user.avatar_url ? (
                       <img
                         src={user.avatar_url}
-                        alt={user.full_name}
+                        alt={`Foto ${user.full_name}`}
                         className="h-10 w-10 shrink-0 rounded-full object-cover"
                       />
                     ) : (
@@ -398,7 +398,7 @@ export default function UsersPage() {
                           <span
                             key={d}
                             className={cn(
-                              "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+                              "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
                               DIVISION_COLORS[d] || "bg-muted/20 text-muted"
                             )}
                           >
@@ -407,7 +407,7 @@ export default function UsersPage() {
                         ))}
                       </div>
                       {typedUser.approval_status === "pending_onboarding" && (
-                        <span className="mt-0.5 inline-block text-[10px] text-muted">
+                        <span className="mt-0.5 inline-block text-[11px] text-muted">
                           Belum pilih divisi
                         </span>
                       )}
@@ -485,7 +485,7 @@ export default function UsersPage() {
                 )}
               >
                 {div}
-                <span className="rounded-full bg-white/30 px-1.5 text-[10px]">{count}</span>
+                <span className="rounded-full bg-white/30 px-1.5 text-[11px]">{count}</span>
               </span>
             );
           })}
@@ -562,7 +562,7 @@ export default function UsersPage() {
                       )}
                       <span className="truncate font-medium text-foreground">{user.full_name}</span>
                       {user.id === currentUserId && (
-                        <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
+                        <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[11px] text-primary">
                           You
                         </span>
                       )}
@@ -583,7 +583,7 @@ export default function UsersPage() {
                                 type="button"
                                 onClick={() => toggleEditDivision(d)}
                                 className={cn(
-                                  "rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors",
+                                  "rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors",
                                   checked
                                     ? DIVISION_COLORS[d] || "bg-primary/15 text-primary"
                                     : "bg-muted/10 text-muted hover:bg-muted/20"
@@ -595,7 +595,7 @@ export default function UsersPage() {
                           })}
                         </div>
                         {editDivisions.length === 0 && (
-                          <span className="text-[10px] text-danger">Pilih minimal 1</span>
+                          <span className="text-[11px] text-danger">Pilih minimal 1</span>
                         )}
                       </div>
                     ) : (
@@ -605,7 +605,7 @@ export default function UsersPage() {
                             <span
                               key={d}
                               className={cn(
-                                "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
                                 DIVISION_COLORS[d] || "bg-muted/20 text-muted"
                               )}
                             >
@@ -693,20 +693,20 @@ export default function UsersPage() {
                         <button
                           onClick={() => handleDelete(user.id, "soft")}
                           disabled={deleting}
-                          className="rounded bg-warning/15 px-2 py-1 text-[10px] font-medium text-warning hover:bg-warning/25"
+                          className="rounded bg-warning/15 px-2 py-1 text-[11px] font-medium text-warning hover:bg-warning/25"
                         >
                           {deleting ? "..." : "Deactivate"}
                         </button>
                         <button
                           onClick={() => handleDelete(user.id, "hard")}
                           disabled={deleting}
-                          className="rounded bg-danger/15 px-2 py-1 text-[10px] font-medium text-danger hover:bg-danger/25"
+                          className="rounded bg-danger/15 px-2 py-1 text-[11px] font-medium text-danger hover:bg-danger/25"
                         >
                           {deleting ? "..." : "Delete"}
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(null)}
-                          className="px-2 py-1 text-[10px] text-muted hover:text-foreground"
+                          className="px-2 py-1 text-[11px] text-muted hover:text-foreground"
                         >
                           Batal
                         </button>
@@ -753,7 +753,7 @@ export default function UsersPage() {
             <p className="font-medium text-foreground">Tentang Role & Hak Akses</p>
             <ul className="mt-2 space-y-1 text-xs text-muted">
               <li>
-                <span className="text-danger">Super Admin</span> &{" "}
+                <span className="text-red-600">Super Admin</span> &{" "}
                 <span className="text-warning">Project Manager</span> bisa kelola semua data
                 (clients, budgets, users, dll)
               </li>

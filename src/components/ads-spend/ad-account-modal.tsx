@@ -103,7 +103,7 @@ export function AdAccountModal({
           <p className="text-xs font-semibold uppercase text-muted">Budget</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[10px] font-medium text-muted">Daily Budget (Rp)</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted">Daily Budget (Rp)</label>
               <input
                 type="number"
                 value={form.daily_budget}
@@ -113,7 +113,7 @@ export function AdAccountModal({
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-medium text-muted">Remaining Budget (Rp)</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted">Remaining Budget (Rp)</label>
               <input
                 type="number"
                 value={form.remaining_budget}
@@ -124,7 +124,7 @@ export function AdAccountModal({
             </div>
           </div>
           {form.daily_budget && form.remaining_budget && (
-            <p className="text-[10px] text-muted">
+            <p className="text-[11px] text-muted">
               <TrendingDown size={10} className="mr-1 inline" />
               Days left terhitung otomatis:{" "}
               <strong>

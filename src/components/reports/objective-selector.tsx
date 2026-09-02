@@ -62,7 +62,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
             {selected?.label || "Select Objective"}
           </span>
           {selected && (
-            <span className="badge bg-primary/10 text-primary text-[8px]">
+            <span className="badge bg-primary/10 text-primary text-[11px]">
               {selected.platform}
             </span>
           )}
@@ -94,7 +94,7 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
           <div className="max-h-[45vh] sm:max-h-[350px] overflow-y-auto overscroll-contain p-2">
             {filteredGroups.map((group) => (
               <div key={group.label} className="mb-2">
-                <p className="mb-1 px-1 text-[10px] sm:text-[9px] font-bold uppercase tracking-wider text-muted">
+                <p className="mb-1 px-1 text-[11px] sm:text-[11px] font-bold uppercase tracking-wider text-muted">
                   {group.label}
                 </p>
                 <div className="space-y-0.5">
@@ -117,11 +117,11 @@ export function ObjectiveSelector({ value, onChange, className }: ObjectiveSelec
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="flex items-center gap-1.5 text-xs sm:text-xs font-medium text-foreground leading-tight"><ObjectiveIcon id={objKey} size={12} className="text-muted" />{obj.label}</span>
-                          <span className="badge bg-surface text-muted text-[9px] sm:text-[8px] shrink-0">
+                          <span className="badge bg-surface text-muted text-[11px] sm:text-[11px] shrink-0">
                             {obj.platform}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[10px] text-muted leading-snug hidden sm:block">{obj.description}</p>
+                        <p className="mt-0.5 text-[11px] text-muted leading-snug hidden sm:block">{obj.description}</p>
                       </button>
                     );
                   })}

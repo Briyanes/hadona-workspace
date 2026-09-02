@@ -870,7 +870,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                         {a.user?.avatar_url ? (
                           <Avatar src={a.user.avatar_url} name={a.user?.full_name} size={24} referrerPolicy="no-referrer" />
                         ) : (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface text-[11px] font-semibold text-foreground">
                             {getInitials(a.user?.full_name)}
                           </div>
                         )}
@@ -905,7 +905,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   <Paperclip size={16} className="text-primary" />
                   <p className="text-xs font-semibold text-foreground">Lampiran File (Google Drive)</p>
                   {taskFiles.length > 0 && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{taskFiles.length} file</span>
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{taskFiles.length} file</span>
                   )}
                 </div>
                 {taskFiles.length > 0 && (
@@ -920,9 +920,9 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                       >
                         <FileText size={14} className="shrink-0 text-primary" />
                         <span className="min-w-0 flex-1 truncate text-xs text-foreground" title={f.file_name}>{f.file_name}</span>
-                        <span className="shrink-0 text-[10px] text-muted">v{f.version}</span>
+                        <span className="shrink-0 text-[11px] text-muted">v{f.version}</span>
                         {f.file_size != null && (
-                          <span className="shrink-0 text-[10px] text-muted">{(f.file_size / (1024 * 1024)).toFixed(1)}MB</span>
+                          <span className="shrink-0 text-[11px] text-muted">{(f.file_size / (1024 * 1024)).toFixed(1)}MB</span>
                         )}
                         <ExternalLink size={12} className="shrink-0 text-muted" />
                       </a>
@@ -1170,7 +1170,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                           {c.user?.avatar_url ? (
                             <Avatar src={c.user.avatar_url} name={c.user?.full_name} size={28} referrerPolicy="no-referrer" />
                           ) : (
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-semibold text-foreground">
                               {getInitials(c.user?.full_name)}
                             </div>
                           )}
@@ -1178,7 +1178,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                             <div className="rounded-lg border border-border bg-background p-2.5">
                               <div className="mb-0.5 flex items-center gap-2">
                                 <span className="text-xs font-medium text-foreground">{c.user?.full_name || "Unknown"}</span>
-                                <span className="text-[10px] text-muted">{timeUntil(c.created_at)}</span>
+                                <span className="text-[11px] text-muted">{timeUntil(c.created_at)}</span>
                               </div>
                               <p className="text-sm text-muted">{c.comment}</p>
                             </div>
@@ -1264,8 +1264,8 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-medium text-foreground">{log.user?.full_name || "Unknown"}</span>
-                              <span className="text-[10px] text-muted">{formatDate(log.date, { day: "numeric", month: "short" })}</span>
-                              {log.billable && <span className="badge bg-success/10 text-success text-[10px]">Billable</span>}
+                              <span className="text-[11px] text-muted">{formatDate(log.date, { day: "numeric", month: "short" })}</span>
+                              {log.billable && <span className="badge bg-success/10 text-success text-[11px]">Billable</span>}
                             </div>
                             {log.description && (
                               <p className="mt-0.5 text-xs text-muted">{log.description}</p>
@@ -1302,7 +1302,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                           {loggingTime ? "..." : "Log Time"}
                         </button>
                       </div>
-                      <p className="text-[10px] text-muted">Jam langsung tercatat di Timesheet & terhubung ke task ini</p>
+                      <p className="text-[11px] text-muted">Jam langsung tercatat di Timesheet & terhubung ke task ini</p>
                     </form>
                   </div>
                 )}

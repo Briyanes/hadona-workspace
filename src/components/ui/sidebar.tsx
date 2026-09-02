@@ -174,7 +174,7 @@ export function Sidebar() {
           {!isCollapsed && (
             <div>
               <div className="text-sm font-bold text-foreground">Hadona</div>
-              <div className="text-[10px] text-muted">Workspace</div>
+              <div className="text-[11px] text-muted">Workspace</div>
             </div>
           )}
         </div>
@@ -202,7 +202,7 @@ export function Sidebar() {
               <div key={section.title} className={cn(isCollapsed ? "space-y-2" : "space-y-1")}>
                 {/* Section Title */}
                 {!isCollapsed && (
-                  <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted/60">
+                  <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-muted">
                     {section.title}
                   </p>
                 )}

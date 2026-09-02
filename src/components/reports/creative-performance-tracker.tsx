@@ -310,14 +310,14 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
               { key: "frequency", label: "Freq", placeholder: "0" },
             ].map((f) => (
               <div key={f.key}>
-                <label className="mb-0 block text-[9px] text-muted">{f.label}</label>
+                <label className="mb-0 block text-[11px] text-muted">{f.label}</label>
                 <input
                   type="number"
                   step="any"
                   placeholder={f.placeholder}
                   value={(newCreative as Record<string, string>)[f.key]}
                   onChange={(e) => setNewCreative({ ...newCreative, [f.key]: e.target.value })}
-                  className="input !py-1 text-[10px]"
+                  className="input !py-1 text-[11px]"
                 />
               </div>
             ))}
@@ -384,19 +384,19 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
                         <Crown size={12} />
                       </button>
                       <span className="text-xs font-medium text-foreground">{c.creative_name}</span>
-                      <span className="badge bg-primary/10 text-primary text-[8px] capitalize">{c.creative_type}</span>
+                      <span className="badge bg-primary/10 text-primary text-[11px] capitalize">{c.creative_type}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       {/* Performance Score */}
                       <span className={cn(
-                        "rounded px-1.5 py-0.5 text-[9px] font-bold",
+                        "rounded px-1.5 py-0.5 text-[11px] font-bold",
                         score >= 50 ? "bg-success/20 text-success" : score >= 20 ? "bg-warning/20 text-warning" : "bg-danger/20 text-danger"
                       )}>
                         Score: {score}
                       </span>
                       <button
                         onClick={() => cycleStatus(c)}
-                        className={cn("flex items-center gap-0.5 text-[9px]", STATUS_CONFIG[c.status]?.color)}
+                        className={cn("flex items-center gap-0.5 text-[11px]", STATUS_CONFIG[c.status]?.color)}
                         title="Click untuk ganti status"
                       >
                         <StatusIcon size={10} /> {STATUS_CONFIG[c.status]?.label}
@@ -411,7 +411,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
                   </div>
 
                   {/* Metrics inline */}
-                  <div className="flex flex-wrap gap-2 text-[9px]">
+                  <div className="flex flex-wrap gap-2 text-[11px]">
                     {m.spend && <span className="text-muted">Spend: <b className="text-foreground">{formatIDR(m.spend)}</b></span>}
                     {m.impressions && <span className="text-muted">Imp: <b className="text-foreground">{formatCompact(m.impressions)}</b></span>}
                     {m.ctr !== undefined && <span className="text-muted">CTR: <b className="text-foreground">{m.ctr}%</b></span>}
@@ -424,7 +424,7 @@ export function CreativePerformanceTracker({ reportId }: { reportId: string }) {
                     )}
                   </div>
 
-                  {c.notes && <p className="mt-1 text-[9px] italic text-muted">📝 {c.notes}</p>}
+                  {c.notes && <p className="mt-1 text-[11px] italic text-muted">📝 {c.notes}</p>}
                 </div>
               );
             })}

@@ -117,7 +117,7 @@ export function Header() {
           {isAdmin ? (
             <span
               className={cn(
-                "whitespace-nowrap rounded-full border bg-surface px-3 py-1 text-[10px] leading-tight",
+                "whitespace-nowrap rounded-full border bg-surface px-3 py-1 text-[11px] leading-tight",
                 ROLE_BADGE_COLORS[profile!.role!] || "border-border text-muted"
               )}
             >
@@ -128,7 +128,7 @@ export function Header() {
               <span
                 key={d}
                 className={cn(
-                  "whitespace-nowrap rounded-full border bg-surface px-2.5 py-1 text-[10px] font-medium leading-tight",
+                  "whitespace-nowrap rounded-full border bg-surface px-2.5 py-1 text-[11px] font-medium leading-tight",
                   DIVISION_BADGE_COLORS[d] || "border-border text-muted"
                 )}
               >
@@ -136,7 +136,7 @@ export function Header() {
               </span>
             ))
           ) : (
-            <span className="text-[10px] font-medium text-muted">
+            <span className="text-[11px] font-medium text-muted">
               {profile?.role ? profile.role.replace(/_/g, " ") : "No division"}
             </span>
           )}

@@ -84,7 +84,7 @@ export default function EmbedTasksPage() {
     <div className="flex h-screen flex-col">
       <header className="border-b border-border bg-surface px-4 py-3">
         <h1 className="flex items-center gap-2 text-sm font-bold text-foreground">
-          <span className="flex h-6 w-6 items-center justify-center rounded gradient-primary text-primary-foreground text-[10px]">H</span>
+          <span className="flex h-6 w-6 items-center justify-center rounded gradient-primary text-primary-foreground text-[11px]">H</span>
           My Tasks
         </h1>
       </header>
@@ -99,10 +99,10 @@ export default function EmbedTasksPage() {
               {statusIcons[t.status]}
               <div className="flex-1">
                 <p className="text-xs font-medium text-foreground">{t.title}</p>
-                {t.client && <p className="text-[10px] text-muted">{t.client.name}</p>}
+                {t.client && <p className="text-[11px] text-muted">{t.client.name}</p>}
               </div>
               {t.due_date && (
-                <span className="text-[10px] text-muted">
+                <span className="text-[11px] text-muted">
                   {new Date(t.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                 </span>
               )}

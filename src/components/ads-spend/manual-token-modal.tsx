@@ -96,7 +96,7 @@ export function ManualTokenModal({
               <strong>Copy token</strong> yang muncul, paste di bawah
             </li>
           </ol>
-          <div className="mt-2 flex items-center gap-1.5 rounded bg-green-100 p-1.5 text-[10px] text-green-700 dark:bg-green-900/50 dark:text-green-400">
+          <div className="mt-2 flex items-center gap-1.5 rounded bg-green-100 p-1.5 text-[11px] text-green-700 dark:bg-green-900/50 dark:text-green-400">
             <Zap size={10} />
             <span>Tidak expired • Tidak perlu App Review • Tidak perlu re-connect tiap 60 hari</span>
           </div>
@@ -126,7 +126,7 @@ export function ManualTokenModal({
             </li>
             <li>Copy token, paste di bawah</li>
           </ol>
-          <p className="mt-2 text-[10px] text-muted">
+          <p className="mt-2 text-[11px] text-muted">
             <AlertTriangle size={12} className="inline" /> Token ini akan di-exchange jadi long-lived (60 hari). Setelah expired, harus diulang.
           </p>
         </details>
@@ -143,7 +143,7 @@ export function ManualTokenModal({
             className="input resize-none font-mono text-[11px]"
             disabled={savingToken}
           />
-          <p className="mt-1 text-[10px] text-muted">
+          <p className="mt-1 text-[11px] text-muted">
             <Lightbulb size={12} className="inline" /> Paste token di sini. Sistem akan otomatis deteksi apakah token permanent (System User)
             atau perlu di-exchange.
           </p>

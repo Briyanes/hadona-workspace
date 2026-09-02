@@ -385,7 +385,7 @@ export default function StrategyPage() {
               {statusConfig[kr.status]?.label || kr.status}
             </span>
             {kr.kr_type && (
-              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", kr.kr_type === "leading" ? "bg-primary/10 text-primary" : "bg-muted/10 text-muted")}>
+              <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium", kr.kr_type === "leading" ? "bg-primary/10 text-primary" : "bg-muted/10 text-muted")}>
                 {kr.kr_type === "leading" ? "Leading" : "Lagging"}
               </span>
             )}
@@ -506,7 +506,7 @@ export default function StrategyPage() {
                   {selectedClient.notes && <p className="mt-2 text-xs leading-relaxed text-muted">{renderWithLinks(selectedClient.notes)}</p>}
                   {selectedClient.services?.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      {selectedClient.services.map((s) => <span key={s} className="badge bg-primary/10 text-primary text-[10px]">{s}</span>)}
+                      {selectedClient.services.map((s) => <span key={s} className="badge bg-primary/10 text-primary text-[11px]">{s}</span>)}
                     </div>
                   )}
                 </div>
@@ -521,9 +521,9 @@ export default function StrategyPage() {
                         <div key={s.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2">
                           <div className="min-w-0">
                             <p className="truncate text-xs font-medium text-foreground capitalize">{s.platform} {s.handle ? `· ${s.handle}` : ""}</p>
-                            {s.followers > 0 && <p className="text-[10px] text-muted">{fmtNum(s.followers)} followers</p>}
+                            {s.followers > 0 && <p className="text-[11px] text-muted">{fmtNum(s.followers)} followers</p>}
                           </div>
-                          {s.ads_connected && <span className="badge bg-success/15 text-success text-[10px]"><Check size={12} className="inline" /></span>}
+                          {s.ads_connected && <span className="badge bg-success/15 text-success text-[11px]"><Check size={12} className="inline" /></span>}
                         </div>
                       ))}
                     </div>
@@ -538,7 +538,7 @@ export default function StrategyPage() {
                     <div className="mt-3 space-y-2">
                       {principles.map((p) => (
                         <div key={p.id} className="rounded-md border border-border bg-background px-3 py-2">
-                          <p className="text-[10px] font-semibold uppercase text-primary">{p.category === "manpower" ? "Man Power" : p.category}</p>
+                          <p className="text-[11px] font-semibold uppercase text-primary">{p.category === "manpower" ? "Man Power" : p.category}</p>
                           <p className="mt-0.5 text-xs text-foreground">{p.description}</p>
                         </div>
                       ))}
@@ -560,13 +560,13 @@ export default function StrategyPage() {
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold text-foreground">{c.name}</p>
                             {competitorUrl(c.platform, c.handle) && (
-                              <a href={competitorUrl(c.platform, c.handle)!} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted transition-colors hover:border-primary hover:text-primary">
+                              <a href={competitorUrl(c.platform, c.handle)!} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted transition-colors hover:border-primary hover:text-primary">
                                 <ExternalLink size={10} />
                                 Profil
                               </a>
                             )}
                           </div>
-                          <p className="mt-1 text-[10px] text-muted capitalize">{c.platform || "—"}{c.followers > 0 ? ` · ${fmtNum(c.followers)} foll` : ""}{c.engagement_rate ? ` · ER ${c.engagement_rate}%` : ""}</p>
+                          <p className="mt-1 text-[11px] text-muted capitalize">{c.platform || "—"}{c.followers > 0 ? ` · ${fmtNum(c.followers)} foll` : ""}{c.engagement_rate ? ` · ER ${c.engagement_rate}%` : ""}</p>
                           {(c.positioning || c.weakness) && (
                             <p className="mt-1 text-[11px] text-muted">
                               {c.positioning && <span className="text-success">+ {c.positioning}</span>}
@@ -588,7 +588,7 @@ export default function StrategyPage() {
                     <div className="mt-3 space-y-2">
                       {initiatives.map((it) => (
                         <div key={it.id} className="flex items-start gap-2 rounded-md border border-border bg-background px-3 py-2">
-                          <span className={cn("mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold", it.tag === "ADS" ? "bg-primary/15 text-primary" : "bg-warning/15 text-warning")}>{it.tag}</span>
+                          <span className={cn("mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold", it.tag === "ADS" ? "bg-primary/15 text-primary" : "bg-warning/15 text-warning")}>{it.tag}</span>
                           <p className="text-xs text-foreground">{it.description}</p>
                         </div>
                       ))}

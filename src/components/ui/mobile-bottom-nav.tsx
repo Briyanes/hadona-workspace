@@ -73,9 +73,9 @@ export function MobileBottomNav() {
               aria-current={isActive ? "page" : undefined}
             >
               <Icon size={22} className="shrink-0" strokeWidth={isActive ? 2.4 : 2} />
-              <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              <span className="text-[11px] font-medium leading-none">{item.label}</span>
               {item.href === "/chat" && chatCount > 0 && (
-                <span className="absolute right-2 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white shadow">
+                <span className="absolute right-2 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-semibold text-white shadow">
                   {chatCount > 99 ? "99+" : chatCount}
                 </span>
               )}
@@ -90,7 +90,7 @@ export function MobileBottomNav() {
           aria-label="Open full menu"
         >
           <Menu size={22} className="shrink-0" />
-          <span className="text-[10px] font-medium leading-none">More</span>
+          <span className="text-[11px] font-medium leading-none">More</span>
         </button>
       </nav>
     </div>

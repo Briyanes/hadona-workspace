@@ -576,7 +576,7 @@ export default function InvoicesPage() {
               </div>
               <p className="text-xs text-muted">{card.label}</p>
               <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
-              <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
+              <p className="mt-0.5 text-[11px] text-muted">{card.sub}</p>
             </div>
           );
         })}
@@ -895,7 +895,7 @@ export default function InvoicesPage() {
                   {/* Items Table */}
                   <div className="overflow-hidden rounded-lg border border-border">
                     {/* Header */}
-                    <div className="grid grid-cols-12 gap-1 border-b border-border bg-surface px-2 py-2 text-[10px] font-semibold uppercase text-muted">
+                    <div className="grid grid-cols-12 gap-1 border-b border-border bg-surface px-2 py-2 text-[11px] font-semibold uppercase text-muted">
                       <div className="col-span-5 px-1">Service / Description</div>
                       <div className="col-span-2 px-1 text-center">Qty</div>
                       <div className="col-span-2 px-1 text-right">Unit Price</div>

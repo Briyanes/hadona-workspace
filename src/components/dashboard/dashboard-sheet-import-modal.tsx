@@ -461,7 +461,7 @@ function ResultStep({
                       <p className="text-sm font-semibold text-foreground">
                         {s.sheet}
                       </p>
-                      <p className="text-[10px] text-muted">
+                      <p className="text-[11px] text-muted">
                         → <code>{s.table}</code>
                       </p>
                     </div>
@@ -484,7 +484,7 @@ function ResultStep({
                 </div>
                 {/* Details (if any) */}
                 {s.details.length > 0 && (
-                  <div className="mt-2 max-h-24 overflow-y-auto rounded bg-surface p-2 text-[10px] text-muted">
+                  <div className="mt-2 max-h-24 overflow-y-auto rounded bg-surface p-2 text-[11px] text-muted">
                     {s.details.slice(0, 8).map((d, j) => (
                       <div key={j}>{d}</div>
                     ))}

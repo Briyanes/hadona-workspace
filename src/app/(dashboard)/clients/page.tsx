@@ -492,7 +492,7 @@ export default function ClientsPage() {
           <Building2 className="mb-2 text-muted" size={18} />
           <p className="text-2xl font-bold text-foreground">{stats.total}</p>
           <p className="text-xs text-muted">Total Client</p>
-          <div className="mt-1 flex gap-2 text-[10px] text-muted">
+          <div className="mt-1 flex gap-2 text-[11px] text-muted">
             <span className="text-success">{stats.active} active</span>
             <span className="text-primary">{stats.onboarding} onb</span>
             <span className="text-warning">{stats.hold} hold</span>
@@ -504,7 +504,7 @@ export default function ClientsPage() {
           <TrendingUp className="mb-2 text-success" size={18} />
           <p className="text-lg font-bold text-success">{formatIDR(stats.totalMrr)}</p>
           <p className="text-xs text-muted">Total MRR (Real)</p>
-          <p className="mt-1 text-[10px] text-muted">dari contract_services</p>
+          <p className="mt-1 text-[11px] text-muted">dari contract_services</p>
         </div>
 
         {/* Outstanding */}
@@ -512,7 +512,7 @@ export default function ClientsPage() {
           <Wallet className="mb-2 text-warning" size={18} />
           <p className="text-lg font-bold text-warning">{formatIDR(stats.totalOutstanding)}</p>
           <p className="text-xs text-muted">Outstanding</p>
-          <p className="mt-1 text-[10px] text-muted">unpaid + overdue</p>
+          <p className="mt-1 text-[11px] text-muted">unpaid + overdue</p>
         </div>
 
         {/* Paid This Month */}
@@ -566,7 +566,7 @@ export default function ClientsPage() {
           <Filter size={12} />
           Filter
           {activeFilterCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] text-white">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[11px] text-white">
               {activeFilterCount}
             </span>
           )}
@@ -675,7 +675,7 @@ export default function ClientsPage() {
         >
           <span className="h-1.5 w-1.5 rounded-full bg-success" />
           Active
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
             {statusCounts.active || 0}
           </span>
         </button>
@@ -689,7 +689,7 @@ export default function ClientsPage() {
           )}
         >
           All
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
             {statusCounts.all || 0}
           </span>
         </button>
@@ -704,7 +704,7 @@ export default function ClientsPage() {
         >
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
           Onboarding
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
             {statusCounts.onboarding || 0}
           </span>
         </button>
@@ -719,7 +719,7 @@ export default function ClientsPage() {
         >
           <span className="h-1.5 w-1.5 rounded-full bg-warning" />
           Hold
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
             {statusCounts.hold || 0}
           </span>
         </button>
@@ -734,7 +734,7 @@ export default function ClientsPage() {
         >
           <span className="h-1.5 w-1.5 rounded-full bg-muted" />
           Inactive
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
             {statusCounts.inactive || 0}
           </span>
         </button>
@@ -749,7 +749,7 @@ export default function ClientsPage() {
         >
           <span className="h-1.5 w-1.5 rounded-full bg-danger" />
           Churned
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
             {statusCounts.churned || 0}
           </span>
         </button>
@@ -797,15 +797,15 @@ export default function ClientsPage() {
                         <DollarSign size={10} /> {formatIDR(c.real_mrr)}/bln
                       </span>
                     ) : (
-                      <span className="rounded-md bg-surface px-2 py-0.5 text-[10px] text-muted">No MRR</span>
+                      <span className="rounded-md bg-surface px-2 py-0.5 text-[11px] text-muted">No MRR</span>
                     )}
                     {c.outstanding > 0 && (
-                      <span className="flex items-center gap-1 rounded-md bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+                      <span className="flex items-center gap-1 rounded-md bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
                         <AlertTriangle size={9} /> {formatIDR(c.outstanding)} outstanding
                       </span>
                     )}
                     {c.overdue_count > 0 && (
-                      <span className="flex items-center gap-1 rounded-md bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger">
+                      <span className="flex items-center gap-1 rounded-md bg-danger/10 px-2 py-0.5 text-[11px] font-bold text-danger">
                         {c.overdue_count}x OVERDUE
                       </span>
                     )}
@@ -823,7 +823,7 @@ export default function ClientsPage() {
 
                   {/* AM name */}
                   {c.am_name && (
-                    <div className="mb-2 flex items-center gap-1 text-[10px] text-muted">
+                    <div className="mb-2 flex items-center gap-1 text-[11px] text-muted">
                       <User size={10} /> AM: {c.am_name}
                     </div>
                   )}
@@ -880,7 +880,7 @@ export default function ClientsPage() {
                   ({filtered.length - visibleCount} remaining)
                 </span>
               </button>
-              <p className="text-[10px] text-muted">
+              <p className="text-[11px] text-muted">
                 Showing {visibleClients.length} of {filtered.length} clients
               </p>
             </div>
@@ -888,7 +888,7 @@ export default function ClientsPage() {
 
           {/* Counter info kalau dataset kecil (tidak melewati PAGE_SIZE) */}
           {filtered.length > 0 && filtered.length <= visibleCount && (
-            <p className="mt-4 pb-2 text-center text-[10px] text-muted">
+            <p className="mt-4 pb-2 text-center text-[11px] text-muted">
               Showing all {filtered.length} client{filtered.length === 1 ? "" : "s"}
             </p>
           )}
@@ -926,7 +926,7 @@ export default function ClientsPage() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <Image src={c.logo_url!} alt={c.name} width={32} height={32} className="h-8 w-8 shrink-0 rounded-lg border border-border object-contain" />
                         ) : (
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[10px] font-bold text-primary">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface text-[11px] font-bold text-primary">
                             {getInitials(c.name)}
                           </div>
                         )}
@@ -942,10 +942,10 @@ export default function ClientsPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {c.services.slice(0, 2).map((s) => (
-                          <span key={s} className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">{s}</span>
+                          <span key={s} className="rounded bg-background px-1.5 py-0.5 text-[11px] text-muted">{s}</span>
                         ))}
                         {c.services.length > 2 && (
-                          <span className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">+{c.services.length - 2}</span>
+                          <span className="rounded bg-background px-1.5 py-0.5 text-[11px] text-muted">+{c.services.length - 2}</span>
                         )}
                         {c.services.length === 0 && <span className="text-xs text-muted">—</span>}
                       </div>
@@ -966,7 +966,7 @@ export default function ClientsPage() {
                             {formatIDR(c.outstanding)}
                           </span>
                           {c.overdue_count > 0 && (
-                            <span className="ml-1 rounded bg-danger/10 px-1 text-[9px] font-bold text-danger">
+                            <span className="ml-1 rounded bg-danger/10 px-1 text-[11px] font-bold text-danger">
                               {c.overdue_count}x OD
                             </span>
                           )}
@@ -1019,7 +1019,7 @@ export default function ClientsPage() {
                   ({filtered.length - visibleCount} remaining)
                 </span>
               </button>
-              <p className="text-[10px] text-muted">
+              <p className="text-[11px] text-muted">
                 Showing {visibleClients.length} of {filtered.length} clients
               </p>
             </div>
@@ -1094,7 +1094,7 @@ export default function ClientsPage() {
                             Hapus
                           </button>
                         )}
-                        <p className="mt-1 text-[10px] text-muted">PNG/JPG, max 2MB</p>
+                        <p className="mt-1 text-[11px] text-muted">PNG/JPG, max 2MB</p>
                       </div>
                     </div>
 
@@ -1126,11 +1126,11 @@ export default function ClientsPage() {
                   <div className="rounded-lg border border-border bg-background p-4">
                     <div className="mb-3 flex items-start justify-between gap-2">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted">Kontrak (Estimasi)</p>
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                         Auto-sync dari Contract Manager
                       </span>
                     </div>
-                    <div className="mb-3 rounded-md bg-primary/5 p-2 text-[10px] text-muted">
+                    <div className="mb-3 rounded-md bg-primary/5 p-2 text-[11px] text-muted">
                       <Lightbulb size={12} className="inline" /> Estimasi untuk onboarding cepat. Setelah client dibuat, gunakan tab "Kontrak" di detail client untuk kontrak detail & billing per-service. Sistem otomatis update field ini.
                     </div>
                     <div className="space-y-2">

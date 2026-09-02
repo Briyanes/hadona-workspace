@@ -187,9 +187,9 @@ export function ProfitabilityWidget() {
               <div className={cn("mb-2 inline-flex rounded-lg p-1.5", card.bg)}>
                 <Icon className={card.color} size={14} />
               </div>
-              <p className="text-[10px] uppercase text-muted">{card.label}</p>
+              <p className="text-[11px] uppercase text-muted">{card.label}</p>
               <p className={cn("mt-0.5 text-base font-bold", card.color)}>{card.value}</p>
-              <p className="text-[10px] text-muted">{card.sub}</p>
+              <p className="text-[11px] text-muted">{card.sub}</p>
             </div>
           );
         })}

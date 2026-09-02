@@ -376,7 +376,7 @@ export default function ProductionPage() {
                       {isUpcoming && <span className="badge bg-primary/10 text-primary"><Calendar size={12} className="inline" /> Upcoming</span>}
                     </div>
                     {p.description && <p className="text-sm text-muted">{p.description}</p>}
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-muted">
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted">
                       {p.client_name && <span><Building2 size={12} className="inline" /> {p.client_name}</span>}
                       {p.shoot_date && (
                         <span className={isUpcoming ? "font-bold text-primary" : ""}>
@@ -388,7 +388,7 @@ export default function ProductionPage() {
                     </div>
                     {Array.isArray(p.deliverables) && p.deliverables.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {p.deliverables.map((d, i) => <span key={i} className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">{d}</span>)}
+                        {p.deliverables.map((d, i) => <span key={i} className="rounded bg-background px-1.5 py-0.5 text-[11px] text-muted">{d}</span>)}
                       </div>
                     )}
                     {Array.isArray(p.crew) && p.crew.length > 0 && (
@@ -397,7 +397,7 @@ export default function ProductionPage() {
                           const name = typeof c === "string" ? c : c?.name;
                           const role = typeof c === "string" ? "" : c?.role;
                           return name ? (
-                            <span key={i} className="rounded bg-background px-1.5 py-0.5 text-[10px] text-muted">
+                            <span key={i} className="rounded bg-background px-1.5 py-0.5 text-[11px] text-muted">
                               <Users size={12} className="inline" /> {name}{role ? ` (${role})` : ""}
                             </span>
                           ) : null;

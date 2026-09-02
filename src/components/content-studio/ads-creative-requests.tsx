@@ -377,7 +377,7 @@ export default function AdsCreativeRequests() {
                       <select
                         value={it.status}
                         onChange={(e) => quickStatus(it, e.target.value)}
-                        title="Ubah status"
+                        aria-label="Ubah status"
                         className={cn(
                           "status-pill rounded-full border px-2.5 py-1 pr-6 text-xs font-medium cursor-pointer bg-transparent min-w-[118px]",
                           sm.cls

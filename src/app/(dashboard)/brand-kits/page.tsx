@@ -352,16 +352,16 @@ export default function BrandKitsPage() {
 
                 {/* Colors */}
                 <div className="mb-3 flex flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[10px]">
+                  <div className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[11px]">
                     <div className="h-3 w-3 rounded border border-border" style={{ backgroundColor: k.primary_color || "#000" }} />
                     <span className="text-muted">Primary</span>
                   </div>
-                  <div className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[10px]">
+                  <div className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[11px]">
                     <div className="h-3 w-3 rounded border border-border" style={{ backgroundColor: k.secondary_color || "#FFF" }} />
                     <span className="text-muted">Secondary</span>
                   </div>
                   {k.accent_color && (
-                    <div className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[10px]">
+                    <div className="flex items-center gap-1.5 rounded-md bg-background px-2 py-1 text-[11px]">
                       <div className="h-3 w-3 rounded border border-border" style={{ backgroundColor: k.accent_color }} />
                       <span className="text-muted">Accent</span>
                     </div>
@@ -406,7 +406,7 @@ export default function BrandKitsPage() {
 
                     {/* Assets list */}
                     {(assets[k.id] || []).length === 0 ? (
-                      <p className="text-center text-[10px] text-muted">Belum ada assets</p>
+                      <p className="text-center text-[11px] text-muted">Belum ada assets</p>
                     ) : (
                       <div className="space-y-1.5">
                         {(assets[k.id] || []).map((asset) => {
@@ -418,7 +418,7 @@ export default function BrandKitsPage() {
                                 <AssetIcon size={14} className="shrink-0 text-muted" />
                                 <div className="overflow-hidden">
                                   <p className="truncate text-xs font-medium text-foreground">{asset.name}</p>
-                                  <p className="text-[9px] text-muted">{asset.mime_type || typeInfo?.label}</p>
+                                  <p className="text-[11px] text-muted">{asset.mime_type || typeInfo?.label}</p>
                                 </div>
                               </div>
                               <div className="flex shrink-0 items-center gap-1">

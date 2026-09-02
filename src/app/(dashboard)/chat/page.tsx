@@ -79,7 +79,7 @@ function DateSeparator({ date }: { date: string }) {
   return (
     <div className="flex items-center justify-center gap-3 my-3">
       <div className="h-px flex-1 bg-border" />
-      <span className="text-[11px] font-medium text-muted bg-gray-100 dark:bg-[#334155] px-3 py-1 rounded-full">
+      <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-[#334155] px-3 py-1 rounded-full">
         {label}
       </span>
       <div className="h-px flex-1 bg-border" />
@@ -134,10 +134,10 @@ function ChannelSidebar({
           </span>
           <span className="truncate">{getDisplayName(ch)}</span>
           {ch.type === "group" && (ch.member_count || 0) > 0 && (
-            <span className="text-[10px] text-muted/70">{ch.member_count}</span>
+            <span className="text-[11px] text-muted">{ch.member_count}</span>
           )}
           {hasCall && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
+            <span className="flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full animate-pulse">
               <CircleDot size={10} /> LIVE
             </span>
           )}
@@ -297,7 +297,7 @@ function MessageBubble({
   if (msg.message_type === "system") {
     return (
       <div className="flex justify-center my-2">
-        <span className="text-xs text-muted bg-gray-100 dark:bg-[#334155] px-3 py-1 rounded-full">
+        <span className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-[#334155] px-3 py-1 rounded-full">
           {msg.content}
         </span>
       </div>
@@ -354,7 +354,7 @@ function MessageBubble({
       {!isMine && (
         <div className="flex-shrink-0 w-8 h-8">
           {!isGrouped && (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/40 to-primary/20 flex items-center justify-center text-[11px] font-bold text-primary overflow-hidden">
               {msg.profiles?.avatar_url ? (
                 <img src={msg.profiles.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
               ) : (
@@ -464,7 +464,7 @@ function MessageBubble({
 
           {/* Timestamp + edited — dalam bubble */}
           <div className={cn(
-            "flex items-center justify-end gap-1 text-[10px] mt-0.5",
+            "flex items-center justify-end gap-1 text-[11px] mt-0.5",
             isMine ? "text-white/70 dark:text-slate-700" : "text-slate-700 dark:text-white/70"
           )}>
             {isEdited && <span className="italic">diedit</span>}
@@ -710,7 +710,7 @@ function MemberPanel({
         <div className="flex flex-col gap-1">
           {members.map((m) => (
             <div key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface-hover group">
-              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary overflow-hidden flex-shrink-0">
                 {m.profile?.avatar_url ? (
                   <img src={m.profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
@@ -723,7 +723,7 @@ function MemberPanel({
                   {m.user_id === myUserId && <span className="text-muted"> (kamu)</span>}
                 </p>
                 {m.role === "owner" && (
-                  <span className="text-[10px] text-amber-600 font-medium flex items-center gap-1"><Crown size={10} /> Owner</span>
+                  <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1"><Crown size={10} /> Owner</span>
                 )}
               </div>
               {isOwner && m.user_id !== myUserId && m.role !== "owner" && (
@@ -1365,7 +1365,7 @@ function ChatArea({
             <div className="flex-1 relative">
               {mentionState && mentionSuggestions.length > 0 && (
                 <div className="absolute bottom-full left-0 mb-2 w-64 max-h-56 overflow-y-auto bg-white dark:bg-[#1e293b] border rounded-xl shadow-lg z-30 py-1">
-                  <p className="px-3 py-1 text-[10px] font-semibold text-muted uppercase tracking-wider">
+                  <p className="px-3 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
                     Menyebut anggota
                   </p>
                   {mentionSuggestions.map((u, i) => (
@@ -1380,7 +1380,7 @@ function ChatArea({
                           : "hover:bg-surface-hover"
                       )}
                     >
-                      <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0 overflow-hidden">
+                      <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[11px] font-bold flex-shrink-0 overflow-hidden">
                         {initialsOf(u.full_name)}
                       </span>
                       <span className="truncate">{u.full_name}</span>

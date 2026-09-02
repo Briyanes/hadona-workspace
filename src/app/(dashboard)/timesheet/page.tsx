@@ -371,6 +371,7 @@ export default function TimesheetPage() {
               <>
                 <select
                   value={timerClient}
+                  aria-label="Timer: pilih klien"
                   onChange={(e) => setTimerClient(e.target.value)}
                   className="input w-auto min-w-[140px] text-xs"
                 >
@@ -381,6 +382,7 @@ export default function TimesheetPage() {
                 </select>
                 <select
                   value={timerActivity}
+                  aria-label="Timer: pilih aktivitas"
                   onChange={(e) => setTimerActivity(e.target.value)}
                   className="input w-auto min-w-[120px] text-xs"
                 >
@@ -439,7 +441,7 @@ export default function TimesheetPage() {
               </div>
               <p className="text-xs text-muted">{card.label}</p>
               <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
-              <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
+              <p className="mt-0.5 text-[11px] text-muted">{card.sub}</p>
             </div>
           );
         })}
@@ -460,11 +462,13 @@ export default function TimesheetPage() {
         <input
           type="date"
           value={dateFilter}
+          aria-label="Filter tanggal"
           onChange={(e) => setDateFilter(e.target.value)}
           className="input w-auto"
         />
         <select
           value={clientFilter}
+          aria-label="Filter klien"
           onChange={(e) => setClientFilter(e.target.value)}
           className="input w-auto"
         >
@@ -530,7 +534,7 @@ export default function TimesheetPage() {
                         {e.description && (
                           <p className="mt-0.5 truncate text-xs text-muted">{e.description}</p>
                         )}
-                        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted">
+                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted">
                           <span className="capitalize">{e.activity_type?.replace(/_/g, " ")}</span>
                           {e.hourly_rate && <span>· {formatIDR(e.hourly_rate)}/h</span>}
                         </div>
@@ -595,6 +599,7 @@ export default function TimesheetPage() {
             <label className="mb-1.5 block text-sm font-medium text-foreground">Anggota Tim</label>
                 <select
                   value={form.user_id}
+                  aria-label="Pilih anggota"
                   onChange={(e) => setForm({ ...form, user_id: e.target.value })}
                   className="input"
                 >
@@ -637,6 +642,7 @@ export default function TimesheetPage() {
                 <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
                 <select
                   value={form.client_id}
+                  aria-label="Pilih klien"
                   onChange={(e) => setForm({ ...form, client_id: e.target.value })}
                   className="input"
                 >

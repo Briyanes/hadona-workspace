@@ -778,7 +778,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 <Zap size={18} />
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-primary">Prepaid Contracts Active</p>
-                  <p className="text-[10px] text-muted">
+                  <p className="text-[11px] text-muted">
                     {prepaidContracts.length} client • Total: <strong className="text-primary">{formatIDR(totalPrepaid)}</strong>
                   </p>
                 </div>
@@ -787,7 +787,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 {prepaidContracts.map((c) => {
                   const prepaidVal = c.prepaid_amount || calculateMonthlyTotal(c.id) * c.total_months_prepaid;
                   return (
-                    <div key={c.id} className="flex items-center justify-between text-[10px]">
+                    <div key={c.id} className="flex items-center justify-between text-[11px]">
                       <span className="text-muted">{c.contract_number || "Kontrak"}</span>
                       <span className="font-medium text-foreground">{formatIDR(prepaidVal)} ({c.total_months_prepaid} bln)</span>
                     </div>
@@ -812,7 +812,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </p>
               <p className="text-xs text-muted">Outstanding</p>
               {outstanding.count > 0 && (
-                <p className="text-[10px] text-warning">{outstanding.count} invoice</p>
+                <p className="text-[11px] text-warning">{outstanding.count} invoice</p>
               )}
             </div>
 
@@ -835,7 +835,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </p>
               <p className="text-xs text-muted">Overdue</p>
               {overdue.count > 0 && (
-                <p className="text-[10px] text-danger">{overdue.count} invoice telat</p>
+                <p className="text-[11px] text-danger">{overdue.count} invoice telat</p>
               )}
             </div>
 
@@ -908,11 +908,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
                     <p className="truncate text-sm font-semibold text-foreground sm:text-base">
                       {contract.contract_number || "Kontrak"}
                     </p>
-                    <span className={cn("badge text-[10px] capitalize", contractStatusColors[contract.status] || contractStatusColors.draft)}>
+                    <span className={cn("badge text-[11px] capitalize", contractStatusColors[contract.status] || contractStatusColors.draft)}>
                       {contract.status}
                     </span>
                     {contract.is_prepaid && (
-                      <span className="badge bg-primary/20 text-primary text-[10px]">
+                      <span className="badge bg-primary/20 text-primary text-[11px]">
                         <Zap size={12} className="inline" /> Prepaid {contract.total_months_prepaid} bln
                       </span>
                     )}
@@ -920,12 +920,12 @@ export function ContractManager({ clientId }: { clientId: string }) {
                   <p className="mt-0.5 text-xs text-muted">
                     {formatDate(contract.start_date, { day: "numeric", month: "short", year: "numeric" })} → {formatDate(contract.end_date, { day: "numeric", month: "short", year: "numeric" })}
                   </p>
-                  <p className="text-[10px] text-muted">Min {contract.minimum_months} bulan • {contract.contract_type}</p>
+                  <p className="text-[11px] text-muted">Min {contract.minimum_months} bulan • {contract.contract_type}</p>
                 </div>
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-base font-bold text-success sm:text-lg">{formatIDR(monthlyTotal)}</p>
-                <p className="text-[10px] text-muted">/bulan</p>
+                <p className="text-[11px] text-muted">/bulan</p>
               </div>
             </div>
 
@@ -965,11 +965,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
                             <DollarSign size={14} className="text-success" />
                             <div>
                               <p className="text-sm font-medium text-foreground">{svc.service_name}</p>
-                              <p className="text-[10px] text-muted">
+                              <p className="text-[11px] text-muted">
                                 Dari {formatDate(svc.effective_from, { month: "short", year: "numeric" })}
                                 {svc.effective_to && ` → ${formatDate(svc.effective_to, { month: "short", year: "numeric" })}`}
                               </p>
-                              {svc.notes && <p className="text-[10px] italic text-muted">"{svc.notes}"</p>}
+                              {svc.notes && <p className="text-[11px] italic text-muted">"{svc.notes}"</p>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1027,7 +1027,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                           e.stopPropagation();
                           handleGenerateBilling(contract.id, getCurrentPeriod());
                         }}
-                        className="flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-[10px] text-muted hover:text-primary"
+                        className="flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-[11px] text-muted hover:text-primary"
                       >
                         <CreditCard size={10} /> Gen {getCurrentPeriod()}
                       </button>
@@ -1036,7 +1036,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                           e.stopPropagation();
                           handleGenerateBilling(contract.id, getNextPeriod());
                         }}
-                        className="flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-[10px] text-muted hover:text-primary"
+                        className="flex items-center gap-1 rounded-md bg-surface px-2 py-1 text-[11px] text-muted hover:text-primary"
                       >
                         <CreditCard size={10} /> Gen {getNextPeriod()}
                       </button>
@@ -1068,24 +1068,24 @@ export function ContractManager({ clientId }: { clientId: string }) {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium text-foreground">{bil.billing_period}</p>
-                                <span className={cn("badge text-[9px]", billingStatusColors[bil.status] || billingStatusColors.unpaid)}>
+                                <span className={cn("badge text-[11px]", billingStatusColors[bil.status] || billingStatusColors.unpaid)}>
                                   {bil.status}
                                 </span>
                               </div>
                               {bil.services_snapshot && bil.services_snapshot.length > 0 && (
-                                <p className="text-[10px] text-muted">
+                                <p className="text-[11px] text-muted">
                                   {bil.services_snapshot.map((s) => s.service).join(", ")}
                                 </p>
                               )}
                               {bil.due_date && bil.status === "unpaid" && (
-                                <p className="text-[10px] text-warning">Jatuh tempo: {formatDate(bil.due_date)}</p>
+                                <p className="text-[11px] text-warning">Jatuh tempo: {formatDate(bil.due_date)}</p>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="text-right">
                               <p className="text-sm font-bold text-foreground">{formatIDR(bil.grand_total)}</p>
-                              <p className="text-[10px] text-muted">
+                              <p className="text-[11px] text-muted">
                                 {formatIDR(bil.total_amount)} + PPN {formatIDR(bil.tax_amount)}
                               </p>
                             </div>
@@ -1095,7 +1095,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                                   e.stopPropagation();
                                   handleMarkPaid(bil.id);
                                 }}
-                                className="rounded-md bg-success px-2 py-1 text-[10px] font-medium text-white hover:bg-success/90"
+                                className="rounded-md bg-success px-2 py-1 text-[11px] font-medium text-white hover:bg-success/90"
                               >
                                 Tandai Lunas
                               </button>
@@ -1110,7 +1110,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                 {/* Document & Actions */}
                 <div className="flex flex-wrap items-center gap-2 border-t border-border p-2">
                   {/* Upload Document */}
-                  <label className="flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[10px] text-primary hover:bg-primary/10">
+                  <label className="flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[11px] text-primary hover:bg-primary/10">
                     <Upload size={10} />
                     {contract.signed_url ? "Ganti Dokumen" : "Upload Dokumen"}
                     <input
@@ -1132,7 +1132,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-muted hover:bg-surface"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted hover:bg-surface"
                     >
                       <Download size={10} /> Lihat Dokumen
                     </a>
@@ -1144,7 +1144,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       e.stopPropagation();
                       openEditModal(contract);
                     }}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-primary hover:bg-primary/10"
+                    className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-primary hover:bg-primary/10"
                   >
                     <RefreshCw size={10} /> Edit Kontrak
                   </button>
@@ -1156,7 +1156,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                         e.stopPropagation();
                         handleRenewContract(contract);
                       }}
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-success hover:bg-success/10"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-success hover:bg-success/10"
                     >
                       <RefreshCw size={10} /> Perpanjang
                     </button>
@@ -1168,7 +1168,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       e.stopPropagation();
                       handleDeleteContract(contract.id);
                     }}
-                    className="ml-auto flex items-center gap-1 text-[10px] text-danger hover:underline"
+                    className="ml-auto flex items-center gap-1 text-[11px] text-danger hover:underline"
                   >
                     <Trash2 size={10} /> Hapus
                   </button>
@@ -1231,7 +1231,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               </div>
               {/* Section: PIC Client */}
               <div className="rounded-md border border-border bg-background/50 p-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Nama PIC</label>
@@ -1268,7 +1268,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
               {/* Section: Payment Schedule / Prepaid */}
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Skema Bayar</label>
@@ -1308,11 +1308,11 @@ export function ContractManager({ clientId }: { clientId: string }) {
                         placeholder="contoh: 30000000"
                         className="input"
                       />
-                      <p className="mt-1 text-[10px] text-muted">
+                      <p className="mt-1 text-[11px] text-muted">
                         Kosongkan jika ingin auto-calculate dari services × jumlah bulan
                       </p>
                     </div>
-                    <p className="mt-2 text-[10px] text-primary">
+                    <p className="mt-2 text-[11px] text-primary">
                       <Lightbulb size={12} className="inline" /> Client membayar penuh di awal. Dashboard akan menampilkan total prepaid, bukan per bulan.
                       Auto-billing akan skip kontrak ini selama periode prepaid.
                     </p>
@@ -1395,7 +1395,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
               {/* Section: Initial Services & Pricing */}
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
                     Services & Harga (Opsional)
                   </p>
                   <button
@@ -1404,7 +1404,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       ...contractForm,
                       initialServices: [...contractForm.initialServices, { service_name: "", monthly_fee: "" }],
                     })}
-                    className="flex items-center gap-0.5 text-[10px] text-primary hover:underline"
+                    className="flex items-center gap-0.5 text-[11px] text-primary hover:underline"
                   >
                     <Plus size={10} /> Tambah baris
                   </button>
@@ -1462,7 +1462,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
                       {/* Live total preview (only on last row) */}
                       {idx === contractForm.initialServices.length - 1 && subtotal > 0 && (
-                        <div className="mt-2 space-y-0.5 rounded-md bg-background/80 p-2 text-[10px]">
+                        <div className="mt-2 space-y-0.5 rounded-md bg-background/80 p-2 text-[11px]">
                           <div className="flex justify-between text-muted">
                             <span>Subtotal</span>
                             <span>{formatIDR(subtotal)}</span>
@@ -1581,7 +1581,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
               {/* PIC Client */}
               <div className="rounded-md border border-border bg-background/50 p-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">PIC Client</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Nama PIC</label>
@@ -1615,7 +1615,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
 
               {/* Bug #5 fix: Skema Pembayaran (Prepaid) */}
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-primary">Skema Pembayaran</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-foreground">Skema Bayar</label>
@@ -1654,7 +1654,7 @@ export function ContractManager({ clientId }: { clientId: string }) {
                       placeholder="contoh: 30000000"
                       className="input"
                     />
-                    <p className="mt-1 text-[10px] text-muted">Kosongkan/0 jika ingin auto-calculate dari services × jumlah bulan</p>
+                    <p className="mt-1 text-[11px] text-muted">Kosongkan/0 jika ingin auto-calculate dari services × jumlah bulan</p>
                   </div>
                 )}
               </div>

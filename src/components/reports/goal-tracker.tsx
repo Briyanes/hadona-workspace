@@ -185,7 +185,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-1 text-[10px] text-primary hover:underline"
+            className="flex items-center gap-1 text-[11px] text-primary hover:underline"
           >
             <Plus size={10} /> Add Goal
           </button>
@@ -224,12 +224,12 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
               <option value="quarterly">Quarterly</option>
             </select>
           </div>
-          <p className="mt-1 text-[9px] text-muted">{GOAL_LABELS[newGoal.goal_type].desc}</p>
+          <p className="mt-1 text-[11px] text-muted">{GOAL_LABELS[newGoal.goal_type].desc}</p>
           <div className="mt-2 flex justify-end gap-1">
-            <button type="button" onClick={() => setShowForm(false)} className="text-[10px] text-muted hover:text-foreground">
+            <button type="button" onClick={() => setShowForm(false)} className="text-[11px] text-muted hover:text-foreground">
               Batal
             </button>
-            <button type="submit" className="rounded bg-primary px-2 py-1 text-[10px] text-white hover:opacity-90">
+            <button type="submit" className="rounded bg-primary px-2 py-1 text-[11px] text-white hover:opacity-90">
               Simpan Goal
             </button>
           </div>
@@ -238,7 +238,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
 
       {/* Goals List */}
       {goals.length === 0 ? (
-        <p className="text-center text-[10px] text-muted">
+        <p className="text-center text-[11px] text-muted">
           Belum ada goal aktif. Klik "Add Goal" untuk set target performa.
         </p>
       ) : (
@@ -251,9 +251,9 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
             return (
               <div key={g.id} className="group rounded-md border border-border bg-surface p-2">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] font-medium text-muted">{meta.label}</span>
+                  <span className="text-[11px] font-medium text-muted">{meta.label}</span>
                   <div className="flex items-center gap-1">
-                    <span className="text-[9px] text-muted uppercase">{g.period_type}</span>
+                    <span className="text-[11px] text-muted uppercase">{g.period_type}</span>
                     <button
                       onClick={() => handleDelete(g.id)}
                       className="text-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
@@ -271,12 +271,12 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
                         className={cn("h-full rounded-full transition-all", progress.bg)}
                         style={{ width: `${Math.min(progress.pct, 100)}%` }}
                       />
-                      <span className="absolute inset-0 flex items-center justify-between px-2 text-[9px] font-bold text-white">
+                      <span className="absolute inset-0 flex items-center justify-between px-2 text-[11px] font-bold text-white">
                         <span>{formatGoal(actual!, meta.unit)}</span>
                         <span>/ {formatGoal(g.target_value, meta.unit)}</span>
                       </span>
                     </div>
-                    <div className="mt-1 flex items-center justify-between text-[9px]">
+                    <div className="mt-1 flex items-center justify-between text-[11px]">
                       <span className={cn("flex items-center gap-0.5 font-semibold", progress.color)}>
                         {progress.status === "on-track" ? <CheckCircle size={9} /> : <AlertCircle size={9} />}
                         {progress.status === "on-track" ? "On Track" : progress.status === "at-risk" ? "At Risk" : "Off Track"}
@@ -285,7 +285,7 @@ export function GoalTracker({ clientId, actualMetrics }: { clientId: string; act
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center justify-between rounded bg-background px-2 py-1 text-[10px]">
+                  <div className="flex items-center justify-between rounded bg-background px-2 py-1 text-[11px]">
                     <span className="text-muted">Target: <b className="text-foreground">{formatGoal(g.target_value, meta.unit)}</b></span>
                     <span className="text-muted italic">Belum ada aktual</span>
                   </div>

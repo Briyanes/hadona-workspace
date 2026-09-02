@@ -876,7 +876,7 @@ export default function CalendarPage() {
           </div>
           <div className="min-w-0">
             <p className="text-lg font-bold text-foreground">{stats.total}</p>
-            <p className="truncate text-[10px] text-muted">Total Event</p>
+            <p className="truncate text-[11px] text-muted">Total Event</p>
           </div>
         </div>
         <div className="card flex items-center gap-2.5 p-3">
@@ -885,7 +885,7 @@ export default function CalendarPage() {
           </div>
           <div className="min-w-0">
             <p className="text-lg font-bold text-foreground">{stats.urgent}</p>
-            <p className="truncate text-[10px] text-muted">Urgent (≤2 hari)</p>
+            <p className="truncate text-[11px] text-muted">Urgent (≤2 hari)</p>
           </div>
         </div>
         <div className="card flex items-center gap-2.5 p-3">
@@ -894,7 +894,7 @@ export default function CalendarPage() {
           </div>
           <div className="min-w-0">
             <p className="text-lg font-bold text-foreground">{stats.today}</p>
-            <p className="truncate text-[10px] text-muted">Hari Ini</p>
+            <p className="truncate text-[11px] text-muted">Hari Ini</p>
           </div>
         </div>
         <div className="card flex items-center gap-2.5 p-3">
@@ -903,7 +903,7 @@ export default function CalendarPage() {
           </div>
           <div className="min-w-0">
             <p className="text-lg font-bold text-foreground">{stats.thisMonth}</p>
-            <p className="truncate text-[10px] text-muted">Bulan Ini</p>
+            <p className="truncate text-[11px] text-muted">Bulan Ini</p>
           </div>
         </div>
       </div>
@@ -934,7 +934,7 @@ export default function CalendarPage() {
               <Icon size={12} />
               {cfg.label}
               <span className={cn(
-                "rounded-full px-1.5 text-[9px] font-bold",
+                "rounded-full px-1.5 text-[11px] font-bold",
                 isActive ? "bg-white/20" : "bg-background"
               )}>
                 {count}
@@ -982,7 +982,7 @@ export default function CalendarPage() {
                       "flex w-12 shrink-0 flex-col items-center rounded-md py-1.5",
                       isToday(e.date) ? cfg.activeBg : cfg.bg
                     )}>
-                      <span className="text-[9px] font-medium uppercase opacity-80">
+                      <span className="text-[11px] font-medium uppercase opacity-80">
                         {new Date(e.date).toLocaleDateString("id-ID", { month: "short" })}
                       </span>
                       <span className="text-base font-bold leading-none">
@@ -995,7 +995,7 @@ export default function CalendarPage() {
                         <Icon size={12} className="shrink-0 text-muted" />
                         <p className="truncate text-sm font-medium text-foreground">{e.title}</p>
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
                         <span className="rounded bg-surface px-1 capitalize">{cfg.label}</span>
                         {e.clientName && <span className="truncate">{e.clientName}</span>}
                         {e.meta && <span>• {e.meta}</span>}
@@ -1009,7 +1009,7 @@ export default function CalendarPage() {
                     {/* Urgent Badge */}
                     <span
                       className={cn(
-                        "shrink-0 rounded px-2 py-1 text-[10px] font-bold",
+                        "shrink-0 rounded px-2 py-1 text-[11px] font-bold",
                         isPast
                           ? "bg-surface text-muted"
                           : isUrgent
@@ -1081,7 +1081,7 @@ export default function CalendarPage() {
                 <div
                   key={d}
                   className={cn(
-                    "py-1 text-center text-[10px] font-semibold uppercase tracking-wide",
+                    "py-1 text-center text-[11px] font-semibold uppercase tracking-wide",
                     i === 0 ? "text-danger" : i === 6 ? "text-primary" : "text-muted"
                   )}
                 >
@@ -1130,7 +1130,7 @@ export default function CalendarPage() {
                             </span>
                             {dayEvents.length > 0 && (
                               <span className={cn(
-                                "rounded-full px-1 text-[8px] font-bold sm:text-[9px]",
+                                "rounded-full px-1 text-[11px] font-bold sm:text-[11px]",
                                 dayEvents.length > 3 ? "bg-danger/10 text-danger" : "bg-surface text-muted"
                               )}>
                                 {dayEvents.length}
@@ -1142,7 +1142,7 @@ export default function CalendarPage() {
                               <div
                                 key={e.id}
                                 className={cn(
-                                  "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[8px] sm:text-[9px]",
+                                  "flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] sm:text-[11px]",
                                   typeConfig[e.type].bg
                                 )}
                               >
@@ -1151,7 +1151,7 @@ export default function CalendarPage() {
                               </div>
                             ))}
                             {dayEvents.length > 3 && (
-                              <p className="text-[8px] text-muted sm:text-[9px]">
+                              <p className="text-[11px] text-muted sm:text-[11px]">
                                 +{dayEvents.length - 3} lagi
                               </p>
                             )}
@@ -1188,7 +1188,7 @@ export default function CalendarPage() {
                         "flex w-12 shrink-0 flex-col items-center rounded-md py-1.5",
                         isTodayCell ? "bg-primary text-white" : "bg-surface text-foreground"
                       )}>
-                        <span className="text-[9px] font-medium uppercase opacity-80">
+                        <span className="text-[11px] font-medium uppercase opacity-80">
                           {WEEKDAYS[dayOfWeek]}
                         </span>
                         <span className="text-lg font-bold leading-none">
@@ -1215,7 +1215,7 @@ export default function CalendarPage() {
                                   <Icon size={10} className="shrink-0 text-muted" />
                                   <span className="truncate text-foreground">{e.title}</span>
                                   {e.clientName && (
-                                    <span className="ml-auto shrink-0 text-[9px] text-muted">
+                                    <span className="ml-auto shrink-0 text-[11px] text-muted">
                                       {e.clientName}
                                     </span>
                                   )}
@@ -1264,7 +1264,7 @@ export default function CalendarPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-medium text-foreground">{e.title}</p>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-muted">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-muted">
                             {e.clientName && <span className="truncate">{e.clientName}</span>}
                             {e.meta && <span>• {e.meta}</span>}
                             {e.status && (
@@ -1309,7 +1309,7 @@ export default function CalendarPage() {
                   {upcomingByGroup.map((group) => (
                     <div key={group.label}>
                       <p className={cn(
-                        "mb-1.5 text-[10px] font-bold uppercase tracking-wide",
+                        "mb-1.5 text-[11px] font-bold uppercase tracking-wide",
                         group.label === "Hari Ini"
                           ? "text-danger"
                           : group.label === "Besok"
@@ -1339,10 +1339,10 @@ export default function CalendarPage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs text-foreground">{e.title}</p>
-                                <p className="truncate text-[10px] text-muted">{e.clientName}</p>
+                                <p className="truncate text-[11px] text-muted">{e.clientName}</p>
                               </div>
                               {isUrgent && (
-                                <span className="shrink-0 rounded bg-danger/10 px-1 py-0.5 text-[9px] font-bold text-danger">
+                                <span className="shrink-0 rounded bg-danger/10 px-1 py-0.5 text-[11px] font-bold text-danger">
                                   {days === 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
                                 </span>
                               )}
@@ -1569,7 +1569,7 @@ export default function CalendarPage() {
                 </label>
               )}
               {!googleConnected && !eventForm.all_day && (
-                <p className="text-[10px] text-muted">
+                <p className="text-[11px] text-muted">
                   <Lightbulb size={12} className="inline" /> Hubungkan Google Calendar di Settings → Integrations untuk auto-generate Meet link
                 </p>
               )}
@@ -1606,7 +1606,7 @@ export default function CalendarPage() {
                       compact
                       allowBulkAssign={false}
                     />
-                    <p className="text-[10px] text-muted">
+                    <p className="text-[11px] text-muted">
                       <Video size={10} className="inline" /> Semua assignee otomatis menerima undangan Google Calendar (jika Meet di-generate).
                     </p>
                   </div>
@@ -1646,7 +1646,7 @@ export default function CalendarPage() {
               <div>
                 <p className="text-sm font-bold text-foreground">{detailEvent.title}</p>
                 {detailEvent.status && (
-                  <span className="mt-0.5 inline-block rounded bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium capitalize text-purple-700">
+                  <span className="mt-0.5 inline-block rounded bg-purple-500/10 px-1.5 py-0.5 text-[11px] font-medium capitalize text-purple-700">
                     {detailEvent.status.replace("_", " ")}
                   </span>
                 )}
@@ -1733,7 +1733,7 @@ export default function CalendarPage() {
                     Generate Google Meet Link
                   </button>
                 ) : (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[10px] text-amber-700">
+                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-700">
                     Hubungkan Google di Settings → Integrations untuk generate Meet link.
                   </div>
                 )
@@ -1749,7 +1749,7 @@ export default function CalendarPage() {
 
               {/* Google sync indicator */}
               {detailEvent.googleEventId && (
-                <div className="flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 p-2 text-[10px] text-green-700">
+                <div className="flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 p-2 text-[11px] text-green-700">
                   <CheckCircle2 size={12} />
                   Tersinkron dengan Google Calendar — reschedule/cancel otomatis update & notify attendees.
                 </div>
@@ -1836,7 +1836,7 @@ export default function CalendarPage() {
               <p className="mt-1.5 text-xs text-muted">
                 Yakin ingin membatalkan <strong>"{detailEvent.title}"</strong>?
                 {detailEvent.googleEventId && (
-                  <span className="mt-1 block text-[10px] text-orange-600">
+                  <span className="mt-1 block text-[11px] text-orange-600">
                     Google Calendar akan diupdate dan email pembatalan dikirim ke semua attendees.
                   </span>
                 )}

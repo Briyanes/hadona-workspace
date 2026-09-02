@@ -234,7 +234,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
           <Upload className="text-primary" size={16} />
           <div>
             <p className="text-lg font-bold text-foreground">{uploads.length}</p>
-            <p className="text-[10px] text-muted">Total Uploads</p>
+            <p className="text-[11px] text-muted">Total Uploads</p>
           </div>
         </div>
         <div className="card flex items-center gap-2 p-3">
@@ -243,21 +243,21 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
             <p className="text-lg font-bold text-foreground">
               {todoUploads + inProgressUploads}
             </p>
-            <p className="text-[10px] text-muted">Pending</p>
+            <p className="text-[11px] text-muted">Pending</p>
           </div>
         </div>
         <div className="card flex items-center gap-2 p-3">
           <CheckCircle className="text-success" size={16} />
           <div>
             <p className="text-lg font-bold text-success">{doneUploads}</p>
-            <p className="text-[10px] text-muted">Done</p>
+            <p className="text-[11px] text-muted">Done</p>
           </div>
         </div>
         <div className="card flex items-center gap-2 p-3">
           <Tag className="text-accent" size={16} />
           <div>
             <p className="text-lg font-bold text-foreground">{captions.length}</p>
-            <p className="text-[10px] text-muted">Caption Bank</p>
+            <p className="text-[11px] text-muted">Caption Bank</p>
           </div>
         </div>
       </div>
@@ -276,7 +276,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
           >
             <Upload size={14} /> Upload Tracker
             {uploads.length > 0 && (
-              <span className="rounded-full bg-surface px-1.5 py-0.5 text-[10px] text-muted">
+              <span className="rounded-full bg-surface px-1.5 py-0.5 text-[11px] text-muted">
                 {uploads.length}
               </span>
             )}
@@ -292,7 +292,7 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
           >
             <FileText size={14} /> Caption Bank
             {captions.length > 0 && (
-              <span className="rounded-full bg-surface px-1.5 py-0.5 text-[10px] text-muted">
+              <span className="rounded-full bg-surface px-1.5 py-0.5 text-[11px] text-muted">
                 {captions.length}
               </span>
             )}
@@ -324,17 +324,17 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       {item.brief_no && (
-                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                           {item.brief_no}
                         </span>
                       )}
                       {item.division && (
-                        <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
+                        <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[11px] text-accent">
                           {item.division}
                         </span>
                       )}
                       {item.upload_date && (
-                        <span className="flex items-center gap-1 text-[10px] text-muted">
+                        <span className="flex items-center gap-1 text-[11px] text-muted">
                           <Calendar size={10} />
                           {formatDate(item.upload_date, { day: "numeric", month: "short" })}
                         </span>
@@ -392,12 +392,12 @@ export function ClientContentTab({ clientId }: { clientId: string }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       {item.product && (
-                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                           {item.product}
                         </span>
                       )}
                       {item.theme && (
-                        <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
+                        <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[11px] text-accent">
                           {item.theme}
                         </span>
                       )}

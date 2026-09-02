@@ -1171,12 +1171,12 @@ export default function AdsSpendPage() {
                   <p className="text-sm font-medium text-foreground">
                     Meta Ads Terhubung: {metaConnection.fb_user_name || "Facebook User"}
                     {isTokenInvalid && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
+                      <span className="ml-2 inline-flex items-center rounded-full bg-danger/10 px-2 py-0.5 text-[11px] font-semibold text-danger">
                         <AlertTriangle size={12} className="inline" /> TOKEN INVALID
                       </span>
                     )}
                     {isTokenExpiring && !isTokenInvalid && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                      <span className="ml-2 inline-flex items-center rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning">
                         ⏰ EXPIRING SOON
                       </span>
                     )}
@@ -1308,7 +1308,7 @@ export default function AdsSpendPage() {
               </div>
               <p className="text-xs text-muted">{card.label}</p>
               <p className="mt-0.5 text-lg font-bold text-foreground">{card.value}</p>
-              <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
+              <p className="mt-0.5 text-[11px] text-muted">{card.sub}</p>
             </div>
           );
         })}
@@ -1328,7 +1328,7 @@ export default function AdsSpendPage() {
                 <div className="h-6 flex-1 overflow-hidden rounded-md bg-background">
                   <div
                     className={cn(
-                      "flex h-full items-center justify-end rounded-md px-2 text-[10px] font-medium text-white transition-all",
+                      "flex h-full items-center justify-end rounded-md px-2 text-[11px] font-medium text-white transition-all",
                       p.color
                     )}
                     style={{ width: `${Math.max(pct, p.budget > 0 ? 15 : 0)}%` }}
@@ -1350,7 +1350,7 @@ export default function AdsSpendPage() {
             <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
               <TrendingUp size={14} /> SPEND & REVENUE TREND
             </p>
-            <p className="mt-0.5 text-[10px] text-muted">
+            <p className="mt-0.5 text-[11px] text-muted">
               Total {filtered.length} accounts • {chartRange} hari terakhir
             </p>
           </div>
@@ -1389,7 +1389,7 @@ export default function AdsSpendPage() {
             <div className="flex h-48 flex-col items-center justify-center text-center">
               <TrendingUp className="mb-2 text-muted" size={24} />
               <p className="text-xs text-muted">Belum ada data spend.</p>
-              <p className="text-[10px] text-muted">
+              <p className="text-[11px] text-muted">
                 Klik icon <ClipboardList size={10} className="inline" /> di tabel untuk log spend
                 harian.
               </p>
@@ -1413,6 +1413,7 @@ export default function AdsSpendPage() {
         </div>
         <select
           value={clientFilter}
+          aria-label="Filter klien"
           onChange={(e) => setClientFilter(e.target.value)}
           className="input w-auto"
         >
@@ -1426,6 +1427,7 @@ export default function AdsSpendPage() {
         </select>
         <select
           value={statusFilter}
+          aria-label="Filter status"
           onChange={(e) => setStatusFilter(e.target.value)}
           className="input w-auto"
         >
@@ -1437,6 +1439,7 @@ export default function AdsSpendPage() {
         {/* FASE 2: Filter by PIC */}
         <select
           value={picFilter}
+          aria-label="Filter PIC"
           onChange={(e) => setPicFilter(e.target.value)}
           className="input w-auto"
         >
@@ -1623,9 +1626,9 @@ export default function AdsSpendPage() {
                         </div>
                       )}
                       {a.account_name ? (
-                        <div className="text-[10px] text-muted">{a.account_name}</div>
+                        <div className="text-[11px] text-muted">{a.account_name}</div>
                       ) : null}
-                      <div className="font-mono text-[10px] text-muted">{a.ad_account_id}</div>
+                      <div className="font-mono text-[11px] text-muted">{a.ad_account_id}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -1722,7 +1725,7 @@ export default function AdsSpendPage() {
                         return (
                           <div className="flex flex-col items-center gap-0.5">
                             <span className={cn(
-                              "text-[10px] font-bold",
+                              "text-[11px] font-bold",
                               pacing.status === "over" ? "text-danger" : pacing.status === "under" ? "text-warning" : "text-success"
                             )}>
                               {pacing.pct.toFixed(0)}%

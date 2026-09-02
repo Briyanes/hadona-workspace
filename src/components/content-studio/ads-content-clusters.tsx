@@ -455,7 +455,7 @@ export default function AdsContentClusters() {
                    <p className="font-semibold text-sm text-foreground">
                      {it.client?.name || it.client_hint || "—"}
                      {showInactive && isInactiveClient(it) && (
-                       <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                       <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted">
                          non-aktif
                        </span>
                      )}
@@ -544,7 +544,7 @@ export default function AdsContentClusters() {
                   <td className="p-3 font-medium">
                     {it.client?.name || it.client_hint || "—"}
                     {showInactive && isInactiveClient(it) && (
-                      <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                      <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted">
                         non-aktif
                       </span>
                     )}

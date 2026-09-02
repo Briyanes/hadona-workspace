@@ -281,7 +281,7 @@ export function ReportDetailModal({ reportId, onClose, onUpdated, onDeleted }: R
                 {report.sheet_source && (
                   <p>
                     <span className="font-medium text-muted">Sheet Tab:</span> {report.sheet_source}
-                    {report.sheet_gid && <span className="ml-1 font-mono text-muted/70">(gid: {report.sheet_gid})</span>}
+                    {report.sheet_gid && <span className="ml-1 font-mono text-muted">(gid: {report.sheet_gid})</span>}
                   </p>
                 )}
                 {report.data_source_kind && (

@@ -143,10 +143,11 @@ export function NotificationBell() {
         onClick={() => setOpen(!open)}
         className="relative rounded-full p-2 transition-colors hover:bg-surface-hover"
         title="Notifications"
+        aria-label="Buka notifikasi"
       >
         <Bell size={18} className="text-muted" />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white animate-pulse">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white animate-pulse">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -160,7 +161,7 @@ export function NotificationBell() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-foreground">Notifications</span>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[10px] font-medium text-danger">
+                <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[11px] font-medium text-danger">
                   {unreadCount} new
                 </span>
               )}
@@ -188,7 +189,7 @@ export function NotificationBell() {
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Bell size={32} className="mb-2 text-muted/40" />
                 <p className="text-sm text-muted">No notifications yet</p>
-                <p className="mt-1 text-xs text-muted/70">
+                <p className="mt-1 text-xs text-muted">
                   You'll see task assignments and updates here
                 </p>
               </div>
@@ -226,7 +227,7 @@ export function NotificationBell() {
                             {n.body}
                           </p>
                         )}
-                        <p className="mt-1 text-[10px] text-muted">
+                        <p className="mt-1 text-[11px] text-muted">
                           {timeUntil(n.created_at)}
                         </p>
                       </div>

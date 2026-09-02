@@ -30,7 +30,7 @@ function HealthBadge({ health }: { health: keyof typeof HEALTH_COLORS }) {
   const labels = { good: "Healthy", warning: "Watch", danger: "Critical", neutral: "—" };
   if (health === "neutral") return null;
   return (
-    <span className={cn("rounded-full px-1.5 py-0.5 text-[8px] font-semibold", HEALTH_COLORS[health])}>
+    <span className={cn("rounded-full px-1.5 py-0.5 text-[11px] font-semibold", HEALTH_COLORS[health])}>
       {labels[health]}
     </span>
   );
@@ -52,7 +52,7 @@ function WoWIndicator({ current, previous }: { current: number | null; previous?
   return (
     <span
       className={cn(
-        "flex items-center gap-0.5 text-[9px] font-medium",
+        "flex items-center gap-0.5 text-[11px] font-medium",
         isFlat ? "text-muted" : isPositive ? "text-success" : "text-danger"
       )}
       title={`WoW: ${previous.toLocaleString("id-ID")} → ${current.toLocaleString("id-ID")}`}
@@ -94,7 +94,7 @@ export function KPICard({ metric, value, previousValue, objectiveId, size = "com
       title={hint}
     >
       <div className="mb-0.5 flex items-center justify-between gap-1">
-        <p className="truncate text-[9px] font-medium uppercase tracking-wide text-muted">
+        <p className="truncate text-[11px] font-medium uppercase tracking-wide text-muted">
           {label}
         </p>
         <HealthBadge health={health} />
@@ -104,7 +104,7 @@ export function KPICard({ metric, value, previousValue, objectiveId, size = "com
       </p>
       {/* 🆕 Sprint 4.8: Tampilkan hint kecil di bawah value kalau metric derived kosong */}
       {hint && (
-        <p className="mt-0.5 text-[8px] italic text-amber-600 line-clamp-2" title={hint}>
+        <p className="mt-0.5 text-[11px] italic text-amber-600 line-clamp-2" title={hint}>
           {hint}
         </p>
       )}
@@ -134,13 +134,13 @@ function FunnelBar({ step, maxValue }: { step: FunnelStep; maxValue: number }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-28 truncate text-right text-[9px] text-muted">{step.label}</div>
+      <div className="w-28 truncate text-right text-[11px] text-muted">{step.label}</div>
       <div className="relative h-6 flex-1 rounded bg-surface">
         <div
           className="absolute inset-y-0 left-0 rounded bg-primary/70 transition-all"
           style={{ width: `${percent}%` }}
         />
-        <span className="absolute inset-y-0 right-2 flex items-center text-[9px] font-semibold text-foreground">
+        <span className="absolute inset-y-0 right-2 flex items-center text-[11px] font-semibold text-foreground">
           {displayValue}
         </span>
       </div>
@@ -178,7 +178,7 @@ export function FunnelVisualization({
           <div key={step.metric}>
             <FunnelBar step={step} maxValue={maxValue} />
             {idx < stepData.length - 1 && stepData[idx + 1]?.value && step.value && (
-              <div className="my-0.5 flex items-center gap-2 pl-28 text-[8px] text-muted">
+              <div className="my-0.5 flex items-center gap-2 pl-28 text-[11px] text-muted">
                 <ArrowRight size={8} />
                 {(((stepData[idx + 1]?.value ?? 0) / step.value) * 100).toFixed(1)}% drop-off
               </div>
@@ -190,10 +190,10 @@ export function FunnelVisualization({
       {/* Ratios */}
       {ratios && ratios.length > 0 && (
         <div className="mt-2 border-t border-border pt-2">
-          <p className="mb-1 text-[8px] font-semibold uppercase text-muted">Conversion Ratios</p>
+          <p className="mb-1 text-[11px] font-semibold uppercase text-muted">Conversion Ratios</p>
           <div className="flex flex-wrap gap-1.5">
             {ratios.map((ratio) => (
-              <span key={ratio} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[8px] font-medium text-primary">
+              <span key={ratio} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                 {METRIC_LABELS[ratio] || ratio}: {formatMetricValue(ratio, metrics[ratio])}
               </span>
             ))}
@@ -239,7 +239,7 @@ export function ObjectiveKPIBar({ objectiveId, metrics, previousMetrics, classNa
     <div className={cn("space-y-2", className)}>
       {/* Hero KPI Bar — Primary metrics dengan size besar */}
       <div>
-        <p className="mb-1 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted">
+        <p className="mb-1 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-muted">
           <ObjectiveIcon id={objectiveId} size={10} className="inline" /> {obj.label} — Primary KPIs
         </p>
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -259,7 +259,7 @@ export function ObjectiveKPIBar({ objectiveId, metrics, previousMetrics, classNa
       {/* Secondary metrics — compact bar */}
       {obj.secondaryMetrics.length > 0 && (
         <div>
-          <p className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted">Secondary Metrics</p>
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted">Secondary Metrics</p>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {obj.secondaryMetrics.slice(0, 10).map((metric) => (
               <KPICard

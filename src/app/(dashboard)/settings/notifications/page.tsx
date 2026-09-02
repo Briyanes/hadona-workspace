@@ -60,7 +60,7 @@ export default function NotificationsSettingsPage() {
       {/* Info Banner */}
       <div className="rounded-lg border border-success/30 bg-success/5 p-4">
         <div className="flex items-start gap-2">
-          <span className="badge bg-success/15 text-success shrink-0 text-[10px]">Active</span>
+          <span className="badge bg-success/15 text-success shrink-0 text-[11px]">Active</span>
           <p className="text-xs text-muted">
             <CheckCircle2 size={12} className="inline" /> <strong>In-app notifications</strong> aktif (<Bell size={12} className="inline" /> di header) · <strong>Email digest</strong> aktif (Daily 07:00 & Weekly Senin via cron) · Telegram webhook coming soon.
           </p>

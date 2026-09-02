@@ -87,7 +87,7 @@ export function Breadcrumb() {
         return (
           <span key={crumb.href} className="flex items-center gap-1">
             {idx > 0 && <ChevronRight size={12} className="text-muted/50" />}
-            {isFirst && <Home size={12} className="text-muted/70" />}
+            {isFirst && <Home size={12} className="text-muted" />}
             {isLast ? (
               <span className="font-medium text-foreground">{crumb.label}</span>
             ) : (
@@ -95,7 +95,7 @@ export function Breadcrumb() {
                 href={crumb.href}
                 className={cn(
                   "transition-colors hover:text-primary",
-                  isFirst && "text-muted/70"
+                  isFirst && "text-muted"
                 )}
               >
                 {crumb.label}

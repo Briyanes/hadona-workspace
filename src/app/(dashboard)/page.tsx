@@ -288,7 +288,7 @@ function DashboardContent() {
               <p className="text-xs text-muted">{card.label}</p>
               <p className="mt-0.5 text-lg font-bold text-foreground group-hover:text-primary">{card.value}</p>
               {"sub" in card && card.sub && (
-                <p className="text-[10px] text-muted">{card.sub}</p>
+                <p className="text-[11px] text-muted">{card.sub}</p>
               )}
             </Link>
           );
@@ -300,19 +300,19 @@ function DashboardContent() {
         <div className="card bg-gradient-to-r from-success/5 to-primary/5 p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="text-center">
-              <p className="text-[10px] uppercase text-muted">Monthly Recurring Revenue</p>
+              <p className="text-[11px] uppercase text-muted">Monthly Recurring Revenue</p>
               <p className="mt-1 text-xl font-bold text-success">{formatIDR(stats?.totalMrr ?? 0)}</p>
-              <p className="text-[10px] text-muted">dari kontrak aktif</p>
+              <p className="text-[11px] text-muted">dari kontrak aktif</p>
             </div>
             <div className="text-center border-border sm:border-x">
-              <p className="text-[10px] uppercase text-muted">Prepaid Revenue</p>
+              <p className="text-[11px] uppercase text-muted">Prepaid Revenue</p>
               <p className="mt-1 text-xl font-bold text-purple-600">{formatIDR(prepaidRevenue)}</p>
-              <p className="text-[10px] text-muted">{prepaidCount} kontrak prepaid</p>
+              <p className="text-[11px] text-muted">{prepaidCount} kontrak prepaid</p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase text-muted">Total Contract Value</p>
+              <p className="text-[11px] uppercase text-muted">Total Contract Value</p>
               <p className="mt-1 text-xl font-bold text-primary">{formatIDR((stats?.totalMrr ?? 0) + prepaidRevenue)}</p>
-              <p className="text-[10px] text-muted">MRR + Prepaid</p>
+              <p className="text-[11px] text-muted">MRR + Prepaid</p>
             </div>
           </div>
         </div>
@@ -341,15 +341,15 @@ function DashboardContent() {
           </div>
           <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-5">
             <div className="rounded-lg bg-background p-3 text-center">
-              <p className="text-[10px] uppercase text-muted">Weekly Spend</p>
+              <p className="text-[11px] uppercase text-muted">Weekly Spend</p>
               <p className="mt-1 text-base font-bold text-foreground">{formatIDR(adsKpi.weeklySpend)}</p>
             </div>
             <div className="rounded-lg bg-background p-3 text-center">
-              <p className="text-[10px] uppercase text-muted">Conversions</p>
+              <p className="text-[11px] uppercase text-muted">Conversions</p>
               <p className="mt-1 text-base font-bold text-foreground">{adsKpi.weeklyConversions}</p>
             </div>
             <div className="rounded-lg bg-background p-3 text-center">
-              <p className="text-[10px] uppercase text-muted">Avg ROAS</p>
+              <p className="text-[11px] uppercase text-muted">Avg ROAS</p>
               <p className={cn(
                 "mt-1 text-base font-bold",
                 adsKpi.avgRoas >= 3 ? "text-success" : adsKpi.avgRoas >= 1 ? "text-warning" : "text-danger"
@@ -359,20 +359,20 @@ function DashboardContent() {
             </div>
             {adsKpi.bestClient && (
               <div className="rounded-lg bg-success/5 p-3 text-center">
-                <p className="flex items-center justify-center gap-1 text-[10px] uppercase text-muted">
+                <p className="flex items-center justify-center gap-1 text-[11px] uppercase text-muted">
                   <Trophy size={10} className="text-success" /> Best ROAS
                 </p>
                 <p className="mt-1 truncate text-sm font-bold text-success">{adsKpi.bestClient.name}</p>
-                <p className="text-[10px] text-muted">{adsKpi.bestClient.roas.toFixed(2)}x</p>
+                <p className="text-[11px] text-muted">{adsKpi.bestClient.roas.toFixed(2)}x</p>
               </div>
             )}
             {adsKpi.worstClient && adsKpi.worstClient.name !== adsKpi.bestClient?.name && (
               <div className="rounded-lg bg-danger/5 p-3 text-center">
-                <p className="flex items-center justify-center gap-1 text-[10px] uppercase text-muted">
+                <p className="flex items-center justify-center gap-1 text-[11px] uppercase text-muted">
                   <TrendingDown size={10} className="text-danger" /> Perlu Atensi
                 </p>
                 <p className="mt-1 truncate text-sm font-bold text-danger">{adsKpi.worstClient.name}</p>
-                <p className="text-[10px] text-muted">{adsKpi.worstClient.roas.toFixed(2)}x</p>
+                <p className="text-[11px] text-muted">{adsKpi.worstClient.roas.toFixed(2)}x</p>
               </div>
             )}
           </div>
@@ -420,14 +420,14 @@ function DashboardContent() {
                       <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                       <div className="flex items-center gap-2 text-xs text-muted">
                         {task.client && <span className="truncate">{task.client.name}</span>}
-                        <span className={cn("badge px-1.5 py-0 text-[10px]", statusColors[task.status] || statusColors.todo)}>
+                        <span className={cn("badge px-1.5 py-0 text-[11px]", statusColors[task.status] || statusColors.todo)}>
                           {task.status.replace("_", " ")}
                         </span>
                       </div>
                     </div>
                     {task.due_date && (
                       <div className={cn(
-                        "flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+                        "flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
                         isOverdue ? "bg-danger/10 text-danger" : isToday ? "bg-warning/10 text-warning" : "text-muted"
                       )}>
                         {isOverdue && <AlertTriangle size={10} />}
@@ -457,10 +457,10 @@ function DashboardContent() {
             {adsKpi && adsKpi.pendingReports.length > 0 ? (
               <>
                 <div className="flex gap-2">
-                  <span className="badge bg-surface text-muted text-[10px]">
+                  <span className="badge bg-surface text-muted text-[11px]">
                     {adsKpi.reportDrafts} Draft
                   </span>
-                  <span className="badge bg-warning/20 text-warning text-[10px]">
+                  <span className="badge bg-warning/20 text-warning text-[11px]">
                     {adsKpi.reportSubmitted} Submitted
                   </span>
                 </div>
@@ -481,7 +481,7 @@ function DashboardContent() {
                       </p>
                     </div>
                     <span className={cn(
-                      "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+                      "flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
                       r.status === "draft" ? "bg-surface text-muted" : "bg-warning/10 text-warning"
                     )}>
                       {r.status === "draft" ? <Clock size={9} /> : <Send size={9} />}
@@ -527,7 +527,7 @@ function DashboardContent() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-foreground">{log.description}</p>
-                      <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted">
+                      <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted">
                         {log.client?.name && <span className="truncate">{log.client.name}</span>}
                         <span>•</span>
                         <span>{new Date(log.created_at).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>

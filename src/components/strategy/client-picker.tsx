@@ -126,9 +126,9 @@ export function ClientPicker({ clients, selectedId, onChange, canvasIds }: Clien
                       <span className={cn("block truncate font-medium", isSelected ? "text-primary" : "text-foreground")}>
                         {c.name}
                       </span>
-                      {c.location && <span className="block text-[10px] text-muted">{c.location}</span>}
+                      {c.location && <span className="block text-[11px] text-muted">{c.location}</span>}
                     </span>
-                    {!hasCanvas(c.id) && <span className="shrink-0 text-[9px] text-muted/70">kosong</span>}
+                    {!hasCanvas(c.id) && <span className="shrink-0 text-[11px] text-muted">kosong</span>}
                     {isSelected && <Check size={14} className="shrink-0 text-primary" />}
                   </button>
                 );

@@ -116,12 +116,12 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
               <div className="mb-1 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-semibold text-foreground">{label}</span>
-                  <span className="rounded-full bg-surface px-1.5 py-0.5 text-[9px] text-muted">
+                  <span className="rounded-full bg-surface px-1.5 py-0.5 text-[11px] text-muted">
                     {div.members} member
                   </span>
                 </div>
                 {div.overdue > 0 && (
-                  <span className="flex items-center gap-0.5 text-[10px] font-medium text-danger">
+                  <span className="flex items-center gap-0.5 text-[11px] font-medium text-danger">
                     <AlertTriangle size={10} />
                     {div.overdue} overdue
                   </span>
@@ -135,13 +135,13 @@ export function DivisionAnalyticsWidget({ initialData }: DivisionAnalyticsWidget
                   style={{ width: `${barWidth}%` }}
                 />
                 <div className="absolute inset-0 flex items-center justify-between px-2">
-                  <span className="text-[10px] font-semibold text-white">{div.total} tasks</span>
-                  <span className="text-[10px] font-medium text-white/90">{progress.toFixed(0)}% done</span>
+                  <span className="text-[11px] font-semibold text-white">{div.total} tasks</span>
+                  <span className="text-[11px] font-medium text-white/90">{progress.toFixed(0)}% done</span>
                 </div>
               </div>
 
               {/* Stats breakdown */}
-              <div className="mt-1 flex gap-2 text-[9px] text-muted">
+              <div className="mt-1 flex gap-2 text-[11px] text-muted">
                 <span className="text-muted"><ClipboardList size={12} className="inline" /> {div.todo} todo</span>
                 <span className="text-muted"><Zap size={12} className="inline" /> {div.in_progress} in progress</span>
                 <span className="text-success"><CheckCircle2 size={12} className="inline" /> {div.done} done</span>

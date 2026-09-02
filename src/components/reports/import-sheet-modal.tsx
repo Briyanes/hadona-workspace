@@ -728,7 +728,7 @@ function PreviewRowCard({
             </span>
             <span
               className={cn(
-                "shrink-0 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
+                "shrink-0 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium",
                 status.color
               )}
             >
@@ -736,7 +736,7 @@ function PreviewRowCard({
               {status.label}
             </span>
             {row.platform && row.platform !== "unknown" && (
-              <span className="shrink-0 rounded bg-background px-1.5 py-0.5 text-[10px] uppercase text-muted">
+              <span className="shrink-0 rounded bg-background px-1.5 py-0.5 text-[11px] uppercase text-muted">
                 {row.platform}
               </span>
             )}
@@ -857,14 +857,14 @@ function PreviewRowCard({
             <summary className="cursor-pointer text-muted hover:text-foreground">
               Lihat raw performance text
             </summary>
-            <pre className="mt-1 max-h-40 overflow-auto rounded bg-surface p-2 text-[10px] text-muted whitespace-pre-wrap">
+            <pre className="mt-1 max-h-40 overflow-auto rounded bg-surface p-2 text-[11px] text-muted whitespace-pre-wrap">
               {row.rawPerformanceText}
             </pre>
           </details>
 
           {/* Warnings */}
           {row.parseWarnings.length > 0 && (
-            <div className="mt-2 text-[10px] text-warning">
+            <div className="mt-2 text-[11px] text-warning">
               ⚠️ {row.parseWarnings.length} warning: {row.parseWarnings.slice(0, 2).join(", ")}
               {row.parseWarnings.length > 2 && "..."}
             </div>
@@ -1191,7 +1191,7 @@ function ResultStep({
           </button>
 
           {!showSkipDetail && (
-            <p className="mt-1.5 text-[10px] text-muted">
+            <p className="mt-1.5 text-[11px] text-muted">
               {hasActionableSkip
                 ? "⚠️ Ada baris yang mungkin perlu review (client tidak dikenali / format tanggal)."
                 : "✅ Semua skip aman — baris naratif atau duplikat yang sudah ada di DB."}
@@ -1202,7 +1202,7 @@ function ResultStep({
 
           {showSkipDetail && (
             <div className="mt-3 space-y-3">
-              <p className="text-[10px] text-muted">
+              <p className="text-[11px] text-muted">
                 Breakdown alasan skip — bukan error, melainkan baris yang sengaja tidak diproses.
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
@@ -1260,8 +1260,8 @@ function ResultStep({
                   if (items.length === 0) return null;
                   return (
                     <div key={key} className="rounded bg-background p-2">
-                      <p className="mb-1 text-[9px] font-semibold uppercase text-muted">{label}</p>
-                      <ul className="space-y-0.5 text-[9px] text-muted">
+                      <p className="mb-1 text-[11px] font-semibold uppercase text-muted">{label}</p>
+                      <ul className="space-y-0.5 text-[11px] text-muted">
                         {items.map((ex, i) => (
                           <li key={i} className="font-mono">{ex}</li>
                         ))}
@@ -1273,7 +1273,7 @@ function ResultStep({
 
               {/* Action hint */}
               {hasActionableSkip && (
-                <div className="rounded bg-warning/10 p-2 text-[10px] text-warning">
+                <div className="rounded bg-warning/10 p-2 text-[11px] text-warning">
                   💡 <strong>Tip:</strong> Untuk unmatched client, cek spelling nama client di master DB.
                   Untuk no-period, pastikan format tanggal di cell performance:{" "}
                   <code className="rounded bg-surface px-1">19 s/d 25/1/26</code>.
@@ -1376,7 +1376,7 @@ function UnmatchedResolverCard({
           <p className="text-xs font-semibold text-primary">
             Auto-Suggest: {unmatchedRows.length} client tidak dikenali
           </p>
-          <p className="mt-0.5 text-[10px] text-muted">
+          <p className="mt-0.5 text-[11px] text-muted">
             Kami mencocokkan nama dengan client DB. Pilih suggestion yang benar untuk re-import,
             atau cari manual lewat dropdown.
           </p>
@@ -1404,10 +1404,10 @@ function UnmatchedResolverCard({
                 >
                   {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                 </button>
-                <span className="font-mono text-[10px] text-muted">#{r.rowIndex}</span>
+                <span className="font-mono text-[11px] text-muted">#{r.rowIndex}</span>
                 <span className="truncate text-xs font-semibold text-foreground">"{sheetName}"</span>
                 {currentOverride && (
-                  <span className="ml-auto inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[9px] font-medium text-success">
+                  <span className="ml-auto inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[11px] font-medium text-success">
                     <CheckCircle2 size={10} /> Resolved
                   </span>
                 )}
@@ -1419,7 +1419,7 @@ function UnmatchedResolverCard({
                   {/* Suggestion chips */}
                   {suggestions.length > 0 ? (
                     <div>
-                      <p className="mb-1 text-[10px] text-muted"><Lightbulb size={12} className="inline" /> Saran client:</p>
+                      <p className="mb-1 text-[11px] text-muted"><Lightbulb size={12} className="inline" /> Saran client:</p>
                       <div className="flex flex-wrap gap-1">
                         {suggestions.map(({ client, score, reason }) => (
                           <button
@@ -1427,7 +1427,7 @@ function UnmatchedResolverCard({
                             type="button"
                             onClick={() => onOverrideChange(r.rowIndex, client.id)}
                             className={cn(
-                              "inline-flex items-center gap-1 rounded border px-2 py-1 text-[10px] transition-colors",
+                              "inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] transition-colors",
                               currentOverride === client.id
                                 ? "border-success bg-success/10 text-success"
                                 : "border-border bg-surface hover:border-primary hover:bg-primary/5"
@@ -1435,20 +1435,20 @@ function UnmatchedResolverCard({
                             title={`Match reason: ${reason} (score: ${score})`}
                           >
                             {client.name}
-                            <span className="text-[9px] opacity-70">({score})</span>
+                            <span className="text-[11px] opacity-70">({score})</span>
                           </button>
                         ))}
                       </div>
                     </div>
                   ) : (
-                    <p className="text-[10px] text-warning">
+                    <p className="text-[11px] text-warning">
                       <AlertTriangle size={12} className="inline" /> Tidak ada suggestion yang cocok. Cari manual di bawah.
                     </p>
                   )}
 
                   {/* Manual search dropdown */}
                   <div>
-                    <label className="mb-1 block text-[10px] text-muted">
+                    <label className="mb-1 block text-[11px] text-muted">
                       Atau pilih manual:
                     </label>
                     <select
@@ -1473,7 +1473,7 @@ function UnmatchedResolverCard({
 
       {/* Footer: Re-import button */}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2">
-        <p className="text-[10px] text-muted">
+        <p className="text-[11px] text-muted">
           {resolvedRows.length}/{unmatchedRows.length} row resolved
         </p>
         <button
@@ -1496,7 +1496,7 @@ function UnmatchedResolverCard({
 
       {/* Hint */}
       {allResolved && !reimporting && (
-        <p className="mt-1.5 text-[10px] text-success">
+        <p className="mt-1.5 text-[11px] text-success">
           <CheckCircle2 size={12} className="inline" /> Semua row sudah di-assign. Klik "Re-import" untuk memproses ulang.
         </p>
       )}
@@ -1526,13 +1526,13 @@ function BreakdownTile({
         tone === "warning" && value > 0 && "ring-1 ring-warning/40"
       )}
     >
-      <p className={cn("text-[9px] uppercase", tone === "warning" && value > 0 ? "text-warning" : "text-muted")}>
+      <p className={cn("text-[11px] uppercase", tone === "warning" && value > 0 ? "text-warning" : "text-muted")}>
         {label}
       </p>
       <p className={cn("text-sm font-bold", tone === "warning" && value > 0 ? "text-warning" : "text-foreground")}>
         {value}
       </p>
-      <p className="text-[8px] text-muted">{description}</p>
+      <p className="text-[11px] text-muted">{description}</p>
     </div>
   );
 }

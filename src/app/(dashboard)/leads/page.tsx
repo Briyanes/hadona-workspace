@@ -355,7 +355,7 @@ export default function LeadsPage() {
           )}
         >
           All
-          <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">{stats.total}</span>
+          <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">{stats.total}</span>
         </button>
         {STAGES.map((s) => (
           <button
@@ -369,7 +369,7 @@ export default function LeadsPage() {
             )}
           >
             {s.label}
-            <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+            <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
               {stats.stageCounts[s.value] || 0}
             </span>
           </button>
@@ -432,7 +432,7 @@ export default function LeadsPage() {
                       <div>
                         <p className="font-medium text-foreground">{lead.company_name}</p>
                         {lead.source && (
-                          <p className="text-[10px] text-muted capitalize">{lead.source.replace("_", " ")}</p>
+                          <p className="text-[11px] text-muted capitalize">{lead.source.replace("_", " ")}</p>
                         )}
                       </div>
                     </div>
@@ -441,12 +441,12 @@ export default function LeadsPage() {
                   <td className="px-4 py-3">
                     <p className="text-xs text-foreground">{lead.contact_person || "—"}</p>
                     {lead.contact_phone && (
-                      <p className="flex items-center gap-1 text-[10px] text-muted">
+                      <p className="flex items-center gap-1 text-[11px] text-muted">
                         <Phone size={9} /> {lead.contact_phone}
                       </p>
                     )}
                     {lead.contact_email && (
-                      <p className="flex items-center gap-1 text-[10px] text-muted">
+                      <p className="flex items-center gap-1 text-[11px] text-muted">
                         <Mail size={9} /> {lead.contact_email}
                       </p>
                     )}
@@ -468,7 +468,7 @@ export default function LeadsPage() {
                       ))}
                     </select>
                     {lead.stage === "won" && lead.won_at && (
-                      <p className="mt-0.5 text-[9px] text-success">
+                      <p className="mt-0.5 text-[11px] text-success">
                         Won: {new Date(lead.won_at).toLocaleDateString("id-ID")}
                       </p>
                     )}
@@ -485,7 +485,7 @@ export default function LeadsPage() {
                       {formatIDR(lead.estimated_value || 0)}
                     </span>
                     {lead.stage === "won" && lead.actual_value > 0 && (
-                      <p className="text-[9px] text-success">Actual: {formatIDR(lead.actual_value)}</p>
+                      <p className="text-[11px] text-success">Actual: {formatIDR(lead.actual_value)}</p>
                     )}
                   </td>
                   {/* Expected Close */}

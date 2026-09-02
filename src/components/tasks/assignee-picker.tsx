@@ -102,7 +102,7 @@ export function AssigneePicker({
       <label className="mb-1.5 block text-sm font-medium text-foreground">
         {label}
         {divisionFilter && (
-          <span className="ml-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          <span className="ml-2 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
             {divisionFilter}
           </span>
         )}
@@ -205,11 +205,11 @@ export function AssigneePicker({
                     <div className="flex-1">
                       <p className="font-medium text-foreground">{u.full_name}</p>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-[10px] text-muted">{u.role.replace(/_/g, " ")}</p>
+                        <p className="text-[11px] text-muted">{u.role.replace(/_/g, " ")}</p>
                         {u.division && u.division.length > 0 && (
                           <div className="flex flex-wrap gap-0.5">
                             {u.division.map((d) => (
-                              <span key={d} className="rounded bg-primary/10 px-1 text-[9px] text-primary">
+                              <span key={d} className="rounded bg-primary/10 px-1 text-[11px] text-primary">
                                 {d}
                               </span>
                             ))}

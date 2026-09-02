@@ -246,11 +246,11 @@ export function CompareView({
         {/* Quick summary */}
         <div className="ml-auto flex gap-3">
           <div className="rounded-lg border border-border bg-surface px-3 py-2">
-            <p className="text-[9px] text-muted">TOTAL SPEND</p>
+            <p className="text-[11px] text-muted">TOTAL SPEND</p>
             <p className="text-sm font-bold text-foreground">{formatIDR(totalSpend)}</p>
           </div>
           <div className="rounded-lg border border-border bg-surface px-3 py-2">
-            <p className="text-[9px] text-muted">OVERALL ROAS</p>
+            <p className="text-[11px] text-muted">OVERALL ROAS</p>
             <p className={cn("text-sm font-bold", overallRoas >= 3 ? "text-success" : overallRoas >= 1 ? "text-warning" : "text-danger")}>
               {overallRoas > 0 ? `${overallRoas.toFixed(2)}x` : "-"}
             </p>
@@ -299,7 +299,7 @@ export function CompareView({
                           >
                             <div className="flex flex-col items-end">
                               <span>W{i + 1}</span>
-                              <span className="text-[9px] font-normal">
+                              <span className="text-[11px] font-normal">
                                 {formatDate(w.report.period_start, { day: "numeric", month: "short" })}
                               </span>
                             </div>
@@ -339,7 +339,7 @@ export function CompareView({
                                     {wowDelta !== null && Math.abs(wowDelta) > 0.1 && (
                                       <span
                                         className={cn(
-                                          "flex items-center gap-0.5 text-[8px]",
+                                          "flex items-center gap-0.5 text-[11px]",
                                           deltaColor(wowDelta, metricDef.key)
                                         )}
                                       >
@@ -361,7 +361,7 @@ export function CompareView({
                             {/* Trend summary column */}
                             <td className="px-3 py-2 text-right">
                               {trendDelta !== null && (
-                                <span className={cn("flex items-center justify-end gap-0.5 text-[10px] font-bold", trendColor)}>
+                                <span className={cn("flex items-center justify-end gap-0.5 text-[11px] font-bold", trendColor)}>
                                   {trendDelta > 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                                   {trendDelta > 0 ? "+" : ""}
                                   {trendDelta.toFixed(0)}%
@@ -381,7 +381,7 @@ export function CompareView({
       )}
 
       {/* Legend */}
-      <div className="rounded-lg border border-border bg-background p-3 text-[10px] text-muted">
+      <div className="rounded-lg border border-border bg-background p-3 text-[11px] text-muted">
         <p className="mb-1 font-semibold uppercase">Cara Baca:</p>
         <ul className="space-y-0.5">
           <li>• 🟢 Hijau = trend naik (positif untuk performa, negatif untuk spend/cost)</li>

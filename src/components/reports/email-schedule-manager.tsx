@@ -171,7 +171,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
       </div>
 
       {/* Info banner */}
-      <div className="mb-3 rounded-md bg-primary/5 p-2 text-[10px] text-muted">
+      <div className="mb-3 rounded-md bg-primary/5 p-2 text-[11px] text-muted">
         💡 Email otomatis dikirim setiap minggu sesuai jadwal. Pastikan report sudah dibuat sebelum jadwal dikirim.
       </div>
 
@@ -208,7 +208,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
           />
           <div className="grid gap-2 sm:grid-cols-2">
             <div>
-              <label className="mb-0.5 block text-[10px] text-muted">Hari</label>
+              <label className="mb-0.5 block text-[11px] text-muted">Hari</label>
               <select
                 value={newSched.scheduleDay}
                 onChange={(e) => setNewSched({ ...newSched, scheduleDay: Number(e.target.value) })}
@@ -220,7 +220,7 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
               </select>
             </div>
             <div>
-              <label className="mb-0.5 block text-[10px] text-muted">Jam (WIB)</label>
+              <label className="mb-0.5 block text-[11px] text-muted">Jam (WIB)</label>
               <select
                 value={newSched.scheduleHour}
                 onChange={(e) => setNewSched({ ...newSched, scheduleHour: Number(e.target.value) })}
@@ -281,11 +281,11 @@ export function EmailScheduleManager({ clients }: { clients: Client[] }) {
                     <XCircle size={10} className="text-muted" />
                   )}
                 </div>
-                <p className="truncate text-[10px] text-muted">{s.recipient_email}</p>
+                <p className="truncate text-[11px] text-muted">{s.recipient_email}</p>
                 {s.cc_emails && s.cc_emails.length > 0 && (
-                  <p className="truncate text-[9px] text-muted">CC: {s.cc_emails.join(", ")}</p>
+                  <p className="truncate text-[11px] text-muted">CC: {s.cc_emails.join(", ")}</p>
                 )}
-                <div className="mt-0.5 flex items-center gap-2 text-[9px] text-muted">
+                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted">
                   <span className="flex items-center gap-0.5">
                     <Calendar size={8} /> {DAYS[s.schedule_day]}
                   </span>

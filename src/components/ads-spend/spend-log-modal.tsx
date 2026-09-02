@@ -128,7 +128,7 @@ export function SpendLogModal({
             className="input"
           />
           {spendForm.spend && spendForm.revenue && (
-            <p className="mt-1 text-[10px] text-muted">
+            <p className="mt-1 text-[11px] text-muted">
               ROAS:{" "}
               <strong
                 className={cn(
@@ -195,7 +195,7 @@ export function SpendLogModal({
         )}
       </div>
 
-      <div className="mt-4 rounded-md bg-primary/5 p-3 text-[10px] text-muted">
+      <div className="mt-4 rounded-md bg-primary/5 p-3 text-[11px] text-muted">
         <Lightbulb size={12} className="inline" /> <strong>Auto-update:</strong> Saat spend log disimpan, remaining budget ad account akan
         otomatis berkurang sesuai spend hari ini.
       </div>

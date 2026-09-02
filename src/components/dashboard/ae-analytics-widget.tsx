@@ -85,7 +85,7 @@ export function AEAnalyticsWidget({ userId }: { userId?: string }) {
           <div key={card.label} className={`rounded-xl border p-4 ${card.bg}`}>
             <p className="text-xs font-medium text-muted">{card.label}</p>
             <p className={`mt-1 text-xl font-bold ${card.color}`}>{card.value}</p>
-            <p className="mt-0.5 text-[10px] text-muted">{card.sub}</p>
+            <p className="mt-0.5 text-[11px] text-muted">{card.sub}</p>
           </div>
         ))}
       </div>

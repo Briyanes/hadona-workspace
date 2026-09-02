@@ -324,7 +324,7 @@ export default function ApprovalsPage() {
               )}
             >
               <Icon size={12} /> {s.label}
-              <span className="rounded-full bg-background px-1.5 text-[10px] text-muted">
+              <span className="rounded-full bg-background px-1.5 text-[11px] text-muted">
                 {stats.statusCounts[s.value] || 0}
               </span>
             </button>
@@ -389,7 +389,7 @@ export default function ApprovalsPage() {
                       )}
                     </div>
                     {a.description && <p className="text-sm text-muted">{a.description}</p>}
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px] text-muted">
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted">
                       {a.client_name && <span><Building2 size={12} className="inline" /> {a.client_name}</span>}
                       {a.submitter_name && <span><User size={12} className="inline" /> {a.submitter_name}</span>}
                       {a.reviewer_name && <span><CheckCircle2 size={12} className="inline" /> Reviewed by: {a.reviewer_name}</span>}

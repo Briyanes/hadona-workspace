@@ -316,7 +316,7 @@ export default function ClientDetailPage() {
         {/* Section: KONTAK */}
         {(client.contact_person || client.contact_phone || client.contact_email || client.account_manager) && (
           <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted"><ClipboardList size={12} className="inline" /> Kontak</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted"><ClipboardList size={12} className="inline" /> Kontak</p>
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
               {client.account_manager && (
                 <div className="flex items-center gap-2 text-sm">
@@ -356,7 +356,7 @@ export default function ClientDetailPage() {
         {/* Section: KONTRAK + MRR */}
         {(financial.real_mrr > 0 || client.contract_start || client.contract_end) && (
           <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted"><Calendar size={12} className="inline" /> Kontrak</p>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted"><Calendar size={12} className="inline" /> Kontrak</p>
             {client.contract_start && client.contract_end && (
               <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
                 <div className="flex items-center gap-2">
@@ -366,12 +366,12 @@ export default function ClientDetailPage() {
                   </span>
                 </div>
                 {new Date(client.contract_end) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && new Date(client.contract_end) > new Date() && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-2 py-0.5 text-[11px] font-bold text-warning">
                     <AlertTriangle size={10} /> Akan habis dalam {Math.ceil((new Date(client.contract_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} hari
                   </span>
                 )}
                 {new Date(client.contract_end) <= new Date() && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-danger/15 px-2 py-0.5 text-[10px] font-bold text-danger">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-danger/15 px-2 py-0.5 text-[11px] font-bold text-danger">
                     Expired
                   </span>
                 )}
@@ -392,7 +392,7 @@ export default function ClientDetailPage() {
         {/* Section: CATATAN */}
         {client.notes && (
           <div className="mt-3 border-t border-border pt-3">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted"><FileText size={12} className="inline" /> Catatan</p>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted"><FileText size={12} className="inline" /> Catatan</p>
             <p className="text-sm text-muted">{client.notes}</p>
           </div>
         )}
@@ -416,7 +416,7 @@ export default function ClientDetailPage() {
               <Icon size={14} />
               {t.label}
               {t.count > 0 && (
-                <span className="rounded-full bg-surface px-1.5 py-0.5 text-[10px] text-muted">
+                <span className="rounded-full bg-surface px-1.5 py-0.5 text-[11px] text-muted">
                   {t.count}
                 </span>
               )}
@@ -434,7 +434,7 @@ export default function ClientDetailPage() {
               <TrendingUp className="mb-2 text-success" size={16} />
               <p className="text-base font-bold text-success sm:text-xl">{formatIDR(financial.real_mrr)}</p>
               <p className="text-xs text-muted">MRR (Real)</p>
-              <p className="mt-0.5 text-[10px] text-muted">dari contract_services</p>
+              <p className="mt-0.5 text-[11px] text-muted">dari contract_services</p>
             </div>
             <div className="card p-3 sm:p-4">
               <AlertTriangle className={cn("mb-2", financial.outstanding > 0 ? "text-warning" : "text-muted")} size={16} />
@@ -443,7 +443,7 @@ export default function ClientDetailPage() {
               </p>
               <p className="text-xs text-muted">Outstanding</p>
               {financial.overdue_count > 0 && (
-                <span className="mt-0.5 inline-block rounded bg-danger/10 px-1 text-[9px] font-bold text-danger">
+                <span className="mt-0.5 inline-block rounded bg-danger/10 px-1 text-[11px] font-bold text-danger">
                   {financial.overdue_count}x OVERDUE
                 </span>
               )}
@@ -653,7 +653,7 @@ export default function ClientDetailPage() {
                             <span>{log.user.full_name}</span>
                           </>
                         )}
-                        <span className={cn("ml-auto rounded px-1.5 py-0.5 text-[9px] font-medium uppercase", getEntityBadgeColor(log.entity_type))}>
+                        <span className={cn("ml-auto rounded px-1.5 py-0.5 text-[11px] font-medium uppercase", getEntityBadgeColor(log.entity_type))}>
                           {log.entity_type.replace("_", " ")}
                         </span>
                       </div>

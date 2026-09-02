@@ -47,7 +47,7 @@ export function LoadMore({
         Load More
         <span className="text-muted">({remaining} remaining)</span>
       </button>
-      <p className="text-[10px] text-muted">
+      <p className="text-[11px] text-muted">
         Showing {visibleCount} of {totalCount} {itemLabel}
       </p>
     </div>

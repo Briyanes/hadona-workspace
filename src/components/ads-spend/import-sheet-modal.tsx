@@ -202,23 +202,23 @@ export function ImportSheetModal({
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div className="rounded-lg bg-success/10 p-2 text-center">
                     <p className="text-lg font-bold text-success">{assignResult.matched}</p>
-                    <p className="text-[10px] text-muted">Di-assign</p>
+                    <p className="text-[11px] text-muted">Di-assign</p>
                   </div>
                   <div className="rounded-lg bg-primary/10 p-2 text-center">
                     <p className="text-lg font-bold text-primary">
                       {assignResult.clients_created}
                     </p>
-                    <p className="text-[10px] text-muted">Client Baru</p>
+                    <p className="text-[11px] text-muted">Client Baru</p>
                   </div>
                   <div className="rounded-lg bg-warning/10 p-2 text-center">
                     <p className="text-lg font-bold text-warning">
                       {assignResult.already_assigned}
                     </p>
-                    <p className="text-[10px] text-muted">Sudah Sesuai</p>
+                    <p className="text-[11px] text-muted">Sudah Sesuai</p>
                   </div>
                   <div className="rounded-lg bg-danger/10 p-2 text-center">
                     <p className="text-lg font-bold text-danger">{assignResult.no_match}</p>
-                    <p className="text-[10px] text-muted">Tidak Match</p>
+                    <p className="text-[11px] text-muted">Tidak Match</p>
                   </div>
                 </div>
 
@@ -232,7 +232,7 @@ export function ImportSheetModal({
                       {assignResult.matched_details.map((d, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between gap-2 border-b border-border/50 py-1 text-[10px] last:border-0"
+                          className="flex items-center justify-between gap-2 border-b border-border/50 py-1 text-[11px] last:border-0"
                         >
                           <span className="font-medium text-foreground">{d.client}</span>
                           <span className="shrink-0 text-muted">
@@ -255,7 +255,7 @@ export function ImportSheetModal({
                       {assignResult.no_match_details.map((d, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between gap-2 border-b border-border/50 py-1 text-[10px] last:border-0"
+                          className="flex items-center justify-between gap-2 border-b border-border/50 py-1 text-[11px] last:border-0"
                         >
                           <span className="font-medium text-foreground">{d.client}</span>
                           <span className="shrink-0 text-muted">
@@ -265,7 +265,7 @@ export function ImportSheetModal({
                         </div>
                       ))}
                     </div>
-                    <p className="mt-1 text-[10px] text-muted">
+                    <p className="mt-1 text-[11px] text-muted">
                       <Lightbulb size={12} className="inline" /> Akun-akun ini mungkin sudah tidak aktif atau nama di sheet berbeda dengan
                       di database.
                     </p>
@@ -318,7 +318,7 @@ export function ImportSheetModal({
                 <option value="F">F</option>
                 <option value="G">G</option>
               </select>
-              <p className="mt-1 text-[10px] text-muted">
+              <p className="mt-1 text-[11px] text-muted">
                 Kolom mana yang berisi nama ad account di sheet Anda?
               </p>
             </div>

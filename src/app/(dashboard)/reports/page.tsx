@@ -1374,7 +1374,7 @@ export default function ReportsPage() {
                 {syncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                 <div className="flex flex-col">
                   <span className="font-medium">{syncing ? "Syncing..." : "Sync Now"}</span>
-                  <span className="text-[10px] text-muted">Auto-sync 7 sheet tabs</span>
+                  <span className="text-[11px] text-muted">Auto-sync 7 sheet tabs</span>
                 </div>
               </button>
               <button
@@ -1387,7 +1387,7 @@ export default function ReportsPage() {
                 <Eye size={14} />
                 <div className="flex flex-col">
                   <span className="font-medium">Lihat Sheet</span>
-                  <span className="text-[10px] text-muted">Preview read-only</span>
+                  <span className="text-[11px] text-muted">Preview read-only</span>
                 </div>
               </button>
             </div>
@@ -1477,19 +1477,19 @@ export default function ReportsPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-4 gap-2">
                 <div className="rounded-md bg-success/10 p-3 text-center">
-                  <p className="text-[10px] uppercase text-muted">Imported</p>
+                  <p className="text-[11px] uppercase text-muted">Imported</p>
                   <p className="text-xl font-bold text-success">{syncResult.summary.imported}</p>
                 </div>
                 <div className="rounded-md bg-primary/10 p-3 text-center">
-                  <p className="text-[10px] uppercase text-muted">Updated</p>
+                  <p className="text-[11px] uppercase text-muted">Updated</p>
                   <p className="text-xl font-bold text-primary">{syncResult.summary.updated}</p>
                 </div>
                 <div className="rounded-md bg-surface p-3 text-center">
-                  <p className="text-[10px] uppercase text-muted">Skipped</p>
+                  <p className="text-[11px] uppercase text-muted">Skipped</p>
                   <p className="text-xl font-bold text-muted">{syncResult.summary.skipped}</p>
                 </div>
                 <div className="rounded-md bg-danger/10 p-3 text-center">
-                  <p className="text-[10px] uppercase text-muted">Errors</p>
+                  <p className="text-[11px] uppercase text-muted">Errors</p>
                   <p className="text-xl font-bold text-danger">{syncResult.summary.errors}</p>
                 </div>
               </div>
@@ -1500,44 +1500,44 @@ export default function ReportsPage() {
                   <p className="mb-1.5 text-xs font-semibold text-info">
                     <Info size={12} className="inline" /> Mengapa {syncResult.summary.skipped} row di-skip?
                   </p>
-                  <p className="mb-2 text-[10px] text-muted">
+                  <p className="mb-2 text-[11px] text-muted">
                     Breakdown alasan skip — bukan error, melainkan baris yang sengaja tidak diproses.
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
                     <div className="rounded bg-background p-2">
-                      <p className="text-[9px] uppercase text-muted">No Metrics</p>
+                      <p className="text-[11px] uppercase text-muted">No Metrics</p>
                       <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.noMetrics}
                       </p>
-                      <p className="text-[8px] text-muted">Baris naratif (KESIMPULAN, ACTION, dll)</p>
+                      <p className="text-[11px] text-muted">Baris naratif (KESIMPULAN, ACTION, dll)</p>
                     </div>
                     <div className="rounded bg-background p-2">
-                      <p className="text-[9px] uppercase text-muted">No Client</p>
+                      <p className="text-[11px] uppercase text-muted">No Client</p>
                       <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.noClient}
                       </p>
-                      <p className="text-[8px] text-muted">Baris kosong / separator</p>
+                      <p className="text-[11px] text-muted">Baris kosong / separator</p>
                     </div>
                     <div className="rounded bg-background p-2">
-                      <p className="text-[9px] uppercase text-muted">No Period</p>
+                      <p className="text-[11px] uppercase text-muted">No Period</p>
                       <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.noPeriod}
                       </p>
-                      <p className="text-[8px] text-muted">Format tanggal tidak terdeteksi</p>
+                      <p className="text-[11px] text-muted">Format tanggal tidak terdeteksi</p>
                     </div>
                     <div className="rounded bg-background p-2">
-                      <p className="text-[9px] uppercase text-muted">Dedup</p>
+                      <p className="text-[11px] uppercase text-muted">Dedup</p>
                       <p className="text-sm font-bold text-foreground">
                         {syncResult.summary.skippedBreakdown.dedup}
                       </p>
-                      <p className="text-[8px] text-muted">Duplikat (sudah ada di sheet sebelumnya)</p>
+                      <p className="text-[11px] text-muted">Duplikat (sudah ada di sheet sebelumnya)</p>
                     </div>
                     <div className="rounded bg-warning/10 p-2">
-                      <p className="text-[9px] uppercase text-warning">Unmatched</p>
+                      <p className="text-[11px] uppercase text-warning">Unmatched</p>
                       <p className="text-sm font-bold text-warning">
                         {syncResult.summary.skippedBreakdown.unmatchedClient}
                       </p>
-                      <p className="text-[8px] text-muted">Client tidak dikenali di DB</p>
+                      <p className="text-[11px] text-muted">Client tidak dikenali di DB</p>
                     </div>
                   </div>
 
@@ -1554,8 +1554,8 @@ export default function ReportsPage() {
                         if (items.length === 0) return null;
                         return (
                           <div key={key} className="rounded bg-background p-2">
-                            <p className="mb-1 text-[9px] font-semibold uppercase text-muted">{label}</p>
-                            <ul className="space-y-0.5 text-[9px] text-muted">
+                            <p className="mb-1 text-[11px] font-semibold uppercase text-muted">{label}</p>
+                            <ul className="space-y-0.5 text-[11px] text-muted">
                               {items.map((ex: string, i: number) => (
                                 <li key={i} className="font-mono">
                                   {ex}
@@ -1600,14 +1600,14 @@ export default function ReportsPage() {
                   <p className="mb-1.5 text-xs font-semibold text-warning">
                     <AlertTriangle size={12} className="inline" /> Client tidak dikenali ({syncResult.unmatchedClients.length})
                   </p>
-                  <p className="mb-2 text-[10px] text-muted">
+                  <p className="mb-2 text-[11px] text-muted">
                     Nama di sheet tidak match dengan DB. Tambahkan ke Clients atau ubah nama di sheet.
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {syncResult.unmatchedClients.map((c) => (
                       <span
                         key={c}
-                        className="rounded bg-warning/10 px-2 py-0.5 text-[10px] text-warning"
+                        className="rounded bg-warning/10 px-2 py-0.5 text-[11px] text-warning"
                       >
                         {c}
                       </span>
@@ -1622,7 +1622,7 @@ export default function ReportsPage() {
                   <p className="mb-1.5 text-xs font-semibold text-danger">
                     <XCircle size={12} className="inline" /> Detail Error ({syncResult.errors_detail.length})
                   </p>
-                  <ul className="space-y-1 text-[10px] text-muted">
+                  <ul className="space-y-1 text-[11px] text-muted">
                     {syncResult.errors_detail.slice(0, 10).map((e, i) => (
                       <li key={i} className="font-mono">{e}</li>
                     ))}
@@ -1675,7 +1675,7 @@ export default function ReportsPage() {
                     </span>
                   )}
                 </p>
-                <p className="text-[10px] text-muted">
+                <p className="text-[11px] text-muted">
                   {syncProgress.current === 0
                     ? syncProgress.currentTabName
                     : `Memproses: "${syncProgress.currentTabName}"`}
@@ -1711,14 +1711,14 @@ export default function ReportsPage() {
           {/* Per-tab results real-time (tampil begitu tab-1 selesai) */}
           {syncProgress.perTabResults.length > 0 && (
             <div className="mt-3 space-y-1">
-              <p className="text-[10px] font-semibold uppercase text-muted">
+              <p className="text-[11px] font-semibold uppercase text-muted">
                 <CheckCircle2 size={12} className="inline" /> Selesai ({syncProgress.perTabResults.length}):
               </p>
               <div className="max-h-32 space-y-0.5 overflow-y-auto">
                 {syncProgress.perTabResults.slice(-5).reverse().map((r, i) => (
                   <div
                     key={`${r.tab}-${i}`}
-                    className="flex items-center justify-between rounded bg-background px-2 py-1 text-[10px]"
+                    className="flex items-center justify-between rounded bg-background px-2 py-1 text-[11px]"
                   >
                     <span className="truncate font-medium text-foreground">{r.tab}</span>
                     <span className="flex shrink-0 gap-2 text-muted">
@@ -1821,7 +1821,7 @@ export default function ReportsPage() {
         <>
       {/* 🆕 Sprint 1.3: Quick Status Chips — 1-klik filter switch dengan counter */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-semibold uppercase text-muted">Status:</span>
+        <span className="text-[11px] font-semibold uppercase text-muted">Status:</span>
         {([
           { key: "all", label: "Semua", count: statusCounts.all, color: "border-border bg-surface text-muted" },
           { key: "draft", label: "Draft", count: statusCounts.draft, color: "border-border bg-surface text-muted" },
@@ -1838,7 +1838,7 @@ export default function ReportsPage() {
             )}
           >
             {chip.label}
-            <span className="rounded-full bg-background px-1.5 text-[9px] tabular-nums">
+            <span className="rounded-full bg-background px-1.5 text-[11px] tabular-nums">
               {chip.count}
             </span>
           </button>
@@ -1848,7 +1848,7 @@ export default function ReportsPage() {
         {activeFilterCount > 0 && (
           <button
             onClick={resetAllFilters}
-            className="ml-auto flex items-center gap-1 rounded-full border border-danger/30 bg-danger/10 px-2.5 py-1 text-[10px] font-medium text-danger transition-colors hover:bg-danger/20"
+            className="ml-auto flex items-center gap-1 rounded-full border border-danger/30 bg-danger/10 px-2.5 py-1 text-[11px] font-medium text-danger transition-colors hover:bg-danger/20"
             title="Reset semua filter"
           >
             <X size={10} />
@@ -1939,7 +1939,7 @@ export default function ReportsPage() {
             </span>
             <button
               onClick={toggleSelectAll}
-              className="ml-1 rounded px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10"
+              className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
             >
               {selectedIds.size === visibleReports.length && visibleReports.length > 0
                 ? "☑ Hilangkan Semua"
@@ -2090,7 +2090,7 @@ export default function ReportsPage() {
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{r.client?.name || "-"}</div>
                         {r.summary && (
-                          <div className="line-clamp-1 text-[10px] text-muted">{r.summary}</div>
+                          <div className="line-clamp-1 text-[11px] text-muted">{r.summary}</div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs text-muted">
@@ -2098,12 +2098,12 @@ export default function ReportsPage() {
                         {formatDate(r.period_end, { day: "numeric", month: "short" })}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`badge ${statusColors[r.status] || statusColors.draft} text-[10px]`}>{r.status}</span>
+                        <span className={`badge ${statusColors[r.status] || statusColors.draft} text-[11px]`}>{r.status}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted">{r.pic?.full_name || "-"}</td>
                       <td className="px-4 py-3 text-xs">
                         {r.objective ? (
-                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">{objLabel}</span>
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">{objLabel}</span>
                         ) : (
                           <span className="text-muted">-</span>
                         )}
@@ -2166,7 +2166,7 @@ export default function ReportsPage() {
                 Load More
                 <span className="text-muted">({filtered.length - visibleCount} remaining)</span>
               </button>
-              <p className="text-[10px] text-muted">
+              <p className="text-[11px] text-muted">
                 Showing {visibleReports.length} of {filtered.length} reports
               </p>
             </div>
@@ -2252,7 +2252,7 @@ export default function ReportsPage() {
                   <div className="mb-3 grid grid-cols-4 gap-2 rounded-md border border-border bg-background p-2">
                     {getObjectiveCardMetrics(r.objective, metrics).map((card, idx) => (
                       <div key={idx} className="text-center">
-                        <p className="text-[9px] text-muted">{card.label}</p>
+                        <p className="text-[11px] text-muted">{card.label}</p>
                         <p className={cn("text-xs font-bold", card.color || "text-foreground")}>
                           {card.value}
                         </p>
@@ -2276,7 +2276,7 @@ export default function ReportsPage() {
                         console.log('[reports] open detail via eye button', r.id);
                         setDetailReport(r);
                       }}
-                      className="flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[10px] font-medium text-muted transition-colors hover:bg-background hover:text-primary"
+                      className="flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-background hover:text-primary"
                       title="Lihat detail"
                       data-testid={`report-detail-btn-${r.id}`}
                     >
@@ -2328,7 +2328,7 @@ export default function ReportsPage() {
                 ({filtered.length - visibleCount} remaining)
               </span>
             </button>
-            <p className="text-[10px] text-muted">
+            <p className="text-[11px] text-muted">
               Showing {visibleReports.length} of {filtered.length} reports
             </p>
           </div>
@@ -2336,7 +2336,7 @@ export default function ReportsPage() {
 
         {/* Counter info kalau dataset kecil (tidak melewati PAGE_SIZE) */}
         {filtered.length > 0 && filtered.length <= visibleCount && (
-          <p className="pb-2 text-center text-[10px] text-muted">
+          <p className="pb-2 text-center text-[11px] text-muted">
             Showing all {filtered.length} report{filtered.length === 1 ? "" : "s"}
           </p>
         )}
@@ -2500,7 +2500,7 @@ export default function ReportsPage() {
                 <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-primary/5 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase text-muted"><Target size={12} className="inline" /> Budget Pacing</p>
-                    <span className="text-[10px] text-muted">
+                    <span className="text-[11px] text-muted">
                       {pulledData.metrics.frequency > 0 && (
                         <>
                           {pulledData.metrics.frequency > 3 ? (
@@ -2530,12 +2530,12 @@ export default function ReportsPage() {
                             className={cn("h-full rounded-full transition-all", pacingBg)}
                             style={{ width: `${Math.min(bp.pacingPercent, 100)}%` }}
                           />
-                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                          <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white">
                             {bp.pacingPercent}%
                           </span>
                         </div>
                         {/* Detail stats */}
-                        <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
+                        <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
                           <div>
                             <p className="text-muted">Target</p>
                             <p className="font-bold text-foreground">{formatIDR(bp.targetSpend)}</p>
@@ -2551,17 +2551,17 @@ export default function ReportsPage() {
                         </div>
                         {/* Status alert */}
                         {bp.pacingPercent < 40 && (
-                          <p className="text-center text-[10px] text-danger font-medium">
+                          <p className="text-center text-[11px] text-danger font-medium">
                             <AlertTriangle size={12} className="inline" /> Spending terlalu lambat! Hanya {bp.pacingPercent}% dari target ({bp.activeAccountCount} akun aktif, {bp.periodDays} hari)
                           </p>
                         )}
                         {bp.pacingPercent >= 95 && bp.pacingPercent <= 105 && (
-                          <p className="text-center text-[10px] text-success font-medium">
+                          <p className="text-center text-[11px] text-success font-medium">
                             <CheckCircle2 size={12} className="inline" /> Pacing on-track! Spend optimal sesuai target harian
                           </p>
                         )}
                         {bp.pacingPercent > 105 && (
-                          <p className="text-center text-[10px] text-warning font-medium">
+                          <p className="text-center text-[11px] text-warning font-medium">
                             <AlertCircle size={12} className="inline" /> Overspending! {bp.pacingPercent}% dari target ({bp.periodDays} hari)
                           </p>
                         )}
@@ -2596,13 +2596,13 @@ export default function ReportsPage() {
                       <div className="space-y-1.5">
                         {steps.map((s, i) => (
                           <div key={s.label} className="flex items-center gap-2">
-                            <span className="w-24 text-[10px] text-muted">{s.label}</span>
+                            <span className="w-24 text-[11px] text-muted">{s.label}</span>
                             <div className="relative h-6 flex-1 overflow-hidden rounded bg-background">
                               <div
                                 className={cn("h-full rounded transition-all", s.color)}
                                 style={{ width: `${Math.max(s.pct, 5)}%`, opacity: 1 - i * 0.15 }}
                               />
-                              <span className="absolute inset-0 flex items-center justify-between px-2 text-[10px] font-semibold text-white">
+                              <span className="absolute inset-0 flex items-center justify-between px-2 text-[11px] font-semibold text-white">
                                 <span>{formatCompact(s.value)}</span>
                                 <span>{s.pct.toFixed(1)}%</span>
                               </span>
@@ -2610,7 +2610,7 @@ export default function ReportsPage() {
                           </div>
                         ))}
                         {/* Conversion rate summary */}
-                        <div className="flex justify-between pt-1 text-[10px]">
+                        <div className="flex justify-between pt-1 text-[11px]">
                           <span className="text-muted">
                             CTR: <b className="text-foreground">{m.ctr.toFixed(2)}%</b>
                           </span>
@@ -2640,7 +2640,7 @@ export default function ReportsPage() {
                     Metrik Iklan (Structured)
                   </p>
                   {Object.keys(previousMetrics).length > 0 && (
-                    <span className="badge bg-primary/10 text-primary text-[10px]">
+                    <span className="badge bg-primary/10 text-primary text-[11px]">
                       <BarChart3 size={12} className="inline" /> WoW comparison aktif
                     </span>
                   )}
@@ -2653,10 +2653,10 @@ export default function ReportsPage() {
 
                     return (
                       <div key={m.key} className="rounded-md border border-border bg-surface p-2">
-                        <label className="mb-0.5 flex items-center justify-between text-[10px] font-medium text-muted">
+                        <label className="mb-0.5 flex items-center justify-between text-[11px] font-medium text-muted">
                           <span>{m.label}</span>
                           {m.derived && (
-                            <span className="rounded bg-primary/10 px-1 text-[8px] text-primary">auto</span>
+                            <span className="rounded bg-primary/10 px-1 text-[11px] text-primary">auto</span>
                           )}
                         </label>
                         <input
@@ -2677,7 +2677,7 @@ export default function ReportsPage() {
                         />
                         {/* WoW delta */}
                         {delta !== null && (
-                          <div className="mt-0.5 flex items-center gap-1 text-[9px]">
+                          <div className="mt-0.5 flex items-center gap-1 text-[11px]">
                             {delta > 0 ? (
                               <TrendingUp size={9} className="text-success" />
                             ) : delta < 0 ? (
@@ -2705,7 +2705,7 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 p-3">
                 <div>
                   <p className="text-xs font-semibold text-foreground"><Zap size={12} className="inline" /> Auto-Generate Naratif</p>
-                  <p className="text-[10px] text-muted">Buat ringkasan, kesimpulan & action plan otomatis dari metrik</p>
+                  <p className="text-[11px] text-muted">Buat ringkasan, kesimpulan & action plan otomatis dari metrik</p>
                 </div>
                 <button
                   type="button"
@@ -2891,7 +2891,7 @@ export default function ReportsPage() {
 
                     return (
                       <div key={m.key} className="rounded border border-border bg-surface p-2 text-center">
-                        <p className="text-[9px] text-muted">
+                        <p className="text-[11px] text-muted">
                           {m.label}
                           {isAnomaly && <span className="ml-0.5 text-warning" title="Anomali: perubahan >30% vs minggu lalu"><AlertTriangle size={12} className="inline" /></span>}
                         </p>
@@ -2899,7 +2899,7 @@ export default function ReportsPage() {
                         {delta !== null && (
                           <p
                             className={cn(
-                              "text-[9px] flex items-center justify-center gap-0.5",
+                              "text-[11px] flex items-center justify-center gap-0.5",
                               delta > 0 ? "text-success" : delta < 0 ? "text-danger" : "text-muted"
                             )}
                           >

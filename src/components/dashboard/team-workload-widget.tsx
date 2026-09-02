@@ -187,33 +187,33 @@ export function TeamWorkloadWidget() {
                 <div className="mt-1 flex items-center gap-2">
                   {/* Status pills */}
                   {m.in_progress > 0 && (
-                    <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+                    <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[11px] font-medium text-warning">
                       {m.in_progress} doing
                     </span>
                   )}
                   {m.review > 0 && (
-                    <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                    <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[11px] font-medium text-accent">
                       {m.review} review
                     </span>
                   )}
                   {m.todo > 0 && (
-                    <span className="rounded bg-muted/15 px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                    <span className="rounded bg-muted/15 px-1.5 py-0.5 text-[11px] font-medium text-muted">
                       {m.todo} todo
                     </span>
                   )}
                   {m.blocked > 0 && (
-                    <span className="rounded bg-danger/15 px-1.5 py-0.5 text-[10px] font-medium text-danger">
+                    <span className="rounded bg-danger/15 px-1.5 py-0.5 text-[11px] font-medium text-danger">
                       {m.blocked} blocked
                     </span>
                   )}
                   {(m.overdue > 0 || level === "overloaded") && (
-                    <span className="flex items-center gap-0.5 rounded bg-danger/15 px-1.5 py-0.5 text-[10px] font-medium text-danger">
+                    <span className="flex items-center gap-0.5 rounded bg-danger/15 px-1.5 py-0.5 text-[11px] font-medium text-danger">
                       <AlertTriangle size={8} />
                       {m.overdue > 0 ? `${m.overdue} overdue` : "overloaded"}
                     </span>
                   )}
                   {active === 0 && (
-                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-success">
+                    <span className="flex items-center gap-0.5 text-[11px] font-medium text-success">
                       <CheckCircle2 size={10} /> All done
                     </span>
                   )}
@@ -230,7 +230,7 @@ export function TeamWorkloadWidget() {
           {(Object.keys(levelConfig) as Array<keyof typeof levelConfig>).map((key) => (
             <div key={key} className="flex items-center gap-1">
               <div className={cn("h-2 w-2 rounded-full", levelConfig[key].dot)} />
-              <span className="text-[10px] text-muted">{levelConfig[key].label}</span>
+              <span className="text-[11px] text-muted">{levelConfig[key].label}</span>
             </div>
           ))}
         </div>

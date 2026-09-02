@@ -128,10 +128,10 @@ export function SpendRevenueChart({
       </ResponsiveContainer>
       {showLegend && (
         <div className="mt-3 flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-[10px] text-muted">
+          <span className="flex items-center gap-1.5 text-[11px] text-muted">
             <span className="h-2 w-2 rounded-full bg-warning" /> Spend
           </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-muted">
+          <span className="flex items-center gap-1.5 text-[11px] text-muted">
             <span className="h-2 w-2 rounded-full bg-success" /> Revenue
           </span>
         </div>

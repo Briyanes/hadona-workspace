@@ -239,7 +239,7 @@ export function ContentStudioWidget() {
             </div>
 
             <div className="mt-3 border-t border-border pt-2 text-center">
-              <span className="text-[10px] text-muted">Total: </span>
+              <span className="text-[11px] text-muted">Total: </span>
               <span className="text-xs font-bold text-foreground">{captions.total} captions</span>
             </div>
           </>

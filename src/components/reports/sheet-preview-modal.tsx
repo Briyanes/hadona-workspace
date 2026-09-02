@@ -107,11 +107,11 @@ const PLATFORM_BADGE: Record<string, string> = {
   meta: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   google: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   tiktok: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
-  unknown: "bg-surface text-muted dark:bg-gray-800 dark:text-muted/70",
+  unknown: "bg-surface text-muted dark:bg-gray-800 dark:text-muted",
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-surface text-muted dark:bg-gray-800 dark:text-muted/70",
+  draft: "bg-surface text-muted dark:bg-gray-800 dark:text-muted",
   submitted: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   reviewed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
 };
@@ -236,7 +236,7 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm">Mengambil semua sheet tabs…</p>
-            <p className="text-xs text-muted/70">
+            <p className="text-xs text-muted">
               Fetch & parse multi-sheet (bisa 10-30 detik untuk 7 tabs)
             </p>
           </div>
@@ -315,7 +315,7 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-foreground">{sheet.name}</span>
-                            <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted">
+                            <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted">
                               gid={sheet.gid}
                             </span>
                           </div>
@@ -329,15 +329,15 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
                       </div>
                       <div className="flex items-center gap-1.5">
                         {parseRate >= 80 ? (
-                          <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                             ✓ Good
                           </span>
                         ) : parseRate >= 40 ? (
-                          <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                          <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                             ⚠ Partial
                           </span>
                         ) : (
-                          <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                          <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
                             ✗ Low
                           </span>
                         )}
@@ -350,14 +350,14 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
                         {/* Header row */}
                         {sheet.headerRow.length > 0 && (
                           <div className="mb-3">
-                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
                               Header Kolom
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {sheet.headerRow.map((h, i) => (
                                 <span
                                   key={i}
-                                  className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground"
+                                  className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground"
                                 >
                                   {h || "(kosong)"}
                                 </span>
@@ -373,7 +373,7 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
                           </p>
                         ) : (
                           <div className="space-y-2">
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                               Preview {sheet.previewRows.length} row pertama
                             </div>
                             {sheet.previewRows.map((row) => (
@@ -422,7 +422,7 @@ export function SheetPreviewModal({ open, onClose, defaultUrl }: Props) {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-surface px-3 py-2">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted">{label}</div>
+      <div className="text-[11px] font-medium uppercase tracking-wider text-muted">{label}</div>
       <div className="mt-0.5 text-lg font-bold text-foreground">{value}</div>
     </div>
   );
@@ -434,26 +434,26 @@ function RowPreviewCard({ row }: { row: PreviewRow }) {
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold text-foreground">{row.clientName || "(no client)"}</span>
         {row.division && (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground">
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-foreground">
             {row.division}
           </span>
         )}
         <span
           className={cn(
-            "rounded px-1.5 py-0.5 text-[10px] font-medium uppercase",
+            "rounded px-1.5 py-0.5 text-[11px] font-medium uppercase",
             PLATFORM_BADGE[row.platform] || PLATFORM_BADGE.unknown
           )}
         >
           {row.platform}
         </span>
         {row.detectedObjective && (
-          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono text-primary">
+          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-mono text-primary">
             {row.detectedObjective}
           </span>
         )}
         <span
           className={cn(
-            "rounded px-1.5 py-0.5 text-[10px] font-medium",
+            "rounded px-1.5 py-0.5 text-[11px] font-medium",
             STATUS_BADGE[row.status] || STATUS_BADGE.draft
           )}
         >
@@ -461,7 +461,7 @@ function RowPreviewCard({ row }: { row: PreviewRow }) {
         </span>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-muted">
+      <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted">
         {row.date && (
           <span className="inline-flex items-center gap-1">
             <Calendar className="h-3 w-3" />
@@ -487,7 +487,7 @@ function RowPreviewCard({ row }: { row: PreviewRow }) {
           {row.metrics.slice(0, 6).map((m, i) => (
             <span
               key={i}
-              className="rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-foreground"
+              className="rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground"
               title={`${m.rawLabel} = ${m.value} (${m.unit})`}
             >
               <span className="text-muted">{m.rawLabel}:</span>{" "}
@@ -495,7 +495,7 @@ function RowPreviewCard({ row }: { row: PreviewRow }) {
             </span>
           ))}
           {row.metrics.length > 6 && (
-            <span className="rounded-md bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted">
+            <span className="rounded-md bg-muted/60 px-1.5 py-0.5 text-[11px] text-muted">
               +{row.metrics.length - 6} lagi
             </span>
           )}

@@ -345,6 +345,7 @@ export default function UploadTracker() {
                     value={u.status}
                     onChange={(e) => updateStatus(u.id, e.target.value)}
                     className="status-pill rounded-md border-0 bg-background px-2 py-1 pr-6 text-xs font-medium"
+                    aria-label="Ubah status"
                   >
                     <option value="todo">To Do</option>
                     <option value="in-progress">In Progress</option>

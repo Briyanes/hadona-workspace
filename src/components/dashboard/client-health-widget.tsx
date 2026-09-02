@@ -83,21 +83,21 @@ export function ClientHealthWidget() {
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-900 dark:bg-rose-950/30">
           <div className="flex items-center gap-1 mb-1">
             <AlertTriangle className="h-4 w-4 text-rose-500" />
-            <span className="text-[10px] font-medium uppercase text-rose-600 dark:text-rose-400">At Risk</span>
+            <span className="text-[11px] font-medium uppercase text-rose-600 dark:text-rose-400">At Risk</span>
           </div>
           <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{summary.atRisk}</p>
         </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
           <div className="flex items-center gap-1 mb-1">
             <Clock className="h-4 w-4 text-amber-500" />
-            <span className="text-[10px] font-medium uppercase text-amber-600 dark:text-amber-400">Attention</span>
+            <span className="text-[11px] font-medium uppercase text-amber-600 dark:text-amber-400">Attention</span>
           </div>
           <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.needsAttention}</p>
         </div>
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950/30">
           <div className="flex items-center gap-1 mb-1">
             <TrendingUp className="h-4 w-4 text-emerald-500" />
-            <span className="text-[10px] font-medium uppercase text-emerald-600 dark:text-emerald-400">Healthy</span>
+            <span className="text-[11px] font-medium uppercase text-emerald-600 dark:text-emerald-400">Healthy</span>
           </div>
           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.healthy}</p>
         </div>
@@ -106,7 +106,7 @@ export function ClientHealthWidget() {
       {/* At-Risk Client List */}
       {data.atRiskClients.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted/60">Needs Immediate Attention</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted">Needs Immediate Attention</p>
           {data.atRiskClients.slice(0, 3).map((c) => (
             <Link
               key={c.id}

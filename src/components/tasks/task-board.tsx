@@ -525,7 +525,7 @@ export function TaskBoard({
           <Filter size={12} />
           Filter
           {activeFilterCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] text-white">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[11px] text-white">
               {activeFilterCount}
             </span>
           )}
@@ -656,7 +656,7 @@ export function TaskBoard({
                   <span className="w-20 shrink-0 text-xs text-muted">{s.label}</span>
                   <div className="h-6 flex-1 overflow-hidden rounded-md bg-background">
                     <div
-                      className="flex h-full items-center justify-end rounded-md bg-primary px-2 text-[10px] font-medium text-white transition-all"
+                      className="flex h-full items-center justify-end rounded-md bg-primary px-2 text-[11px] font-medium text-white transition-all"
                       style={{ width: `${(s.count / maxStatusCount) * 100}%`, minWidth: s.count > 0 ? "2rem" : "0" }}
                     >
                       {s.count > 0 && s.count}
@@ -782,7 +782,7 @@ export function TaskBoard({
 
                                 {task.client && <p className="mb-1 truncate text-xs text-muted" title={task.client.name}>{task.client.name}</p>}
                                 {task.division && (
-                                  <span className="mb-1.5 inline-block max-w-full truncate rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary" title={task.division}>
+                                  <span className="mb-1.5 inline-block max-w-full truncate rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary" title={task.division}>
                                     {task.division}
                                   </span>
                                 )}
@@ -793,7 +793,7 @@ export function TaskBoard({
                                         {a.user?.avatar_url ? (
                                           <Avatar src={a.user.avatar_url} name={a.user?.full_name} size={24} className="border-2 border-background" referrerPolicy="no-referrer" />
                                         ) : (
-                                          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[10px] font-semibold text-foreground">
+                                          <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-surface text-[11px] font-semibold text-foreground">
                                             {getInitials(a.user?.full_name)}
                                           </div>
                                         )}
@@ -964,7 +964,7 @@ export function TaskBoard({
                               {a.user?.avatar_url ? (
                                 <Avatar src={a.user.avatar_url} name={a.user?.full_name} size={24} className="border-2 border-surface" referrerPolicy="no-referrer" />
                               ) : (
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[10px] font-semibold text-foreground">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-surface bg-background text-[11px] font-semibold text-foreground">
                                   {getInitials(a.user?.full_name)}
                                 </div>
                               )}

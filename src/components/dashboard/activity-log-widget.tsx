@@ -109,7 +109,7 @@ export function ActivityLogWidget() {
                   {log.user?.avatar_url ? (
                     <Avatar src={log.user.avatar_url} name={log.user?.full_name} size={28} referrerPolicy="no-referrer" />
                   ) : (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[10px] font-semibold text-foreground">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface text-[11px] font-semibold text-foreground">
                       {getInitials(log.user?.full_name)}
                     </div>
                   )}
@@ -122,10 +122,10 @@ export function ActivityLogWidget() {
                     <span className="truncate text-xs font-medium text-foreground">
                       {log.user?.full_name || "Unknown"}
                     </span>
-                    <span className="text-[9px] text-muted">{timeUntil(log.created_at)}</span>
+                    <span className="text-[11px] text-muted">{timeUntil(log.created_at)}</span>
                   </div>
                   <p className="mt-0.5 text-xs text-muted leading-tight">{log.description}</p>
-                  <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[9px] font-medium", actionColor)}>
+                  <span className={cn("mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-medium", actionColor)}>
                     {log.action.replace("_", " ")}
                   </span>
                 </div>

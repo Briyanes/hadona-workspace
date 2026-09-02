@@ -50,7 +50,7 @@ export function Toggle({ checked, onChange, label, description, icon: Icon, show
         {Icon && (
           <div className={cn(
             "mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-            checked ? "bg-primary/15 text-primary" : "bg-surface text-muted/70 dark:bg-gray-800 dark:text-muted"
+            checked ? "bg-primary/15 text-primary" : "bg-surface text-muted dark:bg-gray-800 dark:text-muted"
           )}>
             <Icon size={16} />
           </div>
