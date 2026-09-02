@@ -1,13 +1,34 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Search } from 'lucide-react';
+import {
+  Search,
+  LayoutDashboard,
+  ListTodo,
+  Users,
+  User,
+  UserPlus,
+  TrendingUp,
+  Receipt,
+  Calendar,
+  Wallet,
+  Target,
+  FileText,
+  Clapperboard,
+  Clock,
+  Plus,
+  Banknote,
+  Settings,
+  Plug,
+  Moon,
+  type LucideIcon,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 type CommandItem = {
   id: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   shortcut?: string;
   action: () => void;
   section: string;
@@ -46,27 +67,27 @@ export function CommandPalette() {
 
   // Navigation commands
   const navCommands: CommandItem[] = [
-    { id: 'nav-dashboard', label: 'Dashboard', icon: '📊', section: 'Navigasi', action: () => router.push('/dashboard') },
-    { id: 'nav-tasks', label: 'Tasks', icon: '✅', section: 'Navigasi', action: () => router.push('/tasks') },
-    { id: 'nav-clients', label: 'Clients', icon: '👥', section: 'Navigasi', action: () => router.push('/clients') },
-    { id: 'nav-reports', label: 'Reports', icon: '📈', section: 'Navigasi', action: () => router.push('/reports') },
-    { id: 'nav-invoices', label: 'Invoices', icon: '🧾', section: 'Navigasi', action: () => router.push('/invoices') },
-    { id: 'nav-calendar', label: 'Calendar', icon: '📅', section: 'Navigasi', action: () => router.push('/calendar') },
-    { id: 'nav-ads-spend', label: 'Ads Spend', icon: '💰', section: 'Navigasi', action: () => router.push('/ads-spend') },
-    { id: 'nav-users', label: 'Users', icon: '👤', section: 'Navigasi', action: () => router.push('/users') },
-    { id: 'nav-strategy', label: 'Strategy', icon: '🎯', section: 'Navigasi', action: () => router.push('/strategy') },
-    { id: 'nav-content-plans', label: 'Content Plans', icon: '📝', section: 'Navigasi', action: () => router.push('/content-plans') },
-    { id: 'nav-content-studio', label: 'Content Studio', icon: '🎬', section: 'Navigasi', action: () => router.push('/content-studio') },
-    { id: 'nav-timesheet', label: 'Timesheet', icon: '⏰', section: 'Navigasi', action: () => router.push('/timesheet') },
+    { id: 'nav-dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'Navigasi', action: () => router.push('/dashboard') },
+    { id: 'nav-tasks', label: 'Tasks', icon: ListTodo, section: 'Navigasi', action: () => router.push('/tasks') },
+    { id: 'nav-clients', label: 'Clients', icon: Users, section: 'Navigasi', action: () => router.push('/clients') },
+    { id: 'nav-reports', label: 'Reports', icon: TrendingUp, section: 'Navigasi', action: () => router.push('/reports') },
+    { id: 'nav-invoices', label: 'Invoices', icon: Receipt, section: 'Navigasi', action: () => router.push('/invoices') },
+    { id: 'nav-calendar', label: 'Calendar', icon: Calendar, section: 'Navigasi', action: () => router.push('/calendar') },
+    { id: 'nav-ads-spend', label: 'Ads Spend', icon: Wallet, section: 'Navigasi', action: () => router.push('/ads-spend') },
+    { id: 'nav-users', label: 'Users', icon: User, section: 'Navigasi', action: () => router.push('/users') },
+    { id: 'nav-strategy', label: 'Strategy', icon: Target, section: 'Navigasi', action: () => router.push('/strategy') },
+    { id: 'nav-content-plans', label: 'Content Plans', icon: FileText, section: 'Navigasi', action: () => router.push('/content-plans') },
+    { id: 'nav-content-studio', label: 'Content Studio', icon: Clapperboard, section: 'Navigasi', action: () => router.push('/content-studio') },
+    { id: 'nav-timesheet', label: 'Timesheet', icon: Clock, section: 'Navigasi', action: () => router.push('/timesheet') },
   ];
 
   const actionCommands: CommandItem[] = [
-    { id: 'act-new-task', label: 'Buat Task Baru', icon: '➕', section: 'Aksi', action: () => router.push('/tasks?new=true') },
-    { id: 'act-new-client', label: 'Tambah Client', icon: '👤', section: 'Aksi', action: () => router.push('/clients?new=true') },
-    { id: 'act-new-invoice', label: 'Buat Invoice', icon: '💵', section: 'Aksi', action: () => router.push('/invoices?new=true') },
-    { id: 'act-settings', label: 'Pengaturan', icon: '⚙️', section: 'Aksi', action: () => router.push('/settings') },
-    { id: 'act-integrations', label: 'Integrasi & API', icon: '🔌', section: 'Aksi', action: () => router.push('/settings/integrations') },
-    { id: 'act-theme', label: 'Ganti Tema', icon: '🌓', section: 'Aksi', action: () => {
+    { id: 'act-new-task', label: 'Buat Task Baru', icon: Plus, section: 'Aksi', action: () => router.push('/tasks?new=true') },
+    { id: 'act-new-client', label: 'Tambah Client', icon: UserPlus, section: 'Aksi', action: () => router.push('/clients?new=true') },
+    { id: 'act-new-invoice', label: 'Buat Invoice', icon: Banknote, section: 'Aksi', action: () => router.push('/invoices?new=true') },
+    { id: 'act-settings', label: 'Pengaturan', icon: Settings, section: 'Aksi', action: () => router.push('/settings') },
+    { id: 'act-integrations', label: 'Integrasi & API', icon: Plug, section: 'Aksi', action: () => router.push('/settings/integrations') },
+    { id: 'act-theme', label: 'Ganti Tema', icon: Moon, section: 'Aksi', action: () => {
       document.documentElement.classList.toggle('dark');
     }},
   ];
@@ -219,7 +240,7 @@ export function CommandPalette() {
                       >
                         {item.type === 'command' ? (
                           <>
-                            <span className="text-base">{item.data.icon}</span>
+                            <item.data.icon className="h-4 w-4 shrink-0" />
                             <span className="flex-1">{item.data.label}</span>
                             {item.data.shortcut && (
                               <kbd className={`text-xs ${isActive ? 'text-white/70 dark:text-[#0f172a]/70' : 'text-muted'}`}>
@@ -229,9 +250,7 @@ export function CommandPalette() {
                           </>
                         ) : (
                           <>
-                            <span className="text-base">
-                              {item.data.type === 'client' ? '👥' : item.data.type === 'task' ? '✅' : item.data.type === 'invoice' ? '🧾' : '📈'}
-                            </span>
+                            {(() => { const ResultIcon = item.data.type === 'client' ? Users : item.data.type === 'task' ? ListTodo : item.data.type === 'invoice' ? Receipt : TrendingUp; return <ResultIcon className="h-4 w-4 shrink-0" />; })()}
                             <div className="flex-1">
                               <div className="font-medium">{item.data.label}</div>
                               {item.data.sublabel && (
