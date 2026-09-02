@@ -8,7 +8,7 @@
  */
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Bell, BellOff, Loader2, Smartphone, ShieldAlert, CheckCircle2, XCircle, Zap } from "lucide-react";
+import { Bell, BellOff, Loader2, Smartphone, ShieldAlert, CheckCircle2, XCircle, Zap, Send } from "lucide-react";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -238,6 +238,25 @@ export function PushManager() {
 
   // Tes notifikasi lokal — validasi izin browser+OS tanpa server;
   // side-effect bagus: memancing browser muncul di macOS System Settings → Notifications
+  const [testingServer, setTestingServer] = useState(false);
+  const testServer = async () => {
+    if (testingServer) return;
+    setTestingServer(true);
+    try {
+      const res = await fetch("/api/push/test", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        toast.success(`Tes push terkirim ke ${data.pushed} device — cek notifikasi Anda 📲`, { duration: 8000 });
+      } else {
+        toast.error(`Tes push gagal: ${data.error || res.statusText}`, { duration: 10000 });
+      }
+    } catch (e) {
+      toast.error(`Tes push gagal: ${e instanceof Error ? e.message : "network error"}`);
+    } finally {
+      setTestingServer(false);
+    }
+  };
+
   const testLocal = async () => {
     if (!("Notification" in window)) { toast.error("Browser tidak mendukung Notification API"); return; }
     let p = Notification.permission;
@@ -327,6 +346,14 @@ export function PushManager() {
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
             {enabled ? "Matikan" : "Aktifkan"}
+          </button>
+          <button
+            onClick={testServer}
+            disabled={testingServer || !enabled}
+            title={enabled ? "Kirim push test via server — validasi rantai penuh (DB → VAPID → device)" : "Aktifkan push dulu di device ini"}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
+          >
+            {testingServer ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Tes dari server
           </button>
           <button
             onClick={testLocal}

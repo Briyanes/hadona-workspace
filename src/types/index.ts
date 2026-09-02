@@ -31,6 +31,10 @@ export interface NotificationPrefs {
   email_report: boolean;
   email_daily: boolean;
   email_weekly: boolean;
+  /** Push utk pesan chat/mention. undefined = aktif (backward compat) */
+  push_chat?: boolean;
+  /** Push utk penugasan task. undefined = aktif (backward compat) */
+  push_task?: boolean;
   telegram_enabled: boolean;
   telegram_webhook: string | null;
 }

@@ -2,6 +2,10 @@
  * Web Push helper (server-side).
  * Mengirim push notification ke semua device milik satu user.
  * Subscription kadaluarsa/invalid → auto dihapus dari DB.
+ * Menghormati user prefs (profiles.notification_prefs):
+ *   - push_chat?: false → skip push chat/mention
+ *   - push_task?: false → skip push task
+ *   (undefined = aktif, backward compat)
  */
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
@@ -37,10 +41,39 @@ export interface PushPayload {
   tag?: string;
 }
 
+/** Kategori notifikasi — dipetakan ke user prefs push_chat/push_task.
+ *  undefined = notif umum, tidak dicek prefs (selalu kirim). */
+export type PushCategory = "chat" | "task";
+
+/** Cek apakah user mengizinkan push utk kategori ini (default: ya). */
+async function isPushAllowed(userId: string, category: PushCategory | undefined): Promise<boolean> {
+  if (!category) return true;
+  const db = serviceClient();
+  const { data } = await db
+    .from("profiles")
+    .select("notification_prefs")
+    .eq("id", userId)
+    .single();
+  const prefs = data?.notification_prefs as Record<string, unknown> | null | undefined;
+  if (!prefs) return true;
+  if (category === "chat" && prefs.push_chat === false) return false;
+  if (category === "task" && prefs.push_task === false) return false;
+  return true;
+}
+
 /** Kirim push ke semua subscription milik user. Return jumlah sukses. */
-export async function sendPushToUser(userId: string, payload: PushPayload): Promise<number> {
+export async function sendPushToUser(
+  userId: string,
+  payload: PushPayload,
+  category?: PushCategory
+): Promise<number> {
   if (!ensureConfigured()) {
     console.warn("[push] VAPID keys not set — skipping push");
+    return 0;
+  }
+
+  // Honor user prefs — jangan kirim kalau user mematikan kategori ini
+  if (!(await isPushAllowed(userId, category))) {
     return 0;
   }
 

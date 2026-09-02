@@ -18,6 +18,8 @@ export default function NotificationsSettingsPage() {
     email_report: true,
     email_daily: false,
     email_weekly: false,
+    push_chat: true,
+    push_task: true,
     telegram_enabled: false,
     telegram_webhook: null,
   });
@@ -69,6 +71,25 @@ export default function NotificationsSettingsPage() {
         <h3 className="mb-2 text-sm font-semibold text-foreground">Push Notification</h3>
         <p className="mb-3 text-xs text-muted">Aktifkan push di setiap device (browser/HP) yang Anda pakai.</p>
         <PushManager />
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="mb-2 text-xs font-medium text-muted">Jenis push yang ingin diterima (berlaku ke semua device):</p>
+          <Toggle
+            showRow
+            checked={prefs.push_chat !== false}
+            onChange={() => setPrefs({ ...prefs, push_chat: prefs.push_chat === false })}
+            label="Chat & Mention"
+            description="Push saat ada pesan chat atau Anda di-mention"
+            icon={MessageSquare}
+          />
+          <Toggle
+            showRow
+            checked={prefs.push_task !== false}
+            onChange={() => setPrefs({ ...prefs, push_task: prefs.push_task === false })}
+            label="Task Assignment"
+            description="Push saat ada task baru yang ditugaskan ke Anda"
+            icon={Bell}
+          />
+        </div>
       </div>
 
       {/* Email Notifications */}
