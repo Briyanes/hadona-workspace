@@ -1,38 +1,73 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { Lightbulb, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Modal } from "@/components/ui/modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
+import { emptyTaskForm } from "./constants";
 import type { Client, TaskForm } from "./types";
 
 interface CreateTaskModalProps {
   clients: Client[];
-  form: TaskForm;
-  onFormChange: (form: TaskForm) => void;
-  assigneeIds: string[];
-  onAssigneeChange: (ids: string[]) => void;
   /** Division filter active on the board — locks the division field when set */
   activeDivision: string | null;
-  saving: boolean;
-  onSubmit: (e: React.FormEvent) => void;
+  /** Division default dari sub-page (mis. /tasks/editor) */
+  defaultDivision: string;
+  /**
+   * Dipanggil saat submit. Return `true` = sukses (form di-reset).
+   * Validasi, dup-check & insert tetap di parent (punya akses tasks).
+   */
+  onCreate: (form: TaskForm, assigneeIds: string[]) => Promise<boolean>;
   onClose: () => void;
 }
 
 const FORM_ID = "create-task-form";
 
-/** Create Task modal — 2-column layout with sticky header & footer. */
+/**
+ * Create Task modal — 2-column layout with sticky header & footer.
+ *
+ * ⚡ State form LOKAL di komponen ini (bukan di parent TaskBoard).
+ * Sebelumnya state ada di parent, sehingga SETIAP ketikan me-render ulang
+ * seluruh board (ratusan kartu + tabel) → input terasa lag / karakter muncul
+ * satu-satu. Dengan state lokal, ketikan hanya me-render modal ini.
+ */
 export function CreateTaskModal({
   clients,
-  form,
-  onFormChange,
-  assigneeIds,
-  onAssigneeChange,
   activeDivision,
-  saving,
-  onSubmit,
+  defaultDivision,
+  onCreate,
   onClose,
 }: CreateTaskModalProps) {
+  const [form, setForm] = useState<TaskForm>(() => emptyTaskForm(defaultDivision));
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  // Sync division field saat filter divisi di board berubah
+  useEffect(() => {
+    setForm((f) => ({ ...f, division: activeDivision || defaultDivision }));
+  }, [activeDivision, defaultDivision]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (saving) return; // guard: mencegah double-submit saat request masih berjalan
+    if (!form.title.trim()) {
+      toast.error("Judul task wajib diisi");
+      return;
+    }
+    setSaving(true);
+    try {
+      const ok = await onCreate(form, assigneeIds);
+      if (ok) {
+        setForm(emptyTaskForm(defaultDivision));
+        setAssigneeIds([]);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Modal
       open
@@ -55,7 +90,7 @@ export function CreateTaskModal({
         </>
       }
     >
-      <form id={FORM_ID} onSubmit={onSubmit} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <form id={FORM_ID} onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Full-width: Title */}
         <div className="lg:col-span-2">
           <label className="mb-1.5 block text-sm font-medium text-foreground">Judul Task *</label>
@@ -64,7 +99,7 @@ export function CreateTaskModal({
             required
             autoFocus
             value={form.title}
-            onChange={(e) => onFormChange({ ...form, title: e.target.value })}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             placeholder="Contoh: Setup Campaign Meta Ads Client X"
             className="input"
           />
@@ -76,7 +111,7 @@ export function CreateTaskModal({
           <textarea
             rows={2}
             value={form.description}
-            onChange={(e) => onFormChange({ ...form, description: e.target.value })}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             placeholder="Detail tugas (opsional)"
             className="input resize-none"
           />
@@ -88,7 +123,7 @@ export function CreateTaskModal({
             <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
             <select
               value={form.client_id}
-              onChange={(e) => onFormChange({ ...form, client_id: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))}
               className="input"
             >
               <option value="">— Pilih Client —</option>
@@ -104,7 +139,7 @@ export function CreateTaskModal({
             <label className="mb-1.5 block text-sm font-medium text-foreground">Status Awal</label>
             <select
               value={form.status}
-              onChange={(e) => onFormChange({ ...form, status: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
               className="input"
             >
               <option value="todo">To Do</option>
@@ -120,7 +155,7 @@ export function CreateTaskModal({
             <input
               type="date"
               value={form.start_date}
-              onChange={(e) => onFormChange({ ...form, start_date: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
               className="input"
             />
           </div>
@@ -130,7 +165,7 @@ export function CreateTaskModal({
             <input
               type="text"
               value={form.result}
-              onChange={(e) => onFormChange({ ...form, result: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, result: e.target.value }))}
               placeholder="Contoh: Monthly report selesai"
               className="input"
             />
@@ -143,7 +178,7 @@ export function CreateTaskModal({
             <label className="mb-1.5 block text-sm font-medium text-foreground">Prioritas</label>
             <select
               value={form.priority}
-              onChange={(e) => onFormChange({ ...form, priority: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
               className="input"
             >
               <option value="low">Low</option>
@@ -157,7 +192,7 @@ export function CreateTaskModal({
             <label className="mb-1.5 block text-sm font-medium text-foreground">Divisi</label>
             <select
               value={form.division}
-              onChange={(e) => onFormChange({ ...form, division: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, division: e.target.value }))}
               className="input"
               // Lock division when on a sub-page (division prop is set)
               disabled={!!activeDivision}
@@ -184,7 +219,7 @@ export function CreateTaskModal({
             <input
               type="date"
               value={form.due_date}
-              onChange={(e) => onFormChange({ ...form, due_date: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
               className="input"
             />
           </div>
@@ -196,7 +231,7 @@ export function CreateTaskModal({
             <textarea
               rows={2}
               value={form.blocker}
-              onChange={(e) => onFormChange({ ...form, blocker: e.target.value })}
+              onChange={(e) => setForm((f) => ({ ...f, blocker: e.target.value }))}
               placeholder="Isi jika ada kendala..."
               className="input resize-none"
             />
@@ -207,7 +242,7 @@ export function CreateTaskModal({
         <div className="lg:col-span-2">
           <AssigneePicker
             selectedIds={assigneeIds}
-            onChange={onAssigneeChange}
+            onChange={setAssigneeIds}
             label="Assignee"
             divisionFilter={form.division || null}
           />

@@ -14,7 +14,7 @@ import { Plus, Calendar, Flag, X, AlertCircle, AlertTriangle, Search, Filter, La
 import { formatDate, getInitials, cn, stripUrls } from "@/lib/utils";
 import { TaskDetailModal } from "@/components/tasks/task-detail-modal";
 import { CreateTaskModal } from "./task-board/create-task-modal";
-import { COLUMNS, priorityColors, DIVISION_TABS, emptyTaskForm } from "./task-board/constants";
+import { COLUMNS, priorityColors, DIVISION_TABS } from "./task-board/constants";
 import type { Task, Client, TaskForm, TaskBoardProps } from "./task-board/types";
 export type { TaskBoardProps };
 import { useSortable } from "@/hooks/use-sortable-table";
@@ -87,9 +87,8 @@ export function TaskBoard({
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<TaskForm>(() => emptyTaskForm(defaultDivision));
-  const [formAssignees, setFormAssignees] = useState<string[]>([]);
+  // NOTE: state form & assignees hidup di dalam CreateTaskModal (state colocation)
+  // agar ketikan tidak me-render ulang seluruh board.
 
   useEffect(() => {
     loadCurrentUser();
@@ -105,11 +104,6 @@ export function TaskBoard({
       supabase.removeChannel(channel);
     };
   }, [supabase, activeDivision]);
-
-  // Reset form division when activeDivision changes
-  useEffect(() => {
-    setForm((f) => ({ ...f, division: activeDivision || defaultDivision }));
-  }, [activeDivision, defaultDivision]);
 
   async function loadCurrentUser() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -257,47 +251,45 @@ export function TaskBoard({
     }
   }
 
-  async function handleCreateTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (saving) return; // guard: mencegah double-submit saat request masih berjalan
-    if (!form.title.trim()) {
-      toast.error("Judul task wajib diisi");
-      return;
-    }
-
+  /**
+   * Dipanggil CreateTaskModal saat submit (guard double-submit & validasi judul
+   * dilakukan di modal). Return true → modal reset & tutup.
+   */
+  async function handleCreateTask(form: TaskForm, assigneeIds: string[]): Promise<boolean> {
     // Warning potensi duplikat: judul sama (case-insensitive) & belum selesai
     const dupTitle = form.title.trim().toLowerCase();
     const existing = tasks.find(
       (t) => t.title?.trim().toLowerCase() === dupTitle && t.status !== "done"
     );
     if (existing && !confirm(`Task dengan judul yang sama sudah ada dan belum selesai:\n\n"${existing.title}"\n\nTetap buat task baru?`)) {
-      return;
+      return false;
     }
 
-    setSaving(true);
     try {
-    const { data: userData } = await supabase.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
 
-    const { data: newTask, error } = await supabase.from("tasks").insert({
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      client_id: form.client_id || null,
-      priority: form.priority,
-      status: form.status,
-      division: form.division.trim() || null,
-      result: form.result.trim() || null,
-      blocker: form.blocker.trim() || null,
-      start_date: form.start_date || null,
-      due_date: form.due_date || null,
-      created_by: userData.user?.id,
-    } as never).select("id").single();
+      const { data: newTask, error } = await supabase.from("tasks").insert({
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        client_id: form.client_id || null,
+        priority: form.priority,
+        status: form.status,
+        division: form.division.trim() || null,
+        result: form.result.trim() || null,
+        blocker: form.blocker.trim() || null,
+        start_date: form.start_date || null,
+        due_date: form.due_date || null,
+        created_by: userData.user?.id,
+      } as never).select("id").single();
 
-    if (error) {
-      toast.error("Gagal membuat task: " + error.message);
-    } else {
+      if (error) {
+        toast.error("Gagal membuat task: " + error.message);
+        return false;
+      }
+
       // Insert assignees if any selected
-      if (newTask && formAssignees.length > 0) {
-        const assigneeRows = formAssignees.map((uid) => ({
+      if (newTask && assigneeIds.length > 0) {
+        const assigneeRows = assigneeIds.map((uid) => ({
           task_id: (newTask as { id: string }).id,
           user_id: uid,
         }));
@@ -305,13 +297,11 @@ export function TaskBoard({
       }
 
       toast.success("Task berhasil dibuat!");
-      setForm(emptyTaskForm(defaultDivision));
-      setFormAssignees([]);
       setShowModal(false);
       loadTasks();
-    }
-    } finally {
-      setSaving(false);
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -1016,13 +1006,9 @@ export function TaskBoard({
       {showModal && (
         <CreateTaskModal
           clients={clients}
-          form={form}
-          onFormChange={setForm}
-          assigneeIds={formAssignees}
-          onAssigneeChange={setFormAssignees}
           activeDivision={activeDivision}
-          saving={saving}
-          onSubmit={handleCreateTask}
+          defaultDivision={defaultDivision}
+          onCreate={handleCreateTask}
           onClose={() => setShowModal(false)}
         />
       )}
