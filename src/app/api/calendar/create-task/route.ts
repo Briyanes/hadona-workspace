@@ -15,7 +15,8 @@ import { getAuthenticatedUser } from "@/lib/auth-api";
  *   description: string
  *   due_date: string (YYYY-MM-DD)
  *   client_id?: string | null
- *   pm_user_id: string
+ *   assignee_ids: string[]  (preferred — multi-assignee)
+ *   pm_user_id?: string     (legacy fallback — converted to assignee_ids)
  *   event_id?: string  (to link back to calendar_events.linked_task_id)
  *   created_by is IGNORED — always set to the authenticated user server-side.
  */
@@ -29,11 +30,18 @@ export async function POST(req: NextRequest) {
     const authUserId = auth.user.id;
 
     const body = await req.json();
-    const { title, description, due_date, client_id, pm_user_id, event_id } = body;
+    const { title, description, due_date, client_id, assignee_ids, pm_user_id, event_id } = body;
 
-    if (!title || !due_date || !pm_user_id) {
+    // Normalisasi: dukung assignee_ids (array baru) & pm_user_id (legacy tunggal)
+    const assignees: string[] = Array.isArray(assignee_ids)
+      ? assignee_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
+      : typeof pm_user_id === "string" && pm_user_id
+        ? [pm_user_id]
+        : [];
+
+    if (!title || !due_date || assignees.length === 0) {
       return NextResponse.json(
-        { error: "Missing required fields: title, due_date, pm_user_id" },
+        { error: "Missing required fields: title, due_date, assignee_ids (atau pm_user_id)" },
         { status: 400 }
       );
     }
@@ -74,13 +82,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Task ID not returned" }, { status: 500 });
     }
 
-    // Step 2: Assign PM via task_assignees
+    // Step 2: Assign semua assignee via task_assignees (bulk insert)
     const { error: assignErr } = await supabaseAdmin
       .from("task_assignees")
-      .insert({
+      .insert(assignees.map((userId) => ({
         task_id: taskId,
-        user_id: pm_user_id,
-      });
+        user_id: userId,
+      })));
 
     if (assignErr) {
       console.error("[API calendar/create-task] Assign error:", assignErr);
@@ -88,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         task_id: taskId,
-        warning: "Task created but failed to assign PM. Assign manually.",
+        warning: "Task created but failed to assign assignees. Assign manually.",
       });
     }
 
@@ -100,15 +108,17 @@ export async function POST(req: NextRequest) {
         .eq("id", event_id);
     }
 
-    // Step 4: Send in-app notification to PM
+    // Step 4: Send in-app notification ke semua assignee (bulk insert)
     try {
-      await supabaseAdmin.from("notifications").insert({
-        user_id: pm_user_id,
-        type: "meeting_assignment",
-        title: "📅 Meeting baru dari AE",
-        body: `Anda di-assign untuk meeting: ${sanitizePlainText(title).slice(0, 100)}. Cek task detail untuk info lengkap.`,
-        link: "/tasks",
-      });
+      await supabaseAdmin.from("notifications").insert(
+        assignees.map((userId) => ({
+          user_id: userId,
+          type: "meeting_assignment",
+          title: "📅 Meeting baru dari AE",
+          body: `Anda di-assign untuk meeting: ${sanitizePlainText(title).slice(0, 100)}. Cek task detail untuk info lengkap.`,
+          link: "/tasks",
+        }))
+      );
     } catch {
       // Non-critical — don't fail the request if notification fails
     }
@@ -116,7 +126,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       task_id: taskId,
-      message: "Task created and assigned successfully",
+      assigned_count: assignees.length,
+      message: `Task created and assigned to ${assignees.length} member`,
     });
   } catch (err) {
     console.error("[API calendar/create-task] Exception:", err);

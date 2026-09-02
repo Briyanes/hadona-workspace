@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn, formatIDR, stripUrls } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
+import { AssigneePicker } from "@/components/tasks/assignee-picker";
 
 interface CalendarEvent {
   id: string;
@@ -145,7 +146,7 @@ export default function CalendarPage() {
     meeting_link: "",
     attendees: [] as string[],
     create_task_for_pm: false,
-    pm_user_id: "",
+    assignee_ids: [] as string[],
     auto_generate_meet: true,
   });
   const [googleConnected, setGoogleConnected] = useState(false);
@@ -329,9 +330,14 @@ export default function CalendarPage() {
           if (clientEmail) attendeesEmails.push(clientEmail);
         }
       }
-      if (eventForm.create_task_for_pm && eventForm.pm_user_id) {
-        const pm = teamMembers.find(t => t.id === eventForm.pm_user_id);
-        if (pm?.email) attendeesEmails.push(pm.email);
+      // Semua assignee task-preparation otomatis dapat invite Google Calendar
+      if (eventForm.create_task_for_pm && eventForm.assignee_ids.length > 0) {
+        for (const uid of eventForm.assignee_ids) {
+          const member = teamMembers.find(t => t.id === uid);
+          if (member?.email && !attendeesEmails.includes(member.email)) {
+            attendeesEmails.push(member.email);
+          }
+        }
       }
 
       // Auto-generate Google Meet if enabled & connected
@@ -377,7 +383,12 @@ export default function CalendarPage() {
         location: eventForm.location || null,
         meeting_link: finalMeetingLink || null,
         google_event_id: finalGoogleEventId,
-        attendees: eventForm.attendees.map(uid => ({ user_id: uid })),
+        attendees: [
+          ...eventForm.attendees,
+          ...(eventForm.create_task_for_pm ? eventForm.assignee_ids : []),
+        ]
+          .filter((uid, i, arr) => arr.indexOf(uid) === i)
+          .map(uid => ({ user_id: uid })),
         created_by: user?.id || null,
       };
       const { data: newEvent, error } = await supabase
@@ -402,11 +413,11 @@ export default function CalendarPage() {
         title: "", description: "", event_type: "client_meeting",
         start_datetime: "", end_datetime: "", all_day: false,
         client_id: "", location: "", meeting_link: "",
-        attendees: [], create_task_for_pm: false, pm_user_id: "",
+        attendees: [], create_task_for_pm: false, assignee_ids: [],
         auto_generate_meet: true,
       });
 
-      if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
+      if (eventForm.create_task_for_pm && eventForm.assignee_ids.length > 0 && eventId) {
         toast.success("Event meeting dibuat! Membuat task untuk PM...");
       } else {
         toast.success("Event meeting dibuat!");
@@ -423,8 +434,8 @@ export default function CalendarPage() {
         });
       }
 
-      // Optional: create task for PM via server-side API (bypass RLS)
-      if (eventForm.create_task_for_pm && eventForm.pm_user_id && eventId) {
+      // Optional: create task for assignees via server-side API (bypass RLS)
+      if (eventForm.create_task_for_pm && eventForm.assignee_ids.length > 0 && eventId) {
         try {
           const startDate = new Date(eventForm.start_datetime);
           const dueDate = startDate.toISOString().slice(0, 10);
@@ -437,7 +448,7 @@ export default function CalendarPage() {
               description: `Prepare untuk meeting: ${eventForm.title}\nWaktu: ${startDate.toLocaleString("id-ID")}\n${eventForm.location ? `Lokasi: ${eventForm.location}\n` : ""}${finalMeetingLink ? `Link: ${finalMeetingLink}` : ""}`,
               due_date: dueDate,
               client_id: eventForm.client_id || null,
-              pm_user_id: eventForm.pm_user_id,
+              assignee_ids: eventForm.assignee_ids,
               event_id: eventId,
               created_by: user?.id || null,
             }),
@@ -1581,24 +1592,24 @@ export default function CalendarPage() {
                   <input
                     type="checkbox"
                     checked={eventForm.create_task_for_pm}
-                    onChange={e => setEventForm({ ...eventForm, create_task_for_pm: e.target.checked })}
+                    onChange={e => setEventForm({ ...eventForm, create_task_for_pm: e.target.checked, assignee_ids: e.target.checked ? eventForm.assignee_ids : [] })}
                     className="rounded"
                   />
                   <span className="text-purple-900">Assign task preparation ke PM/Team</span>
                 </label>
                 {eventForm.create_task_for_pm && (
-                  <select
-                    value={eventForm.pm_user_id}
-                    onChange={e => setEventForm({ ...eventForm, pm_user_id: e.target.value })}
-                    className="input text-xs"
-                  >
-                    <option value="">— Pilih anggota tim —</option>
-                    {teamMembers.map(m => (
-                      <option key={m.id} value={m.id}>
-                        {m.full_name || m.email} {m.division ? `(${m.division})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-1">
+                    <AssigneePicker
+                      selectedIds={eventForm.assignee_ids}
+                      onChange={(ids) => setEventForm({ ...eventForm, assignee_ids: ids })}
+                      label="Assignee Task"
+                      compact
+                      allowBulkAssign={false}
+                    />
+                    <p className="text-[10px] text-muted">
+                      <Video size={10} className="inline" /> Semua assignee otomatis menerima undangan Google Calendar (jika Meet di-generate).
+                    </p>
+                  </div>
                 )}
               </div>
 

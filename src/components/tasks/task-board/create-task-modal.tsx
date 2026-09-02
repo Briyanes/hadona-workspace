@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Lightbulb, Lock } from 'lucide-react';
+import { Lightbulb, Lock, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { createClient } from "@/lib/supabase/client";
+import { DIVISIONS } from "@/lib/division-permissions";
 import { Modal } from "@/components/ui/modal";
 import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { emptyTaskForm } from "./constants";
@@ -43,11 +45,36 @@ export function CreateTaskModal({
   const [form, setForm] = useState<TaskForm>(() => emptyTaskForm(defaultDivision));
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  /** Jumlah member aktif per divisi — untuk hint divisi kosong */
+  const [divisionCounts, setDivisionCounts] = useState<Record<string, number>>({});
 
   // Sync division field saat filter divisi di board berubah
   useEffect(() => {
     setForm((f) => ({ ...f, division: activeDivision || defaultDivision }));
   }, [activeDivision, defaultDivision]);
+
+  // Hitung member aktif per divisi (sekali saat modal dibuka)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("profiles")
+          .select("division")
+          .eq("is_active", true);
+        if (cancelled) return;
+        const counts: Record<string, number> = {};
+        for (const row of (data as { division: string[] | null }[]) || []) {
+          for (const d of row.division || []) counts[d] = (counts[d] || 0) + 1;
+        }
+        setDivisionCounts(counts);
+      } catch {
+        // hint opsional — silent fail
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -198,19 +225,26 @@ export function CreateTaskModal({
               disabled={!!activeDivision}
             >
               <option value="">— Pilih Divisi —</option>
-              <option value="Creative Director">Creative Director</option>
-              <option value="Content Creator">Content Creator</option>
-              <option value="Editor">Editor</option>
-              <option value="Production">Production</option>
-              <option value="Social Media Manager">Social Media Manager</option>
-              <option value="Project Manager">Project Manager</option>
-              <option value="Advertiser">Advertiser</option>
-              <option value="Account Executive">Account Executive</option>
-              <option value="Copywriter">Copywriter</option>
-              <option value="Developer">Developer</option>
+              {DIVISIONS.map((d) => {
+                const count = divisionCounts[d] ?? 0;
+                return (
+                  <option key={d} value={d}>
+                    {count === 0 ? `${d} — ⚠️ belum ada member` : `${d} (${count} member)`}
+                  </option>
+                );
+              })}
             </select>
             {activeDivision && (
               <p className="mt-1 text-xs text-muted"><Lock size={12} className="inline" /> Division terkunci: <strong>{activeDivision}</strong></p>
+            )}
+            {form.division && (divisionCounts[form.division] ?? 0) === 0 && (
+              <p className="mt-1 flex items-start gap-1 text-xs text-warning">
+                <UserX size={12} className="mt-0.5 shrink-0" />
+                <span>
+                  Belum ada member aktif di divisi <strong>{form.division}</strong> — assignee akan kosong.
+                  Tambahkan user ke divisi ini via <strong>Users → Edit → Division</strong>.
+                </span>
+              </p>
             )}
           </div>
 
