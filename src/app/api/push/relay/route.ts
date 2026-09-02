@@ -61,14 +61,20 @@ export async function POST(req: NextRequest) {
   const db = serviceClient();
 
   // 1. Web push ke semua device
+  // Kategori "task" untuk semua type task_* → honor user prefs push_task
+  const isTaskNotif = typeof n.type === "string" && n.type.startsWith("task");
   let pushed = 0;
   try {
-    pushed = await sendPushToUser(n.user_id, {
-      title: n.title,
-      body: n.body || "",
-      url: n.link || "/",
-      tag: `hadona-${n.type || "general"}`,
-    });
+    pushed = await sendPushToUser(
+      n.user_id,
+      {
+        title: n.title,
+        body: n.body || "",
+        url: n.link || "/",
+        tag: `hadona-${n.type || "general"}`,
+      },
+      isTaskNotif ? "task" : undefined
+    );
   } catch (err) {
     console.error("[push/relay] sendPush error:", err);
   }

@@ -81,6 +81,7 @@
 | v103 | Push notif infra: push_subscriptions + RLS, RPC get_chat_unread_total, trigger pg_net relay | notif |
 | v104 | **Fix notif chat/mention** (kolom salah di v103) + `push_config` (relay URL/secret via REST, bukan placeholder SQL) | notif |
 | v105 | Sanitasi mention `@[Nama](uuid)` → `@Nama` di body notif chat (push HP & lonceng) + cleanup notif lama | notif |
+| v106 | **Notif assignee saat status task berubah** (review/blocked) — rewrite trigger v24/v26, fix kolom salah, kategori push_task di relay | notif |
 
 **Catatan:** v7 & v70 tidak ada filenya di repo (v7 dilewati historis; v70 di dalam `migration` tanpa isi signifikan). `migration-all.sql` dan `migration-production-fix.sql` adalah bundel lama — JANGAN dipakai untuk fresh install tanpa review (tidak merepresentasikan state terkini).
 

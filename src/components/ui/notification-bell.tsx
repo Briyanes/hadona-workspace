@@ -3,13 +3,15 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Bell, CheckCheck, ListChecks, MessageSquare, FileWarning, Info } from "lucide-react";
+import { Bell, CheckCheck, ListChecks, MessageSquare, FileWarning, Info, Eye, Ban } from "lucide-react";
 import type { AppNotification } from "@/types";
 import { cn, timeUntil } from "@/lib/utils";
 
 const ICON_MAP: Record<string, typeof ListChecks> = {
   task_assigned: ListChecks,
   task_updated: ListChecks,
+  task_review: Eye,
+  task_blocked: Ban,
   report_deadline: FileWarning,
   mention: MessageSquare,
   general: Info,
@@ -18,6 +20,8 @@ const ICON_MAP: Record<string, typeof ListChecks> = {
 const COLOR_MAP: Record<string, string> = {
   task_assigned: "bg-success/15 text-success",
   task_updated: "bg-accent/15 text-accent",
+  task_review: "bg-primary/15 text-primary",
+  task_blocked: "bg-destructive/15 text-destructive",
   report_deadline: "bg-warning/15 text-warning",
   mention: "bg-primary/15 text-primary",
   general: "bg-muted/15 text-muted",
