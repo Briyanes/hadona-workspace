@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import { Upload, MessageSquare, Loader2, TrendingUp, CheckCircle2, Clock, Megaphone, Power } from "lucide-react";
+import { Upload, MessageSquare, Loader2, TrendingUp, CheckCircle2, Clock, Megaphone, Power, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
 interface UploadStats {
@@ -25,6 +25,7 @@ export function ContentStudioWidget() {
   const [uploads, setUploads] = useState<UploadStats | null>(null);
   const [captions, setCaptions] = useState<CaptionStats | null>(null);
   const [ads, setAds] = useState<{ total: number; active: number } | null>(null);
+  const [requests, setRequests] = useState<{ total: number; pending: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,6 +76,20 @@ export function ContentStudioWidget() {
       } catch {
         setAds(null);
       }
+
+      // Fetch creative requests stats (Content Studio)
+      try {
+        const [totalRes, pendingRes] = await Promise.all([
+          supabase.from("ads_creative_requests").select("id", { count: "exact", head: true }),
+          supabase
+            .from("ads_creative_requests")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "pending"),
+        ]);
+        setRequests({ total: totalRes.count || 0, pending: pendingRes.count || 0 });
+      } catch {
+        setRequests(null);
+      }
     } catch (err) {
       console.error("Content Studio widget error:", err);
     } finally {
@@ -104,7 +119,39 @@ export function ContentStudioWidget() {
     : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Creative Request Widget */}
+      <div className="card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ClipboardList size={18} className="text-orange-500" />
+            <h3 className="text-sm font-bold text-foreground">Creative Request</h3>
+          </div>
+          <Link href="/content-studio" className="text-xs text-primary hover:underline">
+            Detail
+          </Link>
+        </div>
+
+        {requests && requests.total > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1">
+              <ClipboardList size={12} className="text-primary" />
+              <span className="text-xs font-medium text-primary">{requests.total} Total</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-md bg-warning/10 px-2 py-1">
+              <Clock size={12} className="text-warning" />
+              <span className="text-xs font-medium text-warning">{requests.pending} Pending</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1">
+              <CheckCircle2 size={12} className="text-success" />
+              <span className="text-xs font-medium text-success">{requests.total - requests.pending} Diproses</span>
+            </div>
+          </div>
+        ) : (
+          <p className="py-4 text-center text-sm text-muted">Belum ada creative request</p>
+        )}
+      </div>
+
       {/* Upload Tracker Widget */}
       <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">

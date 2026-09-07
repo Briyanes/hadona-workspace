@@ -54,7 +54,7 @@ function formatDate(d: string | null | undefined) {
   }
 }
 
-export default function AdsCaptionBank() {
+export default function AdsCaptionBank({ onDataChange }: { onDataChange?: () => void }) {
   const supabase = createClient() as any;
   const [items, setItems] = useState<AdsCaptionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +147,11 @@ export default function AdsCaptionBank() {
       if (error) throw error;
       toast.success(editingId ? "Caption diperbarui" : "Caption disimpan");
       setShowModal(false);
+      // Reset semua filter agar caption baru tidak tersembunyi
+      setSearch("");
+      setClientFilter("all");
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menyimpan: " + extractError(err));
     } finally {
@@ -164,6 +168,7 @@ export default function AdsCaptionBank() {
       toast.success("Caption dihapus");
       setConfirmDelete(null);
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menghapus: " + extractError(err));
     } finally {

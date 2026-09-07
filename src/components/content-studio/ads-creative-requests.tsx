@@ -93,7 +93,7 @@ function statusMeta(v: string) {
   return STATUS_OPTIONS.find((s) => s.value === v) || STATUS_OPTIONS[0];
 }
 
-export default function AdsCreativeRequests() {
+export default function AdsCreativeRequests({ onDataChange }: { onDataChange?: () => void }) {
   const supabase = createClient() as any;
   const [items, setItems] = useState<CreativeRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -221,7 +221,12 @@ export default function AdsCreativeRequests() {
       if (error) throw error;
       toast.success(editingId ? "Request diperbarui" : "Request ditambahkan");
       setShowModal(false);
+      // Reset semua filter agar item baru tidak tersembunyi (search/klien/status)
+      setSearch("");
+      setClientFilter("all");
+      setStatusFilter("all");
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menyimpan: " + extractError(err));
     } finally {
@@ -235,6 +240,7 @@ export default function AdsCreativeRequests() {
       if (error) throw error;
       toast.success(`Status → ${statusMeta(status).label}`);
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal ubah status: " + extractError(err));
     }
@@ -249,6 +255,7 @@ export default function AdsCreativeRequests() {
       toast.success("Request dihapus");
       setConfirmDelete(null);
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menghapus: " + extractError(err));
     } finally {
@@ -279,6 +286,7 @@ export default function AdsCreativeRequests() {
       if (error) throw error;
       toast.success("Tersimpan ke Banking Caption ✓");
       setBankingId(null);
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menyimpan ke bank: " + extractError(err));
     } finally {

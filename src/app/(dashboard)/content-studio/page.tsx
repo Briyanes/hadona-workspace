@@ -103,11 +103,11 @@ export default function ContentStudioPage() {
       {/* Tab Content */}
       <div>
         {tab === "requests" ? (
-          <AdsCreativeRequests />
+          <AdsCreativeRequests onDataChange={loadStats} />
         ) : tab === "captions" ? (
-          <AdsCaptionBank />
+          <AdsCaptionBank onDataChange={loadStats} />
         ) : (
-          <AdsContentClusters />
+          <AdsContentClusters onDataChange={loadStats} />
         )}
       </div>
     </div>

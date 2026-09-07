@@ -148,7 +148,7 @@ function PostTypeBadge({ type }: { type: string | null | undefined }) {
   );
 }
 
-export default function AdsContentClusters() {
+export default function AdsContentClusters({ onDataChange }: { onDataChange?: () => void }) {
   const supabase = createClient() as any;
   const [items, setItems] = useState<ClusterItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +183,8 @@ export default function AdsContentClusters() {
       const { data, error } = await supabase
         .from("ads_content_clusters")
         .select("*, client:clients(name)")
-        .order("created_at", { ascending: true });
+        // TERBARU DI ATAP — entry yang baru disave langsung terlihat (dulu ASC: terbenam di bawah)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       setItems((data as unknown as ClusterItem[]) || []);
     } catch (err) {
@@ -306,7 +307,17 @@ export default function AdsContentClusters() {
       if (error) throw error;
       toast.success(editingId ? "Ads creative diperbarui" : "Ads creative disimpan");
       setShowModal(false);
+      // Reset semua filter agar entry baru tidak tersembunyi (klien/objective/format/search dst.)
+      setSearch("");
+      setClientFilter("all");
+      setStatusFilter("all");
+      setObjectiveFilter("all");
+      setFunnelFilter("all");
+      setFormatFilter("all");
+      setPostTypeFilter("all");
+      setCompletenessFilter("all");
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menyimpan: " + extractError(err));
     } finally {
@@ -323,6 +334,7 @@ export default function AdsContentClusters() {
       toast.success("Ads creative dihapus");
       setConfirmDelete(null);
       loadItems();
+      onDataChange?.();
     } catch (err) {
       toast.error("Gagal menghapus: " + extractError(err));
     } finally {
