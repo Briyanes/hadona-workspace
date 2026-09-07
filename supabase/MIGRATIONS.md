@@ -95,3 +95,13 @@
 - **Trigger `handle_new_user`** (v21): break = user baru gagal dibuat.
 - **RPC billing** (v55, v58, v63-fix2): dipakai cron `auto-billing` produksi.
 - **v90 divisi rename**: frontend `division-permissions.ts` tergantung nilai enum ini.
+
+## v108 series — Security Hardening (REVOKE PUBLIC + pin search_path) — 2026-07-09
+- **v108** REVOKE PUBLIC dari RPC/view + REVOKE anon storage → ✅ ter-apply (anon kini 401)
+- **v108b** pin search_path massal → ❌ gagal (fungsi milik extension tak bisa di-ALTER)
+- **v108c** pin search_path (exclude extension-owned, per-fungsi) → ✅ ter-apply
+- **v108d** diagnosis → bukti: definisi benar & tabel ada, tapi RPC tetap 42P01 → **stale plan cache PostgREST**
+- **v108e** DROP+CREATE fn → ❌ gagal (2BP01: fn dirujuk 3 RLS policy chat)
+- **v108f** capture via pg_get_policydef → ❌ gagal (fungsi itu tidak ada di Postgres)
+- **v108g** rekonstruksi policy dari pg_policy (pg_get_expr) + DROP+CREATE fn (OID baru) + re-apply REVOKE → ✅ **SUKSES, verify all-green**
+- Pelajaran: (1) ALTER search_path tidak membatalkan plan cache basi — butuh OID baru (DROP+CREATE); (2) fn yang dirujuk RLS policy harus drop policy dulu; (3) selalu `NOTIFY pgrst, 'reload schema'` setelah ubah grants.
