@@ -189,6 +189,7 @@ export default function BrandKitsPage() {
         toast.success("Brand kit dibuat!");
       }
       setShowModal(false);
+      setSearch("");
       loadData();
     } catch (err) {
       let msg = "Unknown error";

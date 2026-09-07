@@ -200,6 +200,8 @@ export default function ApprovalsPage() {
       }
 
       setShowModal(false);
+      setSearch("");
+      setStatusFilter("all");
       loadData();
     } catch (err) {
       let msg = "Unknown error";

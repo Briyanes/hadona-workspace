@@ -222,6 +222,8 @@ export default function ProductionPage() {
         toast.success("Production dibuat!");
       }
       setShowModal(false);
+      setSearch("");
+      setStatusFilter("all");
       loadData();
     } catch (err) {
       let msg = "Unknown error";

@@ -389,6 +389,12 @@ export default function ContentPlansPage() {
       setForm(emptyForm);
       setEditingId(null);
       setShowModal(false);
+      // Reset filter agar plan baru selalu terlihat (pola bug content-studio)
+      setSearch("");
+      setProgressFilter("all");
+      setPilarFilter("all");
+      setClientFilter("all");
+      setMonthFilter("all");
       loadPlans();
     } catch (err) {
       const msg = err instanceof Error ? err.message : (err as Record<string, unknown>)?.message as string || "Unknown error";
