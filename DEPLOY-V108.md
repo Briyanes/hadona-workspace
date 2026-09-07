@@ -27,6 +27,21 @@ via REST per 9 Jul 2026 jam 17:25:
 di SEMUA fungsi public + menutup sisa celah advisor (anon exec, security_invoker view,
 RLS schema_migrations).
 
+## ⚠️ PENTING — Versi terbaru (commit `681b567`)
+
+Versi pertama v108 punya bug: `REVOKE ... FROM anon` saja tidak menutup akses
+karena anon mewarisi grant default **PUBLIC**. Sudah diperbaiki menjadi
+`REVOKE ... FROM PUBLIC, anon` + grant ulang eksplisit. **Pastikan copy file
+`supabase/migration-v108-security-hardening.sql` versi TERBARU dari repo**
+(`git pull` dulu bila perlu) — jangan pakai paste lama di tab SQL Editor.
+
+### Cek apakah run tadi Anda sukses atau rollback
+SQL Editor menjalankan seluruh script sebagai SATU transaksi — jika ada
+statement error, semuanya batal. Indikasi run Anda tadi **tidak ter-apply**:
+`get_chat_unread_total` masih error & anon masih bisa `is_manager`
+(diverifikasi ulang 17:29). Setelah Run sukses harus muncul `Success. No rows returned`
+TANPA pesan error merah.
+
 ## Langkah Eksekusi (±2 menit)
 
 1. Buka **Supabase Dashboard** → project (yang dipakai app)
