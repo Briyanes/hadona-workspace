@@ -66,7 +66,13 @@ ALTER TABLE public.schema_migrations ENABLE ROW LEVEL SECURITY;
 --   increment_view_count(..)       → service_role (API route reports/public)
 -- Trigger (handle_new_user, notify_*, dst.) dieksekusi oleh role internal,
 -- tidak butuh grant anon.
-REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM anon;
+-- REVOKE dari PUBLIC wajib (anon & authenticated mewarisi grant default
+-- PUBLIC pada functions) — REVOKE dari anon saja TIDAK menutup akses.
+-- Setelahnya, kembalikan eksplisit ke authenticated + service_role supaya
+-- helper RLS (is_manager, is_division_member, dst.) tetap bisa dieksekusi
+-- user login (dipanggil di dalam policy) dan API routes (service key).
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC, anon;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated, service_role;
 
 -- Pastikan 4 RPC yang dipakai aplikasi tetapexecutable (guard by-name,
 -- tanpa menebak signature agar tidak error overload).
