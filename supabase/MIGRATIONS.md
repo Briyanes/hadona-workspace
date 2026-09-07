@@ -86,6 +86,8 @@
 | v108 | **Security hardening**: pin `search_path` 34 fn (memulihkan `get_chat_unread_total` dkk yang rusak 42P01), drop view `user_activity`, `security_invoker` view finansial, REVOKE anon exec SECURITY DEFINER, RLS `schema_migrations` — lihat DEPLOY-V108.md | security |
 | v108b | **Fix pin search_path yang terskip di v108** (SET ROLE supabase_admin + fail-loud ALTER + report fn belum ter-pin) — jalankan SETELAH v108 | security |
 | v108c | **Pin search_path v3** — exclude fungsi milik extension (pg_trgm op) yang bikin v108b fail; kumpulkan semua kegagalan sekaligus | security |
+| v109d | **Fix drag task rusak** (42883 create_notification): DROP+CREATE `notify_task_status_change` (OID baru bunuh plan cache basi) + guard `to_regclass` task_assignees — File A fix, File B smoke terpisah | notif |
+| v109e | **Fix assign member rusak** (42P01 tasks): DROP+CREATE `notify_task_assigned` (search_path dipin, OID baru) — bug kembar v109d, ada sejak v24 | notif |
 
 **Catatan:** v7 & v70 tidak ada filenya di repo (v7 dilewati historis; v70 di dalam `migration` tanpa isi signifikan). `migration-all.sql` dan `migration-production-fix.sql` adalah bundel lama — JANGAN dipakai untuk fresh install tanpa review (tidak merepresentasikan state terkini).
 
@@ -105,3 +107,13 @@
 - **v108f** capture via pg_get_policydef → ❌ gagal (fungsi itu tidak ada di Postgres)
 - **v108g** rekonstruksi policy dari pg_policy (pg_get_expr) + DROP+CREATE fn (OID baru) + re-apply REVOKE → ✅ **SUKSES, verify all-green**
 - Pelajaran: (1) ALTER search_path tidak membatalkan plan cache basi — butuh OID baru (DROP+CREATE); (2) fn yang dirujuk RLS policy harus drop policy dulu; (3) selalu `NOTIFY pgrst, 'reload schema'` setelah ubah grants.
+
+## v109 series — Fix trigger notifikasi task pasca-v108 — 2026-07-09
+**Gejala:** drag task gagal `42883 create_notification does not exist` (fn itu pernah dibuat di sesi sebelumnya tapi rollback menelan DROP-nya).
+- **v109/v109b/v109c** create dulu `create_notification` di transaksi sama → ❌ tetap 42883 (fungsi trigger lama menolak re-resolve; pola plan cache yang sama dgn v108d)
+- **v109c-B** diagnostik → `task_assignees` ADA di public + RLS aktif (kontradiksi dgn error 42P01 lama = bukti resolusi basi, bukan tabel hilang)
+- **v109d-A** DROP+CREATE `notify_task_status_change` (OID baru) + guard `to_regclass('public.task_assignees')` → ✅ drag pulih (E2E: flip status 200, 2 notif task_updated)
+- **v109d-B** smoke test file terpisah (kegagalan smoke tidak me-rollback fix)
+- **v109e** E2E temukan bug kembar: insert assignee 42P01 `tasks` — `notify_task_assigned` (v24, SECURITY DEFINER tanpa search_path pin, tidak tersentuh v108c) → DROP+CREATE dgn pin → ✅ assign pulih (201 + notif task_assigned)
+- Verify: `node scripts/verify-migration-v109.mjs` (net-zero, semua jejak dibersihkan) — TES 1–3 all-green
+- Pelajaran: fn SECURITY DEFINER tanpa `SET search_path` bisa "bertahan" bertahun-tahun lalu rusak saat environment search_path berubah (v108); audit lanjutan = cari semua fn SECURITY DEFINER yang belum ter-pin — lihat v108b/c report.
