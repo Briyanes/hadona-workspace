@@ -221,6 +221,8 @@ export default function LeadsPage() {
       }
 
       setShowModal(false);
+      setSearch("");
+      setStageFilter("all");
       loadLeads();
     } catch (err) {
       let msg = "Unknown error";

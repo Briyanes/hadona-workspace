@@ -295,6 +295,11 @@ export default function ClientsPage() {
       }
 
       setShowModal(false);
+      // Reset filter ke default agar klien baru (active) selalu terlihat
+      setSearch("");
+      setFilterStatus("active");
+      setFilterService("all");
+      setFilterAM("all");
       loadClients();
     } catch (err) {
       let msg = "Unknown error";

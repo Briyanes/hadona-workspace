@@ -224,6 +224,8 @@ export default function TimesheetPage() {
       }
 
       setShowModal(false);
+      setSearch("");
+      setClientFilter("all");
       loadEntries();
     } catch (err) {
       const msg = extractError(err);

@@ -584,6 +584,12 @@ export default function AdsSpendPage() {
 
       toast.success(editingId ? "Ad account diupdate!" : "Ad account dibuat!");
       setShowModal(false);
+      // Reset filter & pagination agar item baru selalu terlihat (bug serupa content-studio)
+      setSearch("");
+      setStatusFilter("all");
+      setClientFilter("all");
+      setPicFilter("all");
+      setCurrentPage(1);
       loadAccounts();
     } catch (err) {
       const msg = extractError(err);
@@ -629,6 +635,11 @@ export default function AdsSpendPage() {
 
       toast.success("Spend log disimpan! Budget auto-updated.");
       setShowSpendModal(false);
+      setSearch("");
+      setStatusFilter("all");
+      setClientFilter("all");
+      setPicFilter("all");
+      setCurrentPage(1);
       loadSpendLogs();
       loadAccounts(); // Reload to get updated remaining_budget
     } catch (err) {

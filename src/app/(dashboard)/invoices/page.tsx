@@ -455,6 +455,9 @@ export default function InvoicesPage() {
       }
 
       setShowModal(false);
+      setSearch("");
+      setStatusFilter("all");
+      setClientFilter("all");
       loadInvoices();
       loadClients(); // refresh client list if new was added
     } catch (err) {
