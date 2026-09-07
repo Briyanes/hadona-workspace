@@ -83,6 +83,7 @@
 | v105 | Sanitasi mention `@[Nama](uuid)` → `@Nama` di body notif chat (push HP & lonceng) + cleanup notif lama | notif |
 | v106 | **Notif assignee saat status task berubah** (review/blocked) — rewrite trigger v24/v26, fix kolom salah, kategori push_task di relay | notif |
 | v107 | **Normalisasi divisi "Social Media Management" → "Social Media Manager"** di tasks + profiles (idempotent, fix 50 task tak terlihat di board divisi) | tasks |
+| v108 | **Security hardening**: pin `search_path` 34 fn (memulihkan `get_chat_unread_total` dkk yang rusak 42P01), drop view `user_activity`, `security_invoker` view finansial, REVOKE anon exec SECURITY DEFINER, RLS `schema_migrations` — lihat DEPLOY-V108.md | security |
 
 **Catatan:** v7 & v70 tidak ada filenya di repo (v7 dilewati historis; v70 di dalam `migration` tanpa isi signifikan). `migration-all.sql` dan `migration-production-fix.sql` adalah bundel lama — JANGAN dipakai untuk fresh install tanpa review (tidak merepresentasikan state terkini).
 
