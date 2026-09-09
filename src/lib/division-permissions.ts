@@ -100,7 +100,7 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   },
   {
     href: "/strategy",
-    allowedDivisions: ["Account Executive", "Project Manager", "Advertiser", "Developer"],
+    allowedDivisions: ["Account Executive", "Project Manager", "Advertiser", "Developer", "Creative Director"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
