@@ -106,13 +106,25 @@ const emptyForm = {
   new_client_email: "",
   new_client_phone: "",
   invoice_number: "",
-  issue_date: new Date().toISOString().split("T")[0],
+  issue_date: localDateStr(),
   due_date: "",
   tax: "",
   status: "draft",
   notes: "",
   items: [{ description: "", quantity: 1, unit_price: 0 }] as InvoiceItem[],
 };
+
+/**
+ * Local (WIB-safe) date string "YYYY-MM-DD".
+ * Menghindari bug UTC: `new Date().toISOString()` memundurkan tanggal
+ * 1 hari sebelum jam 07:00 WIB (UTC+7).
+ */
+function localDateStr(d = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export default function InvoicesPage() {
   const supabase = createClient();
@@ -136,6 +148,9 @@ export default function InvoicesPage() {
   // Print
   const [printInvoice, setPrintInvoice] = useState<Invoice | null>(null);
 
+  // PDF download per-row loading state
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   // ── Derived: subtotal from items ──
   const itemsSubtotal = form.items.reduce(
     (sum, item) => sum + (item.quantity || 0) * (item.unit_price || 0),
@@ -152,8 +167,49 @@ export default function InvoicesPage() {
     }, 200);
   }
 
-  function handleDownloadPDF(inv: Invoice) {
-    window.open(`/api/invoices/${inv.id}/pdf`, "_blank");
+  /**
+   * Mobile-safe PDF download.
+   * `window.open` + Content-Disposition attachment silent-fail di iOS Safari
+   * & PWA standalone — fetch blob + programmatic <a download> lebih reliable
+   * dan memberi error handling (401/500) yang jelas.
+   */
+  async function handleDownloadPDF(inv: Invoice) {
+    if (downloadingId) return;
+    setDownloadingId(inv.id);
+    try {
+      const res = await fetch(`/api/invoices/${inv.id}/pdf`);
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error("Sesi berakhir — silakan login ulang");
+        } else if (res.status === 403) {
+          toast.error("Anda tidak punya akses ke invoice ini");
+        } else {
+          toast.error(`Gagal generate PDF (${res.status})`);
+        }
+        return;
+      }
+      const blob = await res.blob();
+      if (blob.size === 0 || !blob.type.includes("pdf")) {
+        toast.error("Respons tidak valid — coba lagi");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      // Ambil filename dari Content-Disposition bila tersedia
+      const cd = res.headers.get("Content-Disposition") || "";
+      const m = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+      a.download = m ? decodeURIComponent(m[1]) : `Invoice ${inv.invoice_number}.pdf`;
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      toast.success("PDF invoice terunduh");
+    } catch {
+      toast.error("Gagal mengunduh PDF — periksa koneksi Anda");
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   useEffect(() => {
@@ -298,16 +354,33 @@ export default function InvoicesPage() {
     return `INV-${year}${month}-${random}`;
   }
 
-  function openCreate() {
+  /**
+   * Generate nomor invoice dengan uniqueness-check (max 5 percobaan)
+   * untuk mencegah duplicate key dari random 4-digit.
+   */
+  async function generateUniqueInvoiceNumber(): Promise<string> {
+    for (let i = 0; i < 5; i++) {
+      const candidate = generateInvoiceNumber();
+      const { data } = await supabase
+        .from("invoices")
+        .select("id")
+        .eq("invoice_number", candidate)
+        .maybeSingle();
+      if (!data) return candidate;
+    }
+    // Fallback: sisipkan detik agar praktis unik
+    return `${generateInvoiceNumber().slice(0, -4)}${String(Date.now()).slice(-4)}`;
+  }
+
+  async function openCreate() {
     setEditingId(null);
     setContractInfo(null);
     setContractServices([]);
+    const invoiceNumber = await generateUniqueInvoiceNumber();
     setForm({
       ...emptyForm,
-      invoice_number: generateInvoiceNumber(),
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
+      invoice_number: invoiceNumber,
+      due_date: localDateStr(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
       items: [{ description: "", quantity: 1, unit_price: 0 }],
     });
     setShowModal(true);
@@ -437,7 +510,7 @@ export default function InvoicesPage() {
         status: form.status,
         notes: form.notes.trim() || null,
         items: validItems,
-        paid_date: form.status === "paid" ? new Date().toISOString().split("T")[0] : null,
+        paid_date: form.status === "paid" ? localDateStr() : null,
         created_by: editingId ? undefined : userData.user?.id,
       };
 
@@ -483,7 +556,7 @@ export default function InvoicesPage() {
 
   async function quickStatus(id: string, status: string) {
     const payload: Record<string, unknown> = { status };
-    if (status === "paid") payload.paid_date = new Date().toISOString().split("T")[0];
+    if (status === "paid") payload.paid_date = localDateStr();
     const { error } = await supabase.from("invoices").update(payload as never).eq("id", id);
     if (error) {
       toast.error("Gagal update status");
@@ -510,7 +583,7 @@ export default function InvoicesPage() {
     .filter((i) => i.status === "sent")
     .reduce((s, i) => s + i.amount, 0);
   const overdueCount = filtered.filter((i) => i.status === "overdue").length;
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = localDateStr();
 
   const statCards = [
     {
@@ -670,11 +743,14 @@ export default function InvoicesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
+                      {/* Aksi — selalu visible di mobile (tidak ada hover di touch
+                          device) + touch target ≥44px (Apple HIG / Material 48).
+                          Desktop tetap compact via sm: overrides. */}
+                      <div className="flex flex-wrap items-center justify-end gap-0.5">
                         {inv.status === "sent" && (
                           <button
                             onClick={() => quickStatus(inv.id, "paid")}
-                            className="rounded p-1.5 text-muted hover:bg-background hover:text-success"
+                            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted hover:bg-background hover:text-success sm:min-h-0 sm:min-w-0 sm:p-1.5"
                             title="Tandai Lunas"
                           >
                             <CheckCircle size={14} />
@@ -682,28 +758,33 @@ export default function InvoicesPage() {
                         )}
                         <button
                           onClick={() => handleDownloadPDF(inv)}
-                          className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                          disabled={downloadingId === inv.id}
+                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted hover:bg-background hover:text-primary disabled:opacity-50 sm:min-h-0 sm:min-w-0 sm:p-1.5"
                           title="Download PDF"
                         >
-                          <Download size={14} />
+                          {downloadingId === inv.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Download size={14} />
+                          )}
                         </button>
                         <button
                           onClick={() => handlePrint(inv)}
-                          className="rounded p-1.5 text-muted hover:bg-background hover:text-primary"
+                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted hover:bg-background hover:text-primary sm:min-h-0 sm:min-w-0 sm:p-1.5"
                           title="Print"
                         >
                           <Printer size={14} />
                         </button>
                         <button
                           onClick={() => openEdit(inv)}
-                          className="rounded p-1.5 text-muted opacity-0 transition-opacity hover:bg-background hover:text-primary group-hover:opacity-100"
+                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted transition-opacity hover:bg-background hover:text-primary opacity-100 sm:min-h-0 sm:min-w-0 sm:p-1.5 sm:opacity-0 sm:group-hover:opacity-100"
                           title="Edit"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
                           onClick={() => handleDelete(inv.id)}
-                          className="rounded p-1.5 text-muted opacity-0 transition-opacity hover:bg-background hover:text-danger group-hover:opacity-100"
+                          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-muted transition-opacity hover:bg-background hover:text-danger opacity-100 sm:min-h-0 sm:min-w-0 sm:p-1.5 sm:opacity-0 sm:group-hover:opacity-100"
                           title="Hapus"
                         >
                           <Trash2 size={14} />

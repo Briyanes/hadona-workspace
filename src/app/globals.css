@@ -439,10 +439,35 @@
   }
 }
 
+/* Print Area — marks the printable zone inside a modal.
+   IMPORTANT: do NOT set display:none here.
+   The class is used by detail modals (reports, invoices) as the print boundary.
+   Hiding it on screen would make those modals invisible (BUG: previously display:none).
+   Visibility is controlled by parent modal (display is set by React conditional render).
+   During print, the consolidated @media print block below promotes it to the
+   top of the document flow. */
+.print-area {
+  /* intentionally empty — inherit display from parent */
+}
+
+/* Print-only header (hidden on screen) */
+.print-header {
+  display: none;
+}
+
 /* ============================================ */
 /* PRINT STYLES (PDF Export via window.print)   */
+/* Consolidated: previously TWO conflicting blocks existed; they are now
+   merged into one. Key fixes vs old version:
+   - `position: fixed` only renders on the FIRST printed page; use
+     `absolute` so multi-page invoices/reports print in full.
+   - Modal screen styles (max-h-[100dvh], overflow-hidden, border, shadow)
+     are explicitly overridden so the print boundary expands fully.
+   - Removed dead `body.printing` rule (no JS ever set that class).      */
 /* ============================================ */
 @media print {
+  /* Hide everything except the print boundary (keeps layout, avoids
+     collapsing ancestors of .print-area) */
   body * {
     visibility: hidden;
   }
@@ -450,47 +475,24 @@
   .print-area * {
     visibility: visible;
   }
+
+  /* Promote print boundary to full-page, top of document flow */
   .print-area {
+    display: block !important;
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 9999;
+    background: white;
     padding: 20px;
   }
-  .no-print {
-    display: none !important;
-  }
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  @page {
-    margin: 1cm;
-    size: A4;
-  }
-  .print-card {
-    page-break-inside: avoid;
-    margin-bottom: 12px;
-  }
-  table {
-    font-size: 10px;
-  }
-}
 
-.print-header {
-  display: none;
-}
-
-/* Print Area — marks the printable zone inside a modal.
-   IMPORTANT: do NOT set display:none here.
-   The class is used by detail modals (reports, invoices) as the print boundary.
-   Hiding it on screen would make those modals invisible (BUG: previously display:none).
-   Visibility is controlled by parent modal (display is set by React conditional render).
-   During print, the @media print block below promotes it to fullscreen. */
-.print-area {
-  /* intentionally empty — inherit display from parent */
-}
-@media print {
   .print-header {
     display: block !important;
     text-align: center;
@@ -498,22 +500,28 @@
     padding-bottom: 10px;
     border-bottom: 2px solid #e5e7eb;
   }
-  /* Show print-only areas */
-  .print-area {
-    display: block !important;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: white;
-    padding: 20px;
-    overflow: visible;
-  }
-  /* Hide everything else when printing an invoice */
-  body.printing > *:not(.print-area) {
+
+  .no-print {
     display: none !important;
   }
-  .print-area * {
-    visibility: visible;
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+
+  .print-card {
+    page-break-inside: avoid;
+    margin-bottom: 12px;
+  }
+
+  table {
+    font-size: 10px;
   }
 }
 

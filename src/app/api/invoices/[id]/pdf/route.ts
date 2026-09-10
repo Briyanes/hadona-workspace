@@ -4,6 +4,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { createElement } from "react";
 import { InvoicePDFDocument, type InvoicePDFData } from "@/lib/invoice-pdf";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessRoute } from "@/lib/division-permissions";
 
 // ============================================
 // GET /api/invoices/[id]/pdf
@@ -74,6 +75,23 @@ export async function GET(
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
+      );
+    }
+
+    // 🔒 AUTHZ CHECK: invoices = Tier 3 (management only).
+    // MUST run BEFORE using the service-role client below — service-role
+    // bypasses RLS, so without this check any logged-in user could fetch
+    // any invoice PDF by ID (IDOR on financial data).
+    const { data: profileData } = await authSupabase
+      .from("profiles")
+      .select("division, role")
+      .eq("id", user.id)
+      .single();
+    const profile = profileData as { division: string[] | null; role: string | null } | null;
+    if (!canAccessRoute("/invoices", profile?.division, profile?.role)) {
+      return NextResponse.json(
+        { error: "Forbidden — Anda tidak punya akses ke invoice" },
+        { status: 403 }
       );
     }
 
@@ -395,17 +413,24 @@ export async function GET(
     );
 
     // Filename format: "Invoice for {Client} {DD.MM}.pdf"
-    const clientName = clientData?.name || "Client";
+    // Sanitize: buang quote/backslash/CRLF & batasi panjang — nama client
+    // bebas teks, karakter tersebut dapat merusak header Content-Disposition.
+    const safeClientName = (clientData?.name || "Client")
+      .replace(/["\\\r\n]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 60) || "Client";
     const datePart = new Date().toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "2-digit",
     });
-    const filename = `Invoice for ${clientName} ${datePart}.pdf`;
+    const filename = `Invoice for ${safeClientName} ${datePart}.pdf`;
 
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        // filename* (RFC 5987) untuk nama non-ASCII yang aman
+        "Content-Disposition": `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
       },
     });
   } catch (err) {
