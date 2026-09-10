@@ -7,7 +7,8 @@
  *
  * Tier 1 — Always Visible (semua user): Dashboard, Tasks, Calendar, Timesheet
  * Tier 2 — Division-Specific (locked jika tidak sesuai divisi)
- * Tier 3 — Management Only (HIDDEN, bukan locked): Invoices, User Management
+ * Tier 3 — Management Only (HIDDEN, bukan locked): Invoices (PM, AE)
+ * Super Admin Only (LOCKED untuk semua lainnya, termasuk PM): User Management
  */
 
 // === Types ===
@@ -85,7 +86,7 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   },
   {
     href: "/ads-spend",
-    allowedDivisions: ["Advertiser", "Project Manager", "Developer"],
+    allowedDivisions: ["Advertiser", "Project Manager", "Developer", "Account Executive"],
     allowedRoles: ["super_admin", "project_manager"],
   },
   {
@@ -146,15 +147,16 @@ export const MENU_ACCESS: MenuAccessConfig[] = [
   // Tier 3 — Management only (HIDDEN for unauthorized, not locked)
   {
     href: "/invoices",
-    allowedDivisions: ["Project Manager"],
+    allowedDivisions: ["Project Manager", "Account Executive"],
     allowedRoles: ["super_admin", "project_manager"],
     hiddenIfUnauthorized: true,
   },
   {
     href: "/users",
-    allowedDivisions: ["Project Manager"],
-    allowedRoles: ["super_admin", "project_manager"],
-    hiddenIfUnauthorized: true,
+    allowedDivisions: [], // super_admin only — divisi tidak diberi akses
+    allowedRoles: ["super_admin"],
+    // TIDAK hiddenIfUnauthorized → menu tampil LOCKED (🔒) untuk semua
+    // non-super_admin, termasuk Project Manager.
   },
 ];
 

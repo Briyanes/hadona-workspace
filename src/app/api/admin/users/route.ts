@@ -60,8 +60,8 @@ async function verifyAdmin(request: NextRequest) {
     return null;
   }
 
-  // Allow super_admin and project_manager only (user management is admin-only)
-  const allowedRoles = ["super_admin", "project_manager"];
+  // Allow super_admin only (user management is super-admin-only since role audit v110)
+  const allowedRoles = ["super_admin"];
   if (!allowedRoles.includes(profile.role)) {
     console.error(`[verifyAdmin] Role "${profile.role}" not allowed for admin actions. User: ${data.user.email}`);
     return null;
