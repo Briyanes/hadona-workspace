@@ -15,13 +15,13 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Varian longgar Supabase client — kompatibel dengan browser & server client
  * apa pun generik schemanya (assignability dua arah tanpa deep instantiation).
+ * (Tanpa eslint-disable — rule @typescript-eslint/no-explicit-any tidak
+ * dimuat di config ESLint project ini, menyebutnya justru error di CI.)
  */
 type AnySupabaseClient = SupabaseClient<any, any, any>;
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /** Slugify standar (identik dgn pola lama di 3 halaman). */
 export function slugify(text: string): string {
