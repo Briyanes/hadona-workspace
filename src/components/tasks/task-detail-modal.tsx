@@ -944,7 +944,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                     <input
                       ref={attachInputRef}
                       type="file"
-                      accept="video/*,image/*,audio/*,.pdf,.zip,.rar,.ai,.psd,.ae,.prproj,.mp4,.mov"
+                      accept="video/*,image/*,audio/*,.pdf,.ppt,.pptx,.key,.doc,.docx,.xls,.xlsx,.zip,.rar,.ai,.psd,.ae,.prproj,.mp4,.mov"
                       onChange={(e) => setAttachFile(e.target.files?.[0] || null)}
                       className="input flex-1 p-1.5 text-xs"
                     />
@@ -958,7 +958,7 @@ export function TaskDetailModal({ taskId, onClose, onUpdated, onDeleted }: TaskD
                   </div>
                 )}
                 <p className="mt-1.5 text-[11px] text-muted">
-                  Cocok untuk video & file besar (hingga 5GB). Tersimpan rapi di Google Drive per client, tim dapat notifikasi otomatis.
+                  Upload hasil kerja di sini — deck strategy (PPT/PDF), dokumen, video & file besar (hingga 5GB). Tersimpan rapi di Google Drive per client, tim dapat notifikasi otomatis.
                 </p>
               </div>
 

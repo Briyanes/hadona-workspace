@@ -1,12 +1,12 @@
 "use client";
 
-import { AlertCircle, BarChart3, Building2, Calculator, Check, ExternalLink, FileSpreadsheet, Layers, Loader2, MapPin, Palette, Pencil, Plus, Share2, Swords, Target, Trash2, TrendingUp, User, X, Zap } from 'lucide-react';
+import { AlertCircle, BarChart3, Building2, Calculator, Check, ExternalLink, FileSpreadsheet, Layers, Loader2, MapPin, Palette, Pencil, Plus, Presentation, Share2, Swords, Target, Trash2, TrendingUp, User, X, Zap } from 'lucide-react';
 import { Modal } from "@/components/ui/modal";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { cn, extractError } from "@/lib/utils";
+import { cn, extractError, formatDate } from "@/lib/utils";
 import ClientStrategyWizard from "@/components/strategy/client-strategy-wizard";
 import { ClientPicker } from "@/components/strategy/client-picker";
 import { PageHeader } from "@/components/ui/page-header";
@@ -38,6 +38,16 @@ interface SocialAcc { id: string; platform: string; handle: string | null; url: 
 interface Competitor { id: string; name: string; platform: string | null; handle: string | null; followers: number; engagement_rate: number | null; posting_freq: string | null; positioning: string | null; weakness: string | null }
 interface Principle { id: string; category: string; description: string }
 interface Initiative { id: string; description: string; tag: string; status: string; okr_id: string | null }
+interface DeckFile {
+  id: string;
+  file_name: string;
+  file_size: number | null;
+  version: number;
+  drive_web_view_link: string | null;
+  created_at: string;
+  user?: { full_name: string | null } | null;
+  task?: { title: string | null } | { title: string | null }[] | null;
+}
 
 const competitorUrl = (platform: string | null, handle: string | null): string | null => {
   if (!handle) return null;
@@ -114,6 +124,7 @@ export default function StrategyPage() {
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [principles, setPrinciples] = useState<Principle[]>([]);
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
+  const [decks, setDecks] = useState<DeckFile[]>([]);
 
   // agency OKR modal (lama)
   const [quarterFilter, setQuarterFilter] = useState("all");
@@ -164,7 +175,10 @@ export default function StrategyPage() {
 
   useEffect(() => {
     setQuarterFilter("all");
-    if (selectedClientId) loadCanvas(selectedClientId);
+    if (selectedClientId) {
+      loadCanvas(selectedClientId);
+      loadDecks(selectedClientId);
+    }
     else if (tab === "agency") loadAgencyOkrs();
   }, [selectedClientId, tab]);
 
@@ -228,6 +242,23 @@ export default function StrategyPage() {
       setError("Gagal memuat canvas: " + extractError(err) + ". Pastikan migration-v87 sudah di-run.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Deck strategy & lampiran file client — dari task_deliverables (upload via Task Detail "Lampiran File")
+  async function loadDecks(clientId: string) {
+    try {
+      const { data } = await (supabase
+        .from("task_deliverables") as unknown as {
+        select: (cols: string) => { eq: (c: string, v: string) => { order: (c: string, o: { ascending: boolean }) => { limit: (n: number) => Promise<{ data: unknown | null }> } } };
+      }).select("id, file_name, file_size, version, drive_web_view_link, created_at, user:profiles(full_name), task:tasks!inner(title)")
+        .eq("tasks.client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setDecks((data as unknown as DeckFile[]) || []);
+    } catch {
+      // tabel belum ada / RLS — section opsional, jangan ganggu canvas
+      setDecks([]);
     }
   }
 
@@ -595,6 +626,52 @@ export default function StrategyPage() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Deck Strategy & Lampiran File (dari Task) */}
+              <div className="card p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-muted"><Presentation size={14} /><span className="text-xs font-semibold uppercase">Deck Strategy & Lampiran</span></div>
+                  {decks.length > 0 && <span className="text-xs text-muted">{decks.length} file</span>}
+                </div>
+                {decks.length === 0 ? (
+                  <p className="mt-3 text-xs text-muted">
+                    Belum ada deck strategy / file. Advertiser upload deck dari detail task (bagian <b>Lampiran File</b>) — otomatis muncul di sini.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {decks.map((d) => {
+                      const taskTitle = Array.isArray(d.task) ? d.task[0]?.title : d.task?.title;
+                      return (
+                        <a
+                          key={d.id}
+                          href={d.drive_web_view_link || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 transition-colors hover:border-primary/40"
+                        >
+                          <Presentation size={14} className="shrink-0 text-primary" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-medium text-foreground" title={d.file_name}>{d.file_name}</p>
+                            <p className="truncate text-[11px] text-muted">
+                              {taskTitle ? `Task: ${taskTitle}` : "—"}
+                              {d.user?.full_name ? ` · ${d.user.full_name}` : ""}
+                              {d.created_at ? ` · ${formatDate(d.created_at, { day: "numeric", month: "short" })}` : ""}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-muted">v{d.version}</span>
+                          {d.file_size != null && (
+                            <span className="shrink-0 text-[11px] text-muted">{(d.file_size / (1024 * 1024)).toFixed(1)}MB</span>
+                          )}
+                          <ExternalLink size={12} className="shrink-0 text-muted" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="mt-2 text-[11px] text-muted">
+                  File tersimpan otomatis di Google Drive folder client (Hadona Creative / {selectedClient.name}).
+                </p>
               </div>
 
               {/* OKR client */}
