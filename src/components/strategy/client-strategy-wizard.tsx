@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { cn, extractError } from "@/lib/utils";
+import { findSlugConflict, friendlyClientError, slugify } from "@/lib/client-slug";
 import { Modal } from "@/components/ui/modal";
 import { sopTasksToPayload } from "@/lib/sop-templates";
 
@@ -103,16 +104,26 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
   }
 
   async function handleSave() {
-    if (!name.trim()) { toast.error("Nama client wajib diisi"); return; }
+    const trimmedName = name.trim();
+    if (!trimmedName) { toast.error("Nama client wajib diisi"); return; }
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
 
+      // 0. Pre-check duplikat slug (fix insiden "clients_slug_key" 9 Nov 2026).
+      //    Nama sama dicegah dulu dengan pesan jelas; bila lolos (race),
+      //    trigger migration-v110 menjamin insert tetap tidak error 23505.
+      const conflict = await findSlugConflict(supabase, trimmedName);
+      if (conflict) {
+        toast.error(`Client "${trimmedName}" sudah ada${conflict !== trimmedName ? ` (bentrok dengan "${conflict}")` : ""}. Gunakan nama berbeda atau pilih client yang sudah ada.`, { duration: 7000 });
+        return;
+      }
+
       // 1. Client
-      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const slug = slugify(trimmedName);
       const clientPayload = {
-        name: name.trim(),
+        name: trimmedName,
         slug,
         industry: null,
         services,
@@ -200,7 +211,7 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
         if (e) throw e;
       }
 
-      toast.success(`Client "${name}" + strategy canvas berhasil dibuat!`);
+      toast.success(`Client "${trimmedName}" + strategy canvas berhasil dibuat!`);
       onCreated();
       onClose();
       // reset
@@ -211,7 +222,8 @@ export default function ClientStrategyWizard({ open, onClose, onCreated }: {
       setP4m({ mindset: "", manpower: "", tools: "", budget: "" });
       setInitiatives([]); setIncludeSop(true);
     } catch (err) {
-      toast.error("Gagal menyimpan: " + extractError(err));
+      // Error 23505 slug diterjemahkan jadi pesan ramah (bukan raw Postgres)
+      toast.error("Gagal menyimpan: " + friendlyClientError(err, trimmedName));
     } finally {
       setSaving(false);
     }

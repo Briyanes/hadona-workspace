@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import Link from "next/link";
 import { cn, formatIDR, getInitials } from "@/lib/utils";
+import { findSlugConflict, friendlyClientError, slugify } from "@/lib/client-slug";
 import { useSortable } from "@/hooks/use-sortable-table";
 import { SortableTh } from "@/components/ui/sortable-th";
 import { uploadFile } from "@/lib/upload";
@@ -190,13 +191,6 @@ export default function ClientsPage() {
     }
   }
 
-  function slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }
-
   function openCreate() {
     setForm(emptyForm);
     setEditingId(null);
@@ -267,6 +261,15 @@ export default function ClientsPage() {
 
     setSaving(true);
     try {
+      // Pre-check duplikat slug (fix insiden "clients_slug_key" 9 Nov 2026).
+      // Mode edit pakai excludeId agar rename tidak dianggap duplikat dirinya;
+      // jika lolos (race), trigger migration-v110 tetap menjamin tidak error 23505.
+      const conflict = await findSlugConflict(supabase, form.name, editingId);
+      if (conflict) {
+        toast.error(`Client "${form.name.trim()}" sudah ada${conflict !== form.name.trim() ? ` (bentrok dengan "${conflict}")` : ""}. Gunakan nama berbeda.`, { duration: 7000 });
+        return;
+      }
+
       const payload = {
         name: form.name.trim(),
         slug: slugify(form.name),
@@ -302,14 +305,9 @@ export default function ClientsPage() {
       setFilterAM("all");
       loadClients();
     } catch (err) {
-      let msg = "Unknown error";
-      if (err && typeof err === "object" && "message" in err) {
-        msg = String((err as { message: unknown }).message);
-      } else if (err instanceof Error) {
-        msg = err.message;
-      }
+      // Error 23505 slug diterjemahkan jadi pesan ramah; lainnya apa adanya
       console.error("[Client Save Error]", err);
-      toast.error("Gagal menyimpan: " + msg);
+      toast.error("Gagal menyimpan: " + friendlyClientError(err, form.name.trim()));
     } finally {
       setSaving(false);
     }
@@ -383,6 +381,22 @@ export default function ClientsPage() {
       } else if (err instanceof Error) {
         msg = err.message;
       }
+
+      // Pesan ramah untuk error proteksi/infrastruktur (jangan bocorkan 42P01
+      // mentah ke user — insiden 13 Sep 2026)
+      if (msg.includes("TIDAK BISA HAPUS CLIENT")) {
+        toast.error(msg); // pesan proteksi v98/v111 sudah manusiawi — tampilkan apa adanya
+        console.error("[Client Delete Error]", err);
+        return;
+      }
+      if (msg.includes("content_plans") && msg.includes("does not exist")) {
+        toast.error(
+          "Gagal hapus: sistem proteksi data sedang bermasalah (DB). Coba lagi beberapa saat; jika berlanjut hubungi admin."
+        );
+        console.error("[Client Delete Error]", err);
+        return;
+      }
+
       console.error("[Client Delete Error]", err);
       toast.error("Gagal hapus: " + msg);
     }

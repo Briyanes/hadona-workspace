@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn, formatDate, formatIDR, extractError } from "@/lib/utils";
+import { findSlugConflict, friendlyClientError, slugify } from "@/lib/client-slug";
 import { PrintableInvoice } from "@/components/invoices/printable-invoice";
 
 interface Invoice {
@@ -466,12 +467,17 @@ export default function InvoicesPage() {
 
       // Create new client first if needed
       if (form.is_new_client) {
-        // Generate slug from name: "SAMA Kreatik" → "sama-kreatik"
         const clientName = form.new_client_name.trim();
-        const slug = clientName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "");
+
+        // Pre-check duplikat slug (fix insiden "clients_slug_key" 9 Nov 2026).
+        // Jika lolos (race), trigger migration-v110 menjamin insert tidak error 23505.
+        const conflict = await findSlugConflict(supabase, clientName);
+        if (conflict) {
+          toast.error(`Client "${clientName}" sudah ada${conflict !== clientName ? ` (bentrok dengan "${conflict}")` : ""}. Pilih client tersebut dari dropdown, atau gunakan nama berbeda.`, { duration: 7000 });
+          return;
+        }
+
+        const slug = slugify(clientName);
 
         const insertData: Record<string, string> = {
           name: clientName,
@@ -534,8 +540,8 @@ export default function InvoicesPage() {
       loadInvoices();
       loadClients(); // refresh client list if new was added
     } catch (err) {
-      const msg = extractError(err);
-      toast.error("Gagal menyimpan: " + msg);
+      // Error 23505 slug diterjemahkan jadi pesan ramah; lainnya apa adanya
+      toast.error("Gagal menyimpan: " + friendlyClientError(err, form.is_new_client ? form.new_client_name.trim() : "invoice"));
     } finally {
       setSaving(false);
     }
